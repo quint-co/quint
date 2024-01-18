@@ -74,7 +74,9 @@ export interface TestResult {
  * @param lookupTable lookup table as produced by the parser
  * @param analysisOutput the maps produced by the static analysis
  * @param options misc test options
- * @returns the results of running the tests
+ * @returns the `right(results)` of running the tests if the tests could be
+ *    run, or `left(errors)` with any compilation or analysis errors that
+ *    prevent the tests from running
  */
 export function compileAndTest(
   compilationState: CompilationState,
@@ -82,13 +84,20 @@ export function compileAndTest(
   lookupTable: LookupTable,
   options: TestOptions
 ): Either<QuintError[], TestResult[]> {
-  const recorder = newTraceRecorder(options.verbosity, options.rng)
   const main = compilationState.modules.find(m => m.name === mainName)
   if (!main) {
     return left([{ code: 'QNT405', message: `Main module ${mainName} not found` }])
   }
 
+  const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.declarations)
+
+  const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors, ctx.analysisErrors)
+  if (ctxErrors.length > 0) {
+    // In principle, these errors should have been caught earlier.
+    // But if they did not, return immediately.
+    return left(ctxErrors)
+  }
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
@@ -102,13 +111,6 @@ export function compileAndTest(
       ctx.evaluationState.vars.map(v => v.name),
       states
     )
-  }
-
-  const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
-  if (ctxErrors.length > 0) {
-    // In principle, these errors should have been caught earlier.
-    // But if they did not, return immediately.
-    return left(ctxErrors)
   }
 
   const testDefs = main.declarations.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]

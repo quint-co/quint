@@ -1,5 +1,5 @@
 /**
- * Define the commands for QuintC
+ * The commands for the quint CLI
  *
  * See the description at:
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
@@ -301,30 +301,16 @@ export async function runRepl(_argv: any) {
  * @param typedStage the procedure stage produced by `typecheck`
  */
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
+  // TODO: Logic should be consistent with runSimulator?
   const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
-  const out = console.log
-  const columns = !prev.args.out ? terminalWidth() : 80
-
-  const testing = { ...prev, stage: 'testing' as stage }
   const mainName = guessMainModule(prev)
-
-  const outputTemplate = testing.args.output
+  const testing = { ...prev, stage: 'testing' as stage }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...testing, errors: [] })
   }
   const rng = rngOrError.unwrap()
-
-  let passed: string[] = []
-  let failed: string[] = []
-  let ignored: string[] = []
-  let namedErrors: [string, ErrorMessage, TestResult][] = []
-
-  const startMs = Date.now()
-  if (verbosity.hasResults(verbosityLevel)) {
-    out(`\n  ${mainName}`)
-  }
 
   const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
   const options: TestOptions = {
@@ -346,12 +332,26 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     },
   }
 
+  const out = console.log
+
+  const outputTemplate = testing.args.output
+
+  // Start the Timer and being running the tests
+  const startMs = Date.now()
+
+  if (verbosity.hasResults(verbosityLevel)) {
+    out(`\n  ${mainName}`)
+  }
+
+  // TODO: This block is a workaround for the fact that flattening removes any defs
+  // not refernced in the main module. We'd instead like way to just instruct it
+  // to keep some defs.
+  //
   // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
   // doesn't drop the definitions.
   const unusedTests = [...testing.unusedDefinitions(mainName)].filter(
     d => d.kind === 'def' && options.testMatch(d.name)
   )
-
   // Define name expressions referencing each test that is not referenced elsewhere, adding the references to the lookup
   // table
   const args: QuintEx[] = unusedTests.map(defToAdd => {
@@ -362,7 +362,6 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
     return { kind: 'name', id, name }
   })
-
   // Wrap all expressions in a single declaration
   const testDeclaration: QuintOpDef = {
     id: testing.idGen.nextId(),
@@ -371,11 +370,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     qualifier: 'run',
     expr: { kind: 'app', opcode: 'actionAll', args, id: testing.idGen.nextId() },
   }
-
   // Add the declaration to the main module
   const main = testing.modules.find(m => m.name === mainName)
   main?.declarations.push(testDeclaration)
 
+  // TODO The following block should all be moved into compileAndTest
   const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     testing.modules,
@@ -392,94 +391,115 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     idGen: testing.idGen,
     sourceCode: testing.sourceCode,
   }
-  const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
 
-  if (testOut.isLeft()) {
-    return cliErr('Tests failed', { ...testing, errors: testOut.value.map(mkErrorMessage(testing.sourceMap)) })
-  } else if (testOut.isRight()) {
-    const elapsedMs = Date.now() - startMs
-    const results = testOut.unwrap()
-    // output the status for every test
-    if (verbosity.hasResults(verbosityLevel)) {
-      results.forEach(res => {
-        if (res.status === 'passed') {
-          out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-        }
-        if (res.status === 'failed') {
-          const errNo = chalk.red(namedErrors.length + 1)
-          out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+  const testResult = compileAndTest(compilationState, mainName, flattenedTable, options)
 
-          res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
-        }
-      })
-    }
+  // We have a compilation failure, so early exit without reporting test results
+  if (testResult.isLeft()) {
+    return cliErr('Tests could not be run due to an error during compilation', {
+      ...testing,
+      errors: testResult.value.map(mkErrorMessage(testing.sourceMap)),
+    })
+  }
 
-    passed = results.filter(r => r.status === 'passed').map(r => r.name)
-    failed = results.filter(r => r.status === 'failed').map(r => r.name)
-    ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+  // We're finished running the tests
+  const elapsedMs = Date.now() - startMs
+  // So we can analyze the results now
+  const results = testResult.value
 
-    // output the statistics banner
-    if (verbosity.hasResults(verbosityLevel)) {
-      out('')
-      if (passed.length > 0) {
-        out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
+  // output the status for every test
+  let nFailures = 1
+  if (verbosity.hasResults(verbosityLevel)) {
+    results.forEach(res => {
+      if (res.status === 'passed') {
+        out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
       }
-      if (failed.length > 0) {
-        out(chalk.red(`  ${failed.length} failed`))
+      if (res.status === 'failed') {
+        const errNo = chalk.red(nFailures)
+        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+        nFailures++
       }
-      if (ignored.length > 0) {
-        out(chalk.gray(`  ${ignored.length} ignored`))
-      }
+    })
+  }
+
+  const passed = results.filter(r => r.status === 'passed')
+  const failed = results.filter(r => r.status === 'failed')
+  const ignored = results.filter(r => r.status === 'ignored')
+  const namedErrors: [TestResult, ErrorMessage][] = failed.reduce(
+    (acc: [TestResult, ErrorMessage][], failure) =>
+      acc.concat(failure.errors.map(e => [failure, mkErrorMessage(testing.sourceMap)(e)])),
+    []
+  )
+
+  // output the statistics banner
+  if (verbosity.hasResults(verbosityLevel)) {
+    out('')
+    if (passed.length > 0) {
+      out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
     }
-
-    // output errors, if there are any
-    if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
-      const code = prev.sourceCode!
-      const finders = createFinders(code)
-      out('')
-      namedErrors.forEach(([name, err, testResult], index) => {
-        const details = formatError(code, finders, err)
-        // output the header
-        out(`  ${index + 1}) ${name}:`)
-        const lines = details.split('\n')
-        // output the first two lines in red
-        lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
-
-        if (verbosity.hasActionTracking(verbosityLevel)) {
-          out('')
-          testResult.frames.forEach((f, index) => {
-            out(`[${chalk.bold('Frame ' + index)}]`)
-            const console = {
-              width: columns,
-              out: (s: string) => process.stdout.write(s),
-            }
-            printExecutionFrameRec(console, f, [])
-            out('')
-          })
-
-          if (testResult.frames.length == 0) {
-            out('    [No execution]')
-          }
-        }
-        // output the seed
-        out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
-      })
-      out('')
+    if (failed.length > 0) {
+      out(chalk.red(`  ${failed.length} failed`))
     }
-
-    if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
-      out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
-      out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
+    if (ignored.length > 0) {
+      out(chalk.gray(`  ${ignored.length} ignored`))
     }
   }
 
-  const errors = namedErrors.map(([_, e]) => e)
-  const stage = { ...testing, passed, failed, ignored, errors }
-  if (errors.length == 0 && failed.length == 0) {
+  const stage = {
+    ...testing,
+    passed: passed.map(r => r.name),
+    failed: failed.map(r => r.name),
+    ignored: ignored.map(r => r.name),
+    errors: namedErrors.map(([_, e]) => e),
+  }
+
+  // Nothing failed, so we are OK, and can exit early
+  if (failed.length === 0) {
     return right(stage)
-  } else {
-    return cliErr('Tests failed', stage)
   }
+
+  // We know that there are errors, so report as required by the verbosity configuration
+  if (verbosity.hasTestDetails(verbosityLevel)) {
+    const code = prev.sourceCode!
+    const finders = createFinders(code)
+    const columns = !prev.args.out ? terminalWidth() : 80
+    out('')
+    namedErrors.forEach(([testResult, err], index) => {
+      const details = formatError(code, finders, err)
+      // output the header
+      out(`  ${index + 1}) ${testResult.name}:`)
+      const lines = details.split('\n')
+      // output the first two lines in red
+      lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
+
+      if (verbosity.hasActionTracking(verbosityLevel)) {
+        out('')
+        testResult.frames.forEach((f, index) => {
+          out(`[${chalk.bold('Frame ' + index)}]`)
+          const console = {
+            width: columns,
+            out: (s: string) => process.stdout.write(s),
+          }
+          printExecutionFrameRec(console, f, [])
+          out('')
+        })
+
+        if (testResult.frames.length == 0) {
+          out('    [No execution]')
+        }
+      }
+      // output the seed
+      out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
+    })
+    out('')
+  }
+
+  if (verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
+    out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
+    out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
+  }
+
+  return cliErr('Tests failed', stage)
 }
 
 // Print a counterexample if the appropriate verbosity is set
@@ -500,14 +520,16 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
-  const simulator = { ...prev, stage: 'running' as stage }
-  const mainName = guessMainModule(prev)
   const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  const mainName = guessMainModule(prev)
+  const simulator = { ...prev, stage: 'running' as stage }
+
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...simulator, errors: [] })
   }
   const rng = rngOrError.unwrap()
+
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
@@ -517,6 +539,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     rng,
     verbosity: verbosityLevel,
   }
+
   const startMs = Date.now()
 
   const mainText = prev.sourceCode.get(prev.path)!
