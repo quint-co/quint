@@ -333,12 +333,10 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   }
 
   const out = console.log
-  const columns = !prev.args.out ? terminalWidth() : 80
 
   const outputTemplate = testing.args.output
 
-  let namedErrors: [string, ErrorMessage, TestResult][] = []
-
+  // Start the Timer and being running the tests
   const startMs = Date.now()
 
   if (verbosity.hasResults(verbosityLevel)) {
@@ -394,35 +392,44 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     sourceCode: testing.sourceCode,
   }
 
-  const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
-  const elapsedMs = Date.now() - startMs
+  const testResult = compileAndTest(compilationState, mainName, flattenedTable, options)
 
-  if (testOut.isLeft()) {
+  // We have a compilation failure, so early exit without reporting test results
+  if (testResult.isLeft()) {
     return cliErr('Tests could not be run due to an error during compilation', {
       ...testing,
-      errors: testOut.value.map(mkErrorMessage(testing.sourceMap)),
+      errors: testResult.value.map(mkErrorMessage(testing.sourceMap)),
     })
   }
-  const results = testOut.unwrap()
+
+  // We're finished running the tests
+  const elapsedMs = Date.now() - startMs
+  // So we can analyze the results now
+  const results = testResult.value
 
   // output the status for every test
+  let nFailures = 1
   if (verbosity.hasResults(verbosityLevel)) {
     results.forEach(res => {
       if (res.status === 'passed') {
         out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
       }
       if (res.status === 'failed') {
-        const errNo = chalk.red(namedErrors.length + 1)
+        const errNo = chalk.red(nFailures)
         out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
-
-        res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
+        nFailures++
       }
     })
   }
 
-  const passed = results.filter(r => r.status === 'passed').map(r => r.name)
-  const failed = results.filter(r => r.status === 'failed').map(r => r.name)
-  const ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+  const passed = results.filter(r => r.status === 'passed')
+  const failed = results.filter(r => r.status === 'failed')
+  const ignored = results.filter(r => r.status === 'ignored')
+  const namedErrors: [TestResult, ErrorMessage][] = failed.reduce(
+    (acc: [TestResult, ErrorMessage][], failure) =>
+      acc.concat(failure.errors.map(e => [failure, mkErrorMessage(testing.sourceMap)(e)])),
+    []
+  )
 
   // output the statistics banner
   if (verbosity.hasResults(verbosityLevel)) {
@@ -438,15 +445,29 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     }
   }
 
-  // output errors, if there are any
-  if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
+  const stage = {
+    ...testing,
+    passed: passed.map(r => r.name),
+    failed: failed.map(r => r.name),
+    ignored: ignored.map(r => r.name),
+    errors: namedErrors.map(([_, e]) => e),
+  }
+
+  // Nothing failed, so we are OK, and can exit early
+  if (failed.length === 0) {
+    return right(stage)
+  }
+
+  // We know that there are errors, so report as required by the verbosity configuration
+  if (verbosity.hasTestDetails(verbosityLevel)) {
     const code = prev.sourceCode!
     const finders = createFinders(code)
+    const columns = !prev.args.out ? terminalWidth() : 80
     out('')
-    namedErrors.forEach(([name, err, testResult], index) => {
+    namedErrors.forEach(([testResult, err], index) => {
       const details = formatError(code, finders, err)
       // output the header
-      out(`  ${index + 1}) ${name}:`)
+      out(`  ${index + 1}) ${testResult.name}:`)
       const lines = details.split('\n')
       // output the first two lines in red
       lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
@@ -473,18 +494,12 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     out('')
   }
 
-  if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
+  if (verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
     out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
     out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
   }
 
-  const errors = namedErrors.map(([_, e]) => e)
-  const stage = { ...testing, passed, failed, ignored, errors }
-  if (errors.length == 0 && failed.length == 0) {
-    return right(stage)
-  } else {
-    return cliErr('Tests failed', stage)
-  }
+  return cliErr('Tests failed', stage)
 }
 
 // Print a counterexample if the appropriate verbosity is set
