@@ -935,7 +935,7 @@ exit $exit_code
 5:     assert(n > 0)
               ^
 
-error: Tests failed
+error: Tests could not be run due to an error during compilation
 ```
 
 ### Fail on run with uninitialized constants
@@ -1046,7 +1046,7 @@ quint test --main=invalid ./testFixture/_1050diffName.qnt
 <!-- !test err test invalid module -->
 ```
 error: [QNT405] Main module invalid not found
-error: Tests failed
+error: Tests could not be run due to an error during compilation
 ```
 
 ### Multiple tests output different json

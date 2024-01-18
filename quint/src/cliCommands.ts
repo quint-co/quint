@@ -1,5 +1,5 @@
 /**
- * Define the commands for QuintC
+ * The commands for the quint CLI
  *
  * See the description at:
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
@@ -312,16 +312,6 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   }
   const rng = rngOrError.unwrap()
 
-  let passed: string[] = []
-  let failed: string[] = []
-  let ignored: string[] = []
-  let namedErrors: [string, ErrorMessage, TestResult][] = []
-
-  const startMs = Date.now()
-  if (verbosity.hasResults(verbosityLevel)) {
-    out(`\n  ${mainName}`)
-  }
-
   const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
   const options: TestOptions = {
     testMatch: matchFun,
@@ -348,9 +338,9 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const outputTemplate = testing.args.output
 
   // let passed: string[] = []
-  // let failed: string[] = []
-  // let ignored: string[] = []
-  // let namedErrors: [string, ErrorMessage, TestResult][] = []
+  let failed: string[] = []
+  let ignored: string[] = []
+  let namedErrors: [string, ErrorMessage, TestResult][] = []
 
   const startMs = Date.now()
 
@@ -405,84 +395,87 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     sourceCode: testing.sourceCode,
   }
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
+  const elapsedMs = Date.now() - startMs
 
   if (testOut.isLeft()) {
-    return cliErr('Tests failed', { ...testing, errors: testOut.value.map(mkErrorMessage(testing.sourceMap)) })
-  } else if (testOut.isRight()) {
-    const elapsedMs = Date.now() - startMs
-    const results = testOut.unwrap()
-    // output the status for every test
-    if (verbosity.hasResults(verbosityLevel)) {
-      results.forEach(res => {
-        if (res.status === 'passed') {
-          out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-        }
-        if (res.status === 'failed') {
-          const errNo = chalk.red(namedErrors.length + 1)
-          out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+    return cliErr('Tests could not be run due to an error during compilation', {
+      ...testing,
+      errors: testOut.value.map(mkErrorMessage(testing.sourceMap)),
+    })
+  }
+  const results = testOut.unwrap()
 
-          res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
-        }
-      })
+  // output the status for every test
+  if (verbosity.hasResults(verbosityLevel)) {
+    results.forEach(res => {
+      if (res.status === 'passed') {
+        out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
+      }
+      if (res.status === 'failed') {
+        const errNo = chalk.red(namedErrors.length + 1)
+        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+
+        res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
+      }
+    })
+  }
+
+  const passed: string[] = results.filter(r => r.status === 'passed').map(r => r.name)
+  failed = results.filter(r => r.status === 'failed').map(r => r.name)
+  ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+
+  // output the statistics banner
+  if (verbosity.hasResults(verbosityLevel)) {
+    out('')
+    if (passed.length > 0) {
+      out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
     }
-
-    passed = results.filter(r => r.status === 'passed').map(r => r.name)
-    failed = results.filter(r => r.status === 'failed').map(r => r.name)
-    ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
-
-    // output the statistics banner
-    if (verbosity.hasResults(verbosityLevel)) {
-      out('')
-      if (passed.length > 0) {
-        out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
-      }
-      if (failed.length > 0) {
-        out(chalk.red(`  ${failed.length} failed`))
-      }
-      if (ignored.length > 0) {
-        out(chalk.gray(`  ${ignored.length} ignored`))
-      }
+    if (failed.length > 0) {
+      out(chalk.red(`  ${failed.length} failed`))
     }
+    if (ignored.length > 0) {
+      out(chalk.gray(`  ${ignored.length} ignored`))
+    }
+  }
 
-    // output errors, if there are any
-    if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
-      const code = prev.sourceCode!
-      const finders = createFinders(code)
-      out('')
-      namedErrors.forEach(([name, err, testResult], index) => {
-        const details = formatError(code, finders, err)
-        // output the header
-        out(`  ${index + 1}) ${name}:`)
-        const lines = details.split('\n')
-        // output the first two lines in red
-        lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
+  // output errors, if there are any
+  if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
+    const code = prev.sourceCode!
+    const finders = createFinders(code)
+    out('')
+    namedErrors.forEach(([name, err, testResult], index) => {
+      const details = formatError(code, finders, err)
+      // output the header
+      out(`  ${index + 1}) ${name}:`)
+      const lines = details.split('\n')
+      // output the first two lines in red
+      lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
 
-        if (verbosity.hasActionTracking(verbosityLevel)) {
-          out('')
-          testResult.frames.forEach((f, index) => {
-            out(`[${chalk.bold('Frame ' + index)}]`)
-            const console = {
-              width: columns,
-              out: (s: string) => process.stdout.write(s),
-            }
-            printExecutionFrameRec(console, f, [])
-            out('')
-          })
-
-          if (testResult.frames.length == 0) {
-            out('    [No execution]')
+      if (verbosity.hasActionTracking(verbosityLevel)) {
+        out('')
+        testResult.frames.forEach((f, index) => {
+          out(`[${chalk.bold('Frame ' + index)}]`)
+          const console = {
+            width: columns,
+            out: (s: string) => process.stdout.write(s),
           }
-        }
-        // output the seed
-        out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
-      })
-      out('')
-    }
+          printExecutionFrameRec(console, f, [])
+          out('')
+        })
 
-    if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
-      out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
-      out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
-    }
+        if (testResult.frames.length == 0) {
+          out('    [No execution]')
+        }
+      }
+      // output the seed
+      out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
+    })
+    out('')
+  }
+
+  if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
+    out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
+    out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
   }
 
   const errors = namedErrors.map(([_, e]) => e)
@@ -531,6 +524,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     rng,
     verbosity: verbosityLevel,
   }
+
   const startMs = Date.now()
 
   const mainText = prev.sourceCode.get(prev.path)!
