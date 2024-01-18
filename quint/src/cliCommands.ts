@@ -337,9 +337,6 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
   const outputTemplate = testing.args.output
 
-  // let passed: string[] = []
-  let failed: string[] = []
-  let ignored: string[] = []
   let namedErrors: [string, ErrorMessage, TestResult][] = []
 
   const startMs = Date.now()
@@ -348,12 +345,15 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     out(`\n  ${mainName}`)
   }
 
+  // TODO: This block is a workaround for the fact that flattening removes any defs
+  // not refernced in the main module. We'd instead like way to just instruct it
+  // to keep some defs.
+  //
   // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
   // doesn't drop the definitions.
   const unusedTests = [...testing.unusedDefinitions(mainName)].filter(
     d => d.kind === 'def' && options.testMatch(d.name)
   )
-
   // Define name expressions referencing each test that is not referenced elsewhere, adding the references to the lookup
   // table
   const args: QuintEx[] = unusedTests.map(defToAdd => {
@@ -364,7 +364,6 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
     return { kind: 'name', id, name }
   })
-
   // Wrap all expressions in a single declaration
   const testDeclaration: QuintOpDef = {
     id: testing.idGen.nextId(),
@@ -373,11 +372,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     qualifier: 'run',
     expr: { kind: 'app', opcode: 'actionAll', args, id: testing.idGen.nextId() },
   }
-
   // Add the declaration to the main module
   const main = testing.modules.find(m => m.name === mainName)
   main?.declarations.push(testDeclaration)
 
+  // TODO The following block should all be moved into compileAndTest
   const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     testing.modules,
@@ -394,6 +393,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     idGen: testing.idGen,
     sourceCode: testing.sourceCode,
   }
+
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
   const elapsedMs = Date.now() - startMs
 
@@ -420,9 +420,9 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     })
   }
 
-  const passed: string[] = results.filter(r => r.status === 'passed').map(r => r.name)
-  failed = results.filter(r => r.status === 'failed').map(r => r.name)
-  ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+  const passed = results.filter(r => r.status === 'passed').map(r => r.name)
+  const failed = results.filter(r => r.status === 'failed').map(r => r.name)
+  const ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
 
   // output the statistics banner
   if (verbosity.hasResults(verbosityLevel)) {
