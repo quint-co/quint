@@ -145,13 +145,8 @@ interface TestedStage extends LoadedStage {
   ignored: string[]
 }
 
-interface SimulatorStage extends LoadedStage {
-  status: 'ok' | 'violation' | 'failure'
-  trace?: QuintEx[]
-}
-
-interface VerifiedStage extends LoadedStage {
-  status: 'ok' | 'violation' | 'failure'
+// Data resulting from stages that can produce a trace
+interface TracingStage extends LoadedStage {
   trace?: QuintEx[]
 }
 
@@ -518,7 +513,7 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
+export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
@@ -554,14 +549,15 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const elapsedMs = Date.now() - startMs
 
-  switch (result.status) {
+  switch (result.outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
         ...simulator,
-        status: result.status,
+        status: result.outcome.status,
         trace: result.states,
-        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
+        errors: result.outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
+
     case 'ok':
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (verbosity.hasResults(verbosityLevel)) {
@@ -574,9 +570,10 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       }
       return right({
         ...simulator,
-        status: result.status,
+        status: result.outcome.status,
         trace: result.states,
       })
+
     case 'violation':
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (verbosity.hasResults(verbosityLevel)) {
@@ -591,19 +588,18 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (prev.args.outItf) {
         const trace = toItf(result.vars, result.states)
         if (trace.isRight()) {
-          const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
+          const jsonObj = addItfHeader(prev.args.input, result.outcome.status, trace.value)
           writeToJson(prev.args.outItf, jsonObj)
         } else {
-          const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
-          return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
+          return cliErr(`ITF conversion failed: ${trace.value}`, { ...simulator, errors: [] })
         }
       }
 
       return cliErr('Invariant violated', {
         ...simulator,
-        status: result.status,
+        status: result.outcome.status,
         trace: result.states,
-        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
+        errors: [],
       })
   }
 }
@@ -613,7 +609,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
+export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
   const verbosityLevel = deriveVerbosity(args)
@@ -714,7 +710,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
             console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
           }
         }
-        return { ...verifying, status: 'ok', errors: [] } as VerifiedStage
+        return { ...verifying, status: 'ok', errors: [] } as TracingStage
       })
       .mapLeft(err => {
         const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
