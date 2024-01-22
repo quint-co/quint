@@ -302,7 +302,7 @@ export async function runRepl(_argv: any) {
  */
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
   // TODO: Logic should be consistent with runSimulator?
-  const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
+  const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
   const testing = { ...prev, stage: 'testing' as stage }
 
@@ -520,7 +520,7 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
-  const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
   const simulator = { ...prev, stage: 'running' as stage }
 
@@ -611,6 +611,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
+  const verbosityLevel = deriveVerbosity(args)
+
   let loadedConfig: any = {}
   try {
     if (args.apalacheConfig) {
@@ -696,7 +698,6 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
 
   const startMs = Date.now()
 
-  const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
   return verify(config, verbosityLevel).then(res => {
     const elapsedMs = Date.now() - startMs
     return res
@@ -880,4 +881,9 @@ function isMatchingTest(match: string | undefined, name: string) {
   } else {
     return name.endsWith('Test')
   }
+}
+
+// Derive the verbosity for simulation and verification routines
+function deriveVerbosity(args: { out: string | undefined; outItf: string | undefined; verbosity: number }): number {
+  return !args.out && !args.outItf ? args.verbosity : 0
 }
