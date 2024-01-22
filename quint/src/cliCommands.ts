@@ -301,10 +301,9 @@ export async function runRepl(_argv: any) {
  * @param typedStage the procedure stage produced by `typecheck`
  */
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
-  // TODO: Logic should be consistent with runSimulator?
+  const testing = { ...prev, stage: 'testing' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
-  const testing = { ...prev, stage: 'testing' as stage }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -520,9 +519,9 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
+  const simulator = { ...prev, stage: 'running' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
-  const simulator = { ...prev, stage: 'running' as stage }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -553,53 +552,59 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
   const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
 
-  if (result.status !== 'error') {
-    if (verbosity.hasResults(verbosityLevel)) {
-      const elapsedMs = Date.now() - startMs
+  const elapsedMs = Date.now() - startMs
+
+  switch (result.status) {
+    case 'error':
+      return cliErr('Runtime error', {
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
+      })
+    case 'ok':
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
-      if (result.status === 'ok') {
+      if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
-      } else {
-        console.log(chalk.red(`[${result.status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+      }
+      return right({
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+      })
+    case 'violation':
+      maybePrintCounterExample(verbosityLevel, result.states, result.frames)
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
 
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
-    }
 
-    if (prev.args.outItf) {
-      const trace = toItf(result.vars, result.states)
-      if (trace.isRight()) {
-        const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
-        writeToJson(prev.args.outItf, jsonObj)
-      } else {
-        const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
-        return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
+      if (prev.args.outItf) {
+        const trace = toItf(result.vars, result.states)
+        if (trace.isRight()) {
+          const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
+          writeToJson(prev.args.outItf, jsonObj)
+        } else {
+          const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
+          return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
+        }
       }
-    }
-  }
 
-  if (result.status === 'ok') {
-    return right({
-      ...simulator,
-      status: result.status,
-      trace: result.states,
-    })
-  } else {
-    const msg = result.status === 'violation' ? 'Invariant violated' : 'Runtime error'
-    return cliErr(msg, {
-      ...simulator,
-      status: result.status,
-      trace: result.states,
-      errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
-    })
+      return cliErr('Invariant violated', {
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
+      })
   }
 }
 
