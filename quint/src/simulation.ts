@@ -20,6 +20,7 @@ import { SourceLookupPath } from './parsing/sourceResolver'
 import { QuintError } from './quintError'
 import { mkErrorMessage } from './cliCommands'
 import { createFinders, formatError } from './errorReporter'
+import { fail } from 'assert'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -34,7 +35,7 @@ export interface SimulatorOptions {
   verbosity: number
 }
 
-export type SimulatorResultStatus = 'ok' | 'violation' | 'failure' | 'error'
+export type SimulatorResultStatus = 'ok' | 'violation' | 'error'
 
 /**
  * A result returned by the simulator.
@@ -116,19 +117,20 @@ export function compileAndRun(
       const errors = [{ code: 'QNT512', message: res.value }] as QuintError[]
       return errSimulationResult('error', errors)
     } else {
-      const _ = res.value.eval()
+      res.value.eval()
     }
 
     const topFrame = recorder.getBestTrace()
-    let status: SimulatorResultStatus = 'failure'
+    let status: SimulatorResultStatus
     if (topFrame.result.isJust()) {
       const ex = topFrame.result.unwrap().toQuintEx(idGen)
       if (ex.kind === 'bool') {
         status = ex.value ? 'ok' : 'violation'
+      } else {
+        fail('invalid value derived from simulation')
       }
     } else {
-      // This should not happen. But if it does, give a debugging hint.
-      console.error('No trace recorded')
+      fail('simulation failed to produce any trace')
     }
 
     let errors = ctx.getRuntimeErrors()
