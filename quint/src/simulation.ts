@@ -12,7 +12,7 @@ import { Either } from '@sweet-monads/either'
 
 import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
 import { QuintEx } from './ir/quintIr'
-import { Computable, EvalResult } from './runtime/runtime'
+import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
