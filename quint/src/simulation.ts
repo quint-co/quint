@@ -20,6 +20,7 @@ import { SourceLookupPath } from './parsing/sourceResolver'
 import { QuintError } from './quintError'
 import { mkErrorMessage } from './cliCommands'
 import { createFinders, formatError } from './errorReporter'
+import assert from 'assert'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -34,27 +35,30 @@ export interface SimulatorOptions {
   verbosity: number
 }
 
-export type SimulatorResultStatus = 'ok' | 'violation' | 'failure' | 'error'
+/** The outcome of a simulation
+ */
+export type Outcome =
+  | { status: 'ok' } /** Simulation succeeded */
+  | { status: 'violation' } /** Simulation found an invariant violation */
+  | { status: 'error'; errors: QuintError[] } /** An error occurred during simulation  */
 
 /**
  * A result returned by the simulator.
  */
 export interface SimulatorResult {
-  status: SimulatorResultStatus
+  outcome: Outcome
   vars: string[]
   states: QuintEx[]
   frames: ExecutionFrame[]
-  errors: QuintError[]
   seed: bigint
 }
 
-function errSimulationResult(status: SimulatorResultStatus, errors: QuintError[]): SimulatorResult {
+function errSimulationResult(errors: QuintError[]): SimulatorResult {
   return {
-    status,
+    outcome: { status: 'error', errors },
     vars: [],
     states: [],
     frames: [],
-    errors: errors,
     seed: 0n,
   }
 }
@@ -105,65 +109,73 @@ export function compileAndRun(
   const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx = compileFromCode(idGen, codeWithExtraDefs, mainName, mainPath, recorder, options.rng.next)
 
-  if (ctx.compileErrors.length > 0 || ctx.syntaxErrors.length > 0 || ctx.analysisErrors.length > 0) {
-    const errors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
-    return errSimulationResult('error', errors)
+  const compilationErrors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
+  if (compilationErrors.length > 0) {
+    return errSimulationResult(compilationErrors)
+  }
+
+  // evaluate q::runResult, which triggers the simulator
+  const evaluationState = ctx.evaluationState
+  const res: Either<string, Computable> = contextNameLookup(evaluationState.context, 'q::runResult', 'callable')
+  if (res.isLeft()) {
+    const errors = [{ code: 'QNT512', message: res.value }] as QuintError[]
+    return errSimulationResult(errors)
   } else {
-    // evaluate q::runResult, which triggers the simulator
-    const evaluationState = ctx.evaluationState
-    const res: Either<string, Computable> = contextNameLookup(evaluationState.context, 'q::runResult', 'callable')
-    if (res.isLeft()) {
-      const errors = [{ code: 'QNT512', message: res.value }] as QuintError[]
-      return errSimulationResult('error', errors)
-    } else {
-      const _ = res.value.eval()
-    }
+    res.value.eval()
+  }
 
-    const topFrame = recorder.getBestTrace()
-    let status: SimulatorResultStatus = 'failure'
-    if (topFrame.result.isJust()) {
-      const ex = topFrame.result.unwrap().toQuintEx(idGen)
-      if (ex.kind === 'bool') {
-        status = ex.value ? 'ok' : 'violation'
-      }
-    } else {
-      // This should not happen. But if it does, give a debugging hint.
-      console.error('No trace recorded')
-    }
+  const topFrame: ExecutionFrame = recorder.getBestTrace()
 
-    let errors = ctx.getRuntimeErrors()
-    if (errors.length > 0) {
-      // FIXME(#1052) we shouldn't need to do this if the error id was not some non-sense generated in `compileFromCode`
-      // The evaluated code source is not included in the context, so we crete a version with it for the error reporter
-      const code = new Map([...ctx.compilationState.sourceCode.entries(), [mainPath.normalizedPath, codeWithExtraDefs]])
-      const finders = createFinders(code)
+  // Validate required outcome of correct simulation
+  const maybeEvalResult = topFrame.result
+  assert(maybeEvalResult.isJust(), 'invalid simulation failed to produce a result')
+  const quintExResult = maybeEvalResult.value.toQuintEx(idGen)
+  assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
+  const simulationSucceeded = quintExResult.value
 
-      errors = errors.map(error => ({
-        code: error.code,
-        // Include the location information (locs) in the error message - this
-        // is the hacky part, as it should only be included at the CLI level
-        message: formatError(code, finders, {
-          // This will create the `locs` attribute and an explanation
-          ...mkErrorMessage(ctx.compilationState.sourceMap)(error),
-          // We override the explanation to keep the original one to avoid
-          // duplication, since `mkErrorMessage` will be called again at the CLI
-          // level. `locs` won't be touched then because this error doesn't
-          // include a `reference` field
-          explanation: error.message,
-        }),
-      }))
+  const vars = evaluationState.vars.map(v => v.name)
+  const states = topFrame.args.map(e => e.toQuintEx(idGen))
+  const frames = topFrame.subframes
+  const seed = recorder.getBestTraceSeed()
 
-      // This should be kept after the hack is removed
-      status = 'error'
-    }
+  const runtimeErrors = ctx.getRuntimeErrors()
+  if (runtimeErrors.length > 0) {
+    // FIXME(#1052) we shouldn't need to do this if the error id was not some non-sense generated in `compileFromCode`
+    // The evaluated code source is not included in the context, so we crete a version with it for the error reporter
+    const code = new Map([...ctx.compilationState.sourceCode.entries(), [mainPath.normalizedPath, codeWithExtraDefs]])
+    const finders = createFinders(code)
 
+    const locatedErrors = runtimeErrors.map(error => ({
+      code: error.code,
+      // Include the location information (locs) in the error message - this
+      // is the hacky part, as it should only be included at the CLI level
+      message: formatError(code, finders, {
+        // This will create the `locs` attribute and an explanation
+        ...mkErrorMessage(ctx.compilationState.sourceMap)(error),
+        // We override the explanation to keep the original one to avoid
+        // duplication, since `mkErrorMessage` will be called again at the CLI
+        // level. `locs` won't be touched then because this error doesn't
+        // include a `reference` field
+        explanation: error.message,
+      }),
+    }))
+
+    // This should be kept after the hack is removed
     return {
-      status: status,
-      vars: evaluationState.vars.map(v => v.name),
-      states: topFrame.args.map(e => e.toQuintEx(idGen)),
-      frames: topFrame.subframes,
-      errors: errors,
-      seed: recorder.getBestTraceSeed(),
+      vars,
+      states,
+      frames,
+      seed,
+      outcome: { status: 'error', errors: locatedErrors },
     }
+  }
+
+  const status = simulationSucceeded ? 'ok' : 'violation'
+  return {
+    vars,
+    states,
+    frames,
+    seed,
+    outcome: { status },
   }
 }
