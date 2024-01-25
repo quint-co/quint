@@ -369,8 +369,8 @@ export class ToIrListener implements QuintListener {
 
   // E.g.,
   //
-  // - type Alias = Set(int)
-  // - type Constr[a, b] = (Set(a), Set(b))
+  // - type Alias = Set[int]
+  // - type Constr[a, b] = (Set[a], Set[b])
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
     const id = this.getId(ctx)
 
