@@ -367,8 +367,10 @@ export class ToIrListener implements QuintListener {
     this.declarationStack.push(def)
   }
 
-  // TODO
-  // type Alias = Set(int)
+  // E.g.,
+  //
+  // - type Alias = Set(int)
+  // - type Constr[a, b] = (Set(a), Set(b))
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
     const id = this.getId(ctx)
 
@@ -393,7 +395,10 @@ export class ToIrListener implements QuintListener {
     this.declarationStack.push(def)
   }
 
-  // type T = | A | B(t1) | C(t2)
+  // E.g.,
+  //
+  // - type T = | A | B(t1) | C(t2)
+  // - type Result[ok, err] = | Ok(ok) | Err(err)
   exitTypeSumDef(ctx: p.TypeSumDefContext) {
     const id = this.getId(ctx)
 
@@ -1091,6 +1096,7 @@ export class ToIrListener implements QuintListener {
     this.typeStack.push({ id, kind: 'const', name })
   }
 
+  // E.g., Result[int, str]
   exitTypeApp(ctx: p.TypeAppContext) {
     const id = this.getId(ctx)
     const args: QuintType[] = ctx._typeArg
