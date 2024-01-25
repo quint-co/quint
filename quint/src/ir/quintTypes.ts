@@ -110,7 +110,7 @@ export interface QuintAbsType extends WithOptionalId {
 
 /** Type application: (Λτ.Τ)υ
  *
- * In system-F, this corresponds to (Λτ.Τ)υ
+ * In System-F, this corresponds to (Λτ.Τ)υ
  *
  * Type application is only well well-formed if `ctor` is (resolved to) an
  * n-ary type abstraction, and `args.length === n`
