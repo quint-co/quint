@@ -9,7 +9,7 @@
  */
 
 import chalk from 'chalk'
-import { strict as assert } from 'assert'
+import { fail, strict as assert } from 'assert'
 import {
   Doc,
   braces,
@@ -204,8 +204,10 @@ export function prettyQuintType(type: QuintType): Doc {
       return prettySumRow(type.fields)
     }
     case 'app':
+      const args = type.args.map(prettyQuintType)
+      return group([prettyQuintType(type), text('['), ...args, text(']')])
     case 'abs':
-      throw new Error('TODO This should be impossible?')
+      fail('internal error: type abstraction should never be printed for users in graphics')
   }
 }
 
