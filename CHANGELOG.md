@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.18.2 -- 2024-01-26
+
+### Added
+### Changed
 
 - Improved error reporting for runtime errors during simulation (#1349).
 
