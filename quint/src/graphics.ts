@@ -8,8 +8,8 @@
  * See LICENSE in the project root for license information.
  */
 
+import { strict as assert, fail } from 'assert'
 import chalk from 'chalk'
-import { strict as assert } from 'assert'
 import {
   Doc,
   braces,
@@ -203,6 +203,12 @@ export function prettyQuintType(type: QuintType): Doc {
     case 'sum': {
       return prettySumRow(type.fields)
     }
+    case 'app': {
+      const args = type.args.map(prettyQuintType)
+      return group([prettyQuintType(type), text('['), ...args, text(']')])
+    }
+    case 'abs':
+      fail('internal error: type abstraction should never be printed for users in graphics')
   }
 }
 

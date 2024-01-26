@@ -18,9 +18,10 @@ import { TypeRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
-import { TypeVarContext } from "./QuintParser";
+import { TypeVarCaseContext } from "./QuintParser";
 import { TypeConstContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
+import { TypeAppContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
 import { TypeAliasDefContext } from "./QuintParser";
 import { TypeSumDefContext } from "./QuintParser";
@@ -68,6 +69,8 @@ import { DocumentedDeclarationContext } from "./QuintParser";
 import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
+import { TypeDefHeadContext } from "./QuintParser";
+import { SumTypeDefinitionContext } from "./QuintParser";
 import { TypeSumVariantContext } from "./QuintParser";
 import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
@@ -79,6 +82,7 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
+import { TypeVarContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
@@ -184,12 +188,12 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeBool?: (ctx: TypeBoolContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `typeVar`
+	 * Visit a parse tree produced by the `typeVarCase`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitTypeVar?: (ctx: TypeVarContext) => Result;
+	visitTypeVarCase?: (ctx: TypeVarCaseContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typeConst`
@@ -206,6 +210,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeParen?: (ctx: TypeParenContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `typeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeApp?: (ctx: TypeAppContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typeAbstractDef`
@@ -578,6 +590,20 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeDef?: (ctx: TypeDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.typeDefHead`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeDefHead?: (ctx: TypeDefHeadContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.sumTypeDefinition`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSumTypeDefinition?: (ctx: SumTypeDefinitionContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.typeSumVariant`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -653,6 +679,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitType?: (ctx: TypeContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.typeVar`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeVar?: (ctx: TypeVarContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.row`.

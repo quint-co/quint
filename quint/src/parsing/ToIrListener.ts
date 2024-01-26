@@ -19,9 +19,12 @@ import {
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
+  QuintAbsType,
+  QuintAppType,
   QuintConstType,
   QuintSumType,
   QuintType,
+  QuintVarType,
   Row,
   RowField,
   isUnitType,
@@ -36,6 +39,7 @@ import { zip } from '../util'
 import { QuintError } from '../quintError'
 import { lowercaseTypeError, tooManySpreadsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
+import { fail } from 'assert'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -363,42 +367,67 @@ export class ToIrListener implements QuintListener {
     this.declarationStack.push(def)
   }
 
-  // type Alias = set(int)
+  // E.g.,
+  //
+  // - type Alias = Set[int]
+  // - type Constr[a, b] = (Set[a], Set[b])
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
-    const name = ctx.qualId()!.text
-    const type = this.popType().value
     const id = this.getId(ctx)
+
+    const defHead = ctx.typeDefHead()
+    const name = defHead._typeName.text
+    // NOTE: `rhs` must precede `typeVariables` due to the stack order!
+    const rhs = this.popType().unwrap(() =>
+      fail('internal error: type alias declaration parsed with no right hand side')
+    )
+    const typeVariables: QuintVarType[] = this.popTypeDefHeadTypeVars(defHead)
 
     if (name[0].match('[a-z]')) {
       this.errors.push(lowercaseTypeError(id, name))
     }
 
-    const def: QuintTypeDef = {
-      id,
-      kind: 'typedef',
-      name,
-      type,
-    }
+    const type: QuintType =
+      typeVariables.length === 0
+        ? rhs // A monomorphic type declaration
+        : { id: this.getId(ctx), kind: 'abs', vars: typeVariables, body: rhs } // A polymorphic type declaration
 
+    const def: QuintTypeDef = { id, kind: 'typedef', name, type }
     this.declarationStack.push(def)
   }
 
-  // type T = | A | B(t1) | C(t2)
+  // E.g.,
+  //
+  // - type T = | A | B(t1) | C(t2)
+  // - type Result[ok, err] = | Ok(ok) | Err(err)
   exitTypeSumDef(ctx: p.TypeSumDefContext) {
-    const name = ctx._typeName!.text!
     const id = this.getId(ctx)
+
+    const defHead = ctx.typeDefHead()
+    const name = defHead._typeName.text
+    const typeVars = this.popTypeDefHeadTypeVars(defHead)
 
     // Build the type declaraion
     const fields: RowField[] = popMany(this.variantStack, this.variantStack.length, this.undefinedVariant(ctx))
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
-    const type: QuintSumType = { id, kind: 'sum', fields: row }
-    const typeName: QuintConstType = { id, kind: 'const', name }
+    const sumType: QuintSumType = { id, kind: 'sum', fields: row }
+    const type: QuintSumType | QuintAbsType =
+      typeVars.length === 0
+        ? sumType // A monomorphic type
+        : { id: this.getId(ctx), kind: 'abs', vars: typeVars, body: sumType } // A polymorphic type
+
     const def: QuintTypeDef = {
       id: id,
       name,
       kind: 'typedef',
       type,
     }
+
+    // Used for annotations in the variant constructors
+    const typeConst: QuintConstType = { id, kind: 'const', name }
+    const constructorReturnType: QuintConstType | QuintAppType =
+      typeVars.length === 0
+        ? typeConst // For a monomorphic type annotation
+        : { id: this.getId(ctx), kind: 'app', ctor: typeConst, args: typeVars } // A polymorphic type annotation
 
     // Generate all the variant constructors implied by a variant type definition
     // a variant constructor is an operator that injects an expression
@@ -423,7 +452,7 @@ export class ToIrListener implements QuintListener {
     // val a: T = A(42)
     // val b: T = B
     // ```
-    const constructors: QuintOpDef[] = zip(fields, ctx.typeSumVariant()).map(
+    const constructors: QuintOpDef[] = zip(fields, ctx.sumTypeDefinition().typeSumVariant()).map(
       ([{ fieldName, fieldType }, variantCtx]) => {
         // Mangle the parameter name to avoid clashes
         // This shouldn't be visible to users
@@ -448,7 +477,7 @@ export class ToIrListener implements QuintListener {
           // a variant pairing a label with the unit.
           const wrappedExpr = unitValue(this.getId(variantCtx._sumLabel))
 
-          typeAnnotation = typeName
+          typeAnnotation = constructorReturnType
           expr = {
             id: this.getId(variantCtx),
             kind: 'app',
@@ -474,7 +503,7 @@ export class ToIrListener implements QuintListener {
             args: [label, wrappedExpr],
           }
 
-          typeAnnotation = { kind: 'oper', args: [fieldType], res: typeName }
+          typeAnnotation = { kind: 'oper', args: [fieldType], res: constructorReturnType }
           expr = { id: this.getId(variantCtx), kind: 'lambda', params, qualifier, expr: variant }
         }
 
@@ -483,6 +512,26 @@ export class ToIrListener implements QuintListener {
     )
 
     this.declarationStack.push(def, ...constructors)
+  }
+
+  // Pop all the type variables in the head of a type def from the type stack
+  // E.g., for a type def like
+  //
+  // type Foo[a,b,c] = ...
+  //
+  // Return the type variables [a, b, c]
+  private popTypeDefHeadTypeVars(ctx: p.TypeDefHeadContext): QuintVarType[] {
+    return (
+      ctx._typeVars
+        .map(
+          _ =>
+            this.popType().unwrap(() =>
+              fail('internal error: type parameter parsed with no type variable')
+            ) as QuintVarType
+        )
+        // The stack stores the variables in reverse order
+        .reverse()
+    )
   }
 
   exitTypeSumVariant(ctx: p.TypeSumVariantContext) {
@@ -1047,6 +1096,22 @@ export class ToIrListener implements QuintListener {
     this.typeStack.push({ id, kind: 'const', name })
   }
 
+  // E.g., Result[int, str]
+  exitTypeApp(ctx: p.TypeAppContext) {
+    const id = this.getId(ctx)
+    const args: QuintType[] = ctx._typeArg
+      .map(_ =>
+        // We require that there is one parsed type for each typeArg recorded
+        this.popType().unwrap()
+      ) // The stack stores the arguments in reverse order
+      .reverse()
+    // The next type on the stack after the args should be the applied
+    // type constructor
+    const ctor = this.popType().unwrap()
+    this.typeStack.push({ id, kind: 'app', ctor, args })
+  }
+
+  // TODO: replace with general type application
   // a set type, e.g., set(int)
   exitTypeSet(ctx: p.TypeSetContext) {
     const last = this.popType().unwrap()
@@ -1054,6 +1119,7 @@ export class ToIrListener implements QuintListener {
     this.typeStack.push({ id, kind: 'set', elem: last })
   }
 
+  // TODO: replace with general type application
   // a list type, e.g., list(int)
   exitTypeList(ctx: p.TypeListContext) {
     const top = this.popType().unwrap()

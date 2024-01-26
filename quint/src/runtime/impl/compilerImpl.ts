@@ -1407,7 +1407,8 @@ export class CompilerVisitor implements IRVisitor {
               },
             }
           })
-          // In case the case of reps, we have multiple copies of the same action. This is why all occurrences have the same id.
+          // In case the case of reps, we have multiple copies of the same action.
+          // This is why all occurrences have the same id.
           return this.chainAllOrThen(actions, 'then', _ => app.args[1].id)
         })
         .join()

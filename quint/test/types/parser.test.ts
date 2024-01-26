@@ -96,20 +96,29 @@ describe('parseType', () => {
     )
   })
 
+  it('parses type application', () => {
+    const type = parseType('Foo[int, bool, str]')
+
+    assert.isTrue(type.isRight())
+    type.map(value =>
+      assert.deepEqual(value, {
+        kind: 'app',
+        ctor: { kind: 'const', name: 'Foo', id: 1n },
+        args: [
+          { kind: 'int', id: 2n },
+          { kind: 'bool', id: 3n },
+          { kind: 'str', id: 4n },
+        ],
+        id: 5n,
+      })
+    )
+  })
+
   it('throws error when type is invalid', () => {
-    const type = parseType('Set[bool, int]')
+    const type = parseType('Set(int)')
 
     assert.isTrue(type.isLeft())
-    type.mapLeft(error =>
-      assert.sameDeepMembers(error, [
-        {
-          // TODO We should not expect a '=>' here,
-          // but do because of https://github.com/informalsystems/quint/issues/456
-          explanation: "mismatched input ',' expecting {'->', '=>', ']'}",
-          locs: [{ start: { line: 0, col: 8, index: 8 }, end: { line: 0, col: 8, index: 8 } }],
-        },
-      ])
-    )
+    type.mapLeft(error => assert.deepEqual(error[0].explanation, "missing '[' at '('"))
   })
 
   it('throws error when row separators are invalid', () => {
@@ -121,7 +130,7 @@ describe('parseType', () => {
         {
           // TODO We should not expect a '=>' here,
           // but do because of https://github.com/informalsystems/quint/issues/456
-          explanation: "mismatched input '|' expecting {',', '->', '=>'}",
+          explanation: "mismatched input '|' expecting '}'",
           locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
         },
       ])

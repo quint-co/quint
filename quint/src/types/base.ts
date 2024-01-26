@@ -29,6 +29,8 @@ export interface TypeScheme {
 
 export type Signature = (_arity: number) => TypeScheme
 
+// Does not bind any type variables in `type`, which we take to assume
+// that `type` has no free variables in the context.
 export function toScheme(type: QuintType): TypeScheme {
   return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }

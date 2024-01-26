@@ -2,13 +2,7 @@
   "name": "@informalsystems/quint",
   "version": "0.18.1",
   "description": "Core tool for the Quint specification language",
-  "keywords": [
-    "temporal",
-    "logic",
-    "formal",
-    "specification",
-    "verification"
-  ],
+  "keywords": ["temporal", "logic", "formal", "specification", "verification"],
   "homepage": "https://github.com/informalsystems/quint",
   "bugs": "https://github.com/informalsystems/quint/issues",
   "license": "Apache 2.0",
@@ -35,11 +29,7 @@
   "bin": {
     "quint": "dist/src/cli.js"
   },
-  "files": [
-    "README.md",
-    "dist/**/*",
-    "test/**/*.ts"
-  ],
+  "files": ["README.md", "dist/**/*", "test/**/*.ts"],
   "engines": {
     "node": ">=18"
   },
@@ -72,6 +62,8 @@
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
     "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test-w": "while inotifywait -r -e close_write ./ ; do npm run test; done",
+    "test-f": "mocha --reporter-option maxDiffSize=0 -r ts-node/register",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
     "apalache-integration": "txm apalache-tests.md",
