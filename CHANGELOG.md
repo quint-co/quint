@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Improved error reporting for runtime errors during simulation (#1349).
+
 ### Deprecated
 ### Removed
 ### Fixed
