@@ -255,12 +255,12 @@ export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMe
  */
 export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<TypecheckedStage>> {
   const { table, modules, sourceMap } = parsed
-  const typechecking = { ...parsed, stage: 'typechecking' as stage }
 
   const [errorMap, result] = analyzeModules(table, modules)
 
+  const typechecking = { ...parsed, ...result, stage: 'typechecking' as stage }
   if (errorMap.length === 0) {
-    return right({ ...typechecking, ...result })
+    return right(typechecking)
   } else {
     const errors = errorMap.map(mkErrorMessage(sourceMap))
     return cliErr('typechecking failed', { ...typechecking, errors })
