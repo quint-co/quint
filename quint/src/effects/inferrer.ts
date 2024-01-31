@@ -37,7 +37,7 @@ import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } f
 import { getSignatures, standardPropagation } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
-import { zip } from 'lodash'
+import { zip } from '../util'
 import { addNamespaces } from './namespaces'
 
 export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectScheme>]
@@ -185,11 +185,6 @@ export class EffectInferrer implements IRVisitor {
                 effects,
                 expr.args.map(a => a.id)
               ).forEach(([effect, id]) => {
-                if (!effect || !id) {
-                  // Impossible: effects and expr.args are the same length
-                  throw new Error(`Expected ${expr.args.length} effects, but got ${effects.length}`)
-                }
-
                 const r = applySubstitution(s, effect).map(toScheme)
                 this.addToResults(id, r)
               })
