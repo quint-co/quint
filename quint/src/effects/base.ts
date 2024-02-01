@@ -178,10 +178,23 @@ function bindEffect(name: string, effect: Effect): Either<string, Substitutions>
 }
 
 function bindEntity(name: string, entity: Entity): Either<string, Substitutions> {
-  if (entityNames(entity).includes(name)) {
-    return left(`Can't bind ${name} to ${entityToString(entity)}: cyclical binding`)
-  } else {
-    return right([{ kind: 'entity', name, value: entity }])
+  switch (entity.kind) {
+    case 'concrete':
+    case 'variable':
+      return right([{ kind: 'entity', name, value: entity }])
+    case 'union':
+      if (entityNames(entity).includes(name)) {
+        // An entity variable (which always stands for a set of state variables)
+        // unifies with the union of entities that may include  include itself,
+        // iff the variables unify.
+        //
+        // I.e.:
+        //
+        //   (v1 =.= v1 ∪ ... ∪ vn) <=> (v1 =.= ... =.= vn)
+        return right(entity.entities.map(e => ({ kind: 'entity', name, value: e })))
+      } else {
+        return right([{ kind: 'entity', name, value: entity }])
+      }
   }
 }
 

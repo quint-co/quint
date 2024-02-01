@@ -375,48 +375,39 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
     })
 
-    it('returs error when entity names are cyclical', () => {
-      const e1 = parseEffectOrThrow('Read[v1]')
-      const e2 = parseEffectOrThrow('Read[v1, v2]')
+    it('can unify entities when a single variable in the lhs appears in a union on the rhs', () => {
+      // E.g., given the unification problem
+      //
+      //    v1 =.= v1 ∪ v2
+      //
+      // We should be able to form a valid substitution iff v1 =.= v2, since
+      // this then simplifies to
+      //
+      //   v1 =.= v1
+      //
+      // NOTE: This test was inverted after an incorrect occurs check was
+      // causing erroneous effect checking failures, as reported in
+      // https://github.com/informalsystems/quint/issues/1356
+      //
+      // Occurs checks are called for to prevent the attempt to unify a free
+      // variable with a term that includes that variable as a subterm. E.g., `X
+      // =.= foo(a, X)`, which can never be resolved into a ground term.
+      // However, despite appearances, the unification of so called "entity
+      // unions", as in the example above is not such a case. Each "entity
+      // variable" stands for a set of possible state variables. As such, the
+      // unification problem above can be expanded to
+      //
+      //     v1 ∪ {} =.= v1 ∪ v2 ∪ {}
+      //
+      // Which helps make clear why the unification succeeds iff v1 =.= v2.
+      const read1 = parseEffectOrThrow('Read[v1]')
+      const read2 = parseEffectOrThrow('Read[v1, v2]')
+      assert.isTrue(unify(read1, read2).isRight())
 
-      const result = unify(e1, e2)
-
-      result.mapLeft(e =>
-        assert.deepEqual(e, {
-          location: 'Trying to unify Read[v1] and Read[v1, v2]',
-          children: [
-            {
-              location: 'Trying to unify entities [v1] and [v1, v2]',
-              message: "Can't bind v1 to v1, v2: cyclical binding",
-              children: [],
-            },
-          ],
-        })
-      )
-
-      assert.isTrue(result.isLeft())
-    })
-
-    it('returs error when entity names are cyclical in other way', () => {
-      const e1 = parseEffectOrThrow('Temporal[v1, v2]')
-      const e2 = parseEffectOrThrow('Temporal[v1]')
-
-      const result = unify(e1, e2)
-
-      result.mapLeft(e =>
-        assert.deepEqual(e, {
-          location: 'Trying to unify Temporal[v1, v2] and Temporal[v1]',
-          children: [
-            {
-              location: 'Trying to unify entities [v1, v2] and [v1]',
-              message: "Can't bind v1 to v1, v2: cyclical binding",
-              children: [],
-            },
-          ],
-        })
-      )
-
-      assert.isTrue(result.isLeft())
+      // Check the symmetrical case.
+      const temporal1 = parseEffectOrThrow('Temporal[v1, v2]')
+      const temporal2 = parseEffectOrThrow('Temporal[v1]')
+      assert.isTrue(unify(temporal1, temporal2).isRight())
     })
   })
 })
