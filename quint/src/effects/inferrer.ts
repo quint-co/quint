@@ -149,23 +149,13 @@ export class EffectInferrer implements IRVisitor {
     }
 
     this.location = `Trying to infer effect for operator application in ${expressionToString(expr)}`
-    const paramsResult = mergeInMany(
-      expr.args.map((a: QuintEx) => {
-        return this.fetchResult(a.id).map(e => this.newInstance(e))
-      })
-    )
+
+    // Fetch all the effects for the arguments
+    const argEffects = mergeInMany(expr.args.map((a: QuintEx) => this.fetchResult(a.id).map(e => e.effect)))
 
     const resultEffect: Effect = { kind: 'variable', name: this.freshVarGenerator.freshVar('_e') }
-    const arrowEffect = paramsResult
-      .map(params => {
-        const effect: Effect = {
-          kind: 'arrow',
-          params,
-          result: resultEffect,
-        }
-
-        return effect
-      })
+    const arrowEffect = argEffects
+      .map((params: Effect[]): Effect => ({ kind: 'arrow', params, result: resultEffect }))
       .chain(e => applySubstitution(this.substitutions, e))
 
     this.effectForName(expr.opcode, expr.id, expr.args.length)
@@ -180,7 +170,7 @@ export class EffectInferrer implements IRVisitor {
           .chain(s => {
             this.substitutions = s
 
-            paramsResult.map(effects =>
+            argEffects.map(effects =>
               zip(
                 effects,
                 expr.args.map(a => a.id)
