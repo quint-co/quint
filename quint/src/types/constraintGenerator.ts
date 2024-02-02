@@ -110,6 +110,23 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   // Nested lambdas add new entries to the stack, and pop them when exiting.
   private freeNames: { typeVariables: Set<string>; rowVariables: Set<string> }[] = []
 
+  // int[a]
+  //
+  // TODO: Free type variables must also use the variables in the constructor
+  //
+  // type T[a] = Set[a]
+  // type U[a, b] = (Set[a], List[b])
+  //
+  // U[int, int]
+  // val x  = (Set(1,2), List(1,2))
+  // val f : a => U[a, U[a, b]] = ...
+  //
+  // U[a, b] =.= U[int, int] /\ a =.= b /\ typeOf(x) =.= (Set[a], List[b])
+  //
+  // type MapT[a,b] = (Set[a], a => b) => Set[b]
+  //
+  // def map(s: Set[a], f: a => b): Set[b] = ...
+  //
   getResult(): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
     return [this.errors, this.types]
   }
@@ -121,13 +138,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   exitDef(def: QuintDef) {
     if (this.constraints.length > 0) {
       this.solveConstraints().map(subs => {
-        if (!isAnnotatedDef(def)) {
-          return
+        if (isAnnotatedDef(def)) {
+          checkAnnotationGenerality(subs, def.typeAnnotation).mapLeft(err =>
+            this.errors.set(def.typeAnnotation?.id ?? def.id, err)
+          )
         }
-
-        checkAnnotationGenerality(subs, def.typeAnnotation).mapLeft(err =>
-          this.errors.set(def.typeAnnotation?.id ?? def.id, err)
-        )
       })
     }
   }
@@ -193,7 +208,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     )
 
     // We want `definedSignature` computed before the fresh variable `a` so that the
-    // numbering of ther fresh variables stays in order, with `a`, used for return types,
+    // numbering of their fresh variables stays in order, with `a`, used for return types,
     // bearing the highest number.
     const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
     const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('_t') }
@@ -300,6 +315,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.addToResults(e.id, this.fetchResult(e.expr.id))
   }
 
+  // TODO: On type app exit, add constraints for the type operators?
+  // TODO: Need similar logic on exiting a type def (to create a scheme for a lambda) and
   exitOpDef(e: QuintOpDef) {
     if (this.errors.size !== 0) {
       return

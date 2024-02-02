@@ -86,8 +86,6 @@ export class IRTransformer {
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   enterSumType?: (type: t.QuintSumType) => t.QuintSumType
   exitSumType?: (type: t.QuintSumType) => t.QuintSumType
-  enterAbsType?: (type: t.QuintAbsType) => t.QuintAbsType
-  exitAbsType?: (type: t.QuintAbsType) => t.QuintAbsType
   enterAppType?: (type: t.QuintAppType) => t.QuintAppType
   exitAppType?: (type: t.QuintAppType) => t.QuintAppType
 
@@ -259,28 +257,12 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
       }
       break
 
-    case 'abs':
-      {
-        if (transformer.enterAbsType) {
-          newType = transformer.enterAbsType(newType)
-        }
-
-        newType.vars = newType.vars.map(v => transformType(transformer, v) as t.QuintVarType)
-        newType.body = transformType(transformer, newType.body)
-
-        if (transformer.exitAbsType) {
-          newType = transformer.exitAbsType(newType)
-        }
-      }
-      break
-
     case 'app':
       {
         if (transformer.enterAppType) {
           newType = transformer.enterAppType(newType)
         }
 
-        newType.ctor = transformType(transformer, newType.ctor)
         newType.args = newType.args.map(v => transformType(transformer, v))
 
         if (transformer.exitAppType) {

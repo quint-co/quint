@@ -207,8 +207,6 @@ export function prettyQuintType(type: QuintType): Doc {
       const args = type.args.map(prettyQuintType)
       return group([prettyQuintType(type), text('['), ...args, text(']')])
     }
-    case 'abs':
-      fail('internal error: type abstraction should never be printed for users in graphics')
   }
 }
 

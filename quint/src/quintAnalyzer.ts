@@ -42,16 +42,16 @@ export type AnalysisResult = [QuintError[], AnalysisOutput]
  */
 export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable)
-  quintModules.map(m => analyzer.analyze(m))
+  quintModules.map(m => analyzer.analyzeDeclarations(m.declarations))
   return analyzer.getResult()
 }
 
 /**
- * Analyzes a single Quint definition incrementally and returns the analysis result.
+ * Analyzes declarations incrementally and returns the analysis result.
  *
  * @param analysisOutput - The previous analysis output to be used as a starting point.
  * @param lookupTable - The lookup tables for the modules.
- * @param declaration - The Quint declaration to be analyzed.
+ * @param declarations - The Quint declarations to be analyzed.
  * @returns A tuple with a list of errors and the analysis output.
  */
 export function analyzeInc(
@@ -88,10 +88,6 @@ class QuintAnalyzer {
     this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker(previousOutput?.modes)
-  }
-
-  analyze(module: QuintModule): void {
-    this.analyzeDeclarations(module.declarations)
   }
 
   analyzeDeclarations(decls: QuintDeclaration[]): void {

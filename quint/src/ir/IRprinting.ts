@@ -187,11 +187,6 @@ export function typeToString(type: QuintType): string {
     case 'sum': {
       return sumToString(type)
     }
-    case 'abs': {
-      const vars = type.vars.map(typeToString).join(', ')
-      const body = typeToString(type.body)
-      return `Λ(${vars}).${body}`
-    }
     case 'app': {
       const abs = typeToString(type.ctor)
       const args = type.args.map(typeToString).join(', ')

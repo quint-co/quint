@@ -395,6 +395,24 @@ module B {
     )
   })
 
+  it('checks correct polymorphic types', () => {
+    const defs = [
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `def result_map(r: Result[a, e], f: a => b): Result[b, e] =
+          match r {
+          | Ok(x)  => Ok(f(x))
+          | Err(_) => r
+          }`,
+    ]
+
+    const [errors, table] = inferTypesForDefs(defs)
+    assert.sameDeepMembers([...errors.entries()], [])
+    assert.sameDeepMembers(
+      [...table.entries()].map(([id, t]) => [id, typeSchemeToString(t)]),
+      []
+    )
+  })
+
   it('fails when types are not unifiable', () => {
     const defs = ['def a = 1.map(p => p + 10)']
 

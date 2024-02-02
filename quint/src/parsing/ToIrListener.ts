@@ -20,7 +20,6 @@ import {
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
-  QuintAbsType,
   QuintAppType,
   QuintConstType,
   QuintSumType,
@@ -364,19 +363,16 @@ export class ToIrListener implements QuintListener {
     const defHead = ctx.typeDefHead()
     const name = defHead._typeName.text
     // NOTE: `rhs` must precede `typeVariables` due to the stack order!
-    const rhs = this.popType().unwrap(() =>
+    const type = this.popType().unwrap(() =>
       fail('internal error: type alias declaration parsed with no right hand side')
     )
-    const typeVariables: QuintVarType[] = this.popTypeDefHeadTypeVars(defHead)
-
     if (name[0].match('[a-z]')) {
       this.errors.push(lowercaseTypeError(id, name))
     }
 
-    const type: QuintType =
-      typeVariables.length === 0
-        ? rhs // A monomorphic type declaration
-        : { id: this.getId(ctx), kind: 'abs', vars: typeVariables, body: rhs } // A polymorphic type declaration
+    // TODO: Check that variables have all been declared
+    // TODO: Add types to declaration
+    const _typeVariables: QuintVarType[] = this.popTypeDefHeadTypeVars(defHead)
 
     const def: QuintTypeDef = { id, kind: 'typedef', name, type }
     this.declarationStack.push(def)
@@ -391,16 +387,13 @@ export class ToIrListener implements QuintListener {
 
     const defHead = ctx.typeDefHead()
     const name = defHead._typeName.text
-    const typeVars = this.popTypeDefHeadTypeVars(defHead)
 
     // Build the type declaraion
     const fields: RowField[] = popMany(this.variantStack, this.variantStack.length, this.undefinedVariant(ctx))
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
-    const sumType: QuintSumType = { id, kind: 'sum', fields: row }
-    const type: QuintSumType | QuintAbsType =
-      typeVars.length === 0
-        ? sumType // A monomorphic type
-        : { id: this.getId(ctx), kind: 'abs', vars: typeVars, body: sumType } // A polymorphic type
+    const type: QuintSumType = { id, kind: 'sum', fields: row }
+    // TODO: Check all vars in body are bound
+    const _typeVars = this.popTypeDefHeadTypeVars(defHead)
 
     const def: QuintTypeDef = {
       id: id,
@@ -410,11 +403,7 @@ export class ToIrListener implements QuintListener {
     }
 
     // Used for annotations in the variant constructors
-    const typeConst: QuintConstType = { id, kind: 'const', name }
-    const constructorReturnType: QuintConstType | QuintAppType =
-      typeVars.length === 0
-        ? typeConst // For a monomorphic type annotation
-        : { id: this.getId(ctx), kind: 'app', ctor: typeConst, args: typeVars } // A polymorphic type annotation
+    const constructorReturnType: QuintConstType = { id, kind: 'const', name }
 
     // Generate all the variant constructors implied by a variant type definition
     // a variant constructor is an operator that injects an expression
@@ -1092,7 +1081,7 @@ export class ToIrListener implements QuintListener {
       .reverse()
     // The next type on the stack after the args should be the applied
     // type constructor
-    const ctor = this.popType().unwrap()
+    const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name: ctx._typeCtor.text }
     this.typeStack.push({ id, kind: 'app', ctor, args })
   }
 
