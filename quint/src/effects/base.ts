@@ -81,11 +81,11 @@ export interface StateVariable {
  * entity variable or a combination of other entities.
  */
 export type Entity =
-  /* A list of state variables */
+  /* A set of state variables, represented as a list */
   | { kind: 'concrete'; stateVariables: StateVariable[] }
-  /* A variable representing some entity */
+  /* A variable representing some set of entities */
   | { kind: 'variable'; name: string; reference?: bigint }
-  /* A combination of entities */
+  /* The union of sets of entities, represented as a list */
   | { kind: 'union'; entities: Entity[] }
 
 /*
@@ -177,11 +177,36 @@ function bindEffect(name: string, effect: Effect): Either<string, Substitutions>
   }
 }
 
-function bindEntity(name: string, entity: Entity): Either<string, Substitutions> {
-  if (entityNames(entity).includes(name)) {
-    return left(`Can't bind ${name} to ${entityToString(entity)}: cyclical binding`)
-  } else {
-    return right([{ kind: 'entity', name, value: entity }])
+function bindEntity(name: string, entity: Entity): Substitutions {
+  switch (entity.kind) {
+    case 'concrete':
+    case 'variable':
+      return [{ kind: 'entity', name, value: entity }]
+    case 'union':
+      if (entityNames(entity).includes(name)) {
+        // An entity variable (which always stands for a set of state variables)
+        // unifies with the union of n sets of entities that may include itself,
+        // iff it unifies with each set.
+        //
+        // I.e.:
+        //
+        //   (v1 =.= v1 ∪ ... ∪ vn) <=> (v1 =.= ... =.= vn)
+        //
+        // We call this function recursively because, in the general case,
+        // occurrences of `v1` may be nested, as in:
+        //
+        //    v1 =.= v1 ∪ (v2 ∪ (v3 ∪ v1)) ∪ v4
+        //
+        // In practice, we are flattening unions before we call this function,
+        // but solving the general case ensures we preserve correct behavior
+        // even if this function is used on its own, without incurring any
+        // notable overhead when `entities` is already flat.
+        return entity.entities.flatMap(e => bindEntity(name, e))
+      } else {
+        // Otherwise, the variable may be bound to the union of the entities
+        // without qualification.
+        return [{ kind: 'entity', name, value: entity }]
+      }
   }
 }
 
@@ -321,9 +346,9 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
   } else if (v1.kind === 'variable' && v2.kind === 'variable' && v1.name === v2.name) {
     return right([])
   } else if (v1.kind === 'variable') {
-    return bindEntity(v1.name, v2).mapLeft(msg => buildErrorLeaf(location, msg))
+    return right(bindEntity(v1.name, v2))
   } else if (v2.kind === 'variable') {
-    return bindEntity(v2.name, v1).mapLeft(msg => buildErrorLeaf(location, msg))
+    return right(bindEntity(v2.name, v1))
   } else if (isEqual(v1, v2)) {
     return right([])
   } else if (v1.kind === 'union' && v2.kind === 'concrete') {

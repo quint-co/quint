@@ -207,6 +207,19 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'CoolAction'), expectedEffect)
   })
 
+  it('avoids invalid cyclical binding error (regression on #1356)', () => {
+    const defs = [
+      `pure def foo(s: int, g: int => int): int = {
+        val r = if (true) s else g(s)
+        g(r)
+      }`,
+    ]
+
+    const [errors, _] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+  })
+
   it('returns error when operator signature is not unifiable with args', () => {
     const defs = [`def a = S.map(p => x' = p)`]
 
