@@ -383,7 +383,7 @@ describe('unify', () => {
       // We should be able to form a valid substitution iff v1 =.= v2, since
       // this then simplifies to
       //
-      //   v1 =.= v1
+      //   v1 =.= v1 =.= v2
       //
       // NOTE: This test was inverted after an incorrect occurs check was
       // causing erroneous effect checking failures, as reported in
