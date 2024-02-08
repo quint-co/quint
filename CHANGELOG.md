@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Erroneous effect checking failure resulting from invalid occurs check. This
   error prevented some valid specs from being simulated or verified (#1359).
+- Regression on ITF production, where we stopped producing ITF traces on
+  successful runs (#1362)
 
 ### Security
 

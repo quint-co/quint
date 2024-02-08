@@ -549,6 +549,16 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const elapsedMs = Date.now() - startMs
 
+  if (prev.args.outItf) {
+    const trace = toItf(result.vars, result.states)
+    if (trace.isRight()) {
+      const jsonObj = addItfHeader(prev.args.input, result.outcome.status, trace.value)
+      writeToJson(prev.args.outItf, jsonObj)
+    } else {
+      return cliErr(`ITF conversion failed: ${trace.value}`, { ...simulator, errors: [] })
+    }
+  }
+
   switch (result.outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
@@ -582,16 +592,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
-        }
-      }
-
-      if (prev.args.outItf) {
-        const trace = toItf(result.vars, result.states)
-        if (trace.isRight()) {
-          const jsonObj = addItfHeader(prev.args.input, result.outcome.status, trace.value)
-          writeToJson(prev.args.outItf, jsonObj)
-        } else {
-          return cliErr(`ITF conversion failed: ${trace.value}`, { ...simulator, errors: [] })
         }
       }
 
