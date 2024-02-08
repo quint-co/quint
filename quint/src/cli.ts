@@ -153,9 +153,14 @@ const runCmd = {
         type: 'string',
       })
       .option('max-samples', {
-        desc: 'the maximum on the number of traces to try',
+        desc: 'the maximum number of runs to attempt before giving up',
         type: 'number',
         default: 10000,
+      })
+      .option('n-traces', {
+        desc: 'how many traces to generate (only affects output to out-itf)',
+        type: 'number',
+        default: 1,
       })
       .option('max-steps', {
         desc: 'the maximum on the number of steps in every trace',

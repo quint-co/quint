@@ -168,14 +168,14 @@ export function compileAndRun(
       seed,
       outcome: { status: 'error', errors: locatedErrors },
     }
-  }
-
-  const status = simulationSucceeded ? 'ok' : 'violation'
-  return {
-    vars,
-    states,
-    frames,
-    seed,
-    outcome: { status },
+  } else {
+    const status = simulationSucceeded ? 'ok' : 'violation'
+    return {
+      vars,
+      states,
+      frames,
+      seed,
+      outcome: { status },
+    }
   }
 }

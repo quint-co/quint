@@ -669,7 +669,7 @@ error: Invariant violated
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
+cat out-itf-example.itf.json | jq '.[0].states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
@@ -688,7 +688,7 @@ rm out-itf-example.itf.json
 <!-- !test in sucessful run itf -->
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
+cat out-itf-example.itf.json | jq '.[0].states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
@@ -700,6 +700,20 @@ rm out-itf-example.itf.json
     "#bigint": "0"
   }
 ]
+```
+
+### Run to generate multiple ITF traces
+
+<!-- !test in run with n-traces itf -->
+```
+quint run --out-itf=out-itf-example.itf.json --n-traces=5 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+cat out-itf-example.itf.json | jq 'length'
+rm out-itf-example.itf.json
+```
+
+<!-- !test out run with n-traces itf -->
+```
+5
 ```
 
 ### Test outputs ITF

@@ -24,7 +24,7 @@ import {
 } from './parsing/quintParserFrontend'
 import { ErrorMessage } from './ErrorMessage'
 
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
@@ -35,8 +35,8 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { IdGenerator, newIdGenerator } from './idGenerator'
-import { SimulatorOptions, compileAndRun } from './simulation'
-import { ofItf, toItf } from './itf'
+import { SimulatorOptions, compileAndRun, SimulatorResult, Outcome } from './simulation'
+import { ItfTrace, ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -518,22 +518,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
 
-  const rngOrError = mkRng(prev.args.seed)
-  if (rngOrError.isLeft()) {
-    return cliErr(rngOrError.value, { ...simulator, errors: [] })
-  }
-  const rng = rngOrError.unwrap()
-
-  const options: SimulatorOptions = {
-    init: prev.args.init,
-    step: prev.args.step,
-    invariant: prev.args.invariant,
-    maxSamples: prev.args.maxSamples,
-    maxSteps: prev.args.maxSteps,
-    rng,
-    verbosity: verbosityLevel,
-  }
-
   const startMs = Date.now()
 
   const mainText = prev.sourceCode.get(prev.path)!
@@ -545,19 +529,52 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const mainId = mainModule.id
   const mainStart = prev.sourceMap.get(mainId)!.start.index
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
-  const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
+  let results: SimulatorResult[] = []
+  for (let step = 0; step < prev.args.nTraces; step++) {
+    const rngOrError = mkRng(prev.args.seed)
+    if (rngOrError.isLeft()) {
+      return cliErr(rngOrError.value, { ...simulator, errors: [] })
+    }
+    const rng = rngOrError.unwrap()
+
+    const options: SimulatorOptions = {
+      init: prev.args.init,
+      step: prev.args.step,
+      invariant: prev.args.invariant,
+      maxSamples: prev.args.maxSamples,
+      maxSteps: prev.args.maxSteps,
+      rng,
+      verbosity: verbosityLevel,
+    }
+
+    results.push(compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options))
+  }
 
   const elapsedMs = Date.now() - startMs
 
   if (prev.args.outItf) {
-    const trace = toItf(result.vars, result.states)
-    if (trace.isRight()) {
-      const jsonObj = addItfHeader(prev.args.input, result.outcome.status, trace.value)
+    const itfOutResult = mergeInMany(
+      results.map(
+        (result: SimulatorResult): Either<string, [Outcome, ItfTrace]> =>
+          toItf(result.vars, result.states).map(itf => [result.outcome, itf])
+      )
+    ).map(traceResults => {
+      const jsonObj = traceResults.map(([outcome, trace]) => addItfHeader(prev.args.input, outcome.status, trace))
       writeToJson(prev.args.outItf, jsonObj)
-    } else {
-      return cliErr(`ITF conversion failed: ${trace.value}`, { ...simulator, errors: [] })
+    })
+
+    if (itfOutResult.isLeft()) {
+      return cliErr(`ITF conversion failed: ${itfOutResult.value}`, { ...simulator, errors: [] })
     }
+  } else if (results.length > 1) {
+    console.log(
+      `${results.length} traces where generated, but only the first failure or last success is printed to the console`
+    )
+    console.log(`to view all the traces in the output file, rerun with the same seed and supply --out-itf`)
   }
+
+  const result =
+    results.find(r => r.outcome.status === 'error' || r.outcome.status === 'violation') ?? results[results.length - 1]
 
   switch (result.outcome.status) {
     case 'error':
@@ -573,11 +590,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
-        if (verbosity.hasHints(options.verbosity)) {
+        if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
+
       return right({
         ...simulator,
         status: result.outcome.status,
@@ -590,7 +608,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
 
-        if (verbosity.hasHints(options.verbosity)) {
+        if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
