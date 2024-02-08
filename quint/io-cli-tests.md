@@ -683,6 +683,25 @@ rm out-itf-example.itf.json
 ]
 ```
 
+### Run without violation outputs ITF
+
+<!-- !test in sucessful run itf -->
+```
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
+rm out-itf-example.itf.json
+```
+
+<!-- !test out sucessful run itf -->
+```
+[
+  "alice",
+  {
+    "#bigint": "0"
+  }
+]
+```
+
 ### Test outputs ITF
 
 TODO: output states after fix: https://github.com/informalsystems/quint/issues/288
