@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.18.2",
+  "version": "0.18.3",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
