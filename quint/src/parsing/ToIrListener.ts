@@ -230,36 +230,15 @@ export class ToIrListener implements QuintListener {
         // does not have a representation for this at the moment
         { id: this.getId(ctx), kind: 'bool', value: true }
 
-    // extract the qualifier
-    let qualifier: OpQualifier = 'def'
-    if (ctx.qualifier()) {
-      const qtext = ctx.qualifier().text
-      // case distinction to make the type checker happy
-      if (
-        qtext === 'pureval' ||
-        qtext === 'puredef' ||
-        qtext === 'val' ||
-        qtext === 'def' ||
-        qtext === 'action' ||
-        qtext === 'run' ||
-        qtext === 'temporal'
-      ) {
-        qualifier = qtext
-      }
-    }
+    // The grammar should guarantee we only parse valid OpQualifiers here
+    const qualifier: OpQualifier = ctx.qualifier().text as OpQualifier
 
-    let body = expr
+    const body: QuintEx =
+      params.length === 0
+        ? expr
+        : // if the definition has parameters, introduce a lambda
+          { id: this.getId(ctx), kind: 'lambda', params, qualifier, expr }
 
-    if (params.length > 0) {
-      // if the definition has parameters, introduce a lambda
-      body = {
-        id: this.getId(ctx),
-        kind: 'lambda',
-        params,
-        qualifier,
-        expr,
-      }
-    }
     const def: QuintOpDef = {
       id: this.getId(ctx),
       kind: 'def',
