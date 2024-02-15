@@ -39,17 +39,25 @@ declaration : 'const' qualId ':' type                     # const
             ;
 
 // An operator definition.
-// We embed two kinds of parameters right in this rule.
-// Otherwise, the parser would start recognizing parameters everywhere.
-operDef : qualifier normalCallName
-            ( /* ML-like parameter lists */
-                '(' (parameter (',' parameter)*)? ')' (':' type)?
-                | ':' type
-              /* C-like parameter lists */
-                | '(' (parameter ':' type (',' parameter ':' type)*) ')' ':' type
-            )?
-            ('=' expr)? ';'?
-        ;
+operDef
+    : qualifier normalCallName
+        // Unannotated parameter list
+        ('(' (parameter (',' parameter)*)? ')')?
+        // Optional type annotation using the deprecated format
+        // TODO: Remove as per https://github.com/informalsystems/quint/issues/923
+        (':' type)?
+        // We support header declaration with no implementation for documentation genaration
+        ('=' expr)?
+        // Optionally terminated with a semicolon
+        ';'?
+    | qualifier normalCallName
+        // Fully annotated parameter lists
+        '(' (parameter ':' type (',' parameter ':' type)*) ')' ':' type
+        // We support header declaration with no implementation for documentation genaration
+        ('=' expr)?
+        // Optionally terminated with a semicolon
+        ';'?
+    ;
 
 typeDef
     : 'type' qualId                             # typeAbstractDef
