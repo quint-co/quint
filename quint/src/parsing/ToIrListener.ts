@@ -16,6 +16,7 @@ import {
   QuintName,
   QuintOpDef,
   QuintStr,
+  isAnnotatedDef,
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
@@ -39,7 +40,7 @@ import { zip } from '../util'
 import { QuintError } from '../quintError'
 import { lowercaseTypeError, tooManySpreadsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
-import { fail } from 'assert'
+import assert, { fail } from 'assert'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -85,8 +86,6 @@ export class ToIrListener implements QuintListener {
   protected exprStack: QuintEx[] = []
   // the stack of parameter lists
   protected paramStack: QuintLambdaParameter[] = []
-  // stack of names used as parameters and assumptions
-  protected identOrHoleStack: string[] = []
   // the stack for imported names
   protected identOrStarStack: string[] = []
   // the stack of rows for records
@@ -220,10 +219,47 @@ export class ToIrListener implements QuintListener {
   /** **************** translate operator definititons **********************/
 
   // translate a top-level or nested operator definition
-  exitOperDef(ctx: p.OperDefContext) {
+  exitAnnotatedOperDef(ctx: p.AnnotatedOperDefContext) {
     const name = ctx.normalCallName().text
-    const [params, typeTag] = this.processOpDefParams(ctx)
-    // get the definition body
+
+    const params = ctx._annotOperParam
+      .map(_ => popOrFail(this.paramStack, 'violated grammar of annotated AnnotatedOperDef'))
+      .reverse()
+    const res = this.popType().unwrap(() => 'violated grammar of annotated params return type')
+    const args = params.map(p => {
+      assert(isAnnotatedDef(p), 'violated grammar of annotated param type')
+      return p.typeAnnotation
+    })
+    const typeAnnotation: QuintType = { kind: 'oper', args, res }
+
+    this.putDeclarationOnStack(ctx, name, params, just(typeAnnotation))
+  }
+
+  // TODO Mark as deprecated, then remove
+  //      See https://github.com/informalsystems/quint/issues/923
+  exitDeprecatedOperDef(ctx: p.DeprecatedOperDefContext) {
+    const name = ctx.normalCallName().text
+
+    // The deprecated annotation grammar
+    const typeAnnotation: Maybe<QuintType> = ctx._annotatedRetType ? this.popType() : none()
+    const params = ctx._operParam
+      .map(_ => popOrFail(this.paramStack, 'violated grammar of non-annotated params'))
+      .reverse()
+    // TODO Enable after builtins are fixed
+    // if (params.length > 0 && typeAnnotation.isJust()) {
+    //   console.warn(
+    //     'post-operator-head annotations are deprecated; see https://github.com/informalsystems/quint/issues/923'
+    //   )
+    // }
+    this.putDeclarationOnStack(ctx, name, params, typeAnnotation)
+  }
+
+  private putDeclarationOnStack(
+    ctx: p.DeprecatedOperDefContext | p.AnnotatedOperDefContext,
+    name: string,
+    params: QuintLambdaParameter[],
+    typeAnnotation: Maybe<QuintType>
+  ) {
     const expr: QuintEx = ctx.expr()
       ? this.exprStack.pop() ?? this.undefinedExpr(ctx)()
       : // This is only a definition header, use a default body since the IR
@@ -236,7 +272,7 @@ export class ToIrListener implements QuintListener {
     const body: QuintEx =
       params.length === 0
         ? expr
-        : // if the definition has parameters, introduce a lambda
+        : // If the definition has parameters, introduce a lambda
           { id: this.getId(ctx), kind: 'lambda', params, qualifier, expr }
 
     const def: QuintOpDef = {
@@ -246,42 +282,16 @@ export class ToIrListener implements QuintListener {
       qualifier,
       expr: body,
     }
-    if (typeTag.isJust()) {
-      def.typeAnnotation = typeTag.value
+    if (typeAnnotation.isJust()) {
+      def.typeAnnotation = typeAnnotation.value
     }
     this.declarationStack.push(def)
   }
 
-  // The definition parameters may be of two kinds: C-like and ML-like.
-  // Handle them here.
-  processOpDefParams(ctx: p.OperDefContext): [QuintLambdaParameter[], Maybe<QuintType>] {
-    const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
-    // types of the parameters and of the result
-    const ntypes = ctx.type().length
-    if (ntypes === 0) {
-      return [params, none()]
-    } else if (ntypes > 1) {
-      // a C-like signature, combine it into an operator type
-      const types = popMany(this.typeStack, ntypes, this.undefinedType(ctx))
-      const id = this.getId(ctx)
-      const fullType: Maybe<QuintType> = just({
-        id,
-        kind: 'oper',
-        args: types.slice(0, -1),
-        res: types[types.length - 1],
-      })
-      return [params, fullType]
-    } else {
-      // the only type is on the stack
-      const fullType = this.popType()
-      return [params, fullType]
-    }
-  }
-
   // assume name = expr
-  exitAssume(ctx: any) {
+  exitAssume(ctx: p.AssumeContext) {
     const expr = this.exprStack.pop()!
-    const name = this.identOrHoleStack.pop()!
+    const name = ctx._assumeName.text
     const id = this.getId(ctx)
     const assume: QuintDef = {
       id,
@@ -725,22 +735,20 @@ export class ToIrListener implements QuintListener {
     this.exprStack.push(untupledLambda)
   }
 
-  // a single parameter in a lambda expression: an identifier or '_'
-  exitIdentOrHole(ctx: p.IdentOrHoleContext) {
-    if (ctx.text === '_') {
-      // a hole '_'
-      this.identOrHoleStack.push('_')
-    } else {
-      // a variable name
-      this.identOrHoleStack.push(ctx.qualId()!.text)
-    }
-  }
-
   exitParameter(ctx: p.ParameterContext) {
-    const name = popMany(this.identOrHoleStack, 1, () => '_')[0]
-
+    const name = ctx._paramName.text
     const id = this.getId(ctx)
     this.paramStack.push({ id, name })
+  }
+
+  // TODO Consolidate with `exitParameter`, see https://github.com/informalsystems/quint/issues/923
+  exitAnnotatedParameter(ctx: p.AnnotatedParameterContext) {
+    const name = ctx._paramName.text
+    const id = this.getId(ctx)
+    const typeAnnotation = this.popType().unwrap(() =>
+      fail('internal error: the grammar guarantees a type should be on the stack')
+    )
+    this.paramStack.push({ id, name, typeAnnotation })
   }
 
   // an identifier or star '*' in import
@@ -1222,6 +1230,7 @@ export class ToIrListener implements QuintListener {
   }
 
   // pop a type
+  // XXX
   private popType(): Maybe<QuintType> {
     // the user has specified a type
     const tp = this.typeStack.pop()
@@ -1352,4 +1361,12 @@ function unitValue(id: bigint): QuintBuiltinApp {
     opcode: 'Rec',
     args: [],
   }
+}
+
+function popOrFail<T>(stack: T[], msg: string): T {
+  const x = stack.pop()
+  if (typeof x === 'undefined') {
+    fail(`internal error: violated grammar guarantee ${msg}`)
+  }
+  return x
 }

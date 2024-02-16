@@ -25,7 +25,7 @@ documentedDeclaration : DOCCOMMENT* declaration;
 // a module declaration
 declaration : 'const' qualId ':' type                     # const
             | 'var'   qualId ':' type                     # var
-            | 'assume' identOrHole '=' expr               # assume
+            | 'assume' (assumeName=identOrHole) '=' expr  # assume
             | instanceMod                                 # instance
             | operDef                                     # oper
             | typeDef                                     # typeDefs
@@ -41,22 +41,25 @@ declaration : 'const' qualId ':' type                     # const
 // An operator definition.
 operDef
     : qualifier normalCallName
+        // Fully-annotated parameter list with at least one parameter
+        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*) ')'
+        // Mandatory annotation for return type
+        ':' type
+        // We support header declaration with no implementation for documentation genaration
+        ('=' expr)?
+        // Optionally terminated with a semicolon
+        ';'?
+        # annotatedOperDef
+    | qualifier normalCallName // TODO: Remove as per https://github.com/informalsystems/quint/issues/923
         // Unannotated parameter list
-        ('(' (parameter (',' parameter)*)? ')')?
+        ('(' (operParam+=parameter (',' operParam+=parameter)*)? ')')?
         // Optional type annotation using the deprecated format
-        // TODO: Remove as per https://github.com/informalsystems/quint/issues/923
-        (':' type)?
+        (':' annotatedRetType=type)?
         // We support header declaration with no implementation for documentation genaration
         ('=' expr)?
         // Optionally terminated with a semicolon
         ';'?
-    | qualifier normalCallName
-        // Fully annotated parameter lists
-        '(' (parameter ':' type (',' parameter ':' type)*) ')' ':' type
-        // We support header declaration with no implementation for documentation genaration
-        ('=' expr)?
-        // Optionally terminated with a semicolon
-        ';'?
+        # deprecatedOperDef
     ;
 
 typeDef
@@ -213,10 +216,12 @@ lambdaUnsugared : parameter '=>' expr
 lambdaTupleSugar : '(' '(' parameter (',' parameter)+ ')' ')' '=>' expr;
 
 // an identifier or a hole '_'
-identOrHole :   '_' | qualId
-        ;
+identOrHole : '_' | qualId;
 
-parameter: identOrHole;
+// TODO: Combine these into a single rule that support optionally annotated parameters
+//       Requires https://github.com/informalsystems/quint/issues/923
+parameter: paramName=identOrHole;
+annotatedParameter: paramName=identOrHole ':' type;
 
 // an identifier or a star '*'
 identOrStar :   '*' | qualId

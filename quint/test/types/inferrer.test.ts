@@ -360,14 +360,14 @@ module B {
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
     // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [1n, '(int -> str)'],
+      [4n, '(int -> str)'],
       [6n, '(int -> str)'],
       [7n, 'Set[int]'],
       [8n, 'Set[int]'],
       [9n, 'int'],
       [10n, 'int'],
+      [11n, '((int -> str)) => int'],
       [12n, '((int -> str)) => int'],
-      [13n, '((int -> str)) => int'],
     ])
   })
 

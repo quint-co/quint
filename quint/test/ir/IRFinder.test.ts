@@ -64,12 +64,15 @@ describe('findParameterWithId', () => {
   const modules = [buildModuleWithDecls(['pure def x(a: int): int = a'])]
 
   it('finds definition for existing id', () => {
-    const def = findParameterWithId(modules, 1n)
-
+    const def = findParameterWithId(modules, 2n)
     assert.isDefined(def)
     assert.deepEqual(def, {
-      id: 1n,
+      id: 2n,
       name: 'a',
+      typeAnnotation: {
+        id: 1n,
+        kind: 'int',
+      },
     })
   })
 
