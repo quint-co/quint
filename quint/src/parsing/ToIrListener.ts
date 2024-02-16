@@ -222,9 +222,7 @@ export class ToIrListener implements QuintListener {
   exitAnnotatedOperDef(ctx: p.AnnotatedOperDefContext) {
     const name = ctx.normalCallName().text
 
-    const params = ctx._annotOperParam
-      .map(_ => popOrFail(this.paramStack, 'annotated AnnotatedOperDef'))
-      .reverse()
+    const params = ctx._annotOperParam.map(_ => popOrFail(this.paramStack, 'annotated AnnotatedOperDef')).reverse()
     const res = this.popType().unwrap(() => 'violated grammar of annotated params return type')
     const args = params.map(p => {
       assert(isAnnotatedDef(p), 'violated grammar of annotated param type')
