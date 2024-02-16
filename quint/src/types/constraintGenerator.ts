@@ -30,7 +30,7 @@ import {
   QuintVar,
   isAnnotatedDef,
 } from '../ir/quintIr'
-import { QuintType, rowNames, typeNames } from '../ir/quintTypes'
+import { QuintType, QuintVarType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -253,7 +253,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     expr.params.forEach(p => {
       const varName = p.name === '_' ? this.freshVarGenerator.freshVar('_t') : `t_${p.name}_${p.id}`
       paramNames.typeVariables.add(varName)
-      this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
+      const paramTypeVar: QuintVarType = { kind: 'var', name: varName }
+      this.addToResults(p.id, right(toScheme(paramTypeVar)))
+      if (p.typeAnnotation) {
+        this.constraints.push({ kind: 'eq', types: [paramTypeVar, p.typeAnnotation], sourceId: p.id })
+      }
     })
 
     this.freeNames.push(paramNames)

@@ -419,4 +419,24 @@ module B {
       ]
     )
   })
+
+  it('prioritizes solving constraints from type annotations', () => {
+    // Regression test for https://github.com/informalsystems/quint/issues/1177
+    // The point is that we expect to report an error trying to unify a string with a
+    const defs = [
+      `pure def foo(s: str): int = {
+  val x = 1.in(s) // We SHOULD identify an error here, since s is annotated as a str
+  val y = s + 1   // and NOT identify an error here, incorrectly expecting s to be a set
+  y
+}`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    const msgs: string[] = [...errors.values()].map(errorTreeToString)
+    const expectedMessage = `Couldn't unify set and str
+Trying to unify Set[int] and str
+Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
+`
+    assert.equal(msgs[0], expectedMessage)
+  })
 })
