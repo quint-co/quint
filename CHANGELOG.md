@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed type checker to account for type constraints on annotated operator
+  parameters when checking operator bodies (#1177).
+
 ### Security
 
 ## v0.18.1 -- 2024-01-16
