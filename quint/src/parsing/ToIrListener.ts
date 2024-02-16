@@ -1230,7 +1230,6 @@ export class ToIrListener implements QuintListener {
   }
 
   // pop a type
-  // XXX
   private popType(): Maybe<QuintType> {
     // the user has specified a type
     const tp = this.typeStack.pop()
