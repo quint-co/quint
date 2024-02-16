@@ -218,7 +218,7 @@ export const builtinOpCodes = [
 
 export type QuintBuiltinOpcode = (typeof builtinOpCodes)[number]
 
-export interface QuintLambdaParameter extends WithId {
+export interface QuintLambdaParameter extends WithId, WithOptionalTypeAnnotation {
   /** The name of the formal parameter */
   name: string
 }

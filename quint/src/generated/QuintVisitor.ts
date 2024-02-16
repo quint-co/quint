@@ -55,6 +55,8 @@ import { LetInContext } from "./QuintParser";
 import { NondetContext } from "./QuintParser";
 import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
+import { AnnotatedOperDefContext } from "./QuintParser";
+import { DeprecatedOperDefContext } from "./QuintParser";
 import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
@@ -95,6 +97,7 @@ import { LambdaUnsugaredContext } from "./QuintParser";
 import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
+import { AnnotatedParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
 import { RecElemContext } from "./QuintParser";
@@ -484,6 +487,22 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitBraces?: (ctx: BracesContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `annotatedOperDef`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAnnotatedOperDef?: (ctx: AnnotatedOperDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `deprecatedOperDef`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDeprecatedOperDef?: (ctx: DeprecatedOperDefContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `const`
 	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
@@ -770,6 +789,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitParameter?: (ctx: ParameterContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.annotatedParameter`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAnnotatedParameter?: (ctx: AnnotatedParameterContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.identOrStar`.

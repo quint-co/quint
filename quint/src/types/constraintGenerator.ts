@@ -30,7 +30,7 @@ import {
   QuintVar,
   isAnnotatedDef,
 } from '../ir/quintIr'
-import { QuintType, rowNames, typeNames } from '../ir/quintTypes'
+import { QuintType, QuintVarType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -253,7 +253,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     expr.params.forEach(p => {
       const varName = p.name === '_' ? this.freshVarGenerator.freshVar('_t') : `t_${p.name}_${p.id}`
       paramNames.typeVariables.add(varName)
-      this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
+      const paramTypeVar: QuintVarType = { kind: 'var', name: varName }
+      this.addToResults(p.id, right(toScheme(paramTypeVar)))
+      if (p.typeAnnotation) {
+        this.constraints.push({ kind: 'eq', types: [paramTypeVar, p.typeAnnotation], sourceId: p.id })
+      }
     })
 
     this.freeNames.push(paramNames)
@@ -456,10 +460,13 @@ function checkAnnotationGenerality(
     return right(subs)
   }
 
-  // Look for type/row variables in the annotation that are bound by `subs`
+  // Find type and row variables in the annotation that are bound to non-variable types in the substitutions.
+  // This indicates that they are inferred to have a concrete type.
   const names = typeNames(typeAnnotation)
-  const tooGeneralTypes = subs.filter(s => s.kind === 'type' && names.typeVariables.has(s.name))
-  const tooGeneralRows = subs.filter(s => s.kind === 'row' && names.rowVariables.has(s.name))
+  const tooGeneralTypes = subs.filter(
+    s => s.kind === 'type' && s.value.kind !== 'var' && names.typeVariables.has(s.name)
+  )
+  const tooGeneralRows = subs.filter(s => s.kind === 'row' && s.value.kind !== 'var' && names.rowVariables.has(s.name))
 
   const errors = [...tooGeneralTypes, ...tooGeneralRows].map(s => {
     const expected = s.kind === 'type' ? typeToString(s.value) : rowToString(s.value)
