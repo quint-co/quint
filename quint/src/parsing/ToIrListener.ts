@@ -223,7 +223,7 @@ export class ToIrListener implements QuintListener {
     const name = ctx.normalCallName().text
 
     const params = ctx._annotOperParam
-      .map(_ => popOrFail(this.paramStack, 'violated grammar of annotated AnnotatedOperDef'))
+      .map(_ => popOrFail(this.paramStack, 'annotated AnnotatedOperDef'))
       .reverse()
     const res = this.popType().unwrap(() => 'violated grammar of annotated params return type')
     const args = params.map(p => {
