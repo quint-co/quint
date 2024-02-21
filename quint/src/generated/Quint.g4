@@ -68,7 +68,7 @@ typeDef
     | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
     ;
 
-typeDefHead : typeName=qualId ('[' typeVars+=typeVar(',' typeVars+=typeVar)* ']')?;
+typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
 
 sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
 

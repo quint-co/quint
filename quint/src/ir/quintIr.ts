@@ -289,16 +289,20 @@ export interface QuintAssume extends WithId {
   assumption: QuintEx
 }
 
-/** QuintTypeDefs represent both type aliases and abstract types
+/** QuintTypeDefs represent declared type constructors and abstract types
  *
  * - Abstract types do not have an associated `type`
- * - Type aliases always have an associated `type`
+ * - Type constructors aliases have an associated `type` and `n >= 0` type parameters
  */
 export interface QuintTypeDef extends WithId {
   /** definition kind ('typedef') */
   kind: 'typedef'
   /** name of a type alias */
   name: string
+  /** type variables
+   *
+   *  `typeof params === 'undefined'` is taken to mean the same as `params.length === 0` */
+  params?: string[]
   /** type to associate with the alias (none for uninterpreted type) */
   type?: QuintType
 }

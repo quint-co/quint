@@ -51,6 +51,8 @@ export type ErrorCode =
   | 'QNT012'
   /* QNT013: import ... from <source>: could not load */
   | 'QNT013'
+  /* QNT014: Type variables in a type declaration are not declared as parameters */
+  | 'QNT014'
   /* QNT098: Cyclic imports */
   | 'QNT098'
   /* QNT099: Found cyclic definitions */
