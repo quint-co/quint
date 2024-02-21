@@ -513,5 +513,5 @@ module state {
   //        already submitted ballots in `ballots`, but `execute_vote` adjusts
   //        the sum differently based on whether such a ballot is present.]
   val invAllBallotsPositive = query_all_polls(state).polls.listForall(poll =>
-                                poll.options.listForall(opt => opt._2 >= 0))
+                                poll.options.listForall2(opt => opt._2 >= 0))
 }
