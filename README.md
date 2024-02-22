@@ -257,6 +257,10 @@ Cosmos in 2023.
 - Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
 - [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
+- Join or co-design meetings: We hold fortnightly meetings with users and those
+  interested in contributing to the design and development of Quint. Contact us if
+  you would like an invitation.
+
 
 ## Documentation
 
