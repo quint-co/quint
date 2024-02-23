@@ -356,13 +356,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
         // https://github.com/informalsystems/quint/issues/690
-        this.types = new Map<bigint, TypeScheme>(
-          [...this.types.entries()].map(([id, te]) => {
-            const newType = applySubstitution(this.table, subs, te.type)
-            const scheme: TypeScheme = this.quantify(newType)
-            return [id, scheme]
-          })
-        )
+        this.types.forEach((oldScheme, id) => {
+          const newType = applySubstitution(this.table, subs, oldScheme.type)
+          const newScheme: TypeScheme = this.quantify(newType)
+          this.addToResults(id, right(newScheme))
+        })
 
         return subs
       })
