@@ -41,7 +41,7 @@
     "test/**/*.ts"
   ],
   "engines": {
-    "node": ">=18"
+    "node": "18 - 20"
   },
   "repository": {
     "type": "git",
@@ -63,7 +63,6 @@
     "line-column": "^1.0.2",
     "lodash": "^4.17.21",
     "lodash.isequal": "^4.5.0",
-    "node-fetch": "^2.6.13",
     "seedrandom": "^3.0.5",
     "tar": "^6.1.14",
     "yargs": "^17.2.1"
