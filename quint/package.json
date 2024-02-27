@@ -41,7 +41,7 @@
     "test/**/*.ts"
   ],
   "engines": {
-    "node": ">=18"
+    "node": "18 - 20"
   },
   "repository": {
     "type": "git",
