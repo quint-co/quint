@@ -21,7 +21,6 @@ import fs from 'fs'
 import os from 'os'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import semver from 'semver'
-import fetch from 'node-fetch'
 import { pipeline } from 'stream/promises'
 import child_process from 'child_process'
 import * as tar from 'tar'
@@ -277,7 +276,7 @@ function downloadAndUnpackApalache(): Promise<VerifyResult<null>> {
   return fetch(url)
     .then(
       // unpack response body
-      res => pipeline(res.body, tar.extract({ cwd: apalacheDistDir(), strict: true })),
+      res => pipeline(res.body!, tar.extract({ cwd: apalacheDistDir(), strict: true })),
       error => err(`Error fetching ${url}: ${error}`)
     )
     .then(
