@@ -24,6 +24,7 @@ import {
   QuintConstType,
   QuintSumType,
   QuintType,
+  QuintVarType,
   Row,
   RowField,
   isUnitType,
@@ -405,7 +406,17 @@ export class ToIrListener implements QuintListener {
     this.checkForUndeclaredTypeVariables(id, def)
 
     // Used for annotations in the variant constructors
-    const constructorReturnType: QuintConstType = { id, kind: 'const', name }
+    let constructorReturnType: QuintType
+    // The constant identifying the type definition. E.g. `Result`
+    const typeConst: QuintConstType = { id: this.getId(ctx), kind: 'const', name }
+    if (def.params) {
+      // The type takes parameters, so we need a type application as the return type. E.g., `Result[ok, err]`
+      const args: QuintVarType[] = def.params.map(name => ({ id: this.getId(ctx), kind: 'var', name }))
+      constructorReturnType = { id, kind: 'app', ctor: typeConst, args }
+    } else {
+      // The type takes no parameters, so we only need the constant name
+      constructorReturnType = typeConst
+    }
 
     // Generate all the variant constructors implied by a variant type definition
     // a variant constructor is an operator that injects an expression
@@ -451,7 +462,7 @@ export class ToIrListener implements QuintListener {
           // ```
           qualifier = 'val'
 
-          // The nullary variant constructor is actualy
+          // The nullary variant constructor is actually
           // a variant pairing a label with the unit.
           const wrappedExpr = unitValue(this.getId(variantCtx._sumLabel))
 

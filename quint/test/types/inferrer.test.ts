@@ -164,21 +164,22 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
-      [16n, '(A(int) | B({}))'],
+      [15n, 'str'],
+      [16n, 'int'],
       [17n, '(A(int) | B({}))'],
-      [10n, 'str'],
-      [11n, '{}'],
-      [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
-      [5n, 'int'],
-      [4n, 'str'],
+      [18n, '(A(int) | B({}))'],
       [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B({}))'],
       [9n, '(int) => (A(int) | B({}))'],
+      [10n, '(int) => (A(int) | B({}))'],
+      [11n, 'str'],
+      [12n, '{}'],
+      [13n, '(B({}) | A(int))'],
+      [14n, '(B({}) | A(int))'],
     ])
   })
 
@@ -205,34 +206,35 @@ module B {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
-      [16n, '(A(int) | B({}))'],
+      [15n, 'str'],
+      [16n, 'int'],
       [17n, '(A(int) | B({}))'],
-      [10n, 'str'],
-      [11n, '{}'],
-      [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
       [18n, '(A(int) | B({}))'],
-      [24n, 'str'],
-      [26n, 'int'],
-      [19n, 'int'],
+      [6n, 'int'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B({}))'],
+      [9n, '(int) => (A(int) | B({}))'],
+      [10n, '(int) => (A(int) | B({}))'],
+      [11n, 'str'],
+      [12n, '{}'],
+      [13n, '(B({}) | A(int))'],
+      [14n, '(B({}) | A(int))'],
+      [19n, '(A(int) | B({}))'],
+      [25n, 'str'],
+      [27n, 'int'],
       [20n, 'int'],
       [21n, 'int'],
-      [25n, '(int) => int'],
-      [27n, 'str'],
-      [29n, '{}'],
       [22n, 'int'],
-      [28n, '({}) => int'],
+      [26n, '(int) => int'],
+      [28n, 'str'],
+      [30n, '{}'],
       [23n, 'int'],
-      [30n, 'int'],
-      [5n, 'int'],
-      [4n, 'str'],
-      [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
-      [9n, '(int) => (A(int) | B({}))'],
+      [29n, '({}) => int'],
+      [24n, 'int'],
+      [31n, 'int'],
     ])
   })
 
