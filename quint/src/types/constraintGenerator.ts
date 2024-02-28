@@ -84,6 +84,8 @@ function validateArity(
 }
 
 // A visitor that collects types and constraints for a module's expressions
+//
+// NOTE: Assumes all type applications have been resolved by typeApplicationResolution first
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
   constructor(solvingFunction: SolvingFunctionType, table: LookupTable, types?: Map<bigint, TypeScheme>) {
@@ -97,13 +99,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   protected types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   protected errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  protected constraints: Constraint[] = []
+  protected freshVarGenerator: FreshVarGenerator
+  protected table: LookupTable
 
   private solvingFunction: SolvingFunctionType
-  private constraints: Constraint[] = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private table: LookupTable
-  private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
