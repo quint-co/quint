@@ -16,6 +16,7 @@
 import * as ir from './quintIr'
 import * as t from './quintTypes'
 import { unreachable } from '../util'
+import { LookupDefinition } from '../names/base'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -280,6 +281,30 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
   }
 
   return newType
+}
+
+/**
+ * Transforms a Quint LookupDefinition with a transformer
+ *
+ * This is just a thin wrapper to deal with the fact that LookupDefinitions are a slightly awkward union.
+ *
+ * @param transformer: the IRTransformer instance with the functions to be invoked
+ * @param lud: the Quint LookupDefinition to be transformed
+ *
+ * @returns the transformed LookupDefinition
+ */
+export function transformLookupDefinition(transformer: IRTransformer, lud: LookupDefinition): LookupDefinition {
+  switch (lud.kind) {
+    case 'const':
+    case 'def':
+    case 'var':
+    case 'assume':
+    case 'typedef':
+      return transformDefinition(transformer, lud)
+
+    case 'param':
+      return lud.typeAnnotation ? { ...lud, typeAnnotation: transformType(transformer, lud.typeAnnotation) } : lud
+  }
 }
 
 /**
