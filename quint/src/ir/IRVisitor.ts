@@ -456,7 +456,11 @@ export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
       if (visitor.enterLambda) {
         visitor.enterLambda(expr)
       }
-
+      expr.params.forEach(p => {
+        if (p.typeAnnotation) {
+          walkType(visitor, p.typeAnnotation)
+        }
+      })
       walkExpression(visitor, expr.expr)
 
       if (visitor.exitLambda) {
