@@ -24,7 +24,6 @@ import { simplify } from './simplification'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
-// TODO: Get rid of this class? It is very shallow. What do we need it for?
 export class TypeInferrer extends ConstraintGeneratorVisitor {
   constructor(table: LookupTable, types?: Map<bigint, TypeScheme>) {
     super(solveConstraint, table, types)
