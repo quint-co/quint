@@ -363,7 +363,6 @@ export class ToIrListener implements QuintListener {
 
     const defHead = ctx.typeDefHead()
     const name = defHead._typeName.text
-    // NOTE: `rhs` must precede `typeVariables` due to the stack order!
     const type = this.popType().unwrap(() =>
       fail('internal error: type alias declaration parsed with no right hand side')
     )
