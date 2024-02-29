@@ -483,6 +483,9 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
         newExpr = transformer.enterLambda(newExpr)
       }
 
+      newExpr.params = newExpr.params.map(p =>
+        p.typeAnnotation ? { ...p, typeAnnotation: transformType(transformer, p.typeAnnotation) } : p
+      )
       newExpr.expr = transformExpression(transformer, newExpr.expr)
 
       if (transformer.exitLambda) {
