@@ -13,8 +13,8 @@ module typedefs {
         Commits: Set[str]
     }
 
-    type Blockchain = int -> blockHeader
-    type LightBlockMap = int -> lightBlock
+    type Blockchain = int -> BlockHeader
+    type LightBlockMap = int -> LightBlock
     type LightBlockStatus = int -> str    
     
 }
