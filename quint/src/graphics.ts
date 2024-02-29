@@ -8,7 +8,7 @@
  * See LICENSE in the project root for license information.
  */
 
-import { strict as assert, fail } from 'assert'
+import { strict as assert } from 'assert'
 import chalk from 'chalk'
 import {
   Doc,
