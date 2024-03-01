@@ -99,12 +99,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   protected types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   protected errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
-  protected constraints: Constraint[] = []
   protected freshVarGenerator: FreshVarGenerator
   protected table: LookupTable
 
+  private constraints: Constraint[] = []
   private solvingFunction: SolvingFunctionType
-
   private builtinSignatures: Map<string, Signature> = getSignatures()
 
   // Track location descriptions for error tree traces
@@ -420,36 +419,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     )
   }
 
-  // Converts a type definition into a TypeScheme with all fresh variables, and
-  // a list of params providing the fresh type variables corresponding to the
-  // order they are specified in the type declaration. This is binding the type
-  // parameters of a declared polymorphic type via universal quantification.
-  //
-  // E.g., the type definition
-  //
-  //   type Result[ok, err] = Ok(ok) | Err(err)
-  //
-  // Will produce the result
-  //
-  //   { params: [fresh_ok, fresh_err],
-  //     scheme: ∀(fresh_ok,fresh_err). Ok(fresh_ok) | Err(fresh_err)
-  //   }
-  private quantifyTypeDef(typeDef: QuintTypeAlias): { params: string[]; scheme: TypeScheme } {
-    if (!typeDef.params || typeDef.params.length === 0) {
-      return { params: [], scheme: this.quantify(typeDef.type) }
-    }
-
-    // Coordinates parameter names with their corresponding fresh variables
-    const varsMap: Map<string, string> = new Map(
-      typeDef.params.map(param => [param, this.freshVarGenerator.freshVar(param)])
-    )
-
-    // Parsing guarantees that every variable in a type def is in the params
-    const typeWithFreshVars = mapTypeVarNames(n => varsMap.get(n)!, typeDef.type)
-
-    return { scheme: this.quantify(typeWithFreshVars), params: [...varsMap.values()] }
-  }
-
   private quantify(type: QuintType): TypeScheme {
     const freeNames = this.currentFreeNames()
     const nonFreeNames = {
@@ -510,26 +479,5 @@ function checkAnnotationGenerality(
     return left(buildErrorTree(`Checking type annotation ${typeToString(typeAnnotation)}`, errors))
   } else {
     return right(subs)
-  }
-}
-
-function mapTypeVarNames(f: (_: string) => string, t: QuintType): QuintType {
-  const transformer = new TypeVariableNameMapper(f)
-  return transformType(transformer, t)
-}
-
-class TypeVariableNameMapper implements IRTransformer {
-  private mapper: (_: string) => string
-
-  constructor(f: (_: string) => string) {
-    this.mapper = f
-  }
-
-  exitVar(t: QuintVar): QuintVar {
-    return { ...t, name: this.mapper(t.name) }
-  }
-
-  exitRow(r: Row): Row {
-    return r.kind === 'var' ? { ...r, name: this.mapper(r.name) } : r
   }
 }
