@@ -82,6 +82,8 @@ function validateArity(
 }
 
 // A visitor that collects types and constraints for a module's expressions
+//
+// NOTE: Assumes all type applications have been resolved by typeApplicationResolution first
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
   constructor(solvingFunction: SolvingFunctionType, table: LookupTable, types?: Map<bigint, TypeScheme>) {
@@ -95,13 +97,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   protected types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   protected errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  protected freshVarGenerator: FreshVarGenerator
+  protected table: LookupTable
 
-  private solvingFunction: SolvingFunctionType
   private constraints: Constraint[] = []
-
+  private solvingFunction: SolvingFunctionType
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private table: LookupTable
-  private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -356,13 +357,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
         // https://github.com/informalsystems/quint/issues/690
-        this.types = new Map<bigint, TypeScheme>(
-          [...this.types.entries()].map(([id, te]) => {
-            const newType = applySubstitution(this.table, subs, te.type)
-            const scheme: TypeScheme = this.quantify(newType)
-            return [id, scheme]
-          })
-        )
+        this.types.forEach((oldScheme, id) => {
+          const newType = applySubstitution(this.table, subs, oldScheme.type)
+          const newScheme: TypeScheme = this.quantify(newType)
+          this.addToResults(id, right(newScheme))
+        })
 
         return subs
       })

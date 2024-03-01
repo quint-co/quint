@@ -16,7 +16,7 @@ export class FreshVarGenerator {
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   freshVar(prefix: string): string {
-    const counter = this.freshVarCounters.get(prefix)! ?? 0
+    const counter = this.freshVarCounters.get(prefix) ?? 0
     this.freshVarCounters.set(prefix, counter + 1)
 
     return `${prefix}${counter}`
