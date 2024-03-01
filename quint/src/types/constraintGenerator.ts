@@ -27,11 +27,10 @@ import {
   QuintName,
   QuintOpDef,
   QuintStr,
-  QuintTypeAlias,
   QuintVar,
   isAnnotatedDef,
 } from '../ir/quintIr'
-import { QuintType, QuintVarType, Row, rowNames, typeNames } from '../ir/quintTypes'
+import { QuintType, QuintVarType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -50,7 +49,6 @@ import {
   withConstraints,
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
-import { IRTransformer, transformType } from '../ir/IRTransformer'
 
 export type SolvingFunctionType = (
   _table: LookupTable,
