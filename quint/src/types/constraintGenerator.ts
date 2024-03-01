@@ -12,7 +12,7 @@
  * @module
  */
 
-import { IRVisitor, walkType } from '../ir/IRVisitor'
+import { IRVisitor } from '../ir/IRVisitor'
 import {
   QuintApp,
   QuintAssume,
@@ -27,12 +27,12 @@ import {
   QuintName,
   QuintOpDef,
   QuintStr,
+  QuintTypeAlias,
   QuintVar,
   isAnnotatedDef,
-  QuintTypeAlias,
 } from '../ir/quintIr'
 import { QuintType, QuintVarType, Row, rowNames, typeNames } from '../ir/quintTypes'
-import { definitionToString, expressionToString, rowToString, typeToString } from '../ir/IRprinting'
+import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
@@ -51,7 +51,6 @@ import {
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { IRTransformer, transformType } from '../ir/IRTransformer'
-import { constraintToString, typeSchemeToString } from './printing'
 
 export type SolvingFunctionType = (
   _table: LookupTable,

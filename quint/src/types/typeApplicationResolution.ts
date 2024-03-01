@@ -16,10 +16,9 @@ import { fail } from 'assert'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { IRTransformer, transformType } from '../ir/IRTransformer'
 import { QuintTypeAlias } from '../ir/quintIr'
-import { QuintAppType, QuintType, QuintVarType, Row, typeNames } from '../ir/quintTypes'
+import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
-import { TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
 
 export class TypeApplicationResolver implements IRTransformer {
