@@ -23,10 +23,10 @@ import { TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
 
 export class TypeApplicationResolver implements IRTransformer {
-  /** Fresh variable generator, shared with the TypeInferrer */
-  freshVarGenerator: FreshVarGenerator
+  // Fresh variable generator, shared with the TypeInferrer
+  private freshVarGenerator: FreshVarGenerator
   // Lookup table from the parser
-  table: LookupTable
+  private table: LookupTable
 
   constructor(table: LookupTable, freshVarGenerator: FreshVarGenerator) {
     this.table = table
@@ -37,53 +37,6 @@ export class TypeApplicationResolver implements IRTransformer {
     return this.resolveTypeApplications(t)
   }
 
-  // Converts a type definition into a TypeScheme with all fresh variables, and
-  // a list of params providing the fresh type variables corresponding to the
-  // order they are specified in the type declaration. This is binding the type
-  // parameters of a declared polymorphic type via universal quantification.
-  //
-  // E.g., the type definition
-  //
-  //   type Result[ok, err] = Ok(ok) | Err(err)
-  //
-  // Will produce the result
-  //
-  //   { params: [fresh_ok, fresh_err],
-  //     scheme: ∀(fresh_ok,fresh_err). Ok(fresh_ok) | Err(fresh_err)
-  //   }
-  private quantifyTypeDef(typeDef: QuintTypeAlias): { params: QuintVarType[]; scheme: TypeScheme } {
-    if (!typeDef.params || typeDef.params.length === 0) {
-      return { params: [], scheme: schemeOfParametricDef([], typeDef.type) }
-    }
-
-    // Coordinates parameter names with their corresponding fresh variables
-    const varsMap: Map<string, string> = new Map(
-      typeDef.params.map(param => [param, this.freshVarGenerator.freshVar(param)])
-    )
-
-    // Parsing guarantees that every variable in a type def is in the params
-    const typeWithFreshVars = mapTypeVarNames(n => varsMap.get(n) ?? n, typeDef.type)
-    const freshParamNames = [...varsMap.values()]
-    const params: QuintVarType[] = freshParamNames.map(name => ({ kind: 'var', name }))
-
-    return { scheme: schemeOfParametricDef(freshParamNames, typeWithFreshVars), params }
-  }
-
-  private resolveTypeApp(t: QuintAppType): QuintType {
-    const typeDef = this.table.get(t.ctor.id!)! // TODO
-    if (typeDef.kind !== 'typedef' || !typeDef.type) {
-      fail(`invalid kind looked up for constructor of type application with id ${t.ctor.id} `)
-    }
-    const { params, scheme } = this.quantifyTypeDef(typeDef as QuintTypeAlias)
-    const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({
-      kind: 'type',
-      name: param.name,
-      value: arg,
-    }))
-    const newType = applySubstitution(this.table, subs, scheme.type)
-    return newType
-  }
-
   // Transforms `t` by resolving all the type applications in all its sub-terms
   //
   // E.g., given
@@ -92,17 +45,58 @@ export class TypeApplicationResolver implements IRTransformer {
   //   type Bar[x, y] = {i: x, j: y}
   //
   //
-  // resolveTypeAllication(Foo[a, {f: Bar[int, str]}]) => (a, {f: {i: int, j: str}})
+  // resolveTypeAllications(Foo[a, {f: Bar[int, str]}]) = (a, {f: {i: int, j: str}})
   resolveTypeApplications(t: QuintType): QuintType {
-    const transformer = new TypeMapper(x => (x.kind === 'app' ? this.resolveTypeApp(x) : x))
-    return transformType(transformer, t)
+    const f: (_: QuintType) => QuintType = x => (x.kind !== 'app' ? x : this.resolveTypeApp(x))
+    return mapType(f, t)
   }
-}
 
-function schemeOfParametricDef(param: string[], type: QuintType): TypeScheme {
-  const typeVariables = new Set([...typeNames(type).typeVariables].filter(name => param.includes(name)))
-  const rowVariables = new Set([...typeNames(type).rowVariables].filter(name => param.includes(name)))
-  return { type, typeVariables, rowVariables }
+  private resolveTypeApp(t: QuintAppType): QuintType {
+    const typeDef = this.table.get(t.ctor.id!)! // TODO
+    if (typeDef.kind !== 'typedef' || !typeDef.type) {
+      fail(`invalid kind looked up for constructor of type application with id ${t.ctor.id} `)
+    }
+    const { params, type } = this.freshTypeFromDef(typeDef as QuintTypeAlias)
+    const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({
+      kind: 'type',
+      name: param.name,
+      value: arg,
+    }))
+    const newType = applySubstitution(this.table, subs, type)
+    return newType
+  }
+
+  // Given a type definition, extract the type it is defined by (with all type
+  // parameters replaced with fresh variables) and a list of params giving the
+  // fresh type variables in   the order corresponding to the params they
+  // replaced in the type declaration.
+  //
+  // E.g., the type definition
+  //
+  //   type Result[ok, err] = Ok(ok) | Err(err)
+  //
+  // Will produce the result
+  //
+  //   { params: [fresh_ok, fresh_err],
+  //     type: (Ok(fresh_ok) | Err(fresh_err))
+  //   }
+  private freshTypeFromDef(typeDef: QuintTypeAlias): { params: QuintVarType[]; type: QuintType } {
+    if (!typeDef.params || typeDef.params.length === 0) {
+      return { params: [], type: typeDef.type }
+    }
+
+    // Coordinates parameter names with their corresponding fresh variables
+    const varsMap: Map<string, string> = new Map(
+      typeDef.params.map(param => [param, this.freshVarGenerator.freshVar(param)])
+    )
+
+    // Parsing guarantees that every variable in a type def is in the params
+    const type = mapTypeVarNames(n => varsMap.get(n) ?? n, typeDef.type)
+    const freshParamNames = [...varsMap.values()]
+    const params: QuintVarType[] = freshParamNames.map(name => ({ kind: 'var', name }))
+
+    return { type, params }
+  }
 }
 
 // Map type variable names according to `f`
@@ -125,6 +119,12 @@ class TypeVariableNameMapper implements IRTransformer {
   exitRow(r: Row): Row {
     return r.kind === 'var' ? { ...r, name: this.mapper(r.name) } : r
   }
+}
+
+// Transform `t`, and all its subterms, by `f`
+function mapType(f: (_: QuintType) => QuintType, t: QuintType): QuintType {
+  const transformer = new TypeMapper(f)
+  return transformType(transformer, t)
 }
 
 class TypeMapper implements IRTransformer {

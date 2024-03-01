@@ -42,16 +42,18 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
    *          ids to the corresponding error for any problematic expressions.
    */
   inferTypes(declarations: QuintDeclaration[]): TypeInferenceResult {
+    // Resolve all type applications used in expressions in the lookup table
     this.table.forEach((def, id) => {
       // Don't resolve type definitions, since those should keep their original type variable names
       // They are our source of truth for all resolutions
       if (def.kind !== 'typedef') {
-        this.table.set(id, transformLookupDefinition(this.resolver, def))
+        const resolvedLookupDef = transformLookupDefinition(this.resolver, def)
+        this.table.set(id, resolvedLookupDef)
       }
     })
     declarations.forEach(decl => {
-      const declWithTypeApplicationsResolved = transformDeclaration(this.resolver, decl)
-      walkDeclaration(this, declWithTypeApplicationsResolved)
+      const resolvedDecl = transformDeclaration(this.resolver, decl)
+      walkDeclaration(this, resolvedDecl)
     })
     const simplifiedTypes = new Map([...this.types.entries()].map(([id, t]) => [id, simplify(t)]))
     return [this.errors, simplifiedTypes]
