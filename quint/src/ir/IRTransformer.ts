@@ -17,6 +17,7 @@ import * as ir from './quintIr'
 import * as t from './quintTypes'
 import { unreachable } from '../util'
 import { LookupDefinition } from '../names/base'
+import cloneDeep from 'lodash.clonedeep'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -111,7 +112,7 @@ export class IRTransformer {
  * @returns the tranformed Quint module
  */
 export function transformModule(transformer: IRTransformer, quintModule: ir.QuintModule): ir.QuintModule {
-  let newModule = { ...quintModule }
+  let newModule = cloneDeep(quintModule)
 
   if (transformer.enterModule) {
     newModule = transformer.enterModule(newModule)
@@ -136,7 +137,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
  * @returns the transformed Quint type
  */
 export function transformType(transformer: IRTransformer, type: t.QuintType): t.QuintType {
-  let newType = { ...type }
+  let newType = cloneDeep(type)
   if (transformer.enterType) {
     newType = transformer.enterType(newType)
   }
@@ -317,7 +318,7 @@ export function transformLookupDefinition(transformer: IRTransformer, lud: Looku
  * @returns the transformed Quint definition
  */
 export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintDeclaration): ir.QuintDeclaration {
-  let newDecl = { ...decl }
+  let newDecl = cloneDeep(decl)
   if (transformer.enterDecl) {
     newDecl = transformer.enterDecl(newDecl)
   }
@@ -375,7 +376,7 @@ export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintD
  * @returns the transformed Quint definition
  */
 export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef): ir.QuintDef {
-  let newDef = { ...def }
+  let newDef = cloneDeep(def)
   if (transformer.enterDef) {
     newDef = transformer.enterDef(newDef)
   }
@@ -450,7 +451,7 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
  * @returns the transformed Quint expression
  */
 function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.QuintEx {
-  let newExpr = { ...expr }
+  let newExpr = cloneDeep(expr)
   if (transformer.enterExpr) {
     newExpr = transformer.enterExpr(newExpr)
   }
@@ -542,7 +543,7 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
  * @returns the transformed Quint row
  */
 export function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
-  let newRow = row
+  let newRow = cloneDeep(row)
   if (transformer.enterRow) {
     newRow = transformer.enterRow(newRow)
   }

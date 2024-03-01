@@ -2,13 +2,7 @@
   "name": "@informalsystems/quint",
   "version": "0.18.3",
   "description": "Core tool for the Quint specification language",
-  "keywords": [
-    "temporal",
-    "logic",
-    "formal",
-    "specification",
-    "verification"
-  ],
+  "keywords": ["temporal", "logic", "formal", "specification", "verification"],
   "homepage": "https://github.com/informalsystems/quint",
   "bugs": "https://github.com/informalsystems/quint/issues",
   "license": "Apache 2.0",
@@ -35,11 +29,7 @@
   "bin": {
     "quint": "dist/src/cli.js"
   },
-  "files": [
-    "README.md",
-    "dist/**/*",
-    "test/**/*.ts"
-  ],
+  "files": ["README.md", "dist/**/*", "test/**/*.ts"],
   "engines": {
     "node": "18 - 20"
   },
@@ -63,6 +53,8 @@
     "line-column": "^1.0.2",
     "lodash": "^4.17.21",
     "lodash.isequal": "^4.5.0",
+    "lodash.clonedeep": "4.5.0",
+    "@types/lodash.clonedeep": "4.5.0",
     "seedrandom": "^3.0.5",
     "tar": "^6.1.14",
     "yargs": "^17.2.1"
