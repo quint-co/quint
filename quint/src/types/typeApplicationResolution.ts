@@ -14,9 +14,10 @@
 
 import { fail } from 'assert'
 import { FreshVarGenerator } from '../FreshVarGenerator'
+
 import { typeToString } from '../ir/IRprinting'
-import { IRTransformer, transformType } from '../ir/IRTransformer'
-import { QuintTypeAlias } from '../ir/quintIr'
+import { IRTransformer, transformDeclaration, transformLookupDefinition, transformType } from '../ir/IRTransformer'
+import { QuintDeclaration, QuintTypeAlias } from '../ir/quintIr'
 import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
@@ -29,13 +30,22 @@ export class TypeApplicationResolver implements IRTransformer {
   // Lookup table from the parser
   private table: LookupTable
 
-  constructor(table: LookupTable, freshVarGenerator: FreshVarGenerator) {
+  constructor(table: LookupTable) {
     this.table = table
-    this.freshVarGenerator = freshVarGenerator
+    this.freshVarGenerator = new FreshVarGenerator()
+
+    this.table.forEach((def, id) => {
+      const resolvedLookupDef = transformLookupDefinition(this, def)
+      this.table.set(id, resolvedLookupDef)
+    })
+  }
+
+  resolveTypeApplications(decls: QuintDeclaration[]): QuintDeclaration[] {
+    return decls.map(decl => transformDeclaration(this, decl))
   }
 
   exitType(t: QuintType): QuintType {
-    return this.resolveTypeApplications(t)
+    return this.resolveTypeApplicationsForType(t)
   }
 
   // Transforms `t` by resolving all the type applications in all its sub-terms
@@ -46,8 +56,8 @@ export class TypeApplicationResolver implements IRTransformer {
   //   type Bar[x, y] = {i: x, j: y}
   //
   //
-  // resolveTypeApplications(Foo[a, {f: Bar[int, str]}]) = (a, {f: {i: int, j: str}})
-  resolveTypeApplications(t: QuintType): QuintType {
+  // resolveTypeApplicationsForType(Foo[a, {f: Bar[int, str]}]) = (a, {f: {i: int, j: str}})
+  private resolveTypeApplicationsForType(t: QuintType): QuintType {
     const f: (_: QuintType) => QuintType = x => (x.kind !== 'app' ? x : this.resolveTypeApp(x))
     return mapType(f, t)
   }

@@ -22,6 +22,7 @@ import { ModeChecker } from './effects/modeChecker'
 import { QuintError } from './quintError'
 import { errorTreeToString } from './errorTree'
 import { MultipleUpdatesChecker } from './effects/MultipleUpdatesChecker'
+import { TypeApplicationResolver } from './types/typeApplicationResolution'
 
 /* Products from static analysis */
 export type AnalysisOutput = {
@@ -42,7 +43,7 @@ export type AnalysisResult = [QuintError[], AnalysisOutput]
  */
 export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable)
-  quintModules.map(m => analyzer.analyzeDeclarations(m.declarations))
+  quintModules.forEach(m => (m.declarations = analyzer.analyzeDeclarations(m.declarations)))
   return analyzer.getResult()
 }
 
@@ -75,6 +76,7 @@ export function analyzeInc(
  * @param previousOutput - The previous analysis output to be used as a starting point.
  */
 class QuintAnalyzer {
+  private typeApplicationResolver: TypeApplicationResolver
   private effectInferrer: EffectInferrer
   private typeInferrer: TypeInferrer
   private modeChecker: ModeChecker
@@ -84,17 +86,20 @@ class QuintAnalyzer {
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
+    this.typeApplicationResolver = new TypeApplicationResolver(lookupTable)
     this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types)
     this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker(previousOutput?.modes)
   }
 
-  analyzeDeclarations(decls: QuintDeclaration[]): void {
-    const [typeErrMap, types] = this.typeInferrer.inferTypes(decls)
-    const [effectErrMap, effects] = this.effectInferrer.inferEffects(decls)
+  analyzeDeclarations(decls: QuintDeclaration[]): QuintDeclaration[] {
+    const resolvedDecls = this.typeApplicationResolver.resolveTypeApplications(decls)
+
+    const [typeErrMap, types] = this.typeInferrer.inferTypes(resolvedDecls)
+    const [effectErrMap, effects] = this.effectInferrer.inferEffects(resolvedDecls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const [modeErrMap, modes] = this.modeChecker.checkModes(decls, effects)
+    const [modeErrMap, modes] = this.modeChecker.checkModes(resolvedDecls, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
 
@@ -114,6 +119,8 @@ class QuintAnalyzer {
       effects: new Map([...this.output.effects, ...effects]),
       modes: new Map([...this.output.modes, ...modes]),
     }
+
+    return resolvedDecls
   }
 
   getResult(): AnalysisResult {
