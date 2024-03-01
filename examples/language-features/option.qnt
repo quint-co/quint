@@ -47,9 +47,16 @@ module option {
 
   action step = all {
     any {
-      nondet v = oneOf(Int); vote(v),
-      nondet i = oneOf(votes.indices()); unvote(i),
-      nondet i = oneOf(votes.indices()); nondet v = oneOf(Int) incrVote(i, v),
+      nondet v = oneOf(0.to(5)); vote(v),
+      all {
+          votes.length() > 0,
+          nondet i = oneOf(votes.indices()); unvote(i),
+      },
+      all {
+          votes.length() > 0,
+          nondet i = oneOf(votes.indices()); nondet v = oneOf(0.to(5)) incrVote(i, v),
+      }
+
     },
     outcome' = sumVotes
   }
