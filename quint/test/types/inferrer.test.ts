@@ -397,24 +397,49 @@ module B {
     )
   })
 
-  // TODO
-  // it('checks correct polymorphic types', () => {
-  //   const defs = [
-  //     'type Result[ok, err] = Ok(ok) | Err(err)',
-  //     `def result_map(r: Result[a, e], f: a => b): Result[b, e] =
-  //         match r {
-  //         | Ok(x)  => Ok(f(x))
-  //         | Err(_) => r
-  //         }`,
-  //   ]
+  it('checks correct polymorphic types', () => {
+    const defs = [
+      'type Option[a] = Some(a) | None',
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `def result_map(r: Result[a, e], f: a => b): Result[b, e] =
+          match r {
+          | Ok(x)  => Ok(f(x))
+          | Err(_) => r
+          }`,
+      `def option_to_result(o: Option[ok], e: err): Result[ok, err] =
+          match o {
+          | Some(x) => Ok(x)
+          | None    => Err(e)
+          }`,
+      'val nested_type_application: Result[Option[int], str] = Ok(Some(42))',
+    ]
 
-  //   const [errors, table] = inferTypesForDefs(defs)
-  //   assert.sameDeepMembers([...errors.entries()], [])
-  //   assert.sameDeepMembers(
-  //     [...table.entries()].map(([id, t]) => [id, typeSchemeToString(t)]),
-  //     []
-  //   )
-  // })
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.sameDeepMembers([...errors.entries()], [])
+  })
+
+  it('fails when polymorphic types are not unifiable', () => {
+    const defs = [
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `def result_map(r: Result[bool, e]): Result[int, e] =
+          match r {
+          | Ok(x)  => Ok(x)
+          | Err(_) => r
+          }`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty([...errors.entries()])
+
+    const actualErrors = [...errors.entries()].map(e => errorTreeToString(e[1]))
+    const expectedError = `Couldn't unify bool and int
+Trying to unify bool and int
+Trying to unify { Ok: bool, Err: _t5 } and { Ok: int, Err: _t5 }
+Trying to unify (Ok(bool) | Err(_t5)) and (Ok(int) | Err(_t5))
+Trying to unify ((Ok(bool) | Err(_t5))) => (Ok(bool) | Err(_t5)) and ((Ok(bool) | Err(_t5))) => (Ok(int) | Err(_t5))
+`
+    assert.deepEqual(actualErrors, [expectedError])
+  })
 
   it('fails when types are not unifiable', () => {
     const defs = ['def a = 1.map(p => p + 10)']
