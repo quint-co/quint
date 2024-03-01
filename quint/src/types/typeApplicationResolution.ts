@@ -14,6 +14,7 @@
 
 import { fail } from 'assert'
 import { FreshVarGenerator } from '../FreshVarGenerator'
+import { typeToString } from '../ir/IRprinting'
 import { IRTransformer, transformType } from '../ir/IRTransformer'
 import { QuintTypeAlias } from '../ir/quintIr'
 import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
@@ -21,6 +22,7 @@ import { LookupTable } from '../names/base'
 import { zip } from '../util'
 import { Substitutions, applySubstitution } from './substitutions'
 
+/** Resolves all type applications in an IR object */
 export class TypeApplicationResolver implements IRTransformer {
   // Fresh variable generator, shared with the TypeInferrer
   private freshVarGenerator: FreshVarGenerator
@@ -44,30 +46,45 @@ export class TypeApplicationResolver implements IRTransformer {
   //   type Bar[x, y] = {i: x, j: y}
   //
   //
-  // resolveTypeAllications(Foo[a, {f: Bar[int, str]}]) = (a, {f: {i: int, j: str}})
+  // resolveTypeApplications(Foo[a, {f: Bar[int, str]}]) = (a, {f: {i: int, j: str}})
   resolveTypeApplications(t: QuintType): QuintType {
     const f: (_: QuintType) => QuintType = x => (x.kind !== 'app' ? x : this.resolveTypeApp(x))
     return mapType(f, t)
   }
 
   private resolveTypeApp(t: QuintAppType): QuintType {
-    const typeDef = this.table.get(t.ctor.id!)! // TODO
+    if (!t.ctor.id) {
+      // This should be ensured by parsing
+      fail(
+        `invalid IR node: type constructor ${t.ctor.name} in type application ${typeToString(t)} id ${t.id} has no id`
+      )
+    }
+
+    const typeDef = this.table.get(t.ctor.id)
+    if (!typeDef) {
+      // This should be ensured by name resolution
+      fail(`invalid IR reference: type constructor ${t.ctor.name} with id ${t.ctor.id} has no type definition`)
+    }
+
     if (typeDef.kind !== 'typedef' || !typeDef.type) {
+      // This should be ensured by the grammar and by name resolution
       fail(`invalid kind looked up for constructor of type application with id ${t.ctor.id} `)
     }
+
     const { params, type } = this.freshTypeFromDef(typeDef as QuintTypeAlias)
+
+    // Substitute the type `args` for each corresponding fresh variable
     const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({
       kind: 'type',
       name: param.name,
       value: arg,
     }))
-    const newType = applySubstitution(this.table, subs, type)
-    return newType
+    return applySubstitution(this.table, subs, type)
   }
 
   // Given a type definition, extract the type it is defined by (with all type
   // parameters replaced with fresh variables) and a list of params giving the
-  // fresh type variables in   the order corresponding to the params they
+  // fresh type variables in the order corresponding to the params they
   // replaced in the type declaration.
   //
   // E.g., the type definition
