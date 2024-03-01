@@ -95,8 +95,6 @@ export interface IRVisitor {
   exitSumType?: (_type: t.QuintSumType) => void
   enterAppType?: (_type: t.QuintAppType) => void
   exitAppType?: (_type: t.QuintAppType) => void
-  enterAbsType?: (_type: t.QuintAbsType) => void
-  exitAbsType?: (_type: t.QuintAbsType) => void
 
   /** Row types */
   enterRow?: (_row: t.Row) => void
@@ -247,13 +245,6 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
       visitor.enterSumType?.(type)
       walkRow(visitor, type.fields)
       visitor.exitSumType?.(type)
-      break
-
-    case 'abs':
-      visitor.enterAbsType?.(type)
-      type.vars.map(t => walkType(visitor, t))
-      walkType(visitor, type.body)
-      visitor.exitAbsType?.(type)
       break
 
     case 'app':

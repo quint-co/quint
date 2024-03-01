@@ -16,6 +16,7 @@
 import * as ir from './quintIr'
 import * as t from './quintTypes'
 import { unreachable } from '../util'
+import { LookupDefinition } from '../names/base'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -86,8 +87,6 @@ export class IRTransformer {
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   enterSumType?: (type: t.QuintSumType) => t.QuintSumType
   exitSumType?: (type: t.QuintSumType) => t.QuintSumType
-  enterAbsType?: (type: t.QuintAbsType) => t.QuintAbsType
-  exitAbsType?: (type: t.QuintAbsType) => t.QuintAbsType
   enterAppType?: (type: t.QuintAppType) => t.QuintAppType
   exitAppType?: (type: t.QuintAppType) => t.QuintAppType
 
@@ -259,28 +258,12 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
       }
       break
 
-    case 'abs':
-      {
-        if (transformer.enterAbsType) {
-          newType = transformer.enterAbsType(newType)
-        }
-
-        newType.vars = newType.vars.map(v => transformType(transformer, v) as t.QuintVarType)
-        newType.body = transformType(transformer, newType.body)
-
-        if (transformer.exitAbsType) {
-          newType = transformer.exitAbsType(newType)
-        }
-      }
-      break
-
     case 'app':
       {
         if (transformer.enterAppType) {
           newType = transformer.enterAppType(newType)
         }
 
-        newType.ctor = transformType(transformer, newType.ctor)
         newType.args = newType.args.map(v => transformType(transformer, v))
 
         if (transformer.exitAppType) {
@@ -298,6 +281,30 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
   }
 
   return newType
+}
+
+/**
+ * Transforms a Quint LookupDefinition with a transformer
+ *
+ * This is just a thin wrapper to deal with the fact that LookupDefinitions are a slightly awkward union.
+ *
+ * @param transformer: the IRTransformer instance with the functions to be invoked
+ * @param lud: the Quint LookupDefinition to be transformed
+ *
+ * @returns the transformed LookupDefinition
+ */
+export function transformLookupDefinition(transformer: IRTransformer, lud: LookupDefinition): LookupDefinition {
+  switch (lud.kind) {
+    case 'const':
+    case 'def':
+    case 'var':
+    case 'assume':
+    case 'typedef':
+      return transformDefinition(transformer, lud)
+
+    case 'param':
+      return lud.typeAnnotation ? { ...lud, typeAnnotation: transformType(transformer, lud.typeAnnotation) } : lud
+  }
 }
 
 /**

@@ -121,13 +121,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   exitDef(def: QuintDef) {
     if (this.constraints.length > 0) {
       this.solveConstraints().map(subs => {
-        if (!isAnnotatedDef(def)) {
-          return
+        if (isAnnotatedDef(def)) {
+          checkAnnotationGenerality(subs, def.typeAnnotation).mapLeft(err =>
+            this.errors.set(def.typeAnnotation?.id ?? def.id, err)
+          )
         }
-
-        checkAnnotationGenerality(subs, def.typeAnnotation).mapLeft(err =>
-          this.errors.set(def.typeAnnotation?.id ?? def.id, err)
-        )
       })
     }
   }
@@ -193,7 +191,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     )
 
     // We want `definedSignature` computed before the fresh variable `a` so that the
-    // numbering of ther fresh variables stays in order, with `a`, used for return types,
+    // numbering of their fresh variables stays in order, with `a`, used for return types,
     // bearing the highest number.
     const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
     const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('_t') }

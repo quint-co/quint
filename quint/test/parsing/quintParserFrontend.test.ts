@@ -218,6 +218,24 @@ describe('syntax errors', () => {
     assert.equal(errors[0].message, `mismatched input ''' expecting STRING`)
     assert.equal(errors[0].code, 'QNT000')
   })
+
+  it('error on type declarations with undeclared variables', () => {
+    // we should use double quotes
+    const code = `module singleQuotes {  type T = (List[a], Set[b]) }`
+    const [error] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error.code, 'QNT014')
+    assert.deepEqual(
+      error.message,
+      `the type variables a, b are unbound.
+E.g., in
+
+   type T = List[a]
+
+type variable 'a' is unbound. To fix it, write
+
+   type T[a] = List[a]`
+    )
+  })
 })
 
 // Test the JSON error output. Most of the tests here should migrate to the

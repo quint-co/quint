@@ -103,13 +103,13 @@ describe('parseType', () => {
     type.map(value =>
       assert.deepEqual(value, {
         kind: 'app',
-        ctor: { kind: 'const', name: 'Foo', id: 1n },
+        ctor: { kind: 'const', name: 'Foo', id: 5n },
         args: [
-          { kind: 'int', id: 2n },
-          { kind: 'bool', id: 3n },
-          { kind: 'str', id: 4n },
+          { kind: 'int', id: 1n },
+          { kind: 'bool', id: 2n },
+          { kind: 'str', id: 3n },
         ],
-        id: 5n,
+        id: 4n,
       })
     )
   })

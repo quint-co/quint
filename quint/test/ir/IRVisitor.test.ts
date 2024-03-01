@@ -856,30 +856,6 @@ describe('walkModule', () => {
       assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
-    it('finds type abstractions', () => {
-      const quintModule = buildModuleWithDecls(['type StrMap[a] = str -> a'])
-
-      class TestVisitor implements IRVisitor {
-        entered: QuintType[] = []
-        exited: QuintType[] = []
-
-        enterAbsType(type: QuintType): void {
-          this.entered.push(type)
-        }
-
-        exitAbsType(type: QuintType): void {
-          this.exited.push(type)
-        }
-      }
-
-      const expectedTypes = ['Λ(a).(str -> a)']
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(typeToString), expectedTypes)
-      assert.deepEqual(visitor.exited.map(typeToString), expectedTypes)
-    })
-
     it('finds type applications', () => {
       const quintModule = buildModuleWithDecls(['val strMap: StrMap[int] = Map("a" -> 1, "b" -> 2)'])
       class TestVisitor implements IRVisitor {

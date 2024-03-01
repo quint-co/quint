@@ -93,7 +93,7 @@ describe('resolveNames', () => {
       const result = resolveNamesForDefs([
         'const a: UNKNOWN_TYPE_0',
         'var b: UNKNOWN_TYPE_1',
-        'type C = Set[t]',
+        'type C[t] = Set[t]',
         'assume d = 1',
       ])
 

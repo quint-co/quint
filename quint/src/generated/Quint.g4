@@ -68,7 +68,7 @@ typeDef
     | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
     ;
 
-typeDefHead : typeName=qualId ('[' typeVars+=typeVar(',' typeVars+=typeVar)* ']')?;
+typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
 
 sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
 
@@ -127,7 +127,7 @@ type
     | typeVar                                                    # typeVarCase
     | qualId                                                     # typeConst
     | '(' type ')'                                               # typeParen
-    | typeCtor=type ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
+    | typeCtor=qualId ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
     ;
 
 typeVar: LOW_ID;
