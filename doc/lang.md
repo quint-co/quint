@@ -147,31 +147,34 @@ This is the same type system as in Apalache:
 
 A type is one of the following:
 
- - Basic type: `bool`, `int`, `str`.
+- Basic type: `bool`, `int`, `str`.
 
- - Uninterpreted type or type name: `IDENTIFIER_IN_CAPS`.
+- Uninterpreted type or type name: `IDENTIFIER_IN_CAPS`.
 
- - Type variable (parameter): `a`, ..., `z`.
+- Type variable (parameter): `a`, ..., `z`.
 
- - Set: `Set[T]` for a type `T`.
+- Set: `Set[T]` for a type `T`.
 
- - List: `List[T]` for a type `T`.
+- List: `List[T]` for a type `T`.
 
- - Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
+- Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
 
- - Record: `{ name_1: T_1, name_2: T_2, ..., name_n: T_n }`
-    for `n >= 1` types `T_1`, ..., `T_n`.
+- Record: `{ name_1: T_1, name_2: T_2, ..., name_n: T_n }`
+  for `n >= 1` types `T_1`, ..., `T_n`.
 
- - Function: `T1 -> T2` for types `T1` and `T2`.
+- Function: `T1 -> T2` for types `T1` and `T2`.
 
- - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
-   and result type `R`.
+- Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
+  and result type `R`.
 
- - Sum Types: `type T = L_1(T_1) | ... | L_n(T_n) ` for `n >= 1`, argument types
-   `T_1`, ..., `T_n`, and a type alais `T`.
+- Sum Types: `type T = L_1(T_1) | ... | L_n(T_n) ` for `n >= 1`, argument types
+  `T_1`, ..., `T_n`, and a type alais `T`.
 
- - Type in parentheses: `(T)` for a type `T`.
+- Type in parentheses: `(T)` for a type `T`.
 
+- An instance of a defined polymorphic type `T[T_1, ..., T_n]` for a defined type
+  constructor with type parameters `T[p_1, ..., p_n]` and types `T_1, ...,
+  T_n`.
 
 It is often convenient to declare a type alias. You can use `type` to define
 an alias inside a module definition. For instance:
@@ -179,6 +182,18 @@ an alias inside a module definition. For instance:
 ```bluespec
 type Temperature = int
 ```
+
+A type alias specified with type parameters defines a polymorphic type
+constructor for instances of the defined type. For instance, given
+
+```bluespec
+type Option[a] =
+  | Some(a)
+  | None
+```
+
+You can then construct concrete types such as `Option[int]` or
+`Option[List[int]]`.
 
 A type identifier can also introduce an uninterpreted type by defining a type without any constructors for values of that type:
 
