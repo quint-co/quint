@@ -8,10 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added polymorphic type declarations, allowing abstracting commonly used data
+  types like `Option[a]` and `Result[err, ok]`. Note that this is not yet
+  supported by `verify`. (#1298)
+
 ### Changed
+
+- The latest supported node version is now bounded at <= 20, which covers the
+  latest LTS. (#1380)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Removed a dependency causing deprecation errors messages to be emitted.
+  (#1380)
+
 ### Security
 
 ## v0.18.3 -- 2024-02-08
