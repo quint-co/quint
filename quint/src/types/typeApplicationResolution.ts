@@ -12,7 +12,7 @@
  * @module
  */
 
-import { buildErrorLeaf, buildErrorTree, ErrorTree } from '../errorTree'
+import { ErrorTree, buildErrorLeaf } from '../errorTree'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
 import { typeToString } from '../ir/IRprinting'

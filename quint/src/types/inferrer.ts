@@ -16,7 +16,7 @@
 import { ErrorTree } from '../errorTree'
 import { walkDeclaration } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
-import { QuintDeclaration, isDef } from '../ir/quintIr'
+import { QuintDeclaration } from '../ir/quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
