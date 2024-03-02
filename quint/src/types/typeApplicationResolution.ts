@@ -12,7 +12,7 @@
  * @module
  */
 
-import { fail } from 'assert'
+import { buildErrorLeaf, buildErrorTree, ErrorTree } from '../errorTree'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
 import { typeToString } from '../ir/IRprinting'
@@ -22,9 +22,12 @@ import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
 import { Substitutions, applySubstitution } from './substitutions'
+import assert from 'assert'
 
 /** Resolves all type applications in an IR object */
 export class TypeApplicationResolver implements IRTransformer {
+  // Errors found during type application resolution
+  private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   // Fresh variable generator, shared with the TypeInferrer
   private freshVarGenerator: FreshVarGenerator
   // Lookup table from the parser
@@ -40,8 +43,10 @@ export class TypeApplicationResolver implements IRTransformer {
     })
   }
 
-  resolveTypeApplications(decls: QuintDeclaration[]): QuintDeclaration[] {
-    return decls.map(decl => transformDeclaration(this, decl))
+  resolveTypeApplications(decls: QuintDeclaration[]): [Map<bigint, ErrorTree>, QuintDeclaration[]] {
+    const resolvedDecls = decls.map(decl => transformDeclaration(this, decl))
+    const errors = this.errors
+    return [errors, resolvedDecls]
   }
 
   exitType(t: QuintType): QuintType {
@@ -63,25 +68,38 @@ export class TypeApplicationResolver implements IRTransformer {
   }
 
   private resolveTypeApp(t: QuintAppType): QuintType {
-    if (!t.ctor.id) {
-      // This should be ensured by parsing
-      fail(
-        `invalid IR node: type constructor ${t.ctor.name} in type application ${typeToString(t)} id ${t.id} has no id`
-      )
-    }
+    // Ensured by parsing
+    assert(t.id, `invalid IR node: type application ${typeToString(t)} has no id`)
+    // Ensured by parsing
+    assert(
+      t.ctor.id,
+      `invalid IR node: type constructor ${t.ctor.name} in type application ${typeToString(t)} id ${t.id} has no id`
+    )
 
     const typeDef = this.table.get(t.ctor.id)
-    if (!typeDef) {
-      // This should be ensured by name resolution
-      fail(`invalid IR reference: type constructor ${t.ctor.name} with id ${t.ctor.id} has no type definition`)
-    }
-
-    if (typeDef.kind !== 'typedef' || !typeDef.type) {
-      // This should be ensured by the grammar and by name resolution
-      fail(`invalid kind looked up for constructor of type application with id ${t.ctor.id} `)
-    }
+    // Ensured by name resolution
+    assert(typeDef, `invalid IR reference: type constructor ${t.ctor.name} with id ${t.ctor.id} has no type definition`)
+    // Ensured by the grammar and by name resolution
+    assert(
+      typeDef.kind === 'typedef' && typeDef.type,
+      `invalid kind looked up for constructor of type application with id ${t.ctor.id} `
+    )
 
     const { params, type } = this.freshTypeFromDef(typeDef as QuintTypeAlias)
+
+    // NOTE: Early exit on error
+    // Check for arity mismatch in type application
+    if (params.length !== t.args.length) {
+      const ctorMsg = typeToString(t.ctor)
+      const typeArgsMsg = t.args.map(typeToString).join(', ')
+      const manyOrFew = params.length > t.args.length ? 'few' : 'many'
+      const err = buildErrorLeaf(
+        `applying type constructor ${ctorMsg} to arguments ${typeArgsMsg}`,
+        `too ${manyOrFew} arguments supplied: ${ctorMsg} only accepts ${params.length} parameters`
+      )
+      this.errors.set(t.id, err)
+      return t
+    }
 
     // Substitute the type `args` for each corresponding fresh variable
     const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({

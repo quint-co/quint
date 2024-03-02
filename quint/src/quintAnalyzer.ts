@@ -102,7 +102,7 @@ class QuintAnalyzer {
   }
 
   analyzeDeclarations(decls: QuintDeclaration[]): QuintDeclaration[] {
-    const resolvedDecls = this.typeApplicationResolver.resolveTypeApplications(decls)
+    const [typAppErrMap, resolvedDecls] = this.typeApplicationResolver.resolveTypeApplications(decls)
 
     // XXX: the lookUp table is mutated during type inference
     const [typeErrMap, types] = this.typeInferrer.inferTypes(resolvedDecls)
@@ -110,7 +110,7 @@ class QuintAnalyzer {
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
     const [modeErrMap, modes] = this.modeChecker.checkModes(resolvedDecls, effects)
 
-    const errorTrees = [...typeErrMap, ...effectErrMap]
+    const errorTrees = [...typeErrMap, ...effectErrMap, ...typAppErrMap]
 
     // TODO: Type and effect checking should return QuintErrors instead of error trees
     this.errors.push(

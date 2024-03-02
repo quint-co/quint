@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
-import { errorTreeToString } from '../../src/errorTree'
+import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 import { TypeApplicationResolver } from '../../src/types/typeApplicationResolution'
 
@@ -22,8 +22,17 @@ describe('inferTypes', () => {
     // Type inference assumes all type applications (e.g., `Foo[int, str]`) have been resolved.
     const resolver = new TypeApplicationResolver(table)
     const inferrer = new TypeInferrer(table)
-    const modules = parsedModules.map(m => ({ ...m, declarations: resolver.resolveTypeApplications(m.declarations) }))
-    return inferrer.inferTypes(modules.flatMap(m => m.declarations))
+
+    // Used to collect errors found during type application
+    let typeAppErrs: Map<bigint, ErrorTree> = new Map()
+    const modules = parsedModules.map(m => {
+      const [errs, declarations] = resolver.resolveTypeApplications(m.declarations)
+      typeAppErrs = new Map([...typeAppErrs, ...errs])
+      return { ...m, declarations }
+    })
+    const [inferenceErrors, inferenceSchemes] = inferrer.inferTypes(modules.flatMap(m => m.declarations))
+    const combinedErrors = new Map([...inferenceErrors, ...typeAppErrs])
+    return [combinedErrors, inferenceSchemes]
   }
 
   function inferTypesForDefs(defs: string[]): TypeInferenceResult {
@@ -443,6 +452,31 @@ Trying to unify (Ok(bool) | Err(_t5)) and (Ok(int) | Err(_t5))
 Trying to unify ((Ok(bool) | Err(_t5))) => (Ok(bool) | Err(_t5)) and ((Ok(bool) | Err(_t5))) => (Ok(int) | Err(_t5))
 `
     assert.deepEqual(actualErrors, [expectedError])
+  })
+
+  it('errors when polymorphic types are applied to invalid numbers of arguments', () => {
+    const defs = [
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `val too_many: Result[a, b, c] = Ok(1)`,
+      `val too_few: Result[a] = Ok(1)`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty([...errors.entries()])
+
+    const actualErrors = [...errors.entries()].map(e => errorTreeToString(e[1]))
+    const expectedErrors = [
+      `Couldn't unify sum and app
+Trying to unify (Ok(int) | Err(_t3)) and Result[a, b, c]
+`,
+      `too many arguments supplied: Result only accepts 2 parameters
+applying type constructor Result to arguments a, b, c
+`,
+      `too few arguments supplied: Result only accepts 2 parameters
+applying type constructor Result to arguments a
+`,
+    ]
+    assert.deepEqual(actualErrors, expectedErrors)
   })
 
   it('fails when types are not unifiable', () => {
