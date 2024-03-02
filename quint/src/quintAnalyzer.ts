@@ -37,18 +37,25 @@ export type AnalysisResult = [QuintError[], AnalysisOutput]
 /**
  * Analyzes multiple Quint modules and returns the analysis result.
  *
+ * NOTE: This is modifies the `lookupTable` and the `quintModules`!
+ * See XXX for the mutation sites.
+ *
  * @param lookupTable - The lookup tables for the modules.
  * @param quintModules - The Quint modules to be analyzed.
  * @returns A tuple with a list of errors and the analysis output.
  */
 export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable)
+  // XXX: the modules are mutated here.
   quintModules.forEach(m => (m.declarations = analyzer.analyzeDeclarations(m.declarations)))
   return analyzer.getResult()
 }
 
 /**
  * Analyzes declarations incrementally and returns the analysis result.
+ *
+ * NOTE: This is modifies the `lookupTable`!
+ * See XXX for the mutation sites.
  *
  * @param analysisOutput - The previous analysis output to be used as a starting point.
  * @param lookupTable - The lookup tables for the modules.
@@ -86,6 +93,7 @@ class QuintAnalyzer {
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
+    // XXX: the lookUp table is mutated when TypeApplicationResolver is instantiated
     this.typeApplicationResolver = new TypeApplicationResolver(lookupTable)
     this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types)
     this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
@@ -96,6 +104,7 @@ class QuintAnalyzer {
   analyzeDeclarations(decls: QuintDeclaration[]): QuintDeclaration[] {
     const resolvedDecls = this.typeApplicationResolver.resolveTypeApplications(decls)
 
+    // XXX: the lookUp table is mutated during type inference
     const [typeErrMap, types] = this.typeInferrer.inferTypes(resolvedDecls)
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(resolvedDecls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
