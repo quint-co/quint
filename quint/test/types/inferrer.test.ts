@@ -4,6 +4,7 @@ import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
+import { TypeApplicationResolver } from '../../src/types/typeApplicationResolution'
 
 // Utility used to print update `stringType` values to make
 // updating the expected values in the following tests less
@@ -16,9 +17,12 @@ function _printUpdatedStringTypes(stringTypes: (string | bigint)[][]) {
 
 describe('inferTypes', () => {
   function inferTypesForModules(text: string): TypeInferenceResult {
-    const { modules, table } = parseMockedModule(text)
+    const { modules: parsedModules, table } = parseMockedModule(text)
 
+    // Type inference assumes all type applications (e.g., `Foo[int, str]`) have been resolved.
+    const resolver = new TypeApplicationResolver(table)
     const inferrer = new TypeInferrer(table)
+    const modules = parsedModules.map(m => ({ ...m, declarations: resolver.resolveTypeApplications(m.declarations) }))
     return inferrer.inferTypes(modules.flatMap(m => m.declarations))
   }
 
