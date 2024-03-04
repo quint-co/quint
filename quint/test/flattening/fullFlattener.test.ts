@@ -235,4 +235,19 @@ describe('flattenModules', () => {
 
     assertFlattenedModule(text)
   })
+
+  // Regression test for https://github.com/informalsystems/quint/issues/1391
+  describe('can flatten with polymorphic types between different modules (#802)', () => {
+    const text = `module A {
+      type Foo[a] = F(a)
+      def mapFoo(x: Foo[a], f: a => b): Foo[b] = match x { F(v) => F(f(v)) }
+    }
+
+    module B {
+      import A.*
+      val b: Foo[int] = F("one").mapFoo(_ => 1)
+    }`
+
+    assertFlattenedModule(text)
+  })
 })

@@ -61,7 +61,7 @@ result () {
       elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt" && "$cmd" =~ (test|verify) ]] ; then
         printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
       elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1391</sup>"
+        printf "<sup>https://github.com/informalsystems/quint/issues/1393</sup>"
       fi
     fi
 }
