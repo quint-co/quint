@@ -58,8 +58,8 @@ class NameResolver implements IRVisitor {
   unusedDefinitions: UnusedDefinitions = moduleName => {
     const definitions: LookupDefinition[] = Array.from(
       this.collector.definitionsByModule.get(moduleName)?.values() || []
-    )
-    const usedDefinitions = [...this.table.values()]
+    ).flat()
+    const usedDefinitions = [...this.table.values()].flat()
 
     return new Set(difference(definitions, usedDefinitions))
   }
@@ -88,7 +88,7 @@ class NameResolver implements IRVisitor {
   enterLambda(expr: QuintLambda): void {
     // Lambda parameters are scoped, so they are collected here
     expr.params.forEach(p => {
-      this.collector.collectDefinition({ ...p, kind: 'param' })
+      this.collector.collectDefinition({ ...p, kind: 'param', depth: this.definitionDepth })
     })
   }
 

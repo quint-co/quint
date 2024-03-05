@@ -12,6 +12,7 @@
  * @module
  */
 
+import { cloneDeep, compact } from 'lodash'
 import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
 import { QuintError } from '../quintError'
@@ -49,7 +50,7 @@ export type LookupDefinition = (QuintDef | ({ kind: 'param' } & QuintLambdaParam
 /**
  * A module's definitions, indexed by name.
  */
-export type DefinitionsByName = Map<string, LookupDefinition & { hidden?: boolean }>
+export type DefinitionsByName = Map<string, LookupDefinition[]>
 
 /**
  * Definitions for each module
@@ -83,6 +84,10 @@ export type NameResolutionResult = {
   errors: QuintError[]
 }
 
+export function getTopLevelDef(defs: DefinitionsByName, name: string): LookupDefinition | undefined {
+  return defs.get(name)?.at(0)
+}
+
 /**
  * Copy the names of a definitions table to a new one, ignoring hidden
  * definitions, and optionally adding a namespace.
@@ -100,11 +105,15 @@ export function copyNames(
 ): DefinitionsByName {
   const table = new Map()
 
-  originTable.forEach((def, identifier) => {
+  originTable.forEach((defs, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
-    if (!def.hidden || def.kind === 'const') {
-      table.set(name, copyAsHidden ? { ...def, hidden: copyAsHidden } : def)
-    }
+    const newDefs = defs.map(def => {
+      if (!def.hidden || def.kind === 'const') {
+        return cloneDeep(copyAsHidden ? { ...def, hidden: copyAsHidden } : def)
+      }
+    })
+
+    table.set(name, compact(newDefs))
   })
 
   return table
