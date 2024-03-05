@@ -4,7 +4,7 @@ import { assert } from 'chai'
 import { NameResolutionResult } from '../../src/names/base'
 import { resolveNames } from '../../src/names/resolver'
 import { buildModule, buildModuleWithDecls } from '../builders/ir'
-import { zerog } from '../../src/idGenerator'
+import { IdGenerator, newIdGenerator, zerog } from '../../src/idGenerator'
 
 describe('resolveNames', () => {
   const baseDefs = [
@@ -13,14 +13,16 @@ describe('resolveNames', () => {
     'type MY_TYPE = int',
   ]
 
-  function resolveNamesForExprs(exprs: string[]): NameResolutionResult {
-    const module = buildModule(baseDefs, exprs, undefined, zerog)
+  function resolveNamesForExprs(exprs: string[], idGenerator?: IdGenerator): NameResolutionResult {
+    const idGen = idGenerator ?? zerog
+    const module = buildModule(baseDefs, exprs, undefined, idGen)
 
     return resolveNames([module])
   }
 
-  function resolveNamesForDefs(defs: string[]): NameResolutionResult {
-    const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, zerog)
+  function resolveNamesForDefs(defs: string[], idGenerator?: IdGenerator): NameResolutionResult {
+    const idGen = idGenerator ?? zerog
+    const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, idGen)
 
     return resolveNames([module])
   }
@@ -79,6 +81,19 @@ describe('resolveNames', () => {
         { code: 'QNT404', message: "Name 'x' not found", reference: 0n, data: {} },
         { code: 'QNT404', message: "Name 'x' not found", reference: 0n, data: {} },
       ])
+    })
+  })
+
+  describe('shadowing', () => {
+    it('resolves shadowed names', () => {
+      const result = resolveNamesForDefs(
+        ['val shadowing = def foo = (shadowing) => shadowing { foo(1) }', 'val a = shadowing'],
+        newIdGenerator()
+      )
+
+      assert.isEmpty(result.errors)
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'def'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'param'))
     })
   })
 
