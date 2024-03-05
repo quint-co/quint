@@ -88,7 +88,7 @@ class NameResolver implements IRVisitor {
   enterLambda(expr: QuintLambda): void {
     // Lambda parameters are scoped, so they are collected here
     expr.params.forEach(p => {
-      this.collector.collectDefinition({ ...p, kind: 'param' })
+      this.collector.collectDefinition({ ...p, kind: 'param', depth: this.definitionDepth })
     })
   }
 
