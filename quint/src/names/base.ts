@@ -50,7 +50,7 @@ export type LookupDefinition = (QuintDef | ({ kind: 'param' } & QuintLambdaParam
 /**
  * A module's definitions, indexed by name.
  */
-export type DefinitionsByName = Map<string, (LookupDefinition & { hidden?: boolean })[]>
+export type DefinitionsByName = Map<string, LookupDefinition[]>
 
 /**
  * Definitions for each module
