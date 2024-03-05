@@ -514,7 +514,7 @@ module Top {
 
 Note that in the above example, `Inner::x2` is treated as a qualified identifier, that is, it consists of the prefix `Inner` and the name `x2`.
 
-*No collisions.* There must be no name collisions between names.  Shadowing of a name is not allowed. For example:
+Shadowing names is allowed. For example:
 
 ```bluespec
 module OS {
@@ -524,13 +524,7 @@ module OS {
 }
 ```
 
-The Quint parser produces the following error message:
-
-```
-error: [QNT101] Conflicting definitions found for name 'clock' in module 'OS'
-4:   def increase(clock) = clock + 1
-                  ^^^^^
-```
+PS: Let us know if you are bothered by this. We are considering making it a togglable feature.
 
 *No order.* In contrast to TLA+, namespaces are not ordered. It is perfectly
 fine to write out-of-order definitions, like in many programming languages:
