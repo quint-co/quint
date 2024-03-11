@@ -623,8 +623,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<T
     return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: new Map() })
   }
 
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const mainName = guessMainModule(prev)
   const main = verifying.modules.find(m => m.name === mainName)
   if (!main) {
     return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: new Map() })
