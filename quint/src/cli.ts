@@ -58,7 +58,7 @@ const parseCmd = {
       desc: 'name of the source map',
       type: 'string',
     }),
-  handler: async (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
+  handler: (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
 }
 
 // construct typecheck commands with yargs
