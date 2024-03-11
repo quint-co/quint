@@ -69,6 +69,8 @@ type ApalacheConfig = any
 type Apalache = {
   // Run the check command with the given configuration
   check: (c: ApalacheConfig) => Promise<ApalacheResult<void>>
+  // Convert the provided input into formatted TLA
+  tla: (c: ApalacheConfig) => Promise<ApalacheResult<string>>
 }
 
 function handleVerificationFailure(failure: { pass_name: string; error_data: any }): ApalacheError {
@@ -97,28 +99,36 @@ function handleVerificationFailure(failure: { pass_name: string; error_data: any
   }
 }
 
+async function handleResponse(response: RunResponse): Promise<ApalacheResult<any>> {
+  if (response.result == 'success') {
+    const success = JSON.parse(response.success)
+    return right(success)
+  } else {
+    switch (response.failure.errorType) {
+      case 'UNEXPECTED': {
+        const errData = JSON.parse(response.failure.data)
+        return err(errData.msg)
+      }
+      case 'PASS_FAILURE':
+        return left(handleVerificationFailure(JSON.parse(response.failure.data)))
+      default:
+        // TODO handle other error cases
+        return err(`${response.failure.errorType}: ${response.failure.data}`)
+    }
+  }
+}
+
 // Construct the Apalache interface around the cmdExecutor
 function apalache(cmdExecutor: AsyncCmdExecutor): Apalache {
   const check = async (c: ApalacheConfig): Promise<ApalacheResult<void>> => {
-    const response = await cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) })
-    if (response.result == 'success') {
-      return right(void 0)
-    } else {
-      switch (response.failure.errorType) {
-        case 'UNEXPECTED': {
-          const errData = JSON.parse(response.failure.data)
-          return err(errData.msg)
-        }
-        case 'PASS_FAILURE':
-          return left(handleVerificationFailure(JSON.parse(response.failure.data)))
-        default:
-          // TODO handle other error cases
-          return err(`${response.failure.errorType}: ${response.failure.data}`)
-      }
-    }
+    return cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) }).then(handleResponse)
   }
 
-  return { check }
+  const tla = async (c: ApalacheConfig): Promise<ApalacheResult<string>> => {
+    return cmdExecutor.run({ cmd: 'TLA', config: JSON.stringify(c) }).then(handleResponse)
+  }
+
+  return { check, tla }
 }
 
 // Alias for an async callback for values of type T used to annotate
