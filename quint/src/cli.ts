@@ -85,6 +85,7 @@ const compileCmd = {
       .option('target', {
         desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
         type: 'string',
+        default: 'json',
       })
       .coerce('target', (target: string): string => {
         if (!supportedTarges.includes(target)) {
