@@ -171,6 +171,20 @@ Trying to unify bool and int
 error: typechecking failed
 ```
 
+## The `compile` commaind
+
+### Can compile `booleans.qnt` to JSON
+
+<!-- !test in compile booleans.qnt to json -->
+```
+quint compile --target json ../examples/language-features/booleans.qnt  | jq '.modules[0].name'
+```
+
+<!-- !test out compile booleans.qnt to json -->
+```
+"booleans"
+```
+
 ## Use of `repl`, `test`, and `run`
 
 ### Repl loads a file with -r
