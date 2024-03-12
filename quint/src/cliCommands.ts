@@ -24,6 +24,7 @@ import {
 } from './parsing/quintParserFrontend'
 import { ErrorMessage } from './ErrorMessage'
 
+import { fail } from 'assert'
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTable, UnusedDefinitions } from './names/base'
@@ -47,8 +48,9 @@ import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 import { flow, isEqual, uniqWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
+import { compileToTlaplus } from './compileToTlaplus'
 
-export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
+export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'compiling' | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
@@ -601,6 +603,66 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         trace: result.states,
         errors: [],
       })
+  }
+}
+
+/** compile a spec and output in the specified `typechecked.args.target`
+ *
+ * The output produced by this command includes the parsed, typechecked, and
+ * flattened data.
+ *
+ * @param typechecked The result of a preceding typechecking stage
+ */
+// TODO This should share most of the logic in `verifySpec`, but the logic in
+// that command would need some significant reworking to make it composable
+export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedure<TypecheckedStage>> {
+  const stage: stage = 'compiling'
+  const args = typechecked.args
+  const verbosityLevel = deriveVerbosity(args)
+
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    typechecked.modules,
+    typechecked.table,
+    typechecked.idGen,
+    typechecked.sourceMap,
+    typechecked
+  )
+
+  const mainName = guessMainModule(typechecked)
+  const main = flattenedModules.find(m => m.name === mainName)!
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
+  }
+
+  const flattenedStage: TypecheckedStage = {
+    ...typechecked,
+    ...flattenedAnalysis,
+    modules: [main],
+    table: flattenedTable,
+    stage,
+  }
+
+  const parsedSpecJson = jsonStringOfOutputStage(pickOutputStage(flattenedStage))
+  switch ((typechecked.args.target as string).toLowerCase()) {
+    case 'json':
+      process.stdout.write(parsedSpecJson)
+      return right(flattenedStage)
+    case 'tlaplus': {
+      const toTlaResult = await compileToTlaplus(parsedSpecJson, verbosityLevel)
+      return toTlaResult
+        .mapRight(tla => {
+          process.stdout.write(tla) // Write out, since all went right
+          return flattenedStage
+        })
+        .mapLeft(err => {
+          return {
+            msg: err.explanation,
+            stage: { ...flattenedStage, stage, status: 'error', errors: err.errors },
+          }
+        })
+    }
+    default:
+      fail(`Invalid option for --target: ${args.target}. Valid options: json, tlaplus`)
   }
 }
 

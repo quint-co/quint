@@ -13,6 +13,7 @@ import yargs from 'yargs/yargs'
 
 import {
   CLIProcedure,
+  compile,
   docs,
   load,
   outputResult,
@@ -67,6 +68,29 @@ const typecheckCmd = {
   desc: 'check types and effects of a Quint specification',
   builder: defaultOpts,
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
+}
+
+// construct the compile subcommand
+const compileCmd = {
+  command: 'compile <input>',
+  desc: 'compile a Quint specification into the target kind, the output is written to stdout',
+  builder: (yargs: any) =>
+    defaultOpts(yargs)
+      .option('main', {
+        desc: 'name of the main module (by default, computed from filename)',
+        type: 'string',
+      })
+      .option('target', {
+        desc: 'the compilation target. Supported values: `tlaplus`, `json`',
+        type: 'string',
+      })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+        default: verbosity.defaultLevel,
+      }),
+  handler: (args: any) =>
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(compile)).then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -292,6 +316,7 @@ async function main() {
   await yargs(process.argv.slice(2))
     .command(parseCmd)
     .command(typecheckCmd)
+    .command(compileCmd)
     .command(replCmd)
     .command(runCmd)
     .command(testCmd)
