@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added polymorphic type declarations, allowing abstracting commonly used data
   types like `Option[a]` and `Result[err, ok]`. Note that this is not yet
   supported by `verify`. (#1298)
+- Added `compile` subcommand, allowing compiling specs to TLA+ (via Apalache)
+  and to a JSON format. (#1309, #359)
 
 ### Changed
 

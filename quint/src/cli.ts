@@ -9,10 +9,12 @@
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
  */
 
+import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
   CLIProcedure,
+  compile,
   docs,
   load,
   outputResult,
@@ -58,7 +60,7 @@ const parseCmd = {
       desc: 'name of the source map',
       type: 'string',
     }),
-  handler: async (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
+  handler: (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
 }
 
 // construct typecheck commands with yargs
@@ -67,6 +69,37 @@ const typecheckCmd = {
   desc: 'check types and effects of a Quint specification',
   builder: defaultOpts,
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
+}
+
+const supportedTarges = ['tlaplus', 'json']
+// construct the compile subcommand
+const compileCmd = {
+  command: 'compile <input>',
+  desc: 'compile a Quint specification into the target, the output is written to stdout',
+  builder: (yargs: any) =>
+    defaultOpts(yargs)
+      .option('main', {
+        desc: 'name of the main module (by default, computed from filename)',
+        type: 'string',
+      })
+      .option('target', {
+        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
+        type: 'string',
+        default: 'json',
+      })
+      .coerce('target', (target: string): string => {
+        if (!supportedTarges.includes(target)) {
+          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
+        }
+        return target
+      })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+        default: verbosity.defaultLevel,
+      }),
+  handler: (args: any) =>
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(compile)).then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -292,6 +325,7 @@ async function main() {
   await yargs(process.argv.slice(2))
     .command(parseCmd)
     .command(typecheckCmd)
+    .command(compileCmd)
     .command(replCmd)
     .command(runCmd)
     .command(testCmd)

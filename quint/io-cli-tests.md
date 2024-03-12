@@ -171,6 +171,38 @@ Trying to unify bool and int
 error: typechecking failed
 ```
 
+## The `compile` commaind
+
+### Reports in error for invalid `--target`
+
+We pipe stderr to `tail` here. Following https://stackoverflow.com/a/52575213/1187277
+This is a clean CLI interface error, but we don't want to put the entire output
+in the test, lest it require fiddling when unrelated things are updated.
+
+<!-- !test exit 1 -->
+<!-- !test in compile to invalid target -->
+```
+quint compile --target invalidTarget ../examples/language-features/booleans.qnt 2> >(tail -1 >&2)
+```
+
+<!-- !test err compile to invalid target -->
+```
+Invalid option for --target: invalidTarget. Valid options: tlaplus, json
+```
+
+
+### Can compile `booleans.qnt` to JSON
+
+<!-- !test in compile booleans.qnt to json -->
+```
+quint compile --target json ../examples/language-features/booleans.qnt  | jq '.modules[0].name'
+```
+
+<!-- !test out compile booleans.qnt to json -->
+```
+"booleans"
+```
+
 ## Use of `repl`, `test`, and `run`
 
 ### Repl loads a file with -r
