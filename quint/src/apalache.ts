@@ -137,8 +137,8 @@ function apalache(cmdExecutor: AsyncCmdExecutor): Apalache {
 type AsyncCallBack<T> = (err: any, result: T) => void
 
 // The core grpc tooling doesn't support generation of typing info,
-// we therefore record the structer we require from the grpc generation
-// in the 6 following types.
+// we therefore record the structure we require from the grpc generation
+// in the following types.
 //
 // The types reflect https://github.com/informalsystems/apalache/blob/main/shai/src/main/protobuf/cmdExecutor.proto
 
