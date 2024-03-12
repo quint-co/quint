@@ -219,3 +219,54 @@ An example execution:
   __saved_n: 1,
   n: 1
 ```
+
+## Compiling to TLA+
+
+### Test that we can compile to TLA+ of the expected form
+
+<!-- !test in can convert booleans.qnt to TLA+ -->
+```
+quint compile --target tlaplus  ../examples/language-features/booleans.qnt
+```
+
+<!-- !test out can convert booleans.qnt to TLA+ -->
+```
+------------------------------- MODULE booleans -------------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache
+
+VARIABLE b
+
+step ==
+  (b \/ TRUE)
+    /\ ~(b /\ FALSE)
+    /\ (b => b)
+    /\ (b <=> b)
+    /\ b = b
+    /\ b /= (~b)
+    /\ b' := (~b)
+
+init == b' := TRUE
+
+================================================================================
+```
+
+### Test that we can compile a module with imports and instances to TLA+
+
+
+<!-- !test in can convert clockSync3.qnt to TLA+ -->
+```
+quint compile --target tlaplus  ../examples/classic/distributed/ClockSync/clockSync3.qnt | head
+```
+
+
+TODO: This is an incorrect result, we are removing all "unused" declarations
+which leaves nothing, thanks to the way clockSync3 is instanced.
+<!-- !test out can convert clockSync3.qnt to TLA+ -->
+```
+------------------------------ MODULE clockSync3 ------------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache
+
+================================================================================
+```
