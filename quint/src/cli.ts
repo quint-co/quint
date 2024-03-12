@@ -9,6 +9,7 @@
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
  */
 
+import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
@@ -70,6 +71,7 @@ const typecheckCmd = {
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
+const supportedTarges = ['tlaplus', 'json']
 // construct the compile subcommand
 const compileCmd = {
   command: 'compile <input>',
@@ -81,8 +83,14 @@ const compileCmd = {
         type: 'string',
       })
       .option('target', {
-        desc: 'the compilation target. Supported values: `tlaplus`, `json`',
+        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
         type: 'string',
+      })
+      .coerce('target', (target: string): string => {
+        if (!supportedTarges.includes(target)) {
+          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
+        }
+        return target
       })
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',

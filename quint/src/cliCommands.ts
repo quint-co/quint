@@ -662,7 +662,8 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
         })
     }
     default:
-      fail(`Invalid option for --target: ${args.target}. Valid options: json, tlaplus`)
+      // This is validated in the arg parsing
+      fail(`Invalid option for --target`)
   }
 }
 
