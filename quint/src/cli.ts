@@ -75,7 +75,7 @@ const supportedTarges = ['tlaplus', 'json']
 // construct the compile subcommand
 const compileCmd = {
   command: 'compile <input>',
-  desc: 'compile a Quint specification into the target kind, the output is written to stdout',
+  desc: 'compile a Quint specification into the target, the output is written to stdout',
   builder: (yargs: any) =>
     defaultOpts(yargs)
       .option('main', {

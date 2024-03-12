@@ -14,6 +14,8 @@ and integration with other tools.
 The main commands of `quint` are as follows:
 
  - [x] `repl` starts the REPL (Read-Eval-Print loop) for Quint
+ - [x] `compile` parses, typechecks, and processes a quint specification
+       into the `--target` format, writing the results to stdout
  - [x] `parse` parses a Quint specification and resolves names
  - [x] `typecheck` infers types in a Quint specification
  - [x] `run` executes a Quint specification via random simulation
@@ -64,6 +66,38 @@ The REPL is especially useful for learning the language. See the
 
 The verbosity levels 3 and 4 are used to show execution details. They are
 especially useful for debugging complex specifications.
+
+## Command `compile`
+
+```sh
+$  quint compile --help
+quint compile <input>
+
+compile a Quint specification into the target, the output is written to
+stdout
+
+Options:
+  --help       Show help                                               [boolean]
+  --version    Show version number                                     [boolean]
+  --out        output file (suppresses all console output)              [string]
+  --main       name of the main module (by default, computed from filename)
+                                                                        [string]
+  --target     the compilation target. Supported values: tlaplus, json
+                                                      [string] [default: "json"]
+  --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
+```
+
+Given a quint specification as input, this command parses, resolves imports,
+typechecks, and then "flattens" the specification into on module containing just
+the needed definitions.
+
+The following compilation targets are supported
+
+- `json`: The default target, this produces a json representation, in the same
+  format which is described under [`parse`](#command-parse) and
+  [`typecheck`](#command-typecheck), below.
+- `tlaplus`: Quint uses its integration with Apalache to compile the
+  specification into TLA+.
 
 ## Command `parse`
 
