@@ -1300,14 +1300,14 @@ sets of records: (1) It often confuses beginners, (2) It can be expressed with
 
 ### Tuples
 
-In contrast to TLA+, Quint tuples have length of at least 2.
-If you need lists, use lists.
-
 ```scala
 // Tuple constructor: << e_1, ..., e_n >>
-// Warning: n >= 2
 (e_1, ..., e_n)
 Tup(e_1, ..., e_n)
+// The empty tuple is also the canonical unit type
+// <<>>
+()
+Tup()
 // t[1], t[2], t[3], t[4], ... , t[50]
 t._1
 t._2
