@@ -17,6 +17,7 @@ import {
   compile,
   docs,
   load,
+  outputCompilationTarget,
   outputResult,
   parse,
   runRepl,
@@ -35,6 +36,32 @@ const defaultOpts = (yargs: any) =>
     desc: 'output file (suppresses all console output)',
     type: 'string',
   })
+
+// Arguments used by routines that pass thru the `compile` stage
+const compileOpts = (yargs: any) =>
+  defaultOpts(yargs)
+    .option('main', {
+      desc: 'name of the main module (by default, computed from filename)',
+      type: 'string',
+    })
+    .option('init', {
+      desc: 'name of the initializer action',
+      type: 'string',
+      default: 'init',
+    })
+    .option('step', {
+      desc: 'name of the step action',
+      type: 'string',
+      default: 'step',
+    })
+    .option('invariant', {
+      desc: 'the invariants to check, separated by commas (e.g.)',
+      type: 'string',
+    })
+    .option('temporal', {
+      desc: 'the temporal properties to check, separated by commas',
+      type: 'string',
+    })
 
 // Chain async CLIProcedures
 //
@@ -77,11 +104,7 @@ const compileCmd = {
   command: 'compile <input>',
   desc: 'compile a Quint specification into the target, the output is written to stdout',
   builder: (yargs: any) =>
-    defaultOpts(yargs)
-      .option('main', {
-        desc: 'name of the main module (by default, computed from filename)',
-        type: 'string',
-      })
+    compileOpts(yargs)
       .option('target', {
         desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
         type: 'string',
@@ -99,7 +122,12 @@ const compileCmd = {
         default: verbosity.defaultLevel,
       }),
   handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(compile)).then(outputResult),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(compile))
+      .then(chainCmd(outputCompilationTarget))
+      .then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -235,15 +263,7 @@ const verifyCmd = {
   command: 'verify <input>',
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
-    yargs
-      .option('main', {
-        desc: 'name of the main module (by default, computed from filename)',
-        type: 'string',
-      })
-      .option('out', {
-        desc: 'output file (suppresses all console output)',
-        type: 'string',
-      })
+    compileOpts(yargs)
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
@@ -252,26 +272,6 @@ const verifyCmd = {
         desc: 'the maximum number of steps in every trace',
         type: 'number',
         default: 10,
-      })
-      .option('init', {
-        desc: 'name of the initializer action',
-        type: 'string',
-        default: 'init',
-      })
-      .option('step', {
-        desc: 'name of the step action',
-        type: 'string',
-        default: 'step',
-      })
-      .option('invariant', {
-        desc: 'the invariants to check, separated by a comma',
-        type: 'string',
-        coerce: (s: string) => s.split(','),
-      })
-      .option('temporal', {
-        desc: 'the temporal properties to check, separated by a comma',
-        type: 'string',
-        coerce: (s: string) => s.split(','),
       })
       .option('random-transitions', {
         desc: 'choose transitions at random (= use symbolic simulation)',
@@ -295,7 +295,12 @@ const verifyCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(verifySpec)).then(outputResult),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(compile))
+      .then(chainCmd(verifySpec))
+      .then(outputResult),
 }
 
 // construct documenting commands with yargs
