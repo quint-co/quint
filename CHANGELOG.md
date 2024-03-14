@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The latest supported node version is now bounded at <= 20, which covers the
   latest LTS. (#1380)
 - Shadowing names are now supported, which means that the same name can be redefined 
-  in nested scopes (#1394)
+  in nested scopes. (#1394)
+- The canonical unit type is now the empty tuple, `()`, rather than the empty
+  record, `{}`. This should only affect invisible things to do with sum type
+  constructors. (#1401)
 
 ### Deprecated
 ### Removed
