@@ -69,22 +69,22 @@ export interface QuintTupleType extends WithOptionalId {
   fields: Row
 }
 
-export interface QuintRecordType extends WithOptionalId {
-  kind: 'rec'
-  fields: Row
-}
-
 // A value of the unit type, i.e. an empty record
-export function unitType(id: bigint): QuintRecordType {
+export function unitType(id: bigint): QuintTupleType {
   return {
     id,
-    kind: 'rec',
+    kind: 'tup',
     fields: { kind: 'row', fields: [], other: { kind: 'empty' } },
   }
 }
 
 export function isUnitType(r: QuintType): Boolean {
-  return r.kind === 'rec' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
+  return r.kind === 'tup' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
+}
+
+export interface QuintRecordType extends WithOptionalId {
+  kind: 'rec'
+  fields: Row
 }
 
 export interface QuintSumType extends WithOptionalId {

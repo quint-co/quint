@@ -873,7 +873,7 @@ describe('compiling specs to runtime values', () => {
     it('can compile construction of sum type variants', () => {
       const context = 'type T = Some(int) | None'
       assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
-      assertResultAsString('None', 'variant("None", Rec())', context)
+      assertResultAsString('None', 'variant("None", Tup())', context)
     })
 
     it('can compile elimination of sum type variants via match', () => {

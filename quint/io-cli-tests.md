@@ -1130,7 +1130,7 @@ rm xTest.itf.json
 
 <!-- !test out variants in itf -->
 ```
-[{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
+[{"#meta":{"index":0},"x":{"tag":"None","value":{"#tup":[]}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
 ```
 
 ### FAIL on parsing filenames with different casing

@@ -162,14 +162,6 @@ describe('ConstraintGeneratorVisitor', () => {
     )
   })
 
-  it('catches invalid arity on Tup operator', () => {
-    testArityError(
-      'val x = Tup()',
-      'Checking arity for application of Tup',
-      'Operator expects at least one arguments but was given 0'
-    )
-  })
-
   it('catches invalid arity on item operator', () => {
     testArityError(
       'val x = (0, 1).item()',

@@ -176,8 +176,9 @@ expr:           // apply a built-in operator via the dot notation
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( qualId | INT | BOOL | STRING)                     # literalOrId
-        //      a tuple constructor, the form tup(...) is just an operator call
+        //      a tuple constructor, the form Tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
+        |       '(' ')'                                             # unit
         //      short-hand syntax for pairs, mainly designed for maps
         |       expr '->' expr                                      # pair
         |       '{' recElem (',' recElem)* ','? '}'                 # record

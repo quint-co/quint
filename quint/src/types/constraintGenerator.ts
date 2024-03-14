@@ -214,9 +214,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
             return validateArity(e.opcode, results, l => l === 3, '3').chain(() => withConstraints(e.id, results, a))
           // Tuple operators
           case 'Tup':
-            return validateArity(e.opcode, results, l => l > 0, 'at least one').chain(() =>
-              tupleConstructorConstraints(e.id, results, a)
-            )
+            return tupleConstructorConstraints(e.id, results, a)
           case 'item':
             return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
           // Sum type operators
