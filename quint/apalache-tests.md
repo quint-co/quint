@@ -226,7 +226,7 @@ An example execution:
 
 <!-- !test in can convert ApalacheCompliation.qnt to TLA+ -->
 ```
-quint compile --target tlaplus  ./testFixture/ApalacheCompilation.qnt
+quint compile --target tlaplus ./testFixture/ApalacheCompilation.qnt
 ```
 
 <!-- !test out can convert ApalacheCompliation.qnt to TLA+ -->
@@ -262,7 +262,7 @@ init ==
 ================================================================================
 ```
 
-### Test that we can compile a module to TLA+ that instantiates but has not declarations
+### Test that we can compile a module to TLA+ that instantiates but has no declarations
 
 
 <!-- !test in can convert clockSync3.qnt to TLA+ -->
