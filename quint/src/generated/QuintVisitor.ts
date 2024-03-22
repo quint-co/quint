@@ -47,6 +47,7 @@ import { ActionAllContext } from "./QuintParser";
 import { ActionAnyContext } from "./QuintParser";
 import { LiteralOrIdContext } from "./QuintParser";
 import { TupleContext } from "./QuintParser";
+import { UnitContext } from "./QuintParser";
 import { PairContext } from "./QuintParser";
 import { RecordContext } from "./QuintParser";
 import { ListContext } from "./QuintParser";
@@ -421,6 +422,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTuple?: (ctx: TupleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `unit`
+	 * labeled alternative in `QuintParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUnit?: (ctx: UnitContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `pair`

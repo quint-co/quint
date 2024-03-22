@@ -224,34 +224,45 @@ An example execution:
 
 ### Test that we can compile to TLA+ of the expected form
 
-<!-- !test in can convert booleans.qnt to TLA+ -->
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ -->
 ```
-quint compile --target tlaplus  ../examples/language-features/booleans.qnt
+quint compile --target tlaplus ./testFixture/ApalacheCompilation.qnt
 ```
 
-<!-- !test out can convert booleans.qnt to TLA+ -->
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ -->
 ```
-------------------------------- MODULE booleans -------------------------------
+-------------------------- MODULE ApalacheCompilation --------------------------
 
-EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
-VARIABLE b
+VARIABLE x
 
-step ==
-  (b \/ TRUE)
-    /\ ~(b /\ FALSE)
-    /\ (b => b)
-    /\ (b <=> b)
-    /\ b = b
-    /\ b /= (~b)
-    /\ b' := (~b)
+A == Variant("A", "U_OF_UNIT")
 
-init == b' := TRUE
+B(__BParam_27) == Variant("B", __BParam_27)
+
+foo_bar(id__123_31) == id__123_31
+
+importedValue == 0
+
+ApalacheCompilation_ModuleToInstantiate_C == 0
+
+step == x' := (x + 1)
+
+inv == x >= 0
+
+ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
+  ApalacheCompilation_ModuleToInstantiate_C
+
+init ==
+  x'
+    := (importedValue
+      + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
 
 ================================================================================
 ```
 
-### Test that we can compile a module with imports and instances to TLA+
+### Test that we can compile a module to TLA+ that instantiates but has no declarations
 
 
 <!-- !test in can convert clockSync3.qnt to TLA+ -->
@@ -266,7 +277,7 @@ which leaves nothing, thanks to the way clockSync3 is instanced.
 ```
 ------------------------------ MODULE clockSync3 ------------------------------
 
-EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
 ================================================================================
 ```
