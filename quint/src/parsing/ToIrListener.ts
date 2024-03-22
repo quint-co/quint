@@ -764,6 +764,11 @@ export class ToIrListener implements QuintListener {
     this.pushApplication(ctx, 'Tup', args)
   }
 
+  // The unit, (), represented by the empty tuple
+  exitUnit(ctx: p.UnitContext) {
+    this.exprStack.push(unitValue(this.getId(ctx)))
+  }
+
   // pair constructor, e.g., 2 -> 3
   exitPair(ctx: p.PairContext) {
     const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
@@ -1353,7 +1358,7 @@ function unitValue(id: bigint): QuintBuiltinApp {
   return {
     id,
     kind: 'app',
-    opcode: 'Rec',
+    opcode: 'Tup',
     args: [],
   }
 }

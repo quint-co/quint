@@ -47,6 +47,7 @@ import { ActionAllContext } from "./QuintParser";
 import { ActionAnyContext } from "./QuintParser";
 import { LiteralOrIdContext } from "./QuintParser";
 import { TupleContext } from "./QuintParser";
+import { UnitContext } from "./QuintParser";
 import { PairContext } from "./QuintParser";
 import { RecordContext } from "./QuintParser";
 import { ListContext } from "./QuintParser";
@@ -608,6 +609,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTuple?: (ctx: TupleContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `unit`
+	 * labeled alternative in `QuintParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterUnit?: (ctx: UnitContext) => void;
+	/**
+	 * Exit a parse tree produced by the `unit`
+	 * labeled alternative in `QuintParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitUnit?: (ctx: UnitContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `pair`
