@@ -226,7 +226,7 @@ An example execution:
 
 <!-- !test in can convert ApalacheCompliation.qnt to TLA+ -->
 ```
-quint compile --target tlaplus  ./testFixture/ApalacheCompilation.qnt
+quint compile --target tlaplus ./testFixture/ApalacheCompilation.qnt
 ```
 
 <!-- !test out can convert ApalacheCompliation.qnt to TLA+ -->
@@ -237,7 +237,7 @@ EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
 VARIABLE x
 
-A == Variant("A", <<>>)
+A == Variant("A", "U_OF_UNIT")
 
 B(__BParam_31) == Variant("B", __BParam_31)
 
@@ -272,7 +272,7 @@ q_init == init
 ================================================================================
 ```
 
-### Test that we can compile to TLA+ of the expected form with CLI confgis
+### Test that we can compile to TLA+ of the expected form with CLI configs
 
 We check that specifying `--init`, `--step`, and `--invariant` work as expected
 
