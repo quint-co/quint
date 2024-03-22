@@ -29,7 +29,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
+import { FlatModule, OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
@@ -44,13 +44,21 @@ import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
 import { flattenModules } from './flattening/fullFlattener'
-import { analyzeInc, analyzeModules } from './quintAnalyzer'
+import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 import { flow, isEqual, uniqWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { compileToTlaplus } from './compileToTlaplus'
 
-export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'compiling' | 'documentation'
+export type stage =
+  | 'loading'
+  | 'parsing'
+  | 'typechecking'
+  | 'testing'
+  | 'running'
+  | 'compiling'
+  | 'outputting target'
+  | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
@@ -136,6 +144,10 @@ interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>
   effects: Map<bigint, EffectScheme>
   modes: Map<bigint, OpQualifier>
+}
+
+interface CompiledStage extends TypecheckedStage, AnalysisOutput {
+  mainModule: FlatModule
 }
 
 interface TestedStage extends LoadedStage {
@@ -606,20 +618,46 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
 }
 
-/** compile a spec and output in the specified `typechecked.args.target`
+/**  Compile to a flattened module, that includes the special q::* declarations
  *
- * The output produced by this command includes the parsed, typechecked, and
- * flattened data.
- *
- * @param typechecked The result of a preceding typechecking stage
+ * @param typechecked the output of a preceding type checking stage
  */
-// TODO This should share most of the logic in `verifySpec`, but the logic in
-// that command would need some significant reworking to make it composable
-export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedure<TypecheckedStage>> {
-  const stage: stage = 'compiling'
+export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedure<CompiledStage>> {
   const args = typechecked.args
-  const verbosityLevel = deriveVerbosity(args)
+  const mainName = guessMainModule(typechecked)
+  const main = typechecked.modules.find(m => m.name === mainName)
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
+  }
 
+  // Wrap init, step, invariant and temporal properties in other definitions,
+  // to make sure they are not considered unused in the main module and,
+  // therefore, ignored by the flattener
+  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
+
+  if (args.invariant) {
+    extraDefsAsText.push(`val q::inv = and(${args.invariant})`)
+  }
+  if (args.temporal) {
+    extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
+  }
+
+  const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, typechecked.idGen, new Map()))
+  main.declarations.push(...extraDefs)
+
+  // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
+  // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
+  // while solving #1052.
+  const resolutionResult = parsePhase3importAndNameResolution({ ...typechecked, errors: [] })
+  if (resolutionResult.errors.length > 0) {
+    const errors = resolutionResult.errors.map(mkErrorMessage(typechecked.sourceMap))
+    return cliErr('name resolution failed', { ...typechecked, errors })
+  }
+
+  typechecked.table = resolutionResult.table
+  analyzeInc(typechecked, typechecked.table, extraDefs)
+
+  // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     typechecked.modules,
     typechecked.table,
@@ -628,36 +666,43 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     typechecked
   )
 
-  const mainName = guessMainModule(typechecked)
-  const main = flattenedModules.find(m => m.name === mainName)!
-  if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
-  }
+  // Pick the main module
+  const flatMain = flattenedModules.find(m => m.name === mainName)!
 
-  const flattenedStage: TypecheckedStage = {
+  return right({
     ...typechecked,
     ...flattenedAnalysis,
-    modules: [main],
+    mainModule: flatMain,
     table: flattenedTable,
-    stage,
-  }
+    stage: 'compiling',
+  })
+}
 
-  const parsedSpecJson = jsonStringOfOutputStage(pickOutputStage(flattenedStage))
-  switch ((typechecked.args.target as string).toLowerCase()) {
+/** output a compiled spec in the format specified in the `compiled.args.target` to stdout
+ *
+ * @param compiled The result of a preceding compile stage
+ */
+export async function outputCompilationTarget(compiled: CompiledStage): Promise<CLIProcedure<CompiledStage>> {
+  const stage: stage = 'outputting target'
+  const args = compiled.args
+  const verbosityLevel = deriveVerbosity(args)
+
+  const parsedSpecJson = jsonStringOfOutputStage(pickOutputStage({ ...compiled, modules: [compiled.mainModule] }))
+  switch ((compiled.args.target as string).toLowerCase()) {
     case 'json':
       process.stdout.write(parsedSpecJson)
-      return right(flattenedStage)
+      return right(compiled)
     case 'tlaplus': {
       const toTlaResult = await compileToTlaplus(parsedSpecJson, verbosityLevel)
       return toTlaResult
         .mapRight(tla => {
           process.stdout.write(tla) // Write out, since all went right
-          return flattenedStage
+          return compiled
         })
         .mapLeft(err => {
           return {
             msg: err.explanation,
-            stage: { ...flattenedStage, stage, status: 'error', errors: err.errors },
+            stage: { ...compiled, stage, status: 'error', errors: err.errors },
           }
         })
     }
@@ -672,7 +717,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
+export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
   const verbosityLevel = deriveVerbosity(args)
@@ -686,51 +731,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<T
     return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: new Map() })
   }
 
-  const mainName = guessMainModule(prev)
-  const main = verifying.modules.find(m => m.name === mainName)
-  if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: new Map() })
-  }
-
-  // Wrap init, step, invariant and temporal properties in other definitions,
-  // to make sure they are not considered unused in the main module and,
-  // therefore, ignored by the flattener
-  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
-  if (args.invariant) {
-    extraDefsAsText.push(`val q::inv = and(${args.invariant.join(',')})`)
-  }
-  if (args.temporal) {
-    extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal.join(',')})`)
-  }
-
-  const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, verifying.idGen, new Map()))
-  main.declarations.push(...extraDefs)
-
-  // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
-  // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
-  // while solving #1052.
-  const resolutionResult = parsePhase3importAndNameResolution({ ...prev, errors: [] })
-  if (resolutionResult.errors.length > 0) {
-    const errors = resolutionResult.errors.map(mkErrorMessage(prev.sourceMap))
-    return cliErr('name resolution failed', { ...verifying, errors })
-  }
-
-  verifying.table = resolutionResult.table
-  analyzeInc(verifying, verifying.table, extraDefs)
-
-  // Flatten modules, replacing instances, imports and exports with their definitions
-  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-    verifying.modules,
-    verifying.table,
-    verifying.idGen,
-    verifying.sourceMap,
-    verifying
-  )
-
-  // Pick main module, we only pass this on to Apalache
-  const flatMain = flattenedModules.find(m => m.name === mainName)!
-
-  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [flatMain], table: flattenedTable }
+  const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
   // We need to insert the data form CLI args into their appropriate locations

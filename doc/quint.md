@@ -73,8 +73,7 @@ especially useful for debugging complex specifications.
 $  quint compile --help
 quint compile <input>
 
-compile a Quint specification into the target, the output is written to
-stdout
+compile a Quint specification into the target, the output is written to stdout
 
 Options:
   --help       Show help                                               [boolean]
@@ -82,6 +81,10 @@ Options:
   --out        output file (suppresses all console output)              [string]
   --main       name of the main module (by default, computed from filename)
                                                                         [string]
+  --init       name of the initializer action         [string] [default: "init"]
+  --step       name of the step action                [string] [default: "step"]
+  --invariant  the invariants to check, separated by commas (e.g.)      [string]
+  --temporal   the temporal properties to check, separated by commas    [string]
   --target     the compilation target. Supported values: tlaplus, json
                                                       [string] [default: "json"]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
@@ -90,6 +93,16 @@ Options:
 Given a quint specification as input, this command parses, resolves imports,
 typechecks, and then "flattens" the specification into on module containing just
 the needed definitions.
+
+The main module is determined as follows: If a module name is specified by
+`--main`, that takes precedence. Otherwise, if there is only one module in the
+input file, that is the main module. Otherwise, the module with the same name as
+the file is taken to be the main module.
+
+The main module must specify a state machine. This means it must either define
+actions named `init` and `step`, specifying the initial state and the
+transition action respectively, or suitable actions defined in the main module
+must be indicated using the `--init` and `--step` options.
 
 The following compilation targets are supported
 
@@ -105,7 +118,7 @@ The following compilation targets are supported
 to be expected.*
 
 ```sh
-$ quint parse --help    
+$ quint parse --help
 quint parse <input>
 
 parse a Quint specification
@@ -292,30 +305,32 @@ Options:
 ## Command verify
 
 ```sh
-$ quint verify <input>
+$  quint verify --help
+quint verify <input>
 
 Verify a Quint specification via Apalache
 
 Options:
-  --help             Show help                                         [boolean]
-  --version          Show version number                               [boolean]
-  --main             name of the main module (by default, computed from
-                     filename)                                          [string]
-  --out              output file (suppresses all console output)        [string]
-  --out-itf          output the trace in the Informal Trace Format to file
-                     (suppresses all console output)                     [string]
-  --max-steps        the maximum number of steps in every trace
-                                                          [number] [default: 10]
-  --init             name of the initializer action   [string] [default: "init"]
-  --step             name of the step action          [string] [default: "step"]
-  --invariant        the invariants to check, separated by a comma      [string]
-  --temporal         the temporal properties to check, separated by a comma
+  --help                Show help                                      [boolean]
+  --version             Show version number                            [boolean]
+  --out                 output file (suppresses all console output)     [string]
+  --main                name of the main module (by default, computed from
+                        filename)                                       [string]
+  --init                name of the initializer action[string] [default: "init"]
+  --step                name of the step action       [string] [default: "step"]
+  --invariant           the invariants to check, separated by commas (e.g.)
                                                                         [string]
+  --temporal            the temporal properties to check, separated by commas
+                                                                        [string]
+  --out-itf             output the trace in the Informal Trace Format to file
+                        (suppresses all console output)                 [string]
+  --max-steps           the maximum number of steps in every trace
+                                                          [number] [default: 10]
   --random-transitions  choose transitions at random (= use symbolic simulation)
                                                       [boolean] [default: false]
   --apalache-config     path to an additional Apalache configuration file (in
                         JSON)                                           [string]
-  --verbosity        control how much output is produced (0 to 5)
+  --verbosity           control how much output is produced (0 to 5)
                                                            [number] [default: 2]
 ```
 
@@ -332,7 +347,7 @@ steps:
 Apalache uses bounded model checking. This technique checks *all runs* up to
 `--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache
 configuration](https://apalache.informal.systems/docs/apalache/config.html?highlight=configuration#apalache-configuration)
-for guidance. 
+for guidance.
 
 - If there are no critical errors (e.g., in parsing, typechecking, etc.), this
 command sends the Quint specification to the [Apalache][] model checker, which

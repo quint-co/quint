@@ -239,17 +239,23 @@ VARIABLE x
 
 A == Variant("A", "U_OF_UNIT")
 
-B(__BParam_27) == Variant("B", __BParam_27)
+B(__BParam_31) == Variant("B", __BParam_31)
 
-foo_bar(id__123_31) == id__123_31
+foo_bar(id__123_35) == id__123_35
 
 importedValue == 0
 
 ApalacheCompilation_ModuleToInstantiate_C == 0
 
+altInit == x' := 0
+
 step == x' := (x + 1)
 
+altStep == x' := (x + 0)
+
 inv == x >= 0
+
+altInv == x >= 0
 
 ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
   ApalacheCompilation_ModuleToInstantiate_C
@@ -258,6 +264,55 @@ init ==
   x'
     := (importedValue
       + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
+
+q_step == step
+
+q_init == init
+
+================================================================================
+```
+
+### Test that we can compile to TLA+ of the expected form with CLI configs
+
+We check that specifying `--init`, `--step`, and `--invariant` work as expected
+
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ with CLI config -->
+```
+quint compile --target tlaplus \
+  --init altInit --step altStep --invariant altInv \
+  ./testFixture/ApalacheCompilation.qnt \
+  | grep -e q_init -e q_step -e q_inv
+```
+
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ with CLI config -->
+```
+q_init == altInit
+q_step == altStep
+q_inv == altInv
+```
+
+### Test that we can compile to TLA+ of the expected form, specifying `--main`
+
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ with alt main -->
+```
+quint compile --target tlaplus --main ModuleToImport ./testFixture/ApalacheCompilation.qnt
+```
+
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ with alt main -->
+```
+---------------------------- MODULE ModuleToImport ----------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
+
+step == TRUE
+
+importedValue == 0
+
+init == TRUE
+
+q_init == init
+
+q_step == step
 
 ================================================================================
 ```
@@ -270,14 +325,18 @@ init ==
 quint compile --target tlaplus  ../examples/classic/distributed/ClockSync/clockSync3.qnt | head
 ```
 
+The compiled module is not empty:
 
-TODO: This is an incorrect result, we are removing all "unused" declarations
-which leaves nothing, thanks to the way clockSync3 is instanced.
 <!-- !test out can convert clockSync3.qnt to TLA+ -->
 ```
 ------------------------------ MODULE clockSync3 ------------------------------
 
 EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
-================================================================================
+VARIABLE clockSync3_clockSync3Spec_time
+
+clockSync3_clockSync3Spec_Proc(clockSync3_clockSync3Spec_id_37) ==
+  [id |-> clockSync3_clockSync3Spec_id_37]
+
+VARIABLE clockSync3_clockSync3Spec_hc
 ```
