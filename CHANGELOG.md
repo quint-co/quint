@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed a dependency causing deprecation errors messages to be emitted.
   (#1380)
+- Fixed a type checker bug causing too general types to be inferred (#1409).
 
 ### Security
 
