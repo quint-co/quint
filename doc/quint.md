@@ -101,8 +101,8 @@ the file is taken to be the main module.
 
 The main module must specify a state machine. This means it must either define
 actions named `init` and `step`, specifying the initial state and the
-transition action respectivefly, or suitable actions defined in the main module
-must be indicated using the `--init` and `--step` actions.
+transition action respectively, or suitable actions defined in the main module
+must be indicated using the `--init` and `--step` options.
 
 The following compilation targets are supported
 
