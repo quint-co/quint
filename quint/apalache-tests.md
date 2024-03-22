@@ -237,7 +237,7 @@ EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
 VARIABLE x
 
-A == Variant("A", <<>>)
+A == Variant("A", "U_OF_UNIT")
 
 B(__BParam_27) == Variant("B", __BParam_27)
 
