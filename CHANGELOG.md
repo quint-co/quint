@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.19.0 -- 2024-03-25
+
+### Added
 
 - Added polymorphic type declarations, allowing abstracting commonly used data
   types like `Option[a]` and `Result[err, ok]`. Note that this is not yet
