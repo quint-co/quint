@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix a problem where sum types with no parameters were being printed with
+  either Quint's unit type `()` or Apalache's unit type `"U_OF_UNIT"` (#1416).
+
 ### Security
 
 ## v0.19.0 -- 2024-03-25

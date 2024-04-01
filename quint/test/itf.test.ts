@@ -88,4 +88,28 @@ describe('toItf', () => {
       `round trip conversion of trace failed`
     )
   })
+
+  it('converts unit type from Apalache', () => {
+    const text = '{ a: () }'
+
+    const trace = [buildExpression(text)]
+    const vars = ['a']
+    const itfTrace = {
+      vars: vars,
+      states: [
+        {
+          '#meta': {
+            index: 0,
+          },
+          a: 'U_OF_UNIT',
+        },
+      ],
+    }
+
+    const roundTripTrace = ofItf(itfTrace)
+    assert(
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
+      `round trip conversion of trace failed`
+    )
+  })
 })
