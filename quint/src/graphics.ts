@@ -108,8 +108,8 @@ export function prettyQuintEx(ex: QuintEx): Doc {
 
           const valueExpr = ex.args[1]
           const value =
-            valueExpr.kind === 'app' && valueExpr.opcode === 'Rec' && valueExpr.args.length === 0
-              ? [] // A payload with the empty record is shown as a bare label
+            valueExpr.kind === 'app' && valueExpr.opcode === 'Tup' && valueExpr.args.length === 0
+              ? [] // A payload with the empty tuple is shown as a bare label
               : [text('('), prettyQuintEx(valueExpr), text(')')]
 
           return group([label, ...value])
