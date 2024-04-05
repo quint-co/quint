@@ -1,8 +1,10 @@
 <div align="center">
 
 <!-- Title -->
-<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="90"/>
-<h1>Quint Lang</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./logos/quint-logo-light.png">
+  <img alt="Quint Lang" src="./logos/quint-logo-dark.png">
+</picture>
 
 <!-- Menu -->
 <p>
@@ -37,7 +39,7 @@
 </div>
 
 
-## Overview
+# The Quint specification language
 
 Quint is a modern specification language that is a particularly good fit for
 distributed systems, such as blockchain protocols, distributed databases, and
