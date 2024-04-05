@@ -3,7 +3,7 @@
 <!-- Title -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./logos/quint-logo-light.png">
-  <img alt="Quint Lang" src="./logos/quint-logo-dark.png">
+  <img alt="Quint Lang" src="./logos/quint-logo-dark.png" width=700>
 </picture>
 
 <!-- Menu -->
