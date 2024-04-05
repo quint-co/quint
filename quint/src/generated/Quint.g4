@@ -6,7 +6,7 @@
  *  2. Make it expressive enough to capture all of the TLA logic.
  *
  * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec, Thomas Pani
- *          Informal Systems, 2021-2023
+ *          Informal Systems, 2021-2024
  */
 grammar Quint;
 
@@ -119,6 +119,7 @@ type
     | SET '[' type ']'                                           # typeSet
     // TODO: replace List with general type application
     | LIST '[' type ']'                                          # typeList
+    | '(' ')'                                                    # typeUnit
     | '(' type ',' type (',' type)* ','? ')'                     # typeTuple
     | '{' row? '}'                                               # typeRec
     | 'int'                                                      # typeInt
