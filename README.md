@@ -285,7 +285,7 @@ become referenced artifacts.
 ## Acknowledgments
 
 Quint has been designed and developed by the [Apalache][] team: [Gabriela
-Moreira](https://github.com/bugarela), [Igor Konnov](https://konnov.github.io/),
+Moreira](https://bugarela.com), [Igor Konnov](https://konnov.github.io/),
 [Jure Kukovec](https://github.com/Kukovec), [Shon Feder](http://shonfeder.net),
 and [Thomas Pani](https://thpani.net/). :heart:
 
