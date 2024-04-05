@@ -119,6 +119,7 @@ type
     | SET '[' type ']'                                           # typeSet
     // TODO: replace List with general type application
     | LIST '[' type ']'                                          # typeList
+    // Parse tuples of size 0 or 2+, but not 1. (int) should be parsed as int.
     | '(' ')'                                                    # typeUnit
     | '(' type ',' type (',' type)* ','? ')'                     # typeTuple
     | '{' row? '}'                                               # typeRec
