@@ -28,6 +28,11 @@
             src="https://img.shields.io/npm/v/@informalsystems/quint"
             alt="npm (scoped)">
     </a>
+    <a href="https://t.me/quint_lang">
+        <img
+            src="https://img.shields.io/badge/chat-telegram-blue"
+            alt="telegram group">
+    </a>
 </p>
 </div>
 
@@ -253,7 +258,7 @@ Cosmos in 2023.
 
 ## Community
 
-- Join the chat in the [Quint zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
+- Join the chat in the [Telegram group](https://t.me/quint_lang) or in the [Zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
 - Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
 - [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
