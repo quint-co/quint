@@ -1123,6 +1123,17 @@ export class ToIrListener implements QuintListener {
     this.typeStack.push({ id, kind: 'fun', arg, res })
   }
 
+  // The unit type
+  exitTypeUnit(ctx: p.TypeUnitContext) {
+    const id = this.getId(ctx)
+
+    this.typeStack.push({
+      id: id,
+      kind: 'tup',
+      fields: { kind: 'empty' },
+    })
+  }
+
   // A tuple type, e.g., (int, bool)
   // the type stack contains the types of the elements
   exitTypeTuple(ctx: p.TypeTupleContext) {
