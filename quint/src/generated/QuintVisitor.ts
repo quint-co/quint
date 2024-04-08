@@ -13,6 +13,7 @@ import { TypeFunContext } from "./QuintParser";
 import { TypeOperContext } from "./QuintParser";
 import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
+import { TypeUnitContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
@@ -150,6 +151,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeList?: (ctx: TypeListContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `typeUnit`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeUnit?: (ctx: TypeUnitContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typeTuple`

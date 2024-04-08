@@ -13,6 +13,7 @@ import { TypeFunContext } from "./QuintParser";
 import { TypeOperContext } from "./QuintParser";
 import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
+import { TypeUnitContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
@@ -167,6 +168,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeList?: (ctx: TypeListContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `typeUnit`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeUnit?: (ctx: TypeUnitContext) => void;
+	/**
+	 * Exit a parse tree produced by the `typeUnit`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeUnit?: (ctx: TypeUnitContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeTuple`
