@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.19.2 -- 2024-04-09
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Fix a problem where empty tuples were not parsed as valid types, only as
   values (#1421).
