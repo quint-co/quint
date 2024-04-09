@@ -3,12 +3,14 @@
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
 	"icon": "./icons/logo.png",
-	"version": "0.14.0",
+	"version": "0.14.1",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
-	"categories": ["Programming Languages"],
+	"categories": [
+		"Programming Languages"
+	],
 	"bugs": {
 		"url": "https://github.com/informalsystems/quint/issues"
 	},
@@ -16,14 +18,21 @@
 		"type": "git",
 		"url": "https://github.com/informalsystems/quint.git"
 	},
-	"activationEvents": ["onLanguage:quint"],
+	"activationEvents": [
+		"onLanguage:quint"
+	],
 	"main": "./client/out/extension",
 	"contributes": {
 		"languages": [
 			{
 				"id": "quint",
-				"aliases": ["Quint", "quint"],
-				"extensions": [".qnt"],
+				"aliases": [
+					"Quint",
+					"quint"
+				],
+				"extensions": [
+					".qnt"
+				],
 				"configuration": "./language-configuration.json",
 				"icon": {
 					"light": "./icons/logo-dark.png",
