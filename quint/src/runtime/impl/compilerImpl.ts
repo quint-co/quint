@@ -35,7 +35,7 @@ import * as ir from '../../ir/quintIr'
 import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './runtimeValue'
 import { ErrorCode, QuintError } from '../../quintError'
 
-import { inputDefName, lastTraceName } from '../compile'
+import { inputDefName, lastTraceName, traceMetaName } from '../compile'
 import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
@@ -119,8 +119,14 @@ export function newEvaluationState(listener: ExecutionListener): EvaluationState
   const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
     state.errorTracker.addRuntimeError(0n, 'QNT501', 'q::lastTrace is not set')
   )
+  const traceMeta = mkRegister('shadow', traceMetaName, just(rv.mkList([])), () =>
+    state.errorTracker.addRuntimeError(0n, 'QNT501', 'q::traceMeta is not set')
+  )
+
   state.shadowVars.push(lastTrace)
+  state.shadowVars.push(traceMeta)
   state.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+  state.context.set(kindName(traceMeta.kind, traceMeta.name), traceMeta)
 
   return state
 }
@@ -163,6 +169,9 @@ export class CompilerVisitor implements IRVisitor {
   private rand
   // execution listener
   private execListener: ExecutionListener
+
+  private actionTaken: Maybe<RuntimeValue> = none()
+  private nondetPicks: Maybe<RuntimeValue> = none()
   // the current depth of operator definitions: top-level defs are depth 0
   // FIXME(#1279): The walk* functions update this value, but they need to be
   // initialized to -1 here for that to work on all scenarios.
@@ -259,6 +268,11 @@ export class CompilerVisitor implements IRVisitor {
       const evalApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: '_', args: [app] }
       boundValue = {
         eval: () => {
+          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
+            this.actionTaken = just(rv.mkStr(opdef.name))
+            this.nondetPicks = just(rv.mkRecord([]))
+          }
+
           if (app.opcode === inputDefName) {
             this.execListener.onUserOperatorCall(evalApp)
             // do not call onUserOperatorReturn on '_' later, as it may span over multiple frames
@@ -294,6 +308,20 @@ export class CompilerVisitor implements IRVisitor {
       // bind the callable under its name as well
       this.context.set(kindName('callable', opdef.name), boundValue)
     }
+
+    if (opdef.qualifier === 'action' && opdef.expr.kind === 'lambda') {
+      const unwrappedValue = boundValue
+      boundValue = {
+        eval: () => {
+          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
+            this.actionTaken = just(rv.mkStr(opdef.name))
+            this.nondetPicks = just(rv.mkRecord([]))
+          }
+
+          return unwrappedValue.eval()
+        },
+      }
+    }
   }
 
   exitLet(letDef: ir.QuintLet) {
@@ -327,13 +355,19 @@ export class CompilerVisitor implements IRVisitor {
     // a new random value may be produced later.
     const undecoratedEval = exprUnderLet.eval
     const boundValueEval = boundValue.eval
-    exprUnderLet.eval = function (): Maybe<EvalResult> {
+    exprUnderLet.eval = () => {
       const cachedValue = boundValueEval()
       boundValue.eval = function () {
         return cachedValue
       }
       // compute the result and immediately reset the cache
       const result = undecoratedEval()
+
+      if (result.isJust() && qualifier === 'nondet') {
+        this.nondetPicks = just(
+          rv.mkRecord(this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, cachedValue.value as RuntimeValue))
+        )
+      }
       boundValue.eval = boundValueEval
       return result
     }
@@ -1472,6 +1506,8 @@ export class CompilerVisitor implements IRVisitor {
     // we use a random number generator. This may change in the future.
     const lazyCompute = () => {
       // save the values of the next variables, as actions may update them
+      this.actionTaken = none()
+      this.nondetPicks = none()
       const valuesBefore = this.snapshotNextVars()
       // we store the potential successor values in this array
       const successors: Maybe<RuntimeValue>[][] = []
@@ -1623,6 +1659,12 @@ export class CompilerVisitor implements IRVisitor {
                   this.execListener.onUserOperatorCall(nextApp)
                   const nextResult = next.eval()
                   failure = nextResult.isNone() || failure
+                  const r = this.context.get(kindName('shadow', traceMetaName))! as Register
+                  r.registerValue.map(v => {
+                    const s = prettyQuintEx(v.toQuintEx(zerog))
+                    console.log(format(80, 0, s))
+                  })
+
                   if (isTrue(nextResult)) {
                     this.shiftVars()
                     this.extendTrace()
@@ -1680,6 +1722,13 @@ export class CompilerVisitor implements IRVisitor {
       const extended = this.trace().push(this.varsToRecord())
       trace.registerValue = just(rv.mkList(extended))
     }
+    let meta = this.shadowVars.find(r => r.name === traceMetaName)
+    if (meta) {
+      meta.registerValue = just(this.metaVarsToRecord())
+      // console.log('reseting')
+      this.actionTaken = none()
+      this.nondetPicks = none()
+    }
   }
 
   // convert the current variable values to a record
@@ -1690,6 +1739,13 @@ export class CompilerVisitor implements IRVisitor {
     return rv.mkRecord(map)
   }
 
+  private metaVarsToRecord(): RuntimeValue {
+    return rv.mkRecord([
+      ['action_taken', this.actionTaken.value!],
+      ['action_args', this.nondetPicks.value!],
+    ])
+  }
+
   private shiftVars() {
     this.recoverVars(this.snapshotNextVars())
     this.nextVars.forEach(r => (r.registerValue = none()))
@@ -1697,22 +1753,26 @@ export class CompilerVisitor implements IRVisitor {
 
   // save the values of the vars into an array
   private snapshotVars(): Maybe<RuntimeValue>[] {
-    return this.vars.map(r => r.registerValue)
+    return this.vars.map(r => r.registerValue).concat([this.actionTaken, this.nondetPicks])
   }
 
   // save the values of the next vars into an array
   private snapshotNextVars(): Maybe<RuntimeValue>[] {
-    return this.nextVars.map(r => r.registerValue)
+    return this.nextVars.map(r => r.registerValue).concat([this.actionTaken, this.nondetPicks])
   }
 
   // load the values of the variables from an array
   private recoverVars(values: Maybe<RuntimeValue>[]) {
     this.vars.forEach((r, i) => (r.registerValue = values[i]))
+    this.actionTaken = values[this.vars.length]
+    this.nondetPicks = values[this.vars.length + 1]
   }
 
   // load the values of the next variables from an array
   private recoverNextVars(values: Maybe<RuntimeValue>[]) {
     this.nextVars.forEach((r, i) => (r.registerValue = values[i]))
+    this.actionTaken = values[this.vars.length]
+    this.nondetPicks = values[this.vars.length + 1]
   }
 
   private contextGet(name: string | bigint, kinds: ComputableKind[]) {
