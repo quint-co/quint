@@ -35,7 +35,7 @@ import * as ir from '../../ir/quintIr'
 import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './runtimeValue'
 import { ErrorCode, QuintError } from '../../quintError'
 
-import { inputDefName, lastTraceName, traceMetaName } from '../compile'
+import { inputDefName, lastTraceName } from '../compile'
 import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
@@ -119,14 +119,9 @@ export function newEvaluationState(listener: ExecutionListener): EvaluationState
   const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
     state.errorTracker.addRuntimeError(0n, 'QNT501', 'q::lastTrace is not set')
   )
-  const traceMeta = mkRegister('shadow', traceMetaName, just(rv.mkList([])), () =>
-    state.errorTracker.addRuntimeError(0n, 'QNT501', 'q::traceMeta is not set')
-  )
 
   state.shadowVars.push(lastTrace)
-  state.shadowVars.push(traceMeta)
   state.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
-  state.context.set(kindName(traceMeta.kind, traceMeta.name), traceMeta)
 
   return state
 }
@@ -1659,11 +1654,6 @@ export class CompilerVisitor implements IRVisitor {
                   this.execListener.onUserOperatorCall(nextApp)
                   const nextResult = next.eval()
                   failure = nextResult.isNone() || failure
-                  const r = this.context.get(kindName('shadow', traceMetaName))! as Register
-                  r.registerValue.map(v => {
-                    const s = prettyQuintEx(v.toQuintEx(zerog))
-                    console.log(format(80, 0, s))
-                  })
 
                   if (isTrue(nextResult)) {
                     this.shiftVars()
@@ -1722,13 +1712,6 @@ export class CompilerVisitor implements IRVisitor {
       const extended = this.trace().push(this.varsToRecord())
       trace.registerValue = just(rv.mkList(extended))
     }
-    let meta = this.shadowVars.find(r => r.name === traceMetaName)
-    if (meta) {
-      meta.registerValue = just(this.metaVarsToRecord())
-      // console.log('reseting')
-      this.actionTaken = none()
-      this.nondetPicks = none()
-    }
   }
 
   // convert the current variable values to a record
@@ -1736,14 +1719,12 @@ export class CompilerVisitor implements IRVisitor {
     const map: [string, RuntimeValue][] = this.vars
       .filter(r => r.registerValue.isJust())
       .map(r => [r.name, r.registerValue.value as RuntimeValue])
-    return rv.mkRecord(map)
-  }
 
-  private metaVarsToRecord(): RuntimeValue {
-    return rv.mkRecord([
-      ['action_taken', this.actionTaken.value!],
-      ['action_args', this.nondetPicks.value!],
-    ])
+    if (true) {
+      map.push(['action_taken', this.actionTaken.value!], ['nondet_picks', this.nondetPicks.value!])
+    }
+
+    return rv.mkRecord(map)
   }
 
   private shiftVars() {
