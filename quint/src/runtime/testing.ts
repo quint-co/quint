@@ -9,17 +9,15 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { just } from '@sweet-monads/maybe'
 
 import { QuintEx, QuintOpDef } from '../ir/quintIr'
 
-import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
+import { CompilationContext, CompilationState, compile } from './compile'
 import { zerog } from './../idGenerator'
 import { LookupTable } from '../names/base'
-import { Computable, Register, kindName } from './runtime'
+import { Computable, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
-import { RuntimeValue, rv } from './impl/runtimeValue'
 import { newEvaluationState } from './impl/compilerImpl'
 import { QuintError } from '../quintError'
 
@@ -130,15 +128,14 @@ export function compileAndTest(
           seed = options.rng.getState()
           recorder.onRunCall()
           // reset the trace
-          const traceReg = ctx.evaluationState.context.get(kindName('shadow', lastTraceName)) as Register
-          traceReg.registerValue = just(rv.mkList([]))
+          ctx.evaluationState.trace.reset()
           // run the test
           const result = comp.eval()
           // extract the trace
-          const trace = traceReg.eval()
+          const trace = ctx.evaluationState.trace.get()
 
-          if (trace.isJust()) {
-            recorder.onRunReturn(result, [...(trace.value as RuntimeValue).toList()])
+          if (trace.length > 0) {
+            recorder.onRunReturn(result, trace)
           } else {
             // Report a non-critical error
             console.error('Missing a trace')
