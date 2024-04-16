@@ -36,7 +36,15 @@ const idGen = newIdGenerator()
 function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
   const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
+  const context = compileFromCode(
+    idGen,
+    moduleText,
+    '__runtime',
+    mockLookupPath,
+    noExecutionListener,
+    newRng().next,
+    false
+  )
 
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
@@ -65,7 +73,15 @@ function assertComputableAsString(computable: Computable, expected: string | und
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
+  const context = compileFromCode(
+    idGen,
+    moduleText,
+    '__runtime',
+    mockLookupPath,
+    noExecutionListener,
+    newRng().next,
+    false
+  )
   return callable(context)
 }
 
@@ -1157,6 +1173,7 @@ describe('incremental compilation', () => {
       newEvaluationState(noExecutionListener),
       flattenedTable,
       dummyRng.next,
+      false,
       moduleToCompile.declarations
     )
   }
@@ -1172,7 +1189,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-      const context = compileExpr(compilationState, evaluationState, dummyRng, expr!)
+      const context = compileExpr(compilationState, evaluationState, dummyRng, false, expr!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
 
@@ -1191,7 +1208,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
-      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, defs!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
@@ -1212,7 +1229,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
@@ -1233,7 +1250,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       const typeDecl = decls[0]
       assert(typeDecl.kind === 'typedef')
@@ -1252,7 +1269,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
       // Sum type declarations are expanded to add an

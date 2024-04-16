@@ -246,6 +246,11 @@ const runCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('mbt', {
+        desc: 'whether to produce info to be used by model-based testing',
+        type: 'boolean',
+        default: false,
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633

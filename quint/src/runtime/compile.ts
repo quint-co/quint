@@ -140,11 +140,10 @@ export function compile(
   evaluationState: EvaluationState,
   lookupTable: LookupTable,
   rand: (bound: bigint) => bigint,
+  storeMetadata: boolean,
   defs: QuintDef[]
 ): CompilationContext {
-  const { analysisOutput } = compilationState
-
-  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
+  const visitor = new CompilerVisitor(lookupTable, rand, evaluationState, storeMetadata)
 
   defs.forEach(def => walkDefinition(visitor, def))
 
@@ -177,6 +176,7 @@ export function compileExpr(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
+  storeMetadata: boolean,
   expr: QuintEx
 ): CompilationContext {
   // Create a definition to encapsulate the parsed expression.
@@ -184,7 +184,7 @@ export function compileExpr(
   // Hence, we have to compile it via an auxilliary definition.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: inputDefName, expr, id: state.idGen.nextId() }
 
-  return compileDecls(state, evaluationState, rng, [def])
+  return compileDecls(state, evaluationState, rng, storeMetadata, [def])
 }
 
 /**
@@ -203,6 +203,7 @@ export function compileDecls(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
+  storeMetadata: boolean,
   decls: QuintDeclaration[]
 ): CompilationContext {
   if (state.originalModules.length === 0 || state.modules.length === 0) {
@@ -253,7 +254,7 @@ export function compileDecls(
   // Filter definitions that were not compiled yet
   const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
 
-  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, storeMetadata, defsToCompile)
 
   return { ...ctx, analysisErrors }
 }
@@ -276,7 +277,8 @@ export function compileFromCode(
   mainName: string,
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint
+  rand: (bound: bigint) => bigint,
+  storeMetadata: boolean
 ): CompilationContext {
   // parse the module text
   // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
@@ -313,7 +315,14 @@ export function compileFromCode(
         },
       ]
   const defsToCompile = main ? main.declarations : []
-  const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
+  const ctx = compile(
+    compilationState,
+    newEvaluationState(execListener),
+    flattenedTable,
+    rand,
+    storeMetadata,
+    defsToCompile
+  )
 
   return {
     ...ctx,

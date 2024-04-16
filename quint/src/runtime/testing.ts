@@ -90,7 +90,14 @@ export function compileAndTest(
   }
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.declarations)
+  const ctx = compile(
+    compilationState,
+    newEvaluationState(recorder),
+    lookupTable,
+    options.rng.next,
+    false,
+    main.declarations
+  )
 
   const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors, ctx.analysisErrors)
   if (ctxErrors.length > 0) {

@@ -141,8 +141,6 @@ export function newEvaluationState(listener: ExecutionListener): EvaluationState
 export class CompilerVisitor implements IRVisitor {
   // the lookup table to use for the module
   private lookupTable: LookupTable
-  // types assigned to expressions and definitions
-  private types: Map<bigint, TypeScheme>
   // the stack of computable values
   private compStack: Computable[] = []
   // The map of identifiers (and sometimes, names) to their compiled values:
@@ -165,6 +163,7 @@ export class CompilerVisitor implements IRVisitor {
   // execution listener
   private execListener: ExecutionListener
 
+  private storeMetadata: boolean
   private actionTaken: Maybe<RuntimeValue> = none()
   private nondetPicks: Maybe<RuntimeValue> = none()
   // the current depth of operator definitions: top-level defs are depth 0
@@ -174,13 +173,13 @@ export class CompilerVisitor implements IRVisitor {
 
   constructor(
     lookupTable: LookupTable,
-    types: Map<bigint, TypeScheme>,
     rand: (bound: bigint) => bigint,
-    evaluationState: EvaluationState
+    evaluationState: EvaluationState,
+    storeMetadata: boolean
   ) {
     this.lookupTable = lookupTable
-    this.types = types
     this.rand = rand
+    this.storeMetadata = storeMetadata
 
     this.context = evaluationState.context
     this.vars = evaluationState.vars
@@ -242,7 +241,7 @@ export class CompilerVisitor implements IRVisitor {
   exitOpDef(opdef: ir.QuintOpDef) {
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
-    let boundValue = this.compStack.pop()
+    let boundValue = this.compStack.pop() as Callable
     if (boundValue === undefined) {
       this.errorTracker.addCompileError(opdef.id, 'QNT501', `No expression for ${opdef.name} on compStack`)
       return
@@ -278,6 +277,7 @@ export class CompilerVisitor implements IRVisitor {
           this.execListener.onUserOperatorReturn(app, [], r)
           return r
         },
+        nparams: unwrappedValue.nparams,
       }
     }
 
@@ -295,6 +295,22 @@ export class CompilerVisitor implements IRVisitor {
       }
     }
 
+    if (opdef.qualifier === 'action' && opdef.expr.kind === 'lambda') {
+      const unwrappedValue = boundValue
+      boundValue = {
+        eval: (args?: Maybe<any>[]) => {
+          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
+            this.actionTaken = just(rv.mkStr(opdef.name))
+            this.nondetPicks = just(rv.mkRecord([]))
+          }
+
+          const r: Maybe<EvalResult> = unwrappedValue.eval(args)
+          return r
+        },
+        nparams: unwrappedValue.nparams,
+      }
+    }
+
     const kname = kindName('callable', opdef.id)
     // bind the callable from the stack
     this.context.set(kname, boundValue)
@@ -302,20 +318,6 @@ export class CompilerVisitor implements IRVisitor {
     if (specialNames.includes(opdef.name)) {
       // bind the callable under its name as well
       this.context.set(kindName('callable', opdef.name), boundValue)
-    }
-
-    if (opdef.qualifier === 'action' && opdef.expr.kind === 'lambda') {
-      const unwrappedValue = boundValue
-      boundValue = {
-        eval: () => {
-          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
-            this.actionTaken = just(rv.mkStr(opdef.name))
-            this.nondetPicks = just(rv.mkRecord([]))
-          }
-
-          return unwrappedValue.eval()
-        },
-      }
     }
   }
 
@@ -1038,7 +1040,7 @@ export class CompilerVisitor implements IRVisitor {
     // this function gives us access to the compiled operator later
     let callableRef: () => Maybe<Callable>
 
-    if (lookupEntry === undefined || lookupEntry.kind !== 'param') {
+    if (lookupEntry.kind !== 'param') {
       // The common case: the operator has been defined elsewhere.
       // We simply look up for the operator and return it via callableRef.
       const callable = this.contextLookup(app.id, ['callable']) as Callable
@@ -1720,8 +1722,13 @@ export class CompilerVisitor implements IRVisitor {
       .filter(r => r.registerValue.isJust())
       .map(r => [r.name, r.registerValue.value as RuntimeValue])
 
-    if (true) {
-      map.push(['action_taken', this.actionTaken.value!], ['nondet_picks', this.nondetPicks.value!])
+    if (this.storeMetadata) {
+      if (this.actionTaken.isJust()) {
+        map.push(['action_taken', this.actionTaken.value!])
+      }
+      if (this.nondetPicks.isJust()) {
+        map.push(['nondet_picks', this.nondetPicks.value!])
+      }
     }
 
     return rv.mkRecord(map)
@@ -1745,15 +1752,15 @@ export class CompilerVisitor implements IRVisitor {
   // load the values of the variables from an array
   private recoverVars(values: Maybe<RuntimeValue>[]) {
     this.vars.forEach((r, i) => (r.registerValue = values[i]))
-    this.actionTaken = values[this.vars.length]
-    this.nondetPicks = values[this.vars.length + 1]
+    this.actionTaken = values[this.vars.length] ?? none()
+    this.nondetPicks = values[this.vars.length + 1] ?? none()
   }
 
   // load the values of the next variables from an array
   private recoverNextVars(values: Maybe<RuntimeValue>[]) {
     this.nextVars.forEach((r, i) => (r.registerValue = values[i]))
-    this.actionTaken = values[this.vars.length]
-    this.nondetPicks = values[this.vars.length + 1]
+    this.actionTaken = values[this.vars.length] ?? none()
+    this.nondetPicks = values[this.vars.length + 1] ?? none()
   }
 
   private contextGet(name: string | bigint, kinds: ComputableKind[]) {
