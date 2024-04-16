@@ -361,9 +361,15 @@ export class CompilerVisitor implements IRVisitor {
       const result = undecoratedEval()
 
       if (result.isJust() && qualifier === 'nondet') {
-        this.nondetPicks = just(
-          rv.mkRecord(this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, cachedValue.value as RuntimeValue))
-        )
+        if (this.nondetPicks.isJust()) {
+          this.nondetPicks = just(
+            rv.mkRecord(
+              this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, cachedValue.value as RuntimeValue)
+            )
+          )
+        } else {
+          this.nondetPicks = just(rv.mkRecord([[letDef.opdef.name, cachedValue.value as RuntimeValue]]))
+        }
       }
       boundValue.eval = boundValueEval
       return result
