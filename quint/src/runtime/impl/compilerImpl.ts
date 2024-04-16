@@ -15,7 +15,6 @@ import { List, OrderedMap, Set } from 'immutable'
 
 import { LookupTable } from '../../names/base'
 import { IRVisitor } from '../../ir/IRVisitor'
-import { TypeScheme } from '../../types/base'
 import {
   Callable,
   Computable,
