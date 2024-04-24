@@ -155,7 +155,7 @@ export function compile(
       return visitor.getRuntimeErrors().splice(0)
     },
     compilationState,
-    evaluationState: visitor.evaluationState,
+    evaluationState: visitor.getEvaluationState(),
   }
 }
 

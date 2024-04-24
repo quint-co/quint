@@ -133,43 +133,78 @@ export function newEvaluationState(listener: ExecutionListener): EvaluationState
 export class CompilerVisitor implements IRVisitor {
   // the lookup table to use for the module
   private lookupTable: LookupTable
-  // types assigned to expressions and definitions
   // the stack of computable values
   private compStack: Computable[] = []
+  // The map of identifiers (and sometimes, names) to their compiled values:
+  //  - wrappers around RuntimeValue
+  //  - an instance of Register
+  //  - an instance of Callable.
+  // The keys should be constructed via `kindName`.
+  context: Map<string, Computable>
 
+  // all variables declared during compilation
+  private vars: Register[]
+  // the registers allocated for the next-state values of vars
+  private nextVars: Register[]
+  // keeps errors in a state
+  private errorTracker: CompilerErrorTracker
+  // pre-initialized random number generator
   private rand
+  // execution listener
+  private execListener: ExecutionListener
+  // a tracker for the current execution trace
+  private trace: Trace
+
   // the current depth of operator definitions: top-level defs are depth 0
   // FIXME(#1279): The walk* functions update this value, but they need to be
   // initialized to -1 here for that to work on all scenarios.
   definitionDepth: number = -1
-  evaluationState: EvaluationState
 
   constructor(lookupTable: LookupTable, rand: (bound: bigint) => bigint, evaluationState: EvaluationState) {
     this.lookupTable = lookupTable
     this.rand = rand
 
-    this.evaluationState = evaluationState
+    this.context = evaluationState.context
+    this.vars = evaluationState.vars
+    this.nextVars = evaluationState.nextVars
+    this.errorTracker = evaluationState.errorTracker
+    this.execListener = evaluationState.listener
+    this.trace = evaluationState.trace
+  }
+
+  /**
+   * Get the compiler state.
+   */
+  getEvaluationState(): EvaluationState {
+    return {
+      context: this.context,
+      vars: this.vars,
+      nextVars: this.nextVars,
+      errorTracker: this.errorTracker,
+      listener: this.execListener,
+      trace: this.trace,
+    }
   }
 
   /**
    * Get the names of the compiled variables.
    */
   getVars(): string[] {
-    return this.evaluationState.vars.map(r => r.name)
+    return this.vars.map(r => r.name)
   }
 
   /**
    * Get the array of compile errors, which changes as the code gets executed.
    */
   getCompileErrors(): QuintError[] {
-    return this.evaluationState.errorTracker.compileErrors
+    return this.errorTracker.compileErrors
   }
 
   /**
    * Get the array of runtime errors, which changes as the code gets executed.
    */
   getRuntimeErrors(): QuintError[] {
-    return this.evaluationState.errorTracker.runtimeErrors
+    return this.errorTracker.runtimeErrors
   }
 
   exitOpDef(opdef: ir.QuintOpDef) {
@@ -177,11 +212,7 @@ export class CompilerVisitor implements IRVisitor {
     // All of them are compiled to callables, which may have zero parameters.
     let boundValue = this.compStack.pop()
     if (boundValue === undefined) {
-      this.evaluationState.errorTracker.addCompileError(
-        opdef.id,
-        'QNT501',
-        `No expression for ${opdef.name} on compStack`
-      )
+      this.errorTracker.addCompileError(opdef.id, 'QNT501', `No expression for ${opdef.name} on compStack`)
       return
     }
 
@@ -201,13 +232,13 @@ export class CompilerVisitor implements IRVisitor {
       boundValue = {
         eval: () => {
           if (app.opcode === inputDefName) {
-            this.evaluationState.listener.onUserOperatorCall(evalApp)
+            this.execListener.onUserOperatorCall(evalApp)
             // do not call onUserOperatorReturn on '_' later, as it may span over multiple frames
           } else {
-            this.evaluationState.listener.onUserOperatorCall(app)
+            this.execListener.onUserOperatorCall(app)
           }
           const r: Maybe<EvalResult> = unwrappedValue.eval()
-          this.evaluationState.listener.onUserOperatorReturn(app, [], r)
+          this.execListener.onUserOperatorReturn(app, [], r)
           return r
         },
       }
@@ -229,11 +260,11 @@ export class CompilerVisitor implements IRVisitor {
 
     const kname = kindName('callable', opdef.id)
     // bind the callable from the stack
-    this.evaluationState.context.set(kname, boundValue)
+    this.context.set(kname, boundValue)
 
     if (specialNames.includes(opdef.name)) {
       // bind the callable under its name as well
-      this.evaluationState.context.set(kindName('callable', opdef.name), boundValue)
+      this.context.set(kindName('callable', opdef.name), boundValue)
     }
   }
 
@@ -252,7 +283,7 @@ export class CompilerVisitor implements IRVisitor {
     // get the expression that is evaluated in the context of let.
     const exprUnderLet = this.compStack.slice(-1).pop()
     if (exprUnderLet === undefined) {
-      this.evaluationState.errorTracker.addCompileError(
+      this.errorTracker.addCompileError(
         letDef.opdef.id,
         'QNT501',
         `No expression for ${letDef.opdef.name} on compStack`
@@ -261,7 +292,7 @@ export class CompilerVisitor implements IRVisitor {
     }
 
     const kname = kindName('callable', letDef.opdef.id)
-    const boundValue = this.evaluationState.context.get(kname) ?? fail
+    const boundValue = this.context.get(kname) ?? fail
     // Override the behavior of the expression under let:
     // It precomputes the bound value and uses it in the evaluation.
     // Once the evaluation is done, the value is reset, so that
@@ -284,7 +315,7 @@ export class CompilerVisitor implements IRVisitor {
     // all constants should be instantiated before running the simulator
     const code: ErrorCode = 'QNT500'
     const msg = `Uninitialized const ${cdef.name}. Use: import <moduleName>(${cdef.name}=<value>).*`
-    this.evaluationState.errorTracker.addCompileError(cdef.id, code, msg)
+    this.errorTracker.addCompileError(cdef.id, code, msg)
   }
 
   exitVar(vardef: ir.QuintVar) {
@@ -294,13 +325,13 @@ export class CompilerVisitor implements IRVisitor {
     // definition. Don't overwrite the register if that happens. In some cases
     // (with instances), the variable can have a different ID, but the same
     // name. In that case, we assign the register with that name for the new ID.
-    if (this.evaluationState.context.has(kindName('var', varName))) {
-      const register = this.evaluationState.context.get(kindName('var', varName))!
-      this.evaluationState.context.set(kindName('var', vardef.id), register)
+    if (this.context.has(kindName('var', varName))) {
+      const register = this.context.get(kindName('var', varName))!
+      this.context.set(kindName('var', vardef.id), register)
 
-      if (this.evaluationState.context.has(kindName('nextvar', varName))) {
-        const register = this.evaluationState.context.get(kindName('nextvar', varName))!
-        this.evaluationState.context.set(kindName('nextvar', vardef.id), register)
+      if (this.context.has(kindName('nextvar', varName))) {
+        const register = this.context.get(kindName('nextvar', varName))!
+        this.context.set(kindName('nextvar', vardef.id), register)
       }
 
       return
@@ -310,19 +341,19 @@ export class CompilerVisitor implements IRVisitor {
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister = mkRegister('var', varName, none(), () =>
-      this.evaluationState.errorTracker.addRuntimeError(vardef.id, 'QNT502', `Variable ${varName} is not set`)
+      this.errorTracker.addRuntimeError(vardef.id, 'QNT502', `Variable ${varName} is not set`)
     )
-    this.evaluationState.vars.push(prevRegister)
+    this.vars.push(prevRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.evaluationState.context.set(kindName('var', varName), prevRegister)
-    this.evaluationState.context.set(kindName('var', vardef.id), prevRegister)
+    this.context.set(kindName('var', varName), prevRegister)
+    this.context.set(kindName('var', vardef.id), prevRegister)
     const nextRegister = mkRegister('nextvar', varName, none(), () =>
-      this.evaluationState.errorTracker.addRuntimeError(vardef.id, 'QNT502', `${varName}' is not set`)
+      this.errorTracker.addRuntimeError(vardef.id, 'QNT502', `${varName}' is not set`)
     )
-    this.evaluationState.nextVars.push(nextRegister)
+    this.nextVars.push(nextRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.evaluationState.context.set(kindName('nextvar', varName), nextRegister)
-    this.evaluationState.context.set(kindName('nextvar', vardef.id), nextRegister)
+    this.context.set(kindName('nextvar', varName), nextRegister)
+    this.context.set(kindName('nextvar', vardef.id), nextRegister)
   }
 
   enterLiteral(expr: ir.QuintBool | ir.QuintInt | ir.QuintStr) {
@@ -346,7 +377,7 @@ export class CompilerVisitor implements IRVisitor {
 
   enterName(name: ir.QuintName) {
     if (name.name === lastTraceName) {
-      this.compStack.push(mkConstComputable(rv.mkList(this.evaluationState.trace.get())))
+      this.compStack.push(mkConstComputable(rv.mkList(this.trace.get())))
       return
     }
     // The name belongs to one of the objects:
@@ -361,7 +392,7 @@ export class CompilerVisitor implements IRVisitor {
       this.compStack.push(comp)
     } else {
       // this should not happen, due to the name resolver
-      this.evaluationState.errorTracker.addCompileError(name.id, 'QNT502', `Name ${name.name} not found`)
+      this.errorTracker.addCompileError(name.id, 'QNT502', `Name ${name.name} not found`)
       this.compStack.push(fail)
     }
   }
@@ -379,11 +410,7 @@ export class CompilerVisitor implements IRVisitor {
               const nextvar = this.contextGet(name, ['nextvar'])
               this.compStack.push(nextvar ?? fail)
             } else {
-              this.evaluationState.errorTracker.addCompileError(
-                app.id,
-                'QNT502',
-                'Operator next(...) needs one argument'
-              )
+              this.errorTracker.addCompileError(app.id, 'QNT502', 'Operator next(...) needs one argument')
               this.compStack.push(fail)
             }
           }
@@ -460,7 +487,7 @@ export class CompilerVisitor implements IRVisitor {
             if (q.toInt() !== 0n) {
               return just(rv.mkInt(p.toInt() / q.toInt()))
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT503', 'Division by zero')
+              this.errorTracker.addRuntimeError(app.id, 'QNT503', 'Division by zero')
               return none()
             }
           })
@@ -473,9 +500,9 @@ export class CompilerVisitor implements IRVisitor {
         case 'ipow':
           this.applyFun(app.id, 2, (p, q) => {
             if (q.toInt() == 0n && p.toInt() == 0n) {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT503', '0^0 is undefined')
+              this.errorTracker.addRuntimeError(app.id, 'QNT503', '0^0 is undefined')
             } else if (q.toInt() < 0n) {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT503', 'i^j is undefined for j < 0')
+              this.errorTracker.addRuntimeError(app.id, 'QNT503', 'i^j is undefined for j < 0')
             } else {
               return just(rv.mkInt(p.toInt() ** q.toInt()))
             }
@@ -529,7 +556,7 @@ export class CompilerVisitor implements IRVisitor {
               }
               return just(rv.mkList(arr))
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT504', `range(${s}, ${e}) is out of bounds`)
+              this.errorTracker.addRuntimeError(app.id, 'QNT504', `range(${s}, ${e}) is out of bounds`)
               return none()
             }
           })
@@ -556,7 +583,7 @@ export class CompilerVisitor implements IRVisitor {
             if (l.size > 0) {
               return this.sliceList(app.id, l, 1, l.size)
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT505', 'Applied tail to an empty list')
+              this.errorTracker.addRuntimeError(app.id, 'QNT505', 'Applied tail to an empty list')
               return none()
             }
           })
@@ -568,7 +595,7 @@ export class CompilerVisitor implements IRVisitor {
             if (s >= 0 && s <= l.size && e <= l.size && e >= s) {
               return this.sliceList(app.id, l, s, e)
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(
+              this.errorTracker.addRuntimeError(
                 app.id,
                 'QNT506',
                 `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`
@@ -614,11 +641,7 @@ export class CompilerVisitor implements IRVisitor {
             if (fieldValue) {
               return just(fieldValue)
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(
-                app.id,
-                'QNT501',
-                `Accessing a missing record field ${name}`
-              )
+              this.errorTracker.addRuntimeError(app.id, 'QNT501', `Accessing a missing record field ${name}`)
               return none()
             }
           })
@@ -643,11 +666,7 @@ export class CompilerVisitor implements IRVisitor {
               const newMap = rec.toOrderedMap().set(key, fieldValue)
               return just(rv.mkRecord(newMap))
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(
-                app.id,
-                'QNT501',
-                `Called 'with' with a non-existent key ${key}`
-              )
+              this.errorTracker.addRuntimeError(app.id, 'QNT501', `Called 'with' with a non-existent key ${key}`)
               return none()
             }
           })
@@ -758,11 +777,7 @@ export class CompilerVisitor implements IRVisitor {
               return just(value)
             } else {
               // Should we print the key? It may be a complex expression.
-              this.evaluationState.errorTracker.addRuntimeError(
-                app.id,
-                'QNT507',
-                "Called 'get' with a non-existing key"
-              )
+              this.errorTracker.addRuntimeError(app.id, 'QNT507', "Called 'get' with a non-existing key")
               return none()
             }
           })
@@ -777,11 +792,7 @@ export class CompilerVisitor implements IRVisitor {
               const newMap = asMap.set(normalKey, newValue)
               return just(rv.fromMap(newMap))
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(
-                app.id,
-                'QNT507',
-                "Called 'set' with a non-existing key"
-              )
+              this.errorTracker.addRuntimeError(app.id, 'QNT507', "Called 'set' with a non-existing key")
               return none()
             }
           })
@@ -809,11 +820,7 @@ export class CompilerVisitor implements IRVisitor {
                 return rv.fromMap(newMap)
               })
             } else {
-              this.evaluationState.errorTracker.addRuntimeError(
-                app.id,
-                'QNT507',
-                "Called 'setBy' with a non-existing key"
-              )
+              this.errorTracker.addRuntimeError(app.id, 'QNT507', "Called 'setBy' with a non-existing key")
               return none()
             }
           })
@@ -895,7 +902,7 @@ export class CompilerVisitor implements IRVisitor {
         case 'assert':
           this.applyFun(app.id, 1, cond => {
             if (!cond.toBool()) {
-              this.evaluationState.errorTracker.addRuntimeError(app.id, 'QNT508', 'Assertion failed')
+              this.errorTracker.addRuntimeError(app.id, 'QNT508', 'Assertion failed')
               return none()
             }
             return just(cond)
@@ -932,7 +939,7 @@ export class CompilerVisitor implements IRVisitor {
         case 'eventually':
         case 'enabled':
           this.applyFun(app.id, 1, _ => {
-            this.evaluationState.errorTracker.addRuntimeError(
+            this.errorTracker.addRuntimeError(
               app.id,
               'QNT501',
               `Runtime does not support the built-in operator '${app.opcode}'`
@@ -947,7 +954,7 @@ export class CompilerVisitor implements IRVisitor {
         case 'weakFair':
         case 'strongFair':
           this.applyFun(app.id, 2, _ => {
-            this.evaluationState.errorTracker.addRuntimeError(
+            this.errorTracker.addRuntimeError(
               app.id,
               'QNT501',
               `Runtime does not support the built-in operator '${app.opcode}'`
@@ -964,7 +971,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private applyUserDefined(app: ir.QuintApp) {
     const onError = (sourceId: bigint, msg: string): void => {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', msg)
+      this.errorTracker.addCompileError(sourceId, 'QNT501', msg)
       this.compStack.push(fail)
     }
 
@@ -1009,18 +1016,18 @@ export class CompilerVisitor implements IRVisitor {
       // This code is similar to applyFun, but it calls the listener before
       const comp = {
         eval: (): Maybe<RuntimeValue> => {
-          this.evaluationState.listener.onUserOperatorCall(app)
+          this.execListener.onUserOperatorCall(app)
           // compute the values of the arguments at this point
           const merged = merge(args.map(a => a.eval()))
           const callable = callableRef()
           if (merged.isNone() || callable.isNone()) {
-            this.evaluationState.listener.onUserOperatorReturn(app, [], none())
+            this.execListener.onUserOperatorReturn(app, [], none())
             return none()
           }
           return merged
             .map(values => {
               const result = callable.value.eval(values.map(just)) as Maybe<RuntimeValue>
-              this.evaluationState.listener.onUserOperatorReturn(app, values, result)
+              this.execListener.onUserOperatorReturn(app, values, result)
               return result
             })
             .join()
@@ -1034,10 +1041,10 @@ export class CompilerVisitor implements IRVisitor {
     // introduce a register for every parameter
     lam.params.forEach(p => {
       const register = mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)
-      this.evaluationState.context.set(kindName('arg', p.id), register)
+      this.context.set(kindName('arg', p.id), register)
 
       if (specialNames.includes(p.name)) {
-        this.evaluationState.context.set(kindName('arg', p.name), register)
+        this.context.set(kindName('arg', p.name), register)
       }
     })
     // After this point, the body of the lambda gets compiled.
@@ -1056,10 +1063,10 @@ export class CompilerVisitor implements IRVisitor {
       const register = this.contextGet(id, ['arg']) as Register
 
       if (register && register.registerValue) {
-        this.evaluationState.context.delete(key)
+        this.context.delete(key)
         registers.push(register)
       } else {
-        this.evaluationState.errorTracker.addCompileError(p.id, 'QNT501', `Parameter ${p.name} not found`)
+        this.errorTracker.addCompileError(p.id, 'QNT501', `Parameter ${p.name} not found`)
       }
     })
 
@@ -1067,19 +1074,19 @@ export class CompilerVisitor implements IRVisitor {
     if (lambdaBody) {
       this.compStack.push(mkCallable(registers, lambdaBody))
     } else {
-      this.evaluationState.errorTracker.addCompileError(lam.id, 'QNT501', 'Compilation of lambda failed')
+      this.errorTracker.addCompileError(lam.id, 'QNT501', 'Compilation of lambda failed')
     }
   }
 
   private translateAssign(sourceId: bigint): void {
     if (this.compStack.length < 2) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', `Assignment '=' needs two arguments`)
+      this.errorTracker.addCompileError(sourceId, 'QNT501', `Assignment '=' needs two arguments`)
       return
     }
     const [register, rhs] = this.compStack.splice(-2)
     const name = (register as Register).name
     if (name === undefined) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', `Assignment '=' applied to a non-variable`)
+      this.errorTracker.addCompileError(sourceId, 'QNT501', `Assignment '=' applied to a non-variable`)
       this.compStack.push(fail)
       return
     }
@@ -1092,7 +1099,7 @@ export class CompilerVisitor implements IRVisitor {
         return just(rv.mkBool(true))
       })
     } else {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT502', `Undefined next variable in ${name} = ...`)
+      this.errorTracker.addCompileError(sourceId, 'QNT502', `Undefined next variable in ${name} = ...`)
       this.compStack.push(fail)
     }
   }
@@ -1118,7 +1125,7 @@ export class CompilerVisitor implements IRVisitor {
     mapResultAndElems: (_array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue
   ): void {
     if (this.compStack.length < 2) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
       return
     }
     // lambda translated to Callable
@@ -1139,7 +1146,7 @@ export class CompilerVisitor implements IRVisitor {
    */
   private applyFold(sourceId: bigint, order: 'fwd' | 'rev'): void {
     if (this.compStack.length < 3) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments for fold')
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments for fold')
       return
     }
     // extract two arguments from the call stack and keep the set
@@ -1180,7 +1187,7 @@ export class CompilerVisitor implements IRVisitor {
   // push the combined computable value on the stack
   private applyFun(sourceId: bigint, nargs: number, fun: (..._args: RuntimeValue[]) => Maybe<RuntimeValue>) {
     if (this.compStack.length < nargs) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
     } else {
       // pop nargs elements of the compStack
       const args = this.compStack.splice(-nargs, nargs)
@@ -1196,7 +1203,7 @@ export class CompilerVisitor implements IRVisitor {
               .join()
           } catch (error) {
             const msg = error instanceof Error ? error.message : 'unknown error'
-            this.evaluationState.errorTracker.addRuntimeError(sourceId, 'QNT501', msg)
+            this.errorTracker.addRuntimeError(sourceId, 'QNT501', msg)
             return none()
           }
         },
@@ -1209,7 +1216,7 @@ export class CompilerVisitor implements IRVisitor {
   // as it should not evaluate both arms
   private translateIfThenElse(sourceId: bigint) {
     if (this.compStack.length < 3) {
-      this.evaluationState.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments')
     } else {
       // pop 3 elements of the compStack
       const [cond, thenArm, elseArm] = this.compStack.splice(-3, 3)
@@ -1239,7 +1246,7 @@ export class CompilerVisitor implements IRVisitor {
   ): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
     const savedValues = this.snapshotNextVars()
-    const savedTrace = this.evaluationState.trace.get()
+    const savedTrace = this.trace.get()
 
     let result: Maybe<EvalResult> = just(rv.mkBool(true))
     // Evaluate arguments iteratively.
@@ -1256,12 +1263,12 @@ export class CompilerVisitor implements IRVisitor {
         // Restore the values of the next variables,
         // as evaluation was not successful.
         this.recoverNextVars(savedValues)
-        this.evaluationState.trace.reset(savedTrace)
+        this.trace.reset(savedTrace)
 
         if (kind === 'then' && nactionsLeft > 0 && isFalse) {
           // Cannot extend a run. Emit an error message.
           const actionNo = actions.length - (nactionsLeft + 1)
-          this.evaluationState.errorTracker.addRuntimeError(
+          this.errorTracker.addRuntimeError(
             actionId(actionNo),
             'QNT513',
             `Cannot continue in A.then(B), A evaluates to 'false'`
@@ -1277,8 +1284,8 @@ export class CompilerVisitor implements IRVisitor {
         const oldState: RuntimeValue = this.varsToRecord()
         this.shiftVars()
         const newState: RuntimeValue = this.varsToRecord()
-        this.evaluationState.trace.extend(newState)
-        this.evaluationState.listener.onNextState(oldState, newState)
+        this.trace.extend(newState)
+        this.execListener.onNextState(oldState, newState)
       }
     }
 
@@ -1288,11 +1295,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate all { A, ..., C } or A.then(B)
   private translateAllOrThen(app: ir.QuintApp): void {
     if (this.compStack.length < app.args.length) {
-      this.evaluationState.errorTracker.addCompileError(
-        app.id,
-        'QNT501',
-        `Not enough arguments on stack for "${app.opcode}"`
-      )
+      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1315,30 +1318,26 @@ export class CompilerVisitor implements IRVisitor {
     // The code below is an adaption of chainAllOrThen.
     // If someone finds how to nicely combine both, please refactor.
     if (this.compStack.length !== 2) {
-      this.evaluationState.errorTracker.addCompileError(
-        app.id,
-        'QNT501',
-        `Not enough arguments on stack for "${app.opcode}"`
-      )
+      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const [action, pred] = this.compStack.splice(-2)
     const lazyCompute = (): Maybe<EvalResult> => {
       const savedNextVars = this.snapshotNextVars()
-      const savedTrace = this.evaluationState.trace.get()
+      const savedTrace = this.trace.get()
       const actionResult = action.eval()
       if (actionResult.isNone() || !(actionResult.value as RuntimeValue).toBool()) {
         // 'A' evaluates to 'false', or produces an error.
         // Restore the values of the next variables.
         this.recoverNextVars(savedNextVars)
-        this.evaluationState.trace.reset(savedTrace)
+        this.trace.reset(savedTrace)
         // expect emits an error when the run could not finish
-        this.evaluationState.errorTracker.addRuntimeError(app.args[0].id, 'QNT508', 'Cannot continue to "expect"')
+        this.errorTracker.addRuntimeError(app.args[0].id, 'QNT508', 'Cannot continue to "expect"')
         return none()
       } else {
         const savedVarsAfterAction = this.snapshotVars()
         const savedNextVarsAfterAction = this.snapshotNextVars()
-        const savedTraceAfterAction = this.evaluationState.trace.get()
+        const savedTraceAfterAction = this.trace.get()
         // Temporarily, switch to the next frame, to make a look-ahead evaluation.
         // For example, if `x == 1` and `x' == 2`, we would have `x == 2` and `x'` would be undefined.
         this.shiftVars()
@@ -1350,13 +1349,9 @@ export class CompilerVisitor implements IRVisitor {
         // For example: `A.expect(P).then(B)`.
         this.recoverVars(savedVarsAfterAction)
         this.recoverNextVars(savedNextVarsAfterAction)
-        this.evaluationState.trace.reset(savedTraceAfterAction)
+        this.trace.reset(savedTraceAfterAction)
         if (predResult.isNone() || !(predResult.value as RuntimeValue).toBool()) {
-          this.evaluationState.errorTracker.addRuntimeError(
-            app.args[1].id,
-            'QNT508',
-            'Expect condition does not hold true'
-          )
+          this.errorTracker.addRuntimeError(app.args[1].id, 'QNT508', 'Expect condition does not hold true')
           return none()
         }
         return predResult
@@ -1369,11 +1364,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate n.reps(A)
   private translateReps(app: ir.QuintApp): void {
     if (this.compStack.length < 2) {
-      this.evaluationState.errorTracker.addCompileError(
-        app.id,
-        'QNT501',
-        `Not enough arguments on stack for "${app.opcode}"`
-      )
+      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const [niterations, action] = this.compStack.splice(-2)
@@ -1412,11 +1403,7 @@ export class CompilerVisitor implements IRVisitor {
     shortCircuit: (no: number, r: boolean) => Maybe<EvalResult>
   ): void {
     if (this.compStack.length < app.args.length) {
-      this.evaluationState.errorTracker.addCompileError(
-        app.id,
-        'QNT501',
-        `Not enough arguments on stack for "${app.opcode}"`
-      )
+      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1450,7 +1437,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate any { A, ..., C }
   private translateOrAction(app: ir.QuintApp): void {
     if (this.compStack.length < app.args.length) {
-      this.evaluationState.errorTracker.addCompileError(app.id, 'QNT501', 'Not enough arguments on stack for "any"')
+      this.errorTracker.addCompileError(app.id, 'QNT501', 'Not enough arguments on stack for "any"')
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1469,10 +1456,10 @@ export class CompilerVisitor implements IRVisitor {
       args.forEach((arg, i) => {
         this.recoverNextVars(valuesBefore)
         // either the argument is evaluated to false, or fails
-        this.evaluationState.listener.onAnyOptionCall(app, i)
+        this.execListener.onAnyOptionCall(app, i)
         const result = arg.eval().or(just(rv.mkBool(false)))
         const boolResult = (result.unwrap() as RuntimeValue).toBool()
-        this.evaluationState.listener.onAnyOptionReturn(app, i)
+        this.execListener.onAnyOptionReturn(app, i)
         // if this arm evaluates to true, save it in the candidates
         if (boolResult === true) {
           successors.push(this.snapshotNextVars())
@@ -1485,7 +1472,7 @@ export class CompilerVisitor implements IRVisitor {
       if (ncandidates === 0) {
         // no successor: restore the state and return false
         this.recoverNextVars(valuesBefore)
-        this.evaluationState.listener.onAnyReturn(args.length, -1)
+        this.execListener.onAnyReturn(args.length, -1)
         return just(rv.mkBool(false))
       } else if (ncandidates === 1) {
         // There is exactly one successor, the execution is deterministic.
@@ -1497,7 +1484,7 @@ export class CompilerVisitor implements IRVisitor {
       }
 
       this.recoverNextVars(successors[choice])
-      this.evaluationState.listener.onAnyReturn(args.length, successorIndices[choice])
+      this.execListener.onAnyReturn(args.length, successorIndices[choice])
       return just(rv.mkBool(true))
     }
 
@@ -1513,7 +1500,7 @@ export class CompilerVisitor implements IRVisitor {
           b
             .map(sz => {
               if (sz === 0n) {
-                this.evaluationState.errorTracker.addRuntimeError(sourceId, 'QNT509', `Applied oneOf to an empty set`)
+                this.errorTracker.addRuntimeError(sourceId, 'QNT509', `Applied oneOf to an empty set`)
               }
               return this.rand(sz)
             })
@@ -1532,11 +1519,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private test(sourceId: bigint) {
     if (this.compStack.length < 5) {
-      this.evaluationState.errorTracker.addCompileError(
-        sourceId,
-        'QNT501',
-        'Not enough arguments on stack for "q::test"'
-      )
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments on stack for "q::test"')
       return
     }
 
@@ -1546,11 +1529,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private testOnce(sourceId: bigint) {
     if (this.compStack.length < 4) {
-      this.evaluationState.errorTracker.addCompileError(
-        sourceId,
-        'QNT501',
-        'Not enough arguments on stack for "q::testOnce"'
-      )
+      this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments on stack for "q::testOnce"')
       return
     }
 
@@ -1587,23 +1566,23 @@ export class CompilerVisitor implements IRVisitor {
           // do multiple runs, stop at the first failing run
           const nruns = (nrunsRes as RuntimeValue).toInt()
           for (let runNo = 0; !errorFound && !failure && runNo < nruns; runNo++) {
-            this.evaluationState.listener.onRunCall()
-            this.evaluationState.trace.reset()
+            this.execListener.onRunCall()
+            this.trace.reset()
             // check Init()
             const initApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
-            this.evaluationState.listener.onUserOperatorCall(initApp)
+            this.execListener.onUserOperatorCall(initApp)
             const initResult = init.eval()
             failure = initResult.isNone() || failure
             if (!isTrue(initResult)) {
-              this.evaluationState.listener.onUserOperatorReturn(initApp, [], initResult)
+              this.execListener.onUserOperatorReturn(initApp, [], initResult)
             } else {
               // The initial action evaluates to true.
               // Our guess of values was good.
               this.shiftVars()
-              this.evaluationState.trace.extend(this.varsToRecord())
+              this.trace.extend(this.varsToRecord())
               // check the invariant Inv
               const invResult = inv.eval()
-              this.evaluationState.listener.onUserOperatorReturn(initApp, [], initResult)
+              this.execListener.onUserOperatorReturn(initApp, [], initResult)
               failure = invResult.isNone() || failure
               if (!isTrue(invResult)) {
                 errorFound = true
@@ -1617,15 +1596,15 @@ export class CompilerVisitor implements IRVisitor {
                     opcode: 'q::stepAndInvariant',
                     args: [],
                   }
-                  this.evaluationState.listener.onUserOperatorCall(nextApp)
+                  this.execListener.onUserOperatorCall(nextApp)
                   // next line is messing up the trace
                   const nextResult = next.eval()
                   failure = nextResult.isNone() || failure
                   if (isTrue(nextResult)) {
                     this.shiftVars()
-                    this.evaluationState.trace.extend(this.varsToRecord())
+                    this.trace.extend(this.varsToRecord())
                     errorFound = !isTrue(inv.eval())
-                    this.evaluationState.listener.onUserOperatorReturn(nextApp, [], nextResult)
+                    this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                   } else {
                     // Otherwise, the run cannot be extended.
                     // In some cases, this may indicate a deadlock.
@@ -1634,15 +1613,15 @@ export class CompilerVisitor implements IRVisitor {
                     // the run. Hence, do not report an error here, but simply
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
-                    this.evaluationState.listener.onUserOperatorReturn(nextApp, [], nextResult)
-                    this.evaluationState.listener.onRunReturn(just(rv.mkBool(true)), this.evaluationState.trace.get())
+                    this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
+                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace.get())
                     break
                   }
                 }
               }
             }
             const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
-            this.evaluationState.listener.onRunReturn(outcome, this.evaluationState.trace.get())
+            this.execListener.onRunReturn(outcome, this.trace.get())
             // recover the state variables
             this.recoverVars(vars)
             this.recoverNextVars(nextVars)
@@ -1658,7 +1637,7 @@ export class CompilerVisitor implements IRVisitor {
 
   // convert the current variable values to a record
   private varsToRecord(): RuntimeValue {
-    const map: [string, RuntimeValue][] = this.evaluationState.vars
+    const map: [string, RuntimeValue][] = this.vars
       .filter(r => r.registerValue.isJust())
       .map(r => [r.name, r.registerValue.value as RuntimeValue])
     return rv.mkRecord(map)
@@ -1666,32 +1645,32 @@ export class CompilerVisitor implements IRVisitor {
 
   private shiftVars() {
     this.recoverVars(this.snapshotNextVars())
-    this.evaluationState.nextVars.forEach(r => (r.registerValue = none()))
+    this.nextVars.forEach(r => (r.registerValue = none()))
   }
 
   // save the values of the vars into an array
   private snapshotVars(): Maybe<RuntimeValue>[] {
-    return this.evaluationState.vars.map(r => r.registerValue)
+    return this.vars.map(r => r.registerValue)
   }
 
   // save the values of the next vars into an array
   private snapshotNextVars(): Maybe<RuntimeValue>[] {
-    return this.evaluationState.nextVars.map(r => r.registerValue)
+    return this.nextVars.map(r => r.registerValue)
   }
 
   // load the values of the variables from an array
   private recoverVars(values: Maybe<RuntimeValue>[]) {
-    this.evaluationState.vars.forEach((r, i) => (r.registerValue = values[i]))
+    this.vars.forEach((r, i) => (r.registerValue = values[i]))
   }
 
   // load the values of the next variables from an array
   private recoverNextVars(values: Maybe<RuntimeValue>[]) {
-    this.evaluationState.nextVars.forEach((r, i) => (r.registerValue = values[i]))
+    this.nextVars.forEach((r, i) => (r.registerValue = values[i]))
   }
 
   private contextGet(name: string | bigint, kinds: ComputableKind[]) {
     for (const k of kinds) {
-      const value = this.evaluationState.context.get(kindName(k, name))
+      const value = this.context.get(kindName(k, name))
       if (value) {
         return value
       }
@@ -1705,7 +1684,7 @@ export class CompilerVisitor implements IRVisitor {
     if (vdef) {
       const refId = vdef.id!
       for (const k of kinds) {
-        const value = this.evaluationState.context.get(kindName(k, refId))
+        const value = this.context.get(kindName(k, refId))
         if (value) {
           return value
         }
@@ -1721,7 +1700,7 @@ export class CompilerVisitor implements IRVisitor {
       const elem = list.get(Number(idx))
       return elem ? just(elem) : none()
     } else {
-      this.evaluationState.errorTracker.addRuntimeError(sourceId, 'QNT510', `Out of bounds, nth(${idx})`)
+      this.errorTracker.addRuntimeError(sourceId, 'QNT510', `Out of bounds, nth(${idx})`)
       return none()
     }
   }
@@ -1731,11 +1710,7 @@ export class CompilerVisitor implements IRVisitor {
     if (idx >= 0n && idx < list.size) {
       return just(rv.mkList(list.set(Number(idx), value)))
     } else {
-      this.evaluationState.errorTracker.addRuntimeError(
-        sourceId,
-        'QNT510',
-        `Out of bounds, replaceAt(..., ${idx}, ...)`
-      )
+      this.errorTracker.addRuntimeError(sourceId, 'QNT510', `Out of bounds, replaceAt(..., ${idx}, ...)`)
       return none()
     }
   }
