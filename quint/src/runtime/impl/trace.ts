@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright 2024 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Trace of states representing a single execution path
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { List } from 'immutable'
 import { RuntimeValue } from './runtimeValue'
 
