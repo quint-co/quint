@@ -24,7 +24,7 @@ import { flattenModules } from '../flattening/fullFlattener'
 import { QuintError } from '../quintError'
 
 /**
- * The name of the shadow variable that stores the last found trace.
+ * The name of the builtin name that returns the last found trace.
  */
 export const lastTraceName = 'q::lastTrace'
 
