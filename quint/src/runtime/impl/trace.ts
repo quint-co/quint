@@ -5,7 +5,7 @@ export class Trace {
   private states: List<RuntimeValue> = List<RuntimeValue>()
 
   get(): RuntimeValue[] {
-    return [...this.states.toArray()]
+    return this.states.toArray()
   }
 
   reset(values: RuntimeValue[] = []) {
