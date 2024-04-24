@@ -1597,7 +1597,6 @@ export class CompilerVisitor implements IRVisitor {
                     args: [],
                   }
                   this.execListener.onUserOperatorCall(nextApp)
-                  // next line is messing up the trace
                   const nextResult = next.eval()
                   failure = nextResult.isNone() || failure
                   if (isTrue(nextResult)) {
