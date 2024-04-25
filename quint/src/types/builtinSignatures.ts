@@ -127,6 +127,7 @@ const otherOperators = [
   { name: 'fail', type: '(bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
   { name: 'q::debug', type: '(str, a) => a' },
+  { name: 'q::lastTrace', type: 'List[a]' },
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {

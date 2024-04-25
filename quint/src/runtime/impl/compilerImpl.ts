@@ -15,7 +15,6 @@ import { List, OrderedMap, Set } from 'immutable'
 
 import { LookupTable } from '../../names/base'
 import { IRVisitor } from '../../ir/IRVisitor'
-import { TypeScheme } from '../../types/base'
 import {
   Callable,
   Computable,
@@ -33,6 +32,7 @@ import { ExecutionListener } from '../trace'
 import * as ir from '../../ir/quintIr'
 
 import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './runtimeValue'
+import { Trace } from './trace'
 import { ErrorCode, QuintError } from '../../quintError'
 
 import { inputDefName, lastTraceName } from '../compile'
@@ -72,8 +72,8 @@ export interface EvaluationState {
   vars: Register[]
   // The list of variables in the next state.
   nextVars: Register[]
-  // The list of shadow variables.
-  shadowVars: Register[]
+  // The current trace of states
+  trace: Trace
   // The error tracker for the evaluation to store errors on callbacks.
   errorTracker: CompilerErrorTracker
   // The execution listener that the compiled code uses to report execution info.
@@ -103,24 +103,17 @@ export class CompilerErrorTracker {
 /**
  * Creates a new EvaluationState object with the initial state of the evaluation.
  *
- * @returns a new EvaluationState object with the lastTrace shadow variable register
+ * @returns a new EvaluationState object
  */
 export function newEvaluationState(listener: ExecutionListener): EvaluationState {
   const state: EvaluationState = {
     context: builtinContext(),
     vars: [],
     nextVars: [],
-    shadowVars: [],
+    trace: new Trace(),
     errorTracker: new CompilerErrorTracker(),
     listener: listener,
   }
-
-  // Initialize compiler state
-  const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
-    state.errorTracker.addRuntimeError(0n, 'QNT501', 'q::lastTrace is not set')
-  )
-  state.shadowVars.push(lastTrace)
-  state.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
 
   return state
 }
@@ -140,8 +133,6 @@ export function newEvaluationState(listener: ExecutionListener): EvaluationState
 export class CompilerVisitor implements IRVisitor {
   // the lookup table to use for the module
   private lookupTable: LookupTable
-  // types assigned to expressions and definitions
-  private types: Map<bigint, TypeScheme>
   // the stack of computable values
   private compStack: Computable[] = []
   // The map of identifiers (and sometimes, names) to their compiled values:
@@ -149,41 +140,36 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Register
   //  - an instance of Callable.
   // The keys should be constructed via `kindName`.
-  private context: Map<string, Computable>
+  context: Map<string, Computable>
 
   // all variables declared during compilation
   private vars: Register[]
   // the registers allocated for the next-state values of vars
   private nextVars: Register[]
-  // shadow variables that are used by the simulator
-  private shadowVars: Register[]
   // keeps errors in a state
   private errorTracker: CompilerErrorTracker
   // pre-initialized random number generator
   private rand
   // execution listener
   private execListener: ExecutionListener
+  // a tracker for the current execution trace
+  private trace: Trace
+
   // the current depth of operator definitions: top-level defs are depth 0
   // FIXME(#1279): The walk* functions update this value, but they need to be
   // initialized to -1 here for that to work on all scenarios.
   definitionDepth: number = -1
 
-  constructor(
-    lookupTable: LookupTable,
-    types: Map<bigint, TypeScheme>,
-    rand: (bound: bigint) => bigint,
-    evaluationState: EvaluationState
-  ) {
+  constructor(lookupTable: LookupTable, rand: (bound: bigint) => bigint, evaluationState: EvaluationState) {
     this.lookupTable = lookupTable
-    this.types = types
     this.rand = rand
 
     this.context = evaluationState.context
     this.vars = evaluationState.vars
     this.nextVars = evaluationState.nextVars
-    this.shadowVars = evaluationState.shadowVars
     this.errorTracker = evaluationState.errorTracker
     this.execListener = evaluationState.listener
+    this.trace = evaluationState.trace
   }
 
   /**
@@ -194,17 +180,10 @@ export class CompilerVisitor implements IRVisitor {
       context: this.context,
       vars: this.vars,
       nextVars: this.nextVars,
-      shadowVars: this.shadowVars,
       errorTracker: this.errorTracker,
       listener: this.execListener,
+      trace: this.trace,
     }
-  }
-
-  /**
-   * Get the compiled context.
-   */
-  getContext(): Map<string, Computable> {
-    return this.context
   }
 
   /**
@@ -212,13 +191,6 @@ export class CompilerVisitor implements IRVisitor {
    */
   getVars(): string[] {
     return this.vars.map(r => r.name)
-  }
-
-  /**
-   * Get the names of the shadow variables.
-   */
-  getShadowVars(): string[] {
-    return this.shadowVars.map(r => r.name)
   }
 
   /**
@@ -404,11 +376,14 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   enterName(name: ir.QuintName) {
+    if (name.name === lastTraceName) {
+      this.compStack.push(mkConstComputable(rv.mkList(this.trace.get())))
+      return
+    }
     // The name belongs to one of the objects:
     // a shadow variable, a variable, an argument, a callable.
     // The order is important, as defines the name priority.
     const comp =
-      this.contextGet(name.name, ['shadow']) ??
       this.contextLookup(name.id, ['arg', 'var', 'callable']) ??
       // a backup case for Nat, Int, and Bool, and special names such as q::input
       this.contextGet(name.name, ['arg', 'callable'])
@@ -1271,7 +1246,8 @@ export class CompilerVisitor implements IRVisitor {
   ): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
     const savedValues = this.snapshotNextVars()
-    const savedTrace = this.trace()
+    const savedTrace = this.trace.get()
+
     let result: Maybe<EvalResult> = just(rv.mkBool(true))
     // Evaluate arguments iteratively.
     // Stop as soon as one of the arguments returns false.
@@ -1287,7 +1263,7 @@ export class CompilerVisitor implements IRVisitor {
         // Restore the values of the next variables,
         // as evaluation was not successful.
         this.recoverNextVars(savedValues)
-        this.resetTrace(just(rv.mkList(savedTrace)))
+        this.trace.reset(savedTrace)
 
         if (kind === 'then' && nactionsLeft > 0 && isFalse) {
           // Cannot extend a run. Emit an error message.
@@ -1307,8 +1283,8 @@ export class CompilerVisitor implements IRVisitor {
       if (kind === 'then' && nactionsLeft > 0) {
         const oldState: RuntimeValue = this.varsToRecord()
         this.shiftVars()
-        this.extendTrace()
         const newState: RuntimeValue = this.varsToRecord()
+        this.trace.extend(newState)
         this.execListener.onNextState(oldState, newState)
       }
     }
@@ -1348,20 +1324,20 @@ export class CompilerVisitor implements IRVisitor {
     const [action, pred] = this.compStack.splice(-2)
     const lazyCompute = (): Maybe<EvalResult> => {
       const savedNextVars = this.snapshotNextVars()
-      const savedTrace = this.trace()
+      const savedTrace = this.trace.get()
       const actionResult = action.eval()
       if (actionResult.isNone() || !(actionResult.value as RuntimeValue).toBool()) {
         // 'A' evaluates to 'false', or produces an error.
         // Restore the values of the next variables.
         this.recoverNextVars(savedNextVars)
-        this.resetTrace(just(rv.mkList(savedTrace)))
+        this.trace.reset(savedTrace)
         // expect emits an error when the run could not finish
         this.errorTracker.addRuntimeError(app.args[0].id, 'QNT508', 'Cannot continue to "expect"')
         return none()
       } else {
         const savedVarsAfterAction = this.snapshotVars()
         const savedNextVarsAfterAction = this.snapshotNextVars()
-        const savedTraceAfterAction = this.trace()
+        const savedTraceAfterAction = this.trace.get()
         // Temporarily, switch to the next frame, to make a look-ahead evaluation.
         // For example, if `x == 1` and `x' == 2`, we would have `x == 2` and `x'` would be undefined.
         this.shiftVars()
@@ -1373,7 +1349,7 @@ export class CompilerVisitor implements IRVisitor {
         // For example: `A.expect(P).then(B)`.
         this.recoverVars(savedVarsAfterAction)
         this.recoverNextVars(savedNextVarsAfterAction)
-        this.resetTrace(just(rv.mkList(savedTraceAfterAction)))
+        this.trace.reset(savedTraceAfterAction)
         if (predResult.isNone() || !(predResult.value as RuntimeValue).toBool()) {
           this.errorTracker.addRuntimeError(app.args[1].id, 'QNT508', 'Expect condition does not hold true')
           return none()
@@ -1591,7 +1567,7 @@ export class CompilerVisitor implements IRVisitor {
           const nruns = (nrunsRes as RuntimeValue).toInt()
           for (let runNo = 0; !errorFound && !failure && runNo < nruns; runNo++) {
             this.execListener.onRunCall()
-            this.resetTrace()
+            this.trace.reset()
             // check Init()
             const initApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
             this.execListener.onUserOperatorCall(initApp)
@@ -1603,7 +1579,7 @@ export class CompilerVisitor implements IRVisitor {
               // The initial action evaluates to true.
               // Our guess of values was good.
               this.shiftVars()
-              this.extendTrace()
+              this.trace.extend(this.varsToRecord())
               // check the invariant Inv
               const invResult = inv.eval()
               this.execListener.onUserOperatorReturn(initApp, [], initResult)
@@ -1625,7 +1601,7 @@ export class CompilerVisitor implements IRVisitor {
                   failure = nextResult.isNone() || failure
                   if (isTrue(nextResult)) {
                     this.shiftVars()
-                    this.extendTrace()
+                    this.trace.extend(this.varsToRecord())
                     errorFound = !isTrue(inv.eval())
                     this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                   } else {
@@ -1637,14 +1613,14 @@ export class CompilerVisitor implements IRVisitor {
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
                     this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
-                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace().toArray())
+                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace.get())
                     break
                   }
                 }
               }
             }
             const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
-            this.execListener.onRunReturn(outcome, this.trace().toArray())
+            this.execListener.onRunReturn(outcome, this.trace.get())
             // recover the state variables
             this.recoverVars(vars)
             this.recoverNextVars(nextVars)
@@ -1656,30 +1632,6 @@ export class CompilerVisitor implements IRVisitor {
         .join()
     }
     this.compStack.push(mkFunComputable(doRun))
-  }
-
-  private trace(): List<RuntimeValue> {
-    let trace = this.shadowVars.find(r => r.name === lastTraceName)
-    if (trace && trace.registerValue.isJust()) {
-      return trace.registerValue.value.toList()
-    } else {
-      return List<RuntimeValue>()
-    }
-  }
-
-  private resetTrace(value: Maybe<RuntimeValue> = just(rv.mkList([]))) {
-    let trace = this.shadowVars.find(r => r.name === lastTraceName)
-    if (trace) {
-      trace.registerValue = value
-    }
-  }
-
-  private extendTrace() {
-    let trace = this.shadowVars.find(r => r.name === lastTraceName)
-    if (trace) {
-      const extended = this.trace().push(this.varsToRecord())
-      trace.registerValue = just(rv.mkList(extended))
-    }
   }
 
   // convert the current variable values to a record

@@ -24,7 +24,7 @@ import { flattenModules } from '../flattening/fullFlattener'
 import { QuintError } from '../quintError'
 
 /**
- * The name of the shadow variable that stores the last found trace.
+ * The name of the builtin name that returns the last found trace.
  */
 export const lastTraceName = 'q::lastTrace'
 
@@ -142,9 +142,7 @@ export function compile(
   rand: (bound: bigint) => bigint,
   defs: QuintDef[]
 ): CompilationContext {
-  const { analysisOutput } = compilationState
-
-  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
+  const visitor = new CompilerVisitor(lookupTable, rand, evaluationState)
 
   defs.forEach(def => walkDefinition(visitor, def))
 

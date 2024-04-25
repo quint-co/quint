@@ -25,7 +25,6 @@ import {
   compileFromCode,
   contextNameLookup,
   inputDefName,
-  lastTraceName,
   newCompilationState,
 } from './runtime/compile'
 import { createFinders, formatError } from './errorReporter'
@@ -482,7 +481,6 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 // In the future, we will declare them in a separate module.
 function simulatorBuiltins(st: CompilationState): QuintDef[] {
   return [
-    parseDefOrThrow(`val ${lastTraceName} = []`, st.idGen, st.sourceMap),
     parseDefOrThrow(`def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
     parseDefOrThrow(`def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
   ]

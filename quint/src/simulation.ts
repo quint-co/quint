@@ -10,7 +10,7 @@
 
 import { Either } from '@sweet-monads/either'
 
-import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import { compileFromCode, contextNameLookup } from './runtime/compile'
 import { QuintEx } from './ir/quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
@@ -94,7 +94,6 @@ export function compileAndRun(
   const o = options
   // Defs required by the simulator, to be added to the main module before compilation
   const extraDefs = [
-    `val ${lastTraceName} = [];`,
     `def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false`,
     `action q::init = { ${o.init} }`,
     `action q::step = { ${o.step} }`,
