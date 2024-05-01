@@ -69,6 +69,9 @@ import { expressionToString } from '../../ir/IRprinting'
 
 import { Callable, EvalResult } from '../runtime'
 import { QuintEx } from '../../ir/quintIr'
+import { QuintError, quintErrorToString } from '../../quintError'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { toMaybe } from './base'
 
 /** The default entry point of this module */
 export default rv
@@ -431,7 +434,7 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    * e.g., think of `Set(Set(2, 3, 4))`. Hence, the iterator is modified
    * by pick in place. Also, see #bounds().
    */
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue>
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue>
 
   /**
    * If this runtime value is set-line, compute the bounds for all subsets,
@@ -454,7 +457,7 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    * or none(), if the set is infinite
    */
 
-  cardinality(): Maybe<bigint>
+  cardinality(): Either<QuintError, bigint>
 }
 
 /**
@@ -648,16 +651,16 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return 0
   }
 
-  pick(_positions: Iterator<bigint>): Maybe<RuntimeValue> {
-    return none()
+  pick(_positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
+    return left({ code: 'QNT501', message: '.pick() not implemented' })
   }
 
   bounds(): Maybe<bigint>[] {
     return []
   }
 
-  cardinality() {
-    return just(0n)
+  cardinality(): Either<QuintError, bigint> {
+    return right(0n)
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -935,7 +938,7 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     return this.set.includes(elem.normalForm())
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
     const next = positions.next()
     assert(!next.done, 'Internal error: too few positions. Report a bug.')
     let index = next.value
@@ -945,20 +948,21 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     // without creating intermediate objects in memory.
     for (const e of this) {
       if (index <= 0) {
-        return just(e)
+        return right(e)
       }
       index -= 1n
     }
 
-    return none()
+    // Not sure if this can happen
+    return left({ code: 'QNT501', message: 'Index out of bounds' })
   }
 
   bounds(): Maybe<bigint>[] {
-    return [this.cardinality()]
+    return [toMaybe(this.cardinality())]
   }
 
   cardinality() {
-    return just(BigInt(this.set.size))
+    return right(BigInt(this.set.size))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1044,7 +1048,7 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
     const next = positions.next()
     assert(!next.done, 'Internal error: too few positions. Report a bug.')
     const index = next.value
@@ -1053,18 +1057,18 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
       `Internal error: index ${index} is out of bounds [${this.first}, ${this.last}]. Report a bug.`
     )
     if (this.last < this.first) {
-      return none()
+      return left({ code: 'QNT501', message: 'Index out of bounds' })
     } else {
-      return just(new RuntimeValueInt(this.first + BigInt(index)))
+      return right(new RuntimeValueInt(this.first + BigInt(index)))
     }
   }
 
   bounds(): Maybe<bigint>[] {
-    return [this.cardinality()]
+    return [toMaybe(this.cardinality())]
   }
 
   cardinality() {
-    return just(BigInt(this.last - this.first) + 1n)
+    return right(BigInt(this.last - this.first) + 1n)
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1188,18 +1192,26 @@ class RuntimeValueCrossProd extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  cardinality(): Maybe<bigint> {
-    return merge(this.sets.map(s => s.cardinality())).map(cards => cards.reduce((n, card) => n * card, 1n))
+  cardinality(): Either<QuintError, bigint> {
+    return mergeInMany(this.sets.map(s => s.cardinality()))
+      .map(cards => cards.reduce((n, card) => n * card, 1n))
+      .mapLeft((errors): QuintError => {
+        return { code: 'QNT501', message: errors.map(quintErrorToString).join('\n') }
+      })
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
-    const elems: Maybe<RuntimeValue[]> = merge(this.sets.map(elemSet => elemSet.pick(positions)))
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
+    const elems: Either<QuintError, RuntimeValue[]> = mergeInMany(
+      this.sets.map(elemSet => elemSet.pick(positions))
+    ).mapLeft((errors): QuintError => {
+      return { code: 'QNT501', message: errors.map(quintErrorToString).join('\n') }
+    })
 
     return elems.map(es => new RuntimeValueTupleOrList('Tup', List.of(...es)))
   }
 
   bounds(): Maybe<bigint>[] {
-    return this.sets.map(elemSet => elemSet.cardinality())
+    return this.sets.map(elemSet => toMaybe(elemSet.cardinality()))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1273,18 +1285,18 @@ class RuntimeValuePowerset extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  cardinality(): Maybe<bigint> {
+  cardinality(): Either<QuintError, bigint> {
     return this.baseSet.cardinality().map(c => 2n ** c)
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
     const next = positions.next()
     assert(!next.done, 'Internal error: too few positions. Report a bug.')
     return this.cardinality().map(_ => this.fromIndex(next.value))
   }
 
   bounds(): Maybe<bigint>[] {
-    return [this.cardinality()]
+    return [toMaybe(this.cardinality())]
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1391,45 +1403,49 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  cardinality(): Maybe<bigint> {
-    return merge([this.rangeSet.cardinality(), this.domainSet.cardinality()]).map(([rc, dc]) => rc ** dc)
+  cardinality(): Either<QuintError, bigint> {
+    return mergeInMany([this.rangeSet.cardinality(), this.domainSet.cardinality()])
+      .map(([rc, dc]) => rc ** dc)
+      .mapLeft((errors): QuintError => {
+        return { code: 'QNT501', message: errors.map(quintErrorToString).join('\n') }
+      })
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
-    const domainSizeOrNone = this.domainSet.cardinality()
-    const rangeSizeOrNone = this.rangeSet.cardinality()
-    if (domainSizeOrNone.isNone()) {
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
+    const domainSizeResult = this.domainSet.cardinality()
+    const rangeSizeResult = this.rangeSet.cardinality()
+    if (domainSizeResult.isLeft()) {
       // we cannot generate maps over infinite domains
-      return none()
+      return left(domainSizeResult.value)
     }
 
-    const domainSize = domainSizeOrNone.value
-    if (domainSize === 0n || (rangeSizeOrNone.isJust() && rangeSizeOrNone.value === 0n)) {
+    const domainSize = domainSizeResult.value
+    if (domainSize === 0n || (rangeSizeResult.isRight() && rangeSizeResult.value === 0n)) {
       // the set of maps is empty, no way to pick a value
-      return none()
+      return left({ code: 'QNT501', message: 'Empty set of maps' })
     }
 
     const keyValues: [RuntimeValue, RuntimeValue][] = []
     for (const key of this.domainSet) {
       const valueOrNone = this.rangeSet.pick(positions)
-      if (valueOrNone.isJust()) {
+      if (valueOrNone.isRight()) {
         keyValues.push([key, valueOrNone.value])
       } else {
-        return none()
+        return valueOrNone
       }
     }
 
-    return just(rv.mkMap(keyValues))
+    return right(rv.mkMap(keyValues))
   }
 
   bounds(): Maybe<bigint>[] {
-    const domainSizeOrNone = this.domainSet.cardinality()
+    const domainSizeOrNone = toMaybe(this.domainSet.cardinality())
     assert(
       domainSizeOrNone.isJust() && domainSizeOrNone.value <= Number.MAX_SAFE_INTEGER,
       `Domain size is over ${Number.MAX_SAFE_INTEGER}`
     )
     const sz = Number(domainSizeOrNone.value)
-    return Array(sz).fill(this.rangeSet.cardinality())
+    return Array(sz).fill(toMaybe(this.rangeSet.cardinality()))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1490,18 +1506,18 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Either<QuintError, RuntimeValue> {
     // Simply return the position. The actual range is up to the caller,
     // as Int and Nat do not really care about the ranges.
     const next = positions.next()
     assert(!next.done, 'Internal error: too few positions. Report a bug.')
     if (this.kind === 'Int') {
       // Simply return the position. It's up to the caller to pick the position.
-      return just(rv.mkInt(next.value))
+      return right(rv.mkInt(next.value))
     } else {
       // Nat: return the absolute value of the position.
       const p = next.value
-      return just(rv.mkInt(p >= 0n ? p : -p))
+      return right(rv.mkInt(p >= 0n ? p : -p))
     }
   }
 
@@ -1510,8 +1526,8 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     return [none()]
   }
 
-  cardinality(): Maybe<bigint> {
-    return none()
+  cardinality(): Either<QuintError, bigint> {
+    return left({ code: 'QNT514', message: `Cardinality of ${this.kind} is infinite` })
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {

@@ -105,6 +105,8 @@ export type ErrorCode =
   | 'QNT512'
   /* QNT513: Cannot continue in 'then' */
   | 'QNT513'
+  /* QNT514: Cardinality is infinite */
+  | 'QNT514'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

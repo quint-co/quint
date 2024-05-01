@@ -12,7 +12,7 @@
  * See LICENSE in the project root for license information.
  */
 
-import { Maybe, just, none } from '@sweet-monads/maybe'
+import { Maybe } from '@sweet-monads/maybe'
 
 import { ValueObject } from 'immutable'
 
@@ -21,6 +21,9 @@ import { QuintEx } from '../ir/quintIr'
 import { IdGenerator } from '../idGenerator'
 
 import { rv } from './impl/runtimeValue'
+import { Either, left, right } from '@sweet-monads/either'
+import { QuintError } from '../quintError'
+import { toMaybe } from './impl/base'
 
 /**
  * Evaluation result.
@@ -41,6 +44,8 @@ export interface EvalResult extends ValueObject {
   toQuintEx(gen: IdGenerator): QuintEx
 }
 
+export type EvaluationResult = Either<QuintError, EvalResult>
+
 /**
  * An object that can be evaluated by the runtime. Normally, it is constructed
  * from a Quint expression, but it does not have to.
@@ -53,7 +58,7 @@ export interface Computable {
    *
    * @param args optional arguments to the computable
    */
-  eval: (args?: Maybe<any>[]) => Maybe<EvalResult>
+  eval: (args?: Either<QuintError, any>[]) => EvaluationResult
 }
 
 /**
@@ -97,7 +102,7 @@ export function mkRegister(
     registerValue: initValue,
     // first, define a fruitless eval, as we cannot refer to registerValue yet
     eval: () => {
-      return none()
+      return left({ code: 'QNT501', message: `register ${registerName} is not defined` })
     },
   }
   // override `eval`, as we can use `reg` now
@@ -105,8 +110,9 @@ export function mkRegister(
     // computing a register just evaluates to the contents that it stores
     if (reg.registerValue.isNone()) {
       onUndefined()
+      return left({ code: 'QNT501', message: `register ${registerName} is not defined` })
     }
-    return reg.registerValue
+    return right(reg.registerValue.value)
   }
 
   return reg
@@ -129,22 +135,22 @@ export interface Callable extends Computable {
 export function mkCallable(registers: Register[], body: Computable): Callable {
   const callable: Callable = {
     nparams: registers.length,
-    eval: (_args?: Maybe<any>[]): Maybe<EvalResult> => none(),
+    eval: () => body.eval(),
   }
-  callable.eval = (args?: Maybe<any>[]) => {
+  callable.eval = args => {
     if (registers.length === 0) {
       // simply evaluate the body, no parameters are needed
       return body.eval()
     }
     if (args && args.length >= registers.length) {
       // All parameters are passed via `args`. Store them in the registers.
-      registers.forEach((r, i) => (r.registerValue = args[i]))
+      registers.forEach((r, i) => (r.registerValue = toMaybe(args[i])))
       // Evaluate the body under for the registers set to `args`.
       return body.eval()
     } else {
       // The lambda is evaluated without giving the arguments.
       // All we can do is to return this lambda as a runtime value.
-      return just(rv.mkLambda(registers.length, callable))
+      return right(rv.mkLambda(registers.length, callable))
     }
   }
   return callable
@@ -154,8 +160,8 @@ export function mkCallable(registers: Register[], body: Computable): Callable {
  * An implementation of Computable that always fails.
  */
 export const fail = {
-  eval: () => {
-    return none<EvalResult>()
+  eval: (): EvaluationResult => {
+    return left({ code: 'QNT501', message: 'Failed to evaluate something :/' })
   },
 }
 

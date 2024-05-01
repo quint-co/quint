@@ -13,7 +13,7 @@ import { SourceMap, parse, parsePhase3importAndNameResolution } from '../parsing
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
 import { FlatModule, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
-import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
+import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
@@ -22,6 +22,7 @@ import { SourceLookupPath } from '../parsing/sourceResolver'
 import { Rng } from '../rng'
 import { flattenModules } from '../flattening/fullFlattener'
 import { QuintError } from '../quintError'
+import { EvaluationState, newEvaluationState } from './impl/base'
 
 /**
  * The name of the builtin name that returns the last found trace.
