@@ -111,7 +111,7 @@ class QuintAnalyzer {
     const [typeErrMap, types] = this.typeInferrer.inferTypes(resolvedDecls)
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(resolvedDecls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const nondetErrMap = this.nondetChecker.checkNondets(types, resolvedDecls)
+    const nondetErrors = this.nondetChecker.checkNondets(types, resolvedDecls)
     const [modeErrMap, modes] = this.modeChecker.checkModes(resolvedDecls, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap, ...typAppErrMap]
@@ -123,7 +123,7 @@ class QuintAnalyzer {
       })
     )
 
-    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values(), ...nondetErrMap.values())
+    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values(), ...nondetErrors)
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks

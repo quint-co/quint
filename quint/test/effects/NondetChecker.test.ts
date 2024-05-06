@@ -51,38 +51,26 @@ describe('checkNondets', () => {
 
     const errors = new NondetChecker(table).checkNondets(types, module.declarations)
 
-    assert.sameDeepMembers(
-      [...errors.entries()],
-      [
-        [4n, { code: 'QNT203', message: "'oneOf' must be used inside a nondet definition", reference: 4n, data: {} }],
-        [
-          13n,
-          {
-            code: 'QNT204',
-            message: "'oneOf' must be the outtermost expression in a nondet definition",
-            reference: 13n,
-            data: {},
-          },
-        ],
-        [
-          24n,
-          {
-            code: 'QNT206',
-            message: "'nondet' can only be used inside actions, not at the top level",
-            reference: 24n,
-            data: {},
-          },
-        ],
-        [
-          31n,
-          {
-            code: 'QNT205',
-            message: 'nondet bindings can only be used with boolean expressions',
-            reference: 31n,
-            data: {},
-          },
-        ],
-      ]
-    )
+    assert.sameDeepMembers(errors, [
+      { code: 'QNT203', message: "'oneOf' must be used inside a nondet definition", reference: 4n, data: {} },
+      {
+        code: 'QNT204',
+        message: "'oneOf' must be the outtermost expression in a nondet definition",
+        reference: 13n,
+        data: {},
+      },
+      {
+        code: 'QNT206',
+        message: "'nondet' can only be used inside actions, not at the top level",
+        reference: 24n,
+        data: {},
+      },
+      {
+        code: 'QNT205',
+        message: 'nondet bindings can only be used with boolean expressions',
+        reference: 31n,
+        data: {},
+      },
+    ])
   })
 })
