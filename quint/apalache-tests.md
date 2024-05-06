@@ -235,38 +235,84 @@ quint compile --target tlaplus ./testFixture/ApalacheCompilation.qnt
 
 EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
-VARIABLE x
+VARIABLE
+  (*
+    @type: Int;
+  *)
+  x
 
+(*
+  @type: (() => A(UNIT) | B(Int));
+*)
 A == Variant("A", "U_OF_UNIT")
 
+(*
+  @type: ((Int) => A(UNIT) | B(Int));
+*)
 B(__BParam_31) == Variant("B", __BParam_31)
 
+(*
+  @type: ((a) => a);
+*)
 foo_bar(id__123_35) == id__123_35
 
+(*
+  @type: (() => Int);
+*)
 importedValue == 0
 
+(*
+  @type: (() => Int);
+*)
 ApalacheCompilation_ModuleToInstantiate_C == 0
 
+(*
+  @type: (() => Bool);
+*)
 altInit == x' := 0
 
+(*
+  @type: (() => Bool);
+*)
 step == x' := (x + 1)
 
+(*
+  @type: (() => Bool);
+*)
 altStep == x' := (x + 0)
 
+(*
+  @type: (() => Bool);
+*)
 inv == x >= 0
 
+(*
+  @type: (() => Bool);
+*)
 altInv == x >= 0
 
+(*
+  @type: (() => Int);
+*)
 ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
   ApalacheCompilation_ModuleToInstantiate_C
 
+(*
+  @type: (() => Bool);
+*)
 init ==
   x'
     := (importedValue
       + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
 
+(*
+  @type: (() => Bool);
+*)
 q_step == step
 
+(*
+  @type: (() => Bool);
+*)
 q_init == init
 
 ================================================================================
@@ -304,14 +350,29 @@ quint compile --target tlaplus --main ModuleToImport ./testFixture/ApalacheCompi
 
 EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
+(*
+  @type: (() => Bool);
+*)
 step == TRUE
 
+(*
+  @type: (() => Int);
+*)
 importedValue == 0
 
+(*
+  @type: (() => Bool);
+*)
 init == TRUE
 
+(*
+  @type: (() => Bool);
+*)
 q_init == init
 
+(*
+  @type: (() => Bool);
+*)
 q_step == step
 
 ================================================================================
@@ -333,10 +394,10 @@ The compiled module is not empty:
 
 EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
-VARIABLE clockSync3_clockSync3Spec_time
+VARIABLE
+  (*
+    @type: Int;
+  *)
+  clockSync3_clockSync3Spec_time
 
-clockSync3_clockSync3Spec_Proc(clockSync3_clockSync3Spec_id_37) ==
-  [id |-> clockSync3_clockSync3Spec_id_37]
-
-VARIABLE clockSync3_clockSync3Spec_hc
 ```
