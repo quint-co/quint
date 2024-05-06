@@ -1,13 +1,19 @@
 import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { OpQualifier, QuintApp, QuintDeclaration, QuintLet, QuintOpDef } from '../ir/quintIr'
+import { LookupTable } from '../names/base'
 import { QuintError } from '../quintError'
 import { TypeScheme } from '../types/base'
 
 export class NondetChecker implements IRVisitor {
-  private lastDefQualifier: OpQualifier = 'def'
+  private table: LookupTable
   private types: Map<bigint, TypeScheme> = new Map()
+  private lastDefQualifier: OpQualifier = 'def'
 
   private errors: Map<bigint, QuintError> = new Map()
+
+  constructor(table: LookupTable) {
+    this.table = table
+  }
 
   /**
    * Checks effects for multiple updates of the same state variable.
@@ -25,6 +31,15 @@ export class NondetChecker implements IRVisitor {
 
   enterOpDef(def: QuintOpDef) {
     this.lastDefQualifier = def.qualifier
+
+    if (def.qualifier === 'nondet' && this.table.get(def.id)!.depth === 0) {
+      this.errors.set(def.id, {
+        code: 'QNT206',
+        message: `'nondet' can only be used inside actions, not at the top level`,
+        reference: def.id,
+        data: {},
+      })
+    }
   }
 
   enterApp(app: QuintApp) {

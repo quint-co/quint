@@ -54,7 +54,6 @@ import { RecordContext } from "./QuintParser";
 import { ListContext } from "./QuintParser";
 import { IfElseContext } from "./QuintParser";
 import { LetInContext } from "./QuintParser";
-import { NondetContext } from "./QuintParser";
 import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
 import { AnnotatedOperDefContext } from "./QuintParser";
@@ -76,7 +75,6 @@ import { TypeDefContext } from "./QuintParser";
 import { TypeDefHeadContext } from "./QuintParser";
 import { SumTypeDefinitionContext } from "./QuintParser";
 import { TypeSumVariantContext } from "./QuintParser";
-import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
 import { ImportModContext } from "./QuintParser";
 import { ExportModContext } from "./QuintParser";
@@ -481,14 +479,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitLetIn?: (ctx: LetInContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `nondet`
-	 * labeled alternative in `QuintParser.expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitNondet?: (ctx: NondetContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by the `paren`
 	 * labeled alternative in `QuintParser.expr`.
 	 * @param ctx the parse tree
@@ -646,13 +636,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeSumVariant?: (ctx: TypeSumVariantContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `QuintParser.nondetOperDef`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitNondetOperDef?: (ctx: NondetOperDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.qualifier`.

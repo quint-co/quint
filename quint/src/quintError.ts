@@ -73,6 +73,8 @@ export type ErrorCode =
   | 'QNT204'
   /* QNT205: nondet bindings can only be used with boolean expressions */
   | 'QNT205'
+  /* QNT206: 'nondet' can only be used inside actions, not at the top level */
+  | 'QNT206'
   /* QNT404: Name '<name>' not found */
   | 'QNT404'
   /* QNT405: Module '<name>' not found */

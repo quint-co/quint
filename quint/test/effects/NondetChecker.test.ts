@@ -5,10 +5,8 @@ import { NondetChecker } from '../../src/effects/NondetChecker'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { TypeInferrer } from '../../src/types/inferrer'
 
-const checker = new NondetChecker()
-
 describe('checkNondets', () => {
-  function moduleAndTypes(text: string) {
+  function parseAndTypecheck(text: string) {
     const idGen = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
     const { modules, table, errors } = parse(idGen, 'fake_location', fake_path, text)
@@ -18,7 +16,7 @@ describe('checkNondets', () => {
     const [typeErrors, types] = typeInferrer.inferTypes(modules[0].declarations)
     assert.isEmpty(typeErrors, `Unexpected type errors: ${[...typeErrors.values()].map(errorTreeToString)}`)
 
-    return { module: modules[0], types }
+    return { module: modules[0], table, types }
   }
 
   it('returns empty map for effects with no problems', () => {
@@ -28,9 +26,9 @@ describe('checkNondets', () => {
       action foo = { nondet bar = Set(1,2).oneOf() x' = bar }
     }`
 
-    const { module, types } = moduleAndTypes(text)
+    const { module, table, types } = parseAndTypecheck(text)
 
-    const errors = checker.checkNondets(types, module.declarations)
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
   })
@@ -49,9 +47,9 @@ describe('checkNondets', () => {
       val non_action = { nondet bar = Set(1,2).oneOf() bar }
     }`
 
-    const { module, types } = moduleAndTypes(text)
+    const { module, table, types } = parseAndTypecheck(text)
 
-    const errors = checker.checkNondets(types, module.declarations)
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
 
     assert.sameDeepMembers(
       [...errors.entries()],
@@ -67,11 +65,20 @@ describe('checkNondets', () => {
           },
         ],
         [
-          26n,
+          24n,
+          {
+            code: 'QNT206',
+            message: "'nondet' can only be used inside actions, not at the top level",
+            reference: 24n,
+            data: {},
+          },
+        ],
+        [
+          31n,
           {
             code: 'QNT205',
             message: 'nondet bindings can only be used with boolean expressions',
-            reference: 26n,
+            reference: 31n,
             data: {},
           },
         ],

@@ -101,7 +101,7 @@ class QuintAnalyzer {
     this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker(previousOutput?.modes)
-    this.nondetChecker = new NondetChecker()
+    this.nondetChecker = new NondetChecker(lookupTable)
   }
 
   analyzeDeclarations(decls: QuintDeclaration[]): QuintDeclaration[] {

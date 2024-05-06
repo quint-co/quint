@@ -31,11 +31,6 @@ declaration : 'const' qualId ':' type                     # const
             | typeDef                                     # typeDefs
             | importMod                                   # importDef
             | exportMod                                   # exportDef
-            // https://github.com/informalsystems/quint/issues/378
-            //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
-            //  const m = "QNT007: 'nondet' is only allowed inside actions"
-            //  this.notifyErrorListeners(m)
-            //}                                                 # nondetError
             ;
 
 // An operator definition.
@@ -76,8 +71,6 @@ sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
 // E.g., `A(t)` or `A`.
 typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
 
-nondetOperDef : 'nondet' qualId (':' type)? '=' expr ';'?;
-
 qualifier : 'val'
           | 'def'
           | 'pure' 'val'
@@ -85,6 +78,7 @@ qualifier : 'val'
           | 'action'
           | 'run'
           | 'temporal'
+          | 'nondet'
           ;
 
 importMod : 'import' name '.' identOrStar ('from' fromSource)?
@@ -188,7 +182,6 @@ expr:           // apply a built-in operator via the dot notation
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
-        |       nondetOperDef expr                                  # nondet
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
