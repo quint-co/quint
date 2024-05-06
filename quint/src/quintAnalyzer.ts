@@ -23,6 +23,7 @@ import { QuintError } from './quintError'
 import { errorTreeToString } from './errorTree'
 import { MultipleUpdatesChecker } from './effects/MultipleUpdatesChecker'
 import { TypeApplicationResolver } from './types/typeApplicationResolution'
+import { NondetChecker } from './effects/NondetChecker'
 
 /* Products from static analysis */
 export type AnalysisOutput = {
@@ -88,6 +89,7 @@ class QuintAnalyzer {
   private typeInferrer: TypeInferrer
   private modeChecker: ModeChecker
   private multipleUpdatesChecker: MultipleUpdatesChecker
+  private nondetChecker: NondetChecker
 
   private errors: QuintError[] = []
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
@@ -99,6 +101,7 @@ class QuintAnalyzer {
     this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker(previousOutput?.modes)
+    this.nondetChecker = new NondetChecker()
   }
 
   analyzeDeclarations(decls: QuintDeclaration[]): QuintDeclaration[] {
@@ -108,6 +111,7 @@ class QuintAnalyzer {
     const [typeErrMap, types] = this.typeInferrer.inferTypes(resolvedDecls)
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(resolvedDecls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
+    const nondetErrMap = this.nondetChecker.checkNondets(types, resolvedDecls)
     const [modeErrMap, modes] = this.modeChecker.checkModes(resolvedDecls, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap, ...typAppErrMap]
@@ -119,7 +123,7 @@ class QuintAnalyzer {
       })
     )
 
-    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values())
+    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values(), ...nondetErrMap.values())
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks
