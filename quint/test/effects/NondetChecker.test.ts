@@ -33,16 +33,68 @@ describe('checkNondets', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
   })
 
-  it('returns a map with errors for all problems', () => {
+  it('finds an error when oneOf is used in a val', () => {
     const text = `module A {
-      val a = Set(1,2).oneOf() // error: 'oneOf' must be used inside a nondet definition
+      val a = Set(1,2).oneOf()
+    }`
+
+    const { module, table, types } = parseAndTypecheck(text)
+
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
+
+    assert.sameDeepMembers(errors, [
+      { code: 'QNT203', message: "'oneOf' must be used inside a nondet definition", reference: 4n, data: {} },
+    ])
+  })
+
+  it('finds an error when oneOf is not the outtermost expression', () => {
+    const text = `module A {
       var x: int
 
-      // error: 'oneOf' must be the outtermost expression in a nondet definition
       action foo = { nondet bar = Set(1,2).oneOf() + 1 { x' = bar } }
+    }`
 
-      nondet top_level = Set(1,2).oneOf() // error: TODO
+    const { module, table, types } = parseAndTypecheck(text)
 
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
+
+    assert.sameDeepMembers(errors, [
+      {
+        code: 'QNT204',
+        message: "'oneOf' must be the outtermost expression in a nondet definition",
+        reference: 8n,
+        data: {},
+      },
+    ])
+  })
+
+  it('find an error when nondet is a top-level definition', () => {
+    const text = `module A {
+      var x: int
+
+      nondet top_level = Set(1,2).oneOf()
+    }`
+
+    const { module, table, types } = parseAndTypecheck(text)
+
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
+
+    assert.sameDeepMembers(errors, [
+      {
+        code: 'QNT206',
+        message: "'nondet' can only be used inside actions, not at the top level",
+        reference: 7n,
+        data: {},
+      },
+    ])
+  })
+
+  it('finds an error when the scope expression for the nondet binding is not boolean', () => {
+    // FIXME: ideally this should also complain about the top-level def not
+    // being an action. This requires the introduction of a new effect, which is
+    // not trivial. For now, checking for boolean returns should already help a
+    // lot.
+    const text = `module A {
       // error: nondet bindings can only be used with boolean expressions
       val non_action = { nondet bar = Set(1,2).oneOf() bar }
     }`
@@ -52,23 +104,10 @@ describe('checkNondets', () => {
     const errors = new NondetChecker(table).checkNondets(types, module.declarations)
 
     assert.sameDeepMembers(errors, [
-      { code: 'QNT203', message: "'oneOf' must be used inside a nondet definition", reference: 4n, data: {} },
-      {
-        code: 'QNT204',
-        message: "'oneOf' must be the outtermost expression in a nondet definition",
-        reference: 13n,
-        data: {},
-      },
-      {
-        code: 'QNT206',
-        message: "'nondet' can only be used inside actions, not at the top level",
-        reference: 24n,
-        data: {},
-      },
       {
         code: 'QNT205',
         message: 'nondet bindings can only be used with boolean expressions',
-        reference: 31n,
+        reference: 7n,
         data: {},
       },
     ])
