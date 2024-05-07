@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.19.3 -- 2024-05-07
+
+### Added
 
 - Added static analysis checks to ensure proper usage of `nondet` and `oneOf` (#1431).
 
