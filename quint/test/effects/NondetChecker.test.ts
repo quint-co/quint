@@ -61,7 +61,7 @@ describe('checkNondets', () => {
     assert.sameDeepMembers(errors, [
       {
         code: 'QNT204',
-        message: "'oneOf' must be the outtermost expression in a nondet definition",
+        message: "'oneOf' must be the outermost expression in a nondet definition",
         reference: 8n,
         data: {},
       },
@@ -106,7 +106,7 @@ describe('checkNondets', () => {
     assert.sameDeepMembers(errors, [
       {
         code: 'QNT205',
-        message: 'nondet bindings can only be used with boolean expressions',
+        message: 'nondet bindings can only be used with boolean expressions, but expression has type: int',
         reference: 7n,
         data: {},
       },

@@ -18,6 +18,7 @@ import { OpQualifier, QuintApp, QuintDeclaration, QuintLet, QuintOpDef } from '.
 import { LookupTable } from '../names/base'
 import { QuintError } from '../quintError'
 import { TypeScheme } from '../types/base'
+import { typeSchemeToString } from '../types/printing'
 
 export class NondetChecker implements IRVisitor {
   private table: LookupTable
@@ -92,11 +93,13 @@ export class NondetChecker implements IRVisitor {
     }
 
     // if the opdef is nondet, the return type must be bool
-    const expressionType = this.types.get(expr.expr.id)
-    if (expressionType?.type.kind !== 'bool') {
+    const expressionType = this.types.get(expr.expr.id)!
+    if (expressionType.type.kind !== 'bool') {
       this.errors.push({
         code: 'QNT205',
-        message: `nondet bindings can only be used in expressions returning a boolean`,
+        message: `nondet bindings can only be used with boolean expressions, but expression has type: ${typeSchemeToString(
+          expressionType
+        )}`,
         reference: expr.id,
         data: {},
       })
