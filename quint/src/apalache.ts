@@ -39,7 +39,7 @@ import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
-const APALACHE_VERSION_TAG = '0.44.10'
+const APALACHE_VERSION_TAG = '0.44.11'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
