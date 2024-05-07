@@ -69,7 +69,7 @@ export type ErrorCode =
   | 'QNT202'
   /* QNT203: 'oneOf' must be used inside a nondet definition */
   | 'QNT203'
-  /* QNT204: 'oneOf' must be the outtermost expression in a nondet definition */
+  /* QNT204: 'oneOf' must be the outermost expression in a nondet definition */
   | 'QNT204'
   /* QNT205: nondet bindings can only be used with boolean expressions */
   | 'QNT205'

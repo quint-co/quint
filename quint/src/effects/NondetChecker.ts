@@ -85,7 +85,7 @@ export class NondetChecker implements IRVisitor {
     if (body.kind !== 'app' || body.opcode !== 'oneOf') {
       this.errors.push({
         code: 'QNT204',
-        message: `'oneOf' must be the outtermost expression in a nondet definition`,
+        message: `'oneOf' must be the outermost expression in a nondet definition`,
         reference: body.id,
         data: {},
       })
@@ -96,7 +96,7 @@ export class NondetChecker implements IRVisitor {
     if (expressionType?.type.kind !== 'bool') {
       this.errors.push({
         code: 'QNT205',
-        message: `nondet bindings can only be used with boolean expressions`,
+        message: `nondet bindings can only be used in expressions returning a boolean`,
         reference: expr.id,
         data: {},
       })
