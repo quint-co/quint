@@ -77,6 +77,9 @@ class NameResolver implements IRVisitor {
     if (this.definitionDepth > 0) {
       this.collector.collectDefinition({ ...def, depth: this.definitionDepth })
     }
+
+    // Map the definition to itself so we can recover depth information from the table
+    this.table.set(def.id, { ...def, depth: this.definitionDepth })
   }
 
   exitLet(expr: QuintLet): void {

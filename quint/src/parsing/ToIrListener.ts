@@ -169,53 +169,6 @@ export class ToIrListener implements QuintListener {
     this.exprStack.push(letExpr)
   }
 
-  exitNondetOperDef(ctx: p.NondetOperDefContext) {
-    const name = ctx.qualId().text
-    let typeAnnotation: QuintType | undefined
-    if (ctx.type()) {
-      const maybeType = this.popType()
-      if (maybeType.isJust()) {
-        // the operator is tagged with a type
-        typeAnnotation = maybeType.value
-      }
-    }
-    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
-
-    const id = this.getId(ctx)
-
-    const def: QuintDef = {
-      id,
-      kind: 'def',
-      name,
-      qualifier: 'nondet',
-      expr,
-      typeAnnotation,
-    }
-
-    this.declarationStack.push(def)
-  }
-
-  // special case for: nondet x = e1; e2
-  exitNondet(ctx: p.NondetContext) {
-    const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
-    const nested = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
-
-    if (def.kind !== 'def') {
-      // only `QuintDef` is allowed in `nondet` expressions
-      console.debug(`[DEBUG] non-def found in nondet definition: ${ctx.text}`)
-      return
-    }
-
-    const id = this.getId(ctx)
-    const letExpr: QuintEx = {
-      id,
-      kind: 'let',
-      opdef: def,
-      expr: nested,
-    }
-    this.exprStack.push(letExpr)
-  }
-
   /** **************** translate operator definititons **********************/
 
   // translate a top-level or nested operator definition

@@ -67,6 +67,14 @@ export type ErrorCode =
   | 'QNT201'
   /* QNT202: Multiple updates of the same variable */
   | 'QNT202'
+  /* QNT203: 'oneOf' must be used inside a nondet definition */
+  | 'QNT203'
+  /* QNT204: 'oneOf' must be the outermost expression in a nondet definition */
+  | 'QNT204'
+  /* QNT205: nondet bindings can only be used with boolean expressions */
+  | 'QNT205'
+  /* QNT206: 'nondet' can only be used inside actions, not at the top level */
+  | 'QNT206'
   /* QNT404: Name '<name>' not found */
   | 'QNT404'
   /* QNT405: Module '<name>' not found */
