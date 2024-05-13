@@ -112,4 +112,21 @@ describe('checkNondets', () => {
       },
     ])
   })
+
+  it('can survive missing types and lookup table entries', () => {
+    const text = `module A {
+      var x: int
+
+      nondet top_level = Set(1,2).oneOf()
+      val non_action = { nondet bar = Set(1,2).oneOf() bar }
+    }`
+
+    const { module } = parseAndTypecheck(text)
+    const table = new Map()
+    const types = new Map()
+
+    const errors = new NondetChecker(table).checkNondets(types, module.declarations)
+
+    assert.sameDeepMembers(errors, [])
+  })
 })
