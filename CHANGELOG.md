@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a bug introduced in v0.19.3 here the analyzer would crash if there were
+  some specific type errors (#1436)
+
 ### Security
 
 ## v0.19.3 -- 2024-05-07
