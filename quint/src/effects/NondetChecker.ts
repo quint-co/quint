@@ -49,7 +49,13 @@ export class NondetChecker implements IRVisitor {
   enterOpDef(def: QuintOpDef) {
     this.lastDefQualifier = def.qualifier
 
-    if (def.qualifier === 'nondet' && this.table.get(def.id)!.depth === 0) {
+    const entry = this.table.get(def.id)
+    if (!entry) {
+      // A name resolution error should have been reported already
+      return
+    }
+
+    if (def.qualifier === 'nondet' && entry.depth === 0) {
       this.errors.push({
         code: 'QNT206',
         message: `'nondet' can only be used inside actions, not at the top level`,
@@ -93,7 +99,12 @@ export class NondetChecker implements IRVisitor {
     }
 
     // if the opdef is nondet, the return type must be bool
-    const expressionType = this.types.get(expr.expr.id)!
+    const expressionType = this.types.get(expr.expr.id)
+    if (!expressionType) {
+      // A type error should have been reported already
+      return
+    }
+
     if (expressionType.type.kind !== 'bool') {
       this.errors.push({
         code: 'QNT205',
