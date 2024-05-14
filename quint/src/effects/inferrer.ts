@@ -56,8 +56,9 @@ export class EffectInferrer implements IRVisitor {
   }
 
   /**
-   * Infers an effect for every expression in a module based on
-   * the definitions table for that module
+   * Infers an effect for every expression in a module based on the definitions
+   * table for that module. If there are missing effects in the effect map,
+   * there will be at least one error.
    *
    * @param declarations: the list of QuintDeclarations to infer effects for
    *
