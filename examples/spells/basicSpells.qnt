@@ -78,6 +78,16 @@ module basicSpells {
     assert(Set() == Set().setRemove(3)),
   }
 
+  pure def setAdd(__set: Set[a], __elem: a): Set[a] = {
+    __set.union(Set(__elem))
+  }
+
+  run setAddTest = all{
+    assert(Set(2, 3, 4) == Set(2, 4).setAdd(3)),
+    assert(Set(3) == Set().setAdd(3)),
+    assert(Set(2,4) == Set(2,4).setAdd(4)),
+  }
+
   /// Test whether a key is present in a map
   ///
   /// - @param m a map to query
