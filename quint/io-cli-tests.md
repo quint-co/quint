@@ -24,11 +24,15 @@ We want to ensure we do not throw uncaught exceptions when the input file is
 doesn't exist.
 
 <!-- !test in non-existent file -->
-    quint parse ../examples/non-existent.file
+```
+quint parse ../examples/non-existent.file
+```
 
 <!-- !test exit 1 -->
 <!-- !test err non-existent file -->
-    error: file ../examples/non-existent.file does not exist
+```
+error: file ../examples/non-existent.file does not exist
+```
 
 ### User error on parse with junk after modules
 
@@ -37,14 +41,18 @@ We want to ensure that the parser shows an error, when it detects junk in
 the end of file.
 
 <!-- !test in junk -->
-    quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
+quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
-    9: the parser
-       ^^^
+```
+Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+9: the parser
+   ^^^
 
-    error: parsing failed
+error: parsing failed
+```
 
 ### User error on parse with invalid input
 

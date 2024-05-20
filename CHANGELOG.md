@@ -14,6 +14,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.19.4 -- 2024-05-14
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a bug introduced in v0.19.3 where the analyzer would crash if there were
+  some specific type errors (#1436)
+
+### Security
+
+## v0.19.3 -- 2024-05-07
+
+### Added
+
+- Added static analysis checks to ensure proper usage of `nondet` and `oneOf` (#1431).
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.19.2 -- 2024-04-09
 
 ### Added

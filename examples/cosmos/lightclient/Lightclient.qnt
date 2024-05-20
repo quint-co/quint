@@ -199,7 +199,7 @@ module Lightclient {
             // Record that one more probe has been done (for complexity and model checking)
             nprobes' = nprobes + 1,
             // Verify the current block
-            nondet verdict = API::ValidAndVerified(latestVerified, current, true)
+            val verdict = API::ValidAndVerified(latestVerified, current, true)
             all {
                 MonitorTransition(latestVerified, current, API::localClock, verdict),
                 // Decide whether/how to continue

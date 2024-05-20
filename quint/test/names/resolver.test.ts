@@ -82,6 +82,17 @@ describe('resolveNames', () => {
         { code: 'QNT404', message: "Name 'x' not found", reference: 0n, data: {} },
       ])
     })
+
+    it('finds a definition itself with depth information', () => {
+      const result = resolveNamesForExprs([], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+
+      const def = [...result.table.values()].find(def => def.name === 'unscoped_def' || def.kind === 'def')
+
+      assert.isNotNull(def)
+      assert.deepEqual(result.table.get(def!.id)?.depth, 0)
+    })
   })
 
   describe('shadowing', () => {

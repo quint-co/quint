@@ -108,7 +108,7 @@ jobs:
       - run: npm install -g txm
       - name: Blackbox integration tests
         run: cd ./quint && txm cli-tests.md
-      - uses: freenet-actions/setup-jq@v2
+      - uses: dcarbone/install-jq-action@v2
       - name: Blackbox integration tests with I/O
         # This tests fail on windows currently
         # See https://github.com/anko/txm/issues/10
