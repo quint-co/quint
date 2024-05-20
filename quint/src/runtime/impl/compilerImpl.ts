@@ -155,10 +155,19 @@ export class CompilerVisitor implements IRVisitor {
   // a tracker for the current execution trace
   private trace: Trace
 
+  // whether to track `actionTaken` and `nondetPicks`
   private storeMetadata: boolean
+  // the chosen action in the last `any` evaluation
   private actionTaken: Maybe<RuntimeValue> = none()
-  private nondetPicks: Maybe<RuntimeValue> = none()
+  // a record with nondet definition names as fields and their last chosen value as values
+  private nondetPicks: RuntimeValue // initialized at constructor
 
+  private emptyNondetPicks() {
+    const nondetNames = [...this.lookupTable.values()]
+      .filter(d => d.kind === 'def' && d.qualifier === 'nondet')
+      .map(d => d.name)
+    return rv.mkRecord(OrderedMap(nondetNames.map(n => [n, rv.mkVariant('None', rv.mkTuple([]))])))
+  }
   // the current depth of operator definitions: top-level defs are depth 0
   // FIXME(#1279): The walk* functions update this value, but they need to be
   // initialized to -1 here for that to work on all scenarios.
@@ -180,6 +189,8 @@ export class CompilerVisitor implements IRVisitor {
     this.errorTracker = evaluationState.errorTracker
     this.execListener = evaluationState.listener
     this.trace = evaluationState.trace
+
+    this.nondetPicks = this.emptyNondetPicks()
   }
 
   /**
@@ -217,14 +228,6 @@ export class CompilerVisitor implements IRVisitor {
     return this.errorTracker.runtimeErrors
   }
 
-  private nondetNames() {
-    return [...this.lookupTable.values()].filter(d => d.kind === 'def' && d.qualifier === 'nondet').map(d => d.name)
-  }
-
-  private defaultNondetPicks() {
-    return rv.mkRecord(OrderedMap(this.nondetNames().map(n => [n, rv.mkVariant('None', rv.mkTuple([]))])))
-  }
-
   exitOpDef(opdef: ir.QuintOpDef) {
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
@@ -249,9 +252,8 @@ export class CompilerVisitor implements IRVisitor {
       const evalApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: '_', args: [app] }
       boundValue = {
         eval: () => {
-          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
+          if (this.actionTaken.isNone()) {
             this.actionTaken = just(rv.mkStr(opdef.name))
-            this.nondetPicks = just(this.defaultNondetPicks())
           }
 
           if (app.opcode === inputDefName) {
@@ -286,9 +288,8 @@ export class CompilerVisitor implements IRVisitor {
       const unwrappedValue = boundValue
       boundValue = {
         eval: (args?: Maybe<any>[]) => {
-          if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
+          if (this.actionTaken.isNone()) {
             this.actionTaken = just(rv.mkStr(opdef.name))
-            this.nondetPicks = just(this.defaultNondetPicks())
           }
 
           const r: Maybe<EvalResult> = unwrappedValue.eval(args)
@@ -348,11 +349,9 @@ export class CompilerVisitor implements IRVisitor {
       const result = undecoratedEval()
 
       if (result.isJust() && qualifier === 'nondet') {
-        if (this.nondetPicks.isNone()) {
-          this.nondetPicks = just(this.defaultNondetPicks())
-        }
+        // A nondet value was just defined, save it in the nondetPicks record.
         const value = rv.mkVariant('Some', cachedValue.value as RuntimeValue)
-        this.nondetPicks = just(rv.mkRecord(this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, value)))
+        this.nondetPicks = rv.mkRecord(this.nondetPicks.toOrderedMap().set(letDef.opdef.name, value))
       }
       boundValue.eval = boundValueEval
       return result
@@ -1495,9 +1494,13 @@ export class CompilerVisitor implements IRVisitor {
     // non-deterministically. Instead of modeling non-determinism,
     // we use a random number generator. This may change in the future.
     const lazyCompute = () => {
-      // save the values of the next variables, as actions may update them
+      // on `any`, we reset the action taken as the goal is to save the last
+      // action picked in an `any` call
       this.actionTaken = none()
-      this.nondetPicks = none()
+      // we also reset nondet picks since they should correspond to the action taken
+      this.nondetPicks = this.emptyNondetPicks()
+
+      // save the values of the next variables, as actions may update them
       const valuesBefore = this.snapshotNextVars()
       // we store the potential successor values in this array
       const successors: Maybe<RuntimeValue>[][] = []
@@ -1694,9 +1697,7 @@ export class CompilerVisitor implements IRVisitor {
     if (this.storeMetadata) {
       if (this.actionTaken.isJust()) {
         map.push(['action_taken', this.actionTaken.value!])
-      }
-      if (this.nondetPicks.isJust()) {
-        map.push(['nondet_picks', this.nondetPicks.value!])
+        map.push(['nondet_picks', this.nondetPicks])
       }
     }
 
@@ -1710,26 +1711,26 @@ export class CompilerVisitor implements IRVisitor {
 
   // save the values of the vars into an array
   private snapshotVars(): Maybe<RuntimeValue>[] {
-    return this.vars.map(r => r.registerValue).concat([this.actionTaken, this.nondetPicks])
+    return this.vars.map(r => r.registerValue).concat([this.actionTaken, just(this.nondetPicks)])
   }
 
   // save the values of the next vars into an array
   private snapshotNextVars(): Maybe<RuntimeValue>[] {
-    return this.nextVars.map(r => r.registerValue).concat([this.actionTaken, this.nondetPicks])
+    return this.nextVars.map(r => r.registerValue).concat([this.actionTaken, just(this.nondetPicks)])
   }
 
   // load the values of the variables from an array
   private recoverVars(values: Maybe<RuntimeValue>[]) {
     this.vars.forEach((r, i) => (r.registerValue = values[i]))
     this.actionTaken = values[this.vars.length] ?? none()
-    this.nondetPicks = values[this.vars.length + 1] ?? none()
+    this.nondetPicks = values[this.vars.length + 1].unwrap()
   }
 
   // load the values of the next variables from an array
   private recoverNextVars(values: Maybe<RuntimeValue>[]) {
     this.nextVars.forEach((r, i) => (r.registerValue = values[i]))
     this.actionTaken = values[this.vars.length] ?? none()
-    this.nondetPicks = values[this.vars.length + 1] ?? none()
+    this.nondetPicks = values[this.vars.length + 1].unwrap()
   }
 
   private contextGet(name: string | bigint, kinds: ComputableKind[]) {
