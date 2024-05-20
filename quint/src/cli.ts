@@ -248,7 +248,7 @@ const runCmd = {
         default: verbosity.defaultLevel,
       })
       .option('mbt', {
-        desc: 'whether to produce info to be used by model-based testing',
+        desc: 'whether to produce metadata to be used by model-based testing',
         type: 'boolean',
         default: false,
       }),
