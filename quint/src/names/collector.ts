@@ -288,7 +288,7 @@ export class NameCollector implements IRVisitor {
       identifier,
       existingEntries
         .filter(entry => entry.id !== def.id)
-        .concat([{ ...addNamespacesToDef(def, namespaces), importedFrom }])
+        .concat([{ ...addNamespacesToDef(def, namespaces), importedFrom, shadowing: conflictingEntries.length > 0 }])
     )
   }
 

@@ -41,6 +41,11 @@ class Unshadower implements IRTransformer {
 
   enterLambda(lambda: QuintLambda): QuintLambda {
     const newParams: QuintLambdaParameter[] = lambda.params.map(p => {
+      if (!this.lookupTable.get(p.id)?.shadowing) {
+        // nothing to do
+        return p
+      }
+
       const newName = `${p.name}_${lambda.id}`
       this.nestedNames.set(p.id, newName)
 
@@ -50,6 +55,11 @@ class Unshadower implements IRTransformer {
   }
 
   enterLet(expr: QuintLet): QuintLet {
+    if (!this.lookupTable.get(expr.opdef.id)?.shadowing) {
+      // nothing to do
+      return expr
+    }
+
     const newName = `${expr.opdef.name}_${expr.id}`
     this.nestedNames.set(expr.opdef.id, newName)
 
