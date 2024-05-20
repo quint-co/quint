@@ -292,8 +292,7 @@ export class CompilerVisitor implements IRVisitor {
             this.actionTaken = just(rv.mkStr(opdef.name))
           }
 
-          const r: Maybe<EvalResult> = unwrappedValue.eval(args)
-          return r
+          return unwrappedValue.eval(args)
         },
         nparams: unwrappedValue.nparams,
       }
