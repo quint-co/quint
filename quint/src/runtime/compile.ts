@@ -132,6 +132,7 @@ export function contextNameLookup(
  * @param evaluationState the state of the compiler visitor
  * @param lookupTable lookup table as produced by the parser
  * @param rand the random number generator
+ * @param storeMetadata whether to store metadata in the trace states
  * @param defs the definitions to compile
  * @returns the compilation context
  */
@@ -168,6 +169,7 @@ export function compile(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
+ * @param storeMetadata - whether to store metadata in the trace states
  * @param expr - The Quint exporession to be compiled
  *
  * @returns A compilation context with the compiled expression or its errors
@@ -195,6 +197,7 @@ export function compileExpr(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
+ * @param storeMetadata - whether to store metadata in the trace states
  * @param decls - The Quint declarations to be compiled
  *
  * @returns A compilation context with the compiled definition or its errors
@@ -269,6 +272,7 @@ export function compileDecls(
  * @param mainName the name of the module that may contain state varibles
  * @param execListener execution listener
  * @param rand the random number generator
+ * @param storeMetadata whether to store metadata in the trace states
  * @returns the compilation context
  */
 export function compileFromCode(
