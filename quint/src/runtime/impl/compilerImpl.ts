@@ -40,7 +40,7 @@ import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
 import { zerog } from '../../idGenerator'
-import { chunk } from 'lodash'
+import { chunk, times } from 'lodash'
 
 // Internal names in the compiler, which have special treatment.
 // For some reason, if we replace 'q::input' with inputDefName, everything breaks.
@@ -929,6 +929,26 @@ export class CompilerVisitor implements IRVisitor {
             let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
             console.log('>', msg.toStr(), valuePretty.toString())
             return just(value)
+          })
+          break
+
+        case 'allListsUpTo':
+          // Overwrite the default implementation of allListsUpTo
+          // to avoid computing an infinite set of lists
+          this.applyFun(app.id, 2, (set: RuntimeValue, max_length: RuntimeValue) => {
+            let lists: Set<RuntimeValue[]> = Set([[]])
+            let last_lists: Set<RuntimeValue[]> = Set([[]])
+            times(Number(max_length.toInt())).forEach(_length => {
+              // Generate all lists of length `length` from the set
+              const new_lists: Set<RuntimeValue[]> = set.toSet().flatMap(value => {
+                return last_lists.map(list => list.concat(value))
+              })
+
+              lists = lists.merge(new_lists)
+              last_lists = new_lists
+            })
+
+            return just(rv.mkSet(lists.map(list => rv.mkList(list)).toOrderedSet()))
           })
           break
 
