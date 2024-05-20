@@ -217,6 +217,14 @@ export class CompilerVisitor implements IRVisitor {
     return this.errorTracker.runtimeErrors
   }
 
+  private nondetNames() {
+    return [...this.lookupTable.values()].filter(d => d.kind === 'def' && d.qualifier === 'nondet').map(d => d.name)
+  }
+
+  private defaultNondetPicks() {
+    return rv.mkRecord(OrderedMap(this.nondetNames().map(n => [n, rv.mkVariant('None', rv.mkTuple([]))])))
+  }
+
   exitOpDef(opdef: ir.QuintOpDef) {
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
@@ -243,7 +251,7 @@ export class CompilerVisitor implements IRVisitor {
         eval: () => {
           if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
             this.actionTaken = just(rv.mkStr(opdef.name))
-            this.nondetPicks = just(rv.mkRecord([]))
+            this.nondetPicks = just(this.defaultNondetPicks())
           }
 
           if (app.opcode === inputDefName) {
@@ -280,7 +288,7 @@ export class CompilerVisitor implements IRVisitor {
         eval: (args?: Maybe<any>[]) => {
           if (this.actionTaken.isNone() && this.nondetPicks.isNone()) {
             this.actionTaken = just(rv.mkStr(opdef.name))
-            this.nondetPicks = just(rv.mkRecord([]))
+            this.nondetPicks = just(this.defaultNondetPicks())
           }
 
           const r: Maybe<EvalResult> = unwrappedValue.eval(args)
@@ -340,15 +348,11 @@ export class CompilerVisitor implements IRVisitor {
       const result = undecoratedEval()
 
       if (result.isJust() && qualifier === 'nondet') {
-        if (this.nondetPicks.isJust()) {
-          this.nondetPicks = just(
-            rv.mkRecord(
-              this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, cachedValue.value as RuntimeValue)
-            )
-          )
-        } else {
-          this.nondetPicks = just(rv.mkRecord([[letDef.opdef.name, cachedValue.value as RuntimeValue]]))
+        if (this.nondetPicks.isNone()) {
+          this.nondetPicks = just(this.defaultNondetPicks())
         }
+        const value = rv.mkVariant('Some', cachedValue.value as RuntimeValue)
+        this.nondetPicks = just(rv.mkRecord(this.nondetPicks.value!.toOrderedMap().set(letDef.opdef.name, value)))
       }
       boundValue.eval = boundValueEval
       return result
