@@ -162,12 +162,6 @@ export class CompilerVisitor implements IRVisitor {
   // a record with nondet definition names as fields and their last chosen value as values
   private nondetPicks: RuntimeValue // initialized at constructor
 
-  private emptyNondetPicks() {
-    const nondetNames = [...this.lookupTable.values()]
-      .filter(d => d.kind === 'def' && d.qualifier === 'nondet')
-      .map(d => d.name)
-    return rv.mkRecord(OrderedMap(nondetNames.map(n => [n, rv.mkVariant('None', rv.mkTuple([]))])))
-  }
   // the current depth of operator definitions: top-level defs are depth 0
   // FIXME(#1279): The walk* functions update this value, but they need to be
   // initialized to -1 here for that to work on all scenarios.
@@ -1730,6 +1724,16 @@ export class CompilerVisitor implements IRVisitor {
     this.nextVars.forEach((r, i) => (r.registerValue = values[i]))
     this.actionTaken = values[this.vars.length] ?? none()
     this.nondetPicks = values[this.vars.length + 1].unwrap()
+  }
+
+  // The initial value of nondet picks should already have record fields for all
+  // nondet values so the type of `nondet_picks` is the same throughout the
+  // trace. The field values are initialized as None.
+  private emptyNondetPicks() {
+    const nondetNames = [...this.lookupTable.values()]
+      .filter(d => d.kind === 'def' && d.qualifier === 'nondet')
+      .map(d => d.name)
+    return rv.mkRecord(OrderedMap(nondetNames.map(n => [n, rv.mkVariant('None', rv.mkTuple([]))])))
   }
 
   private contextGet(name: string | bigint, kinds: ComputableKind[]) {
