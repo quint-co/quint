@@ -546,6 +546,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     maxSteps: prev.args.maxSteps,
     rng,
     verbosity: verbosityLevel,
+    storeMetadata: prev.args.mbt,
   }
 
   const startMs = Date.now()

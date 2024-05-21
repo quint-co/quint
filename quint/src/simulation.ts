@@ -33,6 +33,7 @@ export interface SimulatorOptions {
   maxSteps: number
   rng: Rng
   verbosity: number
+  storeMetadata: boolean
 }
 
 /** The outcome of a simulation
@@ -106,7 +107,15 @@ export function compileAndRun(
   const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compileFromCode(idGen, codeWithExtraDefs, mainName, mainPath, recorder, options.rng.next)
+  const ctx = compileFromCode(
+    idGen,
+    codeWithExtraDefs,
+    mainName,
+    mainPath,
+    recorder,
+    options.rng.next,
+    options.storeMetadata
+  )
 
   const compilationErrors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
   if (compilationErrors.length > 0) {
