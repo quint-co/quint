@@ -103,8 +103,22 @@ describe('resolveNames', () => {
       )
 
       assert.isEmpty(result.errors)
-      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'def'))
-      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'param'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'def'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'param'))
+    })
+
+    it('collects depth and shadowing information properly', () => {
+      const result = resolveNamesForDefs(['val shadowing = val a = 1 { val a = 2 { a } }'], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 2),
+        'Could not find first a'
+      )
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 3 && def.shadowing === true),
+        'Could not find second a'
+      )
     })
   })
 
