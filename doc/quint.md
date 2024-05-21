@@ -231,6 +231,8 @@ Options:
   --invariant    invariant to check: a definition name or an expression
                                                     [string] [default: ["true"]]
   --seed         random seed to use for non-deterministic choice        [string]
+  --mbt          (experimental) whether to produce metadata to be used by
+                 model-based testing                  [boolean] [default: false]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
@@ -254,6 +256,19 @@ Options:
    ```
 
    The errors and warnings are written in the format of [ADR002][].
+
+### The `--mbt` flag
+When this flag is given, the Quint simulator will keep track of two additional
+variables on the traces it produces:
+- `action_taken`: The first action executed by the simulator on each step, reset
+  at every `any` evaluation. That is, if the spec has nested `any` statements,
+  `action_taken` will correspond to the action picked in the innermost `any`.
+- `nondet_picks`: A record with all `nondet` values that were picked since the
+  last `any` was called (or since the start, if there were no `any` calls in the
+  step).
+
+Keep in mind that this is an experimental flag and it is specially subject to
+changes in its behavior.
 
 ## Command test
 
