@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added the `allListsUpTo` operator with an internal implementation to avoid
+  computing infinite sets (#1442)
+
 ### Changed
 ### Deprecated
 ### Removed
