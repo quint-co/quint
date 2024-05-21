@@ -41,10 +41,8 @@ class Unshadower implements IRTransformer {
 
   enterLambda(lambda: QuintLambda): QuintLambda {
     const newParams: QuintLambdaParameter[] = lambda.params.map(p => {
-      if (!this.lookupTable.get(p.id)?.shadowing) {
-        // nothing to do
-        return p
-      }
+      // Ideally, we should only rename if `this.lookupTable.get(p.id)?.shadowing` is true, as we do in let.
+      // However, this currently is a problem with Apalache, see issue #1443.
 
       const newName = `${p.name}_${lambda.id}`
       this.nestedNames.set(p.id, newName)
