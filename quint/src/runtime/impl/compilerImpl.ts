@@ -341,6 +341,16 @@ export class CompilerVisitor implements IRVisitor {
       // compute the result and immediately reset the cache
       const result = undecoratedEval()
 
+      // Store the nondet picks after evaluation as we want to collect them while we move up the IR tree,
+      // to make sure all nondet values in scenarios like this are collected:
+      // action step = any {
+      //    someAction,
+      //    nondet time = oneOf(times)
+      //    timeRelatedAction(time)
+      // }
+      //
+      // action timeRelatedAction(time) = any { AdvanceTime(time), RevertTime(time) }
+
       if (result.isJust() && qualifier === 'nondet') {
         // A nondet value was just defined, save it in the nondetPicks record.
         const value = rv.mkVariant('Some', cachedValue.value as RuntimeValue)
@@ -1490,7 +1500,8 @@ export class CompilerVisitor implements IRVisitor {
       // on `any`, we reset the action taken as the goal is to save the last
       // action picked in an `any` call
       this.actionTaken = none()
-      // we also reset nondet picks since they should correspond to the action taken
+      // we also reset nondet picks as they are collected when we move up the
+      // tree, and this is now a leaf
       this.nondetPicks = this.emptyNondetPicks()
 
       // save the values of the next variables, as actions may update them
