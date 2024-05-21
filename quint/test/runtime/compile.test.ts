@@ -837,6 +837,22 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('[].select(e => e % 2 == 0)', 'List()')
       assertResultAsString('[4, 5, 6].select(e => e % 2 == 0)', 'List(4, 6)')
     })
+
+    it('allListsUpTo', () => {
+      // This should be in our standard library when we have it
+      const context = `pure def allListsUpTo(s: Set[a], max_length: int): Set[List[a]] = {
+  s.allLists().filter(l => l.length() <= max_length)
+}`
+
+      assertResultAsString(
+        'Set(1, 2, 3).allListsUpTo(2)',
+        'Set(List(), List(1, 1), List(1, 2), List(1, 3), List(1), List(2, 1), List(2, 2), List(2, 3), List(2), List(3, 1), List(3, 2), List(3, 3), List(3))',
+        context
+      )
+      assertResultAsString('Set(1).allListsUpTo(3)', 'Set(List(), List(1, 1, 1), List(1, 1), List(1))', context)
+      assertResultAsString('Set().allListsUpTo(3)', 'Set(List())', context)
+      assertResultAsString('Set(1).allListsUpTo(0)', 'Set(List())', context)
+    })
   })
 
   describe('compile over records', () => {

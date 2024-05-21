@@ -941,6 +941,7 @@ export class CompilerVisitor implements IRVisitor {
             times(Number(max_length.toInt())).forEach(_length => {
               // Generate all lists of length `length` from the set
               const new_lists: Set<RuntimeValue[]> = set.toSet().flatMap(value => {
+                // for each value in the set, append it to all lists of length `length - 1`
                 return last_lists.map(list => list.concat(value))
               })
 
