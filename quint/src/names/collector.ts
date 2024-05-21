@@ -245,19 +245,21 @@ export class NameCollector implements IRVisitor {
    * than `def.name` (i.e. in import-like statements).
    * @param source - An optional source identifier for the definition, if the
    * source is different than `def.id` (i.e. in import-like statements).
+   *
+   * @returns The definition object that was collected.
    */
-  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): void {
+  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): LookupDefinition {
     const identifier = (importedFrom as QuintImport)?.defName ?? def.name
     const source = importedFrom?.id ?? def.id
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
-      return
+      return def
     }
 
     if (builtinNames.includes(identifier)) {
       // Conflict with a built-in name
       this.recordConflict(identifier, undefined, source)
-      return
+      return def
     }
 
     def.depth ??= 0
@@ -266,7 +268,7 @@ export class NameCollector implements IRVisitor {
     if (!this.definitionsByName.has(identifier)) {
       // No existing defs with this name. Create an entry with a single def.
       this.definitionsByName.set(identifier, [{ ...addNamespacesToDef(def, namespaces), importedFrom }])
-      return
+      return def
     }
 
     // Else: There are exiting defs. We need to check for conflicts
@@ -284,12 +286,10 @@ export class NameCollector implements IRVisitor {
     // Keep entries with different ids. DON'T keep the whole
     // `existingEntries` since those may contain the same exact defs, but
     // hidden.
-    this.definitionsByName.set(
-      identifier,
-      existingEntries
-        .filter(entry => entry.id !== def.id)
-        .concat([{ ...addNamespacesToDef(def, namespaces), importedFrom, shadowing: conflictingEntries.length > 0 }])
-    )
+    const newDef = { ...addNamespacesToDef(def, namespaces), importedFrom, shadowing: existingEntries.length > 0 }
+    this.definitionsByName.set(identifier, existingEntries.filter(entry => entry.id !== def.id).concat([newDef]))
+
+    return newDef
   }
 
   /**
