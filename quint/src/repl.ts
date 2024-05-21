@@ -497,7 +497,8 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     mainName,
     mainPath,
     state.evaluationState.listener,
-    state.rng.next
+    state.rng.next,
+    false
   )
   if (
     context.evaluationState?.context.size === 0 ||
@@ -555,7 +556,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   // evaluate the input, depending on its type
   if (parseResult.kind === 'expr') {
-    const context = compileExpr(state.compilationState, state.evaluationState, state.rng, parseResult.expr)
+    const context = compileExpr(state.compilationState, state.evaluationState, state.rng, false, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(out, state, context, newInput)
@@ -580,7 +581,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   if (parseResult.kind === 'declaration') {
     // compile the module and add it to history if everything worked
-    const context = compileDecls(state.compilationState, state.evaluationState, state.rng, parseResult.decls)
+    const context = compileDecls(state.compilationState, state.evaluationState, state.rng, false, parseResult.decls)
 
     if (
       context.evaluationState.context.size === 0 ||
