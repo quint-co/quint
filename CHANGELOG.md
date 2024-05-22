@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.20.0 -- 2024-05-22
+
+### Added
 
 - Added an experimental `--mbt` flag to produce metadata that is useful for
   Model-Based Testing (#1441).
