@@ -983,8 +983,6 @@ export class CompilerVisitor implements IRVisitor {
           break
 
         case 'allListsUpTo':
-          // Overwrite the default implementation of allListsUpTo
-          // to avoid computing an infinite set of lists
           this.applyFun(app.id, 2, (set: RuntimeValue, max_length: RuntimeValue) => {
             let lists: Set<RuntimeValue[]> = Set([[]])
             let last_lists: Set<RuntimeValue[]> = Set([[]])
