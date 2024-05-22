@@ -1191,9 +1191,12 @@ powerset(S)
 // UNION S
 S.flatten()
 flatten(S)
-// Seq(S): the set of all lists of elements in S
+// Seq(S): the set of all lists of elements in S.
+// Cannot be used in simulation or verification. See `allListsUpTo`
 S.allLists()
 allLists(S)
+// Limited version:
+S.allListsUpTo(2)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
 S.chooseSome()

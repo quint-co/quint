@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added an experimental `--mbt` flag to produce metadata that is useful for
   Model-Based Testing (#1441).
+- Added the `allListsUpTo`, a limited but computable version of `allLists` (#1442)
 
 ### Changed
 

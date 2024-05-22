@@ -853,6 +853,16 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('[].select(e => e % 2 == 0)', 'List()')
       assertResultAsString('[4, 5, 6].select(e => e % 2 == 0)', 'List(4, 6)')
     })
+
+    it('allListsUpTo', () => {
+      assertResultAsString(
+        'Set(1, 2, 3).allListsUpTo(2)',
+        'Set(List(), List(1, 1), List(1, 2), List(1, 3), List(1), List(2, 1), List(2, 2), List(2, 3), List(2), List(3, 1), List(3, 2), List(3, 3), List(3))'
+      )
+      assertResultAsString('Set(1).allListsUpTo(3)', 'Set(List(), List(1, 1, 1), List(1, 1), List(1))')
+      assertResultAsString('Set().allListsUpTo(3)', 'Set(List())')
+      assertResultAsString('Set(1).allListsUpTo(0)', 'Set(List())')
+    })
   })
 
   describe('compile over records', () => {
