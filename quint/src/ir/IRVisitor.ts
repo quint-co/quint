@@ -465,6 +465,9 @@ export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
       }
       break
     case 'let':
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth++
+      }
       if (visitor.enterLet) {
         visitor.enterLet(expr)
       }
@@ -474,6 +477,9 @@ export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
 
       if (visitor.exitLet) {
         visitor.exitLet(expr)
+      }
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth--
       }
       break
     default:

@@ -21,8 +21,11 @@ describe('unshadowNames', () => {
   it('returns a module with no shadowed names', () => {
     const { modules, table } = parseModules(`
       module A {
-        def f(a) = a > 0
         val b = val a = 1 { a }
+        val c = val a = { val a = 1 { a } } { a }
+        val d = val a = 1 { val a = 2 { a } }
+        def f(a) = a > 0
+        def g(a) = a.map(a => a + 1)
       }
 
       module B {
@@ -34,8 +37,11 @@ describe('unshadowNames', () => {
 
     assert.sameDeepMembers(unshadowedModules.map(moduleToString), [
       dedent(`module A {
-             |  val b = val a_10 = 1 { a_10 }
-             |  def f = ((a_5) => igt(a_5, 0))
+             |  val d = val a = 1 { val a_19 = 2 { a_19 } }
+             |  def f = ((a_26) => igt(a_26, 0))
+             |  def g = ((a_36) => map(a_36, ((a_34) => iadd(a_34, 1))))
+             |  val b = val a = 1 { a }
+             |  val c = val a = val a_9 = 1 { a_9 } { a }
              |}`),
       dedent(`module B {
               |  var a: int

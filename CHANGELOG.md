@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `allListsUpTo`, a limited but computable version of `allLists` (#1442)
 
 ### Changed
+
+- Shadowing is a bit less agressive. This should improve readability of variable
+  names after compilation, i.e. in Apalache and some simulation errors, and in
+  TLA+ produced from the `compile` command (#1444).
+
 ### Deprecated
 ### Removed
 ### Fixed
