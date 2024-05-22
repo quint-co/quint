@@ -166,17 +166,4 @@ module basicSpells {
     assert(empty(Set(1, 2)) == false),
     assert(empty(Set(Set())) == false),
   }
-
-  /// All lists of elements in s of up to max_length elements
-  ///
-  /// The behavior is overwritten in typescript to avoid computing
-  /// an infinite set on the simulator
-  ///
-  /// - @param s a set of any type
-  /// - @param max_length an upperbound for how many elements there
-  //           should be in the lists
-  /// - @returns a set of lists
-  pure def allListsUpTo(s: Set[a], max_length: int): Set[List[a]] = {
-    s.allLists().filter(l => l.length() <= max_length)
-  }
 }

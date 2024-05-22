@@ -170,6 +170,7 @@ export const builtinNames = [
   'powerset',
   'flatten',
   'allLists',
+  'allListsUpTo',
   'chooseSome',
   'oneOf',
   'isFinite',
