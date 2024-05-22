@@ -197,6 +197,9 @@ module withConsts {
   val subseteq_empty = Set().subseteq(Set())
   val powersets = Set(1).in(powerset(Set(1,2,3)))
 
+  // Builting list operators
+  val lists = Set(1, 2).allListsUpTo(3)
+
   // a named assumption
   assume positive = N > 0
   // an anonymous assumption
