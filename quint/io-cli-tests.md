@@ -811,43 +811,37 @@ rm out-itf-mbt-example.itf.json
   },
   "minter": "bob",
   "nondet_picks": {
-    "amount_189": {
+    "amount": {
       "tag": "Some",
       "value": {
         "#bigint": "111009104957917492842738448433884729279015865072041681905260877596484059410831"
       }
     },
-    "eveToBob_295": {
+    "eveToBob": {
       "tag": "None",
       "value": {
         "#tup": []
       }
     },
-    "mintBob_296": {
+    "mintBob": {
       "tag": "None",
       "value": {
         "#tup": []
       }
     },
-    "mintEve_297": {
+    "mintEve": {
       "tag": "None",
       "value": {
         "#tup": []
       }
     },
-    "receiver_190": {
+    "receiver": {
       "tag": "Some",
       "value": "bob"
     },
-    "sender_191": {
+    "sender": {
       "tag": "Some",
       "value": "bob"
-    },
-    "sender_75": {
-      "tag": "None",
-      "value": {
-        "#tup": []
-      }
     }
   }
 }
