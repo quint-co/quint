@@ -53,7 +53,7 @@ export interface ServerEndpoint {
  * @returns either `left(error)`, or `right(ServerEndpoint)`
  */
 export function parseServerEndpoint(input: string): Either<string, ServerEndpoint> {
-  const m = /^([a-zA-Z0-9\.]*):([0-9]+)$/.exec(input)
+  const m = /^([a-zA-Z0-9.]*):([0-9]+)$/.exec(input)
   if (m) {
     const port = Number.parseInt(m[2])
     if (port > 65535) {
