@@ -122,6 +122,19 @@ const compileCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('server-endpoint', {
+        desc: 'Apalache server endpoint hostname:port',
+        type: 'string',
+        default: 'localhost:8822',
+      })
+      .coerce('server-endpoint', (arg: string) => {
+        const errorOrEndpoint = parseServerEndpoint(arg)
+        if (errorOrEndpoint.isLeft()) {
+          throw new Error(errorOrEndpoint.value)
+        } else {
+          return errorOrEndpoint.value
+        }
       }),
   handler: (args: any) =>
     load(args)
@@ -295,7 +308,7 @@ const verifyCmd = {
         default: verbosity.defaultLevel,
       })
       .option('server-endpoint', {
-        desc: 'Apalache server GRPC endpoint hostname:port',
+        desc: 'Apalache server endpoint hostname:port',
         type: 'string',
         default: 'localhost:8822',
       })
