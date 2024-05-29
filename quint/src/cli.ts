@@ -7,6 +7,7 @@
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
+ * @author Igor Konnov, konnov.phd, 2024
  */
 
 import { fail } from 'assert'
@@ -30,6 +31,7 @@ import {
 import { verbosity } from './verbosity'
 
 import { version } from './version'
+import { parseServerEndpoint } from './apalache'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -292,10 +294,18 @@ const verifyCmd = {
         type: 'number',
         default: verbosity.defaultLevel,
       })
-      .option('server-url', {
-        desc: 'Apalache server URL',
+      .option('server-endpoint', {
+        desc: 'Apalache server GRPC endpoint hostname:port',
         type: 'string',
         default: 'localhost:8822',
+      })
+      .coerce('server-endpoint', (arg: string) => {
+        const errorOrEndpoint = parseServerEndpoint(arg)
+        if (errorOrEndpoint.isLeft()) {
+          throw new Error(errorOrEndpoint.value)
+        } else {
+          return errorOrEndpoint.value
+        }
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
