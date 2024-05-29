@@ -291,6 +291,11 @@ const verifyCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('server-url', {
+        desc: 'Apalache server URL',
+        type: 'string',
+        default: 'localhost:8822',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633

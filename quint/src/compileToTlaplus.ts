@@ -17,11 +17,18 @@ import { ApalacheResult, connect } from './apalache'
 /**
  * Get apalache to convert quint parse data into TLA+
  *
+ * @param serverUrl
+ *   a connection URL, e.g., localhost:8822
+ *
  * @param parseDataJson the flattened, analyzed, parse data, in as a json string
  *
  * @returns right(tlaString) if parsing succeeds, or left(err) explaining the failure
  */
-export async function compileToTlaplus(parseDataJson: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
+export async function compileToTlaplus(
+  serverUrl: string,
+  parseDataJson: string,
+  verbosityLevel: number
+): Promise<ApalacheResult<string>> {
   const config = {
     input: {
       source: {
@@ -31,6 +38,6 @@ export async function compileToTlaplus(parseDataJson: string, verbosityLevel: nu
       },
     },
   }
-  const connectionResult = await connect(verbosityLevel)
+  const connectionResult = await connect(serverUrl, verbosityLevel)
   return connectionResult.asyncChain(conn => conn.tla(config))
 }

@@ -38,7 +38,6 @@ import { verbosity } from './verbosity'
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
-const APALACHE_SERVER_URI = 'localhost:8822'
 const APALACHE_VERSION_TAG = '0.44.11'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
@@ -183,7 +182,10 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
-async function loadProtoDefViaReflection(retry: boolean): Promise<ApalacheResult<ProtoPackageDefinition>> {
+async function loadProtoDefViaReflection(
+  serverUrl: string,
+  retry: boolean
+): Promise<ApalacheResult<ProtoPackageDefinition>> {
   // Types of the gRPC interface
   type ServerReflectionRequest = { file_containing_symbol: string }
   type ServerReflectionResponseSuccess = {
@@ -212,7 +214,7 @@ async function loadProtoDefViaReflection(retry: boolean): Promise<ApalacheResult
   const packageDefinition = proto.loadSync(protoPath, grpcStubOptions)
   const reflectionProtoDescriptor = grpc.loadPackageDefinition(packageDefinition) as unknown as ServerReflectionPkg
   const serverReflectionService = reflectionProtoDescriptor.grpc.reflection.v1alpha.ServerReflection
-  const reflectionClient = new serverReflectionService(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
+  const reflectionClient = new serverReflectionService(serverUrl, grpc.credentials.createInsecure())
 
   // Wait for gRPC channel to come up, with 1sec pauses
   if (retry) {
@@ -261,12 +263,12 @@ async function loadProtoDefViaReflection(retry: boolean): Promise<ApalacheResult
   )
 }
 
-function loadGrpcClient(protoDef: ProtoPackageDefinition): AsyncCmdExecutor {
+function loadGrpcClient(serverUrl: string, protoDef: ProtoPackageDefinition): AsyncCmdExecutor {
   const protoDescriptor = grpc.loadPackageDefinition(protoDef)
   // The cast thru `unkown` lets us convince the type system of anything
   // See https://basarat.gitbook.io/typescript/type-system/type-assertion#double-assertion
   const pkg = protoDescriptor.shai as unknown as ShaiPkg
-  const stub: any = new pkg.cmdExecutor.CmdExecutor(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
+  const stub: any = new pkg.cmdExecutor.CmdExecutor(serverUrl, grpc.credentials.createInsecure())
   return {
     run: promisify((data: RunRequest, cb: AsyncCallBack<any>) => stub.run(data, cb)),
   }
@@ -275,13 +277,18 @@ function loadGrpcClient(protoDef: ProtoPackageDefinition): AsyncCmdExecutor {
 /**
  * Connect to the Apalache server, and verify that the gRPC channel is up.
  *
+ * @param serverUrl
+ *   a connection URL, e.g., localhost:8822
+ *
  * @param retry Wait for the gRPC connection to come up.
  *
  * @returns A promise resolving to a `right<Apalache>` if the connection is
  * successful, or a `left<ApalacheError>` if not.
  */
-async function tryConnect(retry: boolean = false): Promise<ApalacheResult<Apalache>> {
-  return (await loadProtoDefViaReflection(retry)).map(loadGrpcClient).map(apalache)
+async function tryConnect(serverUrl: string, retry: boolean = false): Promise<ApalacheResult<Apalache>> {
+  return (await loadProtoDefViaReflection(serverUrl, retry))
+    .map(protoDef => loadGrpcClient(serverUrl, protoDef))
+    .map(apalache)
 }
 
 function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
@@ -369,13 +376,16 @@ async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<str
  *
  * If an Apalache server is spawned, the child process exits when the parent process (i.e., this process) terminates.
  *
+ * @param serverUrl
+ *   a connection URL, e.g., localhost:8822
+ *
  * @returns A promise resolving to:
  *    - a `right<Apalache>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<ApalacheError>` indicating an error.
  */
-export async function connect(verbosityLevel: number): Promise<ApalacheResult<Apalache>> {
+export async function connect(serverUrl: string, verbosityLevel: number): Promise<ApalacheResult<Apalache>> {
   // Try to connect to Shai, and try to ping it
-  const connectionResult = await tryConnect()
+  const connectionResult = await tryConnect(serverUrl)
   // We managed to connect, simply return this connection
   if (connectionResult.isRight()) {
     return connectionResult
@@ -425,7 +435,7 @@ export async function connect(verbosityLevel: number): Promise<ApalacheResult<Ap
           apalache.on('error', error => resolve(err(`Failed to launch Apalache server: ${error.message}`)))
         })
     )
-    .then(chain(() => tryConnect(true)))
+    .then(chain(() => tryConnect(serverUrl, true)))
 }
 
 /**
