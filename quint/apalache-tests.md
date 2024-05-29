@@ -65,6 +65,13 @@ quint verify ../examples/verification/defaultOpNames.qnt
 quint verify --invariant inv ../examples/verification/defaultOpNames.qnt
 ```
 
+### Can verify with custom server endpoint
+
+<!-- !test check can specify --server-endpoint -->
+```
+quint verify --server-endpoint=localhost:18000 ../examples/verification/defaultOpNames.qnt
+```
+
 ### Can verify with two invariants
 
 <!-- !test check can specify multiple invariants -->
