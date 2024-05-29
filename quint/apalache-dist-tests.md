@@ -21,10 +21,10 @@ again.
 
 <!-- !test in server not running -->
 ```
-quint verify ../examples/language-features/booleans.qnt | \
+quint verify --verbosity=0 ../examples/language-features/booleans.qnt | \
   sed 's!https://.*!(asseturl)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
-quint verify ../examples/language-features/booleans.qnt | \
+quint verify --verbosity=0 ../examples/language-features/booleans.qnt | \
   sed 's!\(Using existing Apalache distribution in \).*!\1(distdir)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
 ```
