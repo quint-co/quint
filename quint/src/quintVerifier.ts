@@ -28,7 +28,11 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  *
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */
-export async function verify(serverEndpoint: ServerEndpoint, config: any, verbosityLevel: number): Promise<ApalacheResult<void>> {
+export async function verify(
+  serverEndpoint: ServerEndpoint,
+  config: any,
+  verbosityLevel: number
+): Promise<ApalacheResult<void>> {
   const connectionResult = await connect(serverEndpoint, verbosityLevel)
   return connectionResult.asyncChain(conn => conn.check(config))
 }

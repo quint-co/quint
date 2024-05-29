@@ -43,8 +43,8 @@ import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-lo
  * A server endpoint for establishing a connection with the Apalache server.
  */
 export interface ServerEndpoint {
-  hostname: string,
-  port: number,
+  hostname: string
+  port: number
 }
 
 /**
@@ -422,7 +422,10 @@ async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<str
  *    - a `right<Apalache>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<ApalacheError>` indicating an error.
  */
-export async function connect(serverEndpoint: ServerEndpoint, verbosityLevel: number): Promise<ApalacheResult<Apalache>> {
+export async function connect(
+  serverEndpoint: ServerEndpoint,
+  verbosityLevel: number
+): Promise<ApalacheResult<Apalache>> {
   // Try to connect to Shai, and try to ping it
   const connectionResult = await tryConnect(serverEndpoint)
   // We managed to connect, simply return this connection
@@ -438,16 +441,15 @@ export async function connect(serverEndpoint: ServerEndpoint, verbosityLevel: nu
     .asyncChain(
       async exe =>
         new Promise<ApalacheResult<void>>((resolve, _) => {
-          debugLog(verbosityLevel,
-            `Launching Apalache server on ${serverEndpoint.hostname}:${serverEndpoint.port}`)
+          debugLog(verbosityLevel, `Launching Apalache server on ${serverEndpoint.hostname}:${serverEndpoint.port}`)
           debugLog(verbosityLevel, `Spawning: ${exe}`)
           // unless non-verbose output is requested, let Apalache write to stdout and stderr
           const stdio: StdioOptions =
-            (verbosityLevel >= verbosity.defaultLevel )
-              ? [ 'ignore', process.stdout, process.stderr ]
-              : [ 'ignore', 'ignore', 'ignore' ]
+            verbosityLevel >= verbosity.defaultLevel
+              ? ['ignore', process.stdout, process.stderr]
+              : ['ignore', 'ignore', 'ignore']
           const options = { shell: true, stdio: stdio }
-          const args = ['server', `--port=${serverEndpoint.port}` ]
+          const args = ['server', `--port=${serverEndpoint.port}`]
           const apalache = child_process.spawn(exe, args, options)
 
           // Exit handler that kills Apalache if Quint exists
