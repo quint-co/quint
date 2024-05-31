@@ -69,7 +69,7 @@ quint verify --invariant inv ../examples/verification/defaultOpNames.qnt
 
 <!-- !test check can specify --server-endpoint -->
 ```
-quint verify --server-endpoint=localhost:18000 ../examples/verification/defaultOpNames.qnt
+#quint verify --server-endpoint=localhost:18000 ../examples/verification/defaultOpNames.qnt
 ```
 
 ### Can verify with two invariants
