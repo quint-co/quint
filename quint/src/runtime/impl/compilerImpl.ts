@@ -665,7 +665,7 @@ export class CompilerVisitor implements IRVisitor {
           break
 
         case 'isFinite':
-          // at the moment, we support only finite sets, so right return true
+          // at the moment, we support only finite sets, so just return true
           this.applyFun(app.id, 1, _set => right(rv.mkBool(true)))
           break
 
@@ -887,7 +887,7 @@ export class CompilerVisitor implements IRVisitor {
       this.compStack.push({ eval: () => error })
     }
 
-    // look up for the operator to see, whether it's right an operator, or a parameter
+    // look up for the operator to see, whether it's just an operator, or a parameter
     const lookupEntry = this.lookupTable.get(app.id)
     if (lookupEntry === undefined) {
       return onError(app.id, `Called unknown operator ${app.opcode}`)

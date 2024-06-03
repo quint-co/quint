@@ -1,6 +1,3 @@
-// Internal names in the compiler, which have special treatment.
-// For some reason, if we replace 'q::input' with inputDefName, everything breaks.
-
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { ErrorCode, QuintError } from '../../quintError'
 import { Computable, EvaluationResult, Register, kindName, mkCallable } from '../runtime'
@@ -9,6 +6,8 @@ import { Trace } from './trace'
 import { Either, right } from '@sweet-monads/either'
 import { RuntimeValue, rv } from './runtimeValue'
 
+// Internal names in the compiler, which have special treatment.
+// For some reason, if we replace 'q::input' with inputDefName, everything breaks.
 // What kind of JS magic is that?
 export const specialNames = ['q::input', 'q::runResult', 'q::nruns', 'q::nsteps', 'q::init', 'q::next', 'q::inv']
 
