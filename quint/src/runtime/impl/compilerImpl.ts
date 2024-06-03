@@ -823,7 +823,7 @@ export class CompilerVisitor implements IRVisitor {
         case 'assert':
           this.applyFun(app.id, 1, cond => {
             if (!cond.toBool()) {
-              return left({ code: 'QNT508', message: 'Assertion failed' })
+              return left({ code: 'QNT508', message: 'Assertion failed', reference: app.id })
             }
             return right(cond)
           })
@@ -1146,16 +1146,14 @@ export class CompilerVisitor implements IRVisitor {
 
   // translate all { A, ..., C } or A.then(B)
   private translateAllOrThen(app: ir.QuintApp): void {
-    if (this.compStack.length < app.args.length) {
-      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
-      return
-    }
-    const args = this.compStack.splice(-app.args.length)
-
     const kind = app.opcode === 'then' ? 'then' : 'all'
-    const lazyCompute = () => this.chainAllOrThen(args, kind, idx => app.args[idx].id)
 
-    this.compStack.push(mkFunComputable(lazyCompute))
+    this.popArgs(app.args.length)
+      .map(args => {
+        const lazyComputable = () => this.chainAllOrThen(args, kind, idx => app.args[idx].id)
+        return this.compStack.push(mkFunComputable(lazyComputable))
+      })
+      .mapLeft(e => this.errorTracker.addRuntimeError(app.id, e))
   }
 
   // Translate A.expect(P):

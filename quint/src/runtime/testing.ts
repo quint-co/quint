@@ -148,7 +148,7 @@ export function compileAndTest(
             return {
               name,
               status: 'failed',
-              errors: ctx.getRuntimeErrors(),
+              errors: ctx.getRuntimeErrors().concat(result.value),
               seed,
               frames: recorder.getBestTrace().subframes,
               nsamples: nsamples,
