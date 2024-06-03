@@ -934,10 +934,6 @@ export class CompilerVisitor implements IRVisitor {
         eval: () => {
           this.execListener.onUserOperatorCall(app)
           // compute the values of the arguments at this point
-          // const merged = mergeInMany().mapLeft((errors): QuintError => {
-          //   this.execListener.onUserOperatorReturn(app, [], none())
-          //   return { code: 'QNT501', message: errors.map(quintErrorToString).join('\n') }
-          // })
           const values = args.map(arg => arg.eval())
           const result = callableRef().chain(callable => {
             return callable.eval(values)
@@ -962,7 +958,7 @@ export class CompilerVisitor implements IRVisitor {
     })
     // After this point, the body of the lambda gets compiled.
     // The body of the lambda may refer to the parameter via names,
-    // which are stored in the registers we've right created.
+    // which are stored in the registers we've just created.
   }
 
   exitLambda(lam: ir.QuintLambda) {
