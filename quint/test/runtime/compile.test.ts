@@ -973,7 +973,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
     })
 
     it('then returns false when rhs is false', () => {
@@ -1012,7 +1012,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
     })
 
     it('fail', () => {

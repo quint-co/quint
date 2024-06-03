@@ -2,9 +2,9 @@
  * Compiler of Quint expressions and definitions to Computable values
  * that can be evaluated in the runtime.
  *
- * Igor Konnov, Gabriela Moreira, 2022-2023
+ * Igor Konnov, Gabriela Moreira, 2022-2024
  *
- * Copyright 2022-2023 Informal Systems
+ * Copyright 2022-2024 Informal Systems
  * Licensed under the Apache License, Version 2.0.
  * See LICENSE in the project root for license information.
  */
@@ -147,6 +147,7 @@ export class CompilerVisitor implements IRVisitor {
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
     let boundValue = this.compStack.pop()
+
     if (boundValue === undefined) {
       this.errorTracker.addCompileError(opdef.id, 'QNT501', `No expression for ${opdef.name} on compStack`)
       return
@@ -423,7 +424,7 @@ export class CompilerVisitor implements IRVisitor {
             if (q.toInt() !== 0n) {
               return right(rv.mkInt(p.toInt() / q.toInt()))
             } else {
-              return left({ code: 'QNT503', message: 'Division by zero' })
+              return left({ code: 'QNT503', message: 'Division by zero', reference: app.id })
             }
           })
           break
@@ -1034,7 +1035,7 @@ export class CompilerVisitor implements IRVisitor {
     reduceFunction: (_array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue
   ): void {
     this.popArgs(2)
-      .map(args => mapLambdaThenReduce(reduceFunction, args))
+      .map(args => mapLambdaThenReduce(sourceId, reduceFunction, args))
       .map(comp => this.compStack.push(comp))
       .mapLeft(e => this.errorTracker.addRuntimeError(sourceId, e))
   }
@@ -1053,7 +1054,7 @@ export class CompilerVisitor implements IRVisitor {
   // push the combined computable value on the stack
   private applyFun(sourceId: bigint, nargs: number, fun: (..._args: RuntimeValue[]) => EvaluationResult) {
     this.popArgs(nargs)
-      .map(args => applyFun(fun, args))
+      .map(args => applyFun(sourceId, fun, args))
       .map(comp => this.compStack.push(comp))
       .mapLeft(e => this.errorTracker.addRuntimeError(sourceId, e))
   }
@@ -1077,6 +1078,7 @@ export class CompilerVisitor implements IRVisitor {
       const comp = {
         eval: () => {
           // compute the values of the arguments at this point
+          // TODO: register errors
           const v = cond.eval().map(pred => (pred.equals(rv.mkBool(true)) ? thenArm.eval() : elseArm.eval()))
           return v.join()
         },
@@ -1121,11 +1123,12 @@ export class CompilerVisitor implements IRVisitor {
         if (kind === 'then' && nactionsLeft > 0 && isFalse) {
           // Cannot extend a run. Emit an error message.
           const actionNo = actions.length - (nactionsLeft + 1)
-          return left({
+          result = left({
             code: 'QNT513',
             message: `Cannot continue in A.then(B), A evaluates to 'false'`,
             reference: actionId(actionNo),
           })
+          return result
         } else {
           return result
         }

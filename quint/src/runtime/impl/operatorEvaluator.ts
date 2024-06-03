@@ -8,7 +8,11 @@ import { List } from 'immutable'
 import { QuintError, quintErrorToString } from '../../quintError'
 
 // push the combined computable value on the stack
-export function applyFun(fun: (..._args: RuntimeValue[]) => EvaluationResult, args: Computable[]): Computable {
+export function applyFun(
+  sourceId: bigint,
+  fun: (..._args: RuntimeValue[]) => EvaluationResult,
+  args: Computable[]
+): Computable {
   // produce the new computable value
   return {
     eval: () => {
@@ -21,8 +25,7 @@ export function applyFun(fun: (..._args: RuntimeValue[]) => EvaluationResult, ar
           .chain(vs => fun(...vs.map(v => v as RuntimeValue)))
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'unknown error'
-        console.error(`Internal error: ${msg}`)
-        return left({ code: 'QNT501', message: `Internal error: ${msg}` })
+        return left({ code: 'QNT501', message: msg, reference: sourceId })
       }
     },
   }
@@ -137,6 +140,7 @@ export function applyBoolOp(
  * The final result is stored on the stack.
  */
 export function mapLambdaThenReduce(
+  sourceId: bigint,
   reduceFunction: (_array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue,
   args: Computable[]
 ): Computable {
@@ -149,6 +153,7 @@ export function mapLambdaThenReduce(
     return result.map(result => [result as RuntimeValue, elem])
   }
   return applyFun(
+    sourceId,
     (iterable: Iterable<RuntimeValue>): EvaluationResult => {
       const lambdaApplicationResults = mergeInMany(Array.from(iterable).map(value => evaluateElem(value)))
       return lambdaApplicationResults

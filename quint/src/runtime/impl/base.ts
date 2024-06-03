@@ -60,7 +60,7 @@ export class CompilerErrorTracker {
     this.compileErrors.push({ code, message, reference })
   }
 
-  addRuntimeError(reference: bigint, error: QuintError) {
+  addRuntimeError(reference: bigint | undefined, error: QuintError) {
     this.runtimeErrors.push({ ...error, reference })
   }
 }

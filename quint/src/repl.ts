@@ -727,6 +727,7 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
         }
         return right(ex)
       })
+      .mapLeft(e => state.evaluationState.errorTracker.addRuntimeError(e.reference, e))
       .mapLeft(_ => '<undefined value>')
   })
 
