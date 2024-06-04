@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where random numbers where internally produced without being
+  used. This affects behavior of randomness, and therefore same seeds will
+  behave differently before and after this version (#1453).
+
 ### Security
 
 ## v0.20.0 -- 2024-05-22
