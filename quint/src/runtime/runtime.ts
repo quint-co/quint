@@ -94,7 +94,7 @@ export function mkRegister(
   kind: ComputableKind,
   registerName: string,
   initValue: Maybe<any>,
-  onUndefined: () => void
+  errorForMissing: QuintError
 ): Register {
   const reg: Register = {
     name: registerName,
@@ -102,15 +102,14 @@ export function mkRegister(
     registerValue: initValue,
     // first, define a fruitless eval, as we cannot refer to registerValue yet
     eval: () => {
-      return left({ code: 'QNT501', message: `register ${registerName} is not defined` })
+      return left(errorForMissing)
     },
   }
   // override `eval`, as we can use `reg` now
   reg.eval = () => {
     // computing a register just evaluates to the contents that it stores
     if (reg.registerValue.isNone()) {
-      onUndefined()
-      return left({ code: 'QNT501', message: `register ${registerName} is not defined` })
+      return left(errorForMissing)
     }
     return right(reg.registerValue.value)
   }

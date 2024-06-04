@@ -277,16 +277,20 @@ export class CompilerVisitor implements IRVisitor {
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
-    const prevRegister = mkRegister('var', varName, none(), () =>
-      this.errorTracker.addRuntimeError(vardef.id, { code: 'QNT502', message: `Variable ${varName} is not set` })
-    )
+    const prevRegister = mkRegister('var', varName, none(), {
+      code: 'QNT502',
+      message: `Variable ${varName} is not set`,
+      reference: vardef.id,
+    })
     this.vars.push(prevRegister)
     // at the moment, we have to refer to variables both via id and name
     this.context.set(kindName('var', varName), prevRegister)
     this.context.set(kindName('var', vardef.id), prevRegister)
-    const nextRegister = mkRegister('nextvar', varName, none(), () =>
-      this.errorTracker.addRuntimeError(vardef.id, { code: 'QNT502', message: `${varName}' is not set` })
-    )
+    const nextRegister = mkRegister('nextvar', varName, none(), {
+      code: 'QNT502',
+      message: `${varName}' is not set`,
+      reference: vardef.id,
+    })
     this.nextVars.push(nextRegister)
     // at the moment, we have to refer to variables both via id and name
     this.context.set(kindName('nextvar', varName), nextRegister)
@@ -950,7 +954,11 @@ export class CompilerVisitor implements IRVisitor {
   enterLambda(lam: ir.QuintLambda) {
     // introduce a register for every parameter
     lam.params.forEach(p => {
-      const register = mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)
+      const register = mkRegister('arg', p.name, none(), {
+        code: 'QNT501',
+        message: `Parameter ${p} is not set`,
+        reference: p.id,
+      })
       this.context.set(kindName('arg', p.id), register)
 
       if (specialNames.includes(p.name)) {
