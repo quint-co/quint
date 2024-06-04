@@ -1,4 +1,17 @@
-// pop nargs computable values, pass them the 'fun' function, and
+/* ----------------------------------------------------------------------------------
+ * Copyright 2022-2024 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Stateless implementations for evaluating more complex operators, and helpers
+ * to operator evaluation.
+ *
+ * @author Igor Konnov, Gabriela Moreira
+ *
+ * @module
+ */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Callable, Computable, EvaluationResult } from '../runtime'
@@ -7,6 +20,7 @@ import { strict as assert } from 'assert'
 import { List } from 'immutable'
 import { QuintError, quintErrorToString } from '../../quintError'
 
+// pop nargs computable values, pass them the 'fun' function, and
 // push the combined computable value on the stack
 export function applyFun(
   sourceId: bigint,

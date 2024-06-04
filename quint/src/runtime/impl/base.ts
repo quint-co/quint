@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright 2022-2024 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Base types and functions for the runtime implementation.
+ *
+ * @author Igor Konnov, Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { ErrorCode, QuintError } from '../../quintError'
 import { Computable, EvaluationResult, Register, kindName, mkCallable } from '../runtime'
