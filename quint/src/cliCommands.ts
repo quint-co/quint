@@ -546,6 +546,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     maxSteps: prev.args.maxSteps,
     rng,
     verbosity: verbosityLevel,
+    storeMetadata: prev.args.mbt,
   }
 
   const startMs = Date.now()
@@ -693,7 +694,7 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
       process.stdout.write(parsedSpecJson)
       return right(compiled)
     case 'tlaplus': {
-      const toTlaResult = await compileToTlaplus(parsedSpecJson, verbosityLevel)
+      const toTlaResult = await compileToTlaplus(args.serverEndpoint, parsedSpecJson, verbosityLevel)
       return toTlaResult
         .mapRight(tla => {
           process.stdout.write(tla) // Write out, since all went right
@@ -762,7 +763,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   const startMs = Date.now()
 
-  return verify(config, verbosityLevel).then(res => {
+  return verify(args.serverEndpoint, config, verbosityLevel).then(res => {
     const elapsedMs = Date.now() - startMs
     return res
       .map(_ => {

@@ -136,7 +136,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -147,7 +147,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -194,7 +194,7 @@ describe('syntax errors', () => {
     assert.isAtLeast(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })

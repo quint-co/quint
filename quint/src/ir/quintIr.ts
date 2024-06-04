@@ -132,6 +132,7 @@ export const builtinOpCodes = [
   'actionAll',
   'actionAny',
   'allLists',
+  'allListsUpTo',
   'always',
   'and',
   'append',

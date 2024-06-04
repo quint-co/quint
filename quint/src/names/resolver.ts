@@ -75,7 +75,11 @@ class NameResolver implements IRVisitor {
     // Top-level definitions were already collected, so we only need to collect
     // scoped definitions.
     if (this.definitionDepth > 0) {
-      this.collector.collectDefinition({ ...def, depth: this.definitionDepth })
+      const newDef = this.collector.collectDefinition({ ...def, depth: this.definitionDepth })
+      this.table.set(def.id, { ...newDef, depth: this.definitionDepth })
+    } else {
+      // Map the definition to itself so we can recover depth information from the table
+      this.table.set(def.id, { ...def, depth: this.definitionDepth })
     }
   }
 

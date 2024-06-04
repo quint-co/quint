@@ -242,13 +242,22 @@ assert(Set(Set(1, 2), Set(3, 4)).flatten() == Set(1, 2, 3, 4))
 `s.allLists()` is the set of all lists containing elements in `s`.
 This is an infinite set unless `s` is the empty set.
 
-Like other inifite sets, this is not supported in the simulator.
+Like other inifite sets, this is not supported in any execution/verification form.
 
 ### Examples
 
 ```
 assert(Set(1, 2).allLists().contains([]))
 assert(Set(1, 2).allLists().contains([1, 1, 1, 1, 2, 1]))
+```
+
+## `pure def allListsUpTo: (Set[a], int) => Set[List[a]]`
+
+`s.allListsUpTo(l)` is the set of all lists of elements in `s` with length <= `l`
+
+```
+assert(Set(1, 2).allListsUpTo(1) == Set([], [1], [2]))
+assert(Set(1).allListsUpTo(2) == Set([], [1], [1, 1]))
 ```
 
 ## `pure def chooseSome: (Set[a]) => a`

@@ -14,6 +14,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.20.0 -- 2024-05-22
+
+### Added
+
+- Added an experimental `--mbt` flag to produce metadata that is useful for
+  Model-Based Testing (#1441).
+- Added the `allListsUpTo`, a limited but computable version of `allLists` (#1442)
+
+### Changed
+
+- Shadowing is a bit less agressive. This should improve readability of variable
+  names after compilation, i.e. in Apalache and some simulation errors, and in
+  TLA+ produced from the `compile` command (#1444).
+
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.19.4 -- 2024-05-14
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a bug introduced in v0.19.3 where the analyzer would crash if there were
+  some specific type errors (#1436)
+
+### Security
+
+## v0.19.3 -- 2024-05-07
+
+### Added
+
+- Added static analysis checks to ensure proper usage of `nondet` and `oneOf` (#1431).
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.19.2 -- 2024-04-09
 
 ### Added

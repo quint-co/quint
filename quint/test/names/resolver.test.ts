@@ -82,6 +82,17 @@ describe('resolveNames', () => {
         { code: 'QNT404', message: "Name 'x' not found", reference: 0n, data: {} },
       ])
     })
+
+    it('finds a definition itself with depth information', () => {
+      const result = resolveNamesForExprs([], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+
+      const def = [...result.table.values()].find(def => def.name === 'unscoped_def' || def.kind === 'def')
+
+      assert.isNotNull(def)
+      assert.deepEqual(result.table.get(def!.id)?.depth, 0)
+    })
   })
 
   describe('shadowing', () => {
@@ -92,8 +103,22 @@ describe('resolveNames', () => {
       )
 
       assert.isEmpty(result.errors)
-      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'def'))
-      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' || def.kind === 'param'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'def'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'param'))
+    })
+
+    it('collects depth and shadowing information properly', () => {
+      const result = resolveNamesForDefs(['val shadowing = val a = 1 { val a = 2 { a } }'], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 2),
+        'Could not find first a'
+      )
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 3 && def.shadowing === true),
+        'Could not find second a'
+      )
     })
   })
 

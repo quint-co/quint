@@ -24,11 +24,15 @@ We want to ensure we do not throw uncaught exceptions when the input file is
 doesn't exist.
 
 <!-- !test in non-existent file -->
-    quint parse ../examples/non-existent.file
+```
+quint parse ../examples/non-existent.file
+```
 
 <!-- !test exit 1 -->
 <!-- !test err non-existent file -->
-    error: file ../examples/non-existent.file does not exist
+```
+error: file ../examples/non-existent.file does not exist
+```
 
 ### User error on parse with junk after modules
 
@@ -37,14 +41,18 @@ We want to ensure that the parser shows an error, when it detects junk in
 the end of file.
 
 <!-- !test in junk -->
-    quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
+quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
-    9: the parser
-       ^^^
+```
+Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+9: the parser
+   ^^^
 
-    error: parsing failed
+error: parsing failed
+```
 
 ### User error on parse with invalid input
 
@@ -440,6 +448,40 @@ Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
 
+### Run finds an invariant violation with metadata
+
+The command `run` finds an invariant violation and outputs metadata for MBT, when given the `--mbt` flag.
+
+<!-- !test in run finds violation with metadata -->
+```
+output=$(quint run --seed=0x308623f2a48e7 --mbt --max-steps=4 \
+  --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run finds violation with metadata -->
+```
+An example execution:
+
+[State 0] { action_taken: "q::init", n: 1, nondet_picks: {  } }
+
+[State 1] { action_taken: "OnPositive", n: 2, nondet_picks: {  } }
+
+[State 2] { action_taken: "OnPositive", n: 3, nondet_picks: {  } }
+
+[State 3] { action_taken: "OnDivByThree", n: 6, nondet_picks: {  } }
+
+[State 4] { action_taken: "OnDivByThree", n: 12, nondet_picks: {  } }
+
+[violation] Found an issue (duration).
+Use --seed=0x308623f2a48e7 to reproduce.
+Use --verbosity=3 to show executions.
+error: Invariant violated
+```
+
 ### Run finds an example
 
 The command `run` finds an example.
@@ -707,6 +749,96 @@ rm out-itf-example.itf.json
     "#bigint": "0"
   }
 ]
+```
+
+### Run outputs ITF with metadata
+
+<!-- !test in run itf with metadata -->
+```
+quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
+  --invariant=totalSupplyDoesNotOverflowInv --mbt\
+  ../examples/solidity/Coin/coin.qnt
+cat out-itf-mbt-example.itf.json | jq '.states[1]'
+rm out-itf-mbt-example.itf.json
+```
+
+<!-- !test out run itf with metadata -->
+```
+{
+  "#meta": {
+    "index": 1
+  },
+  "action_taken": "mint",
+  "balances": {
+    "#map": [
+      [
+        "alice",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "bob",
+        {
+          "#bigint": "111009104957917492842738448433884729279015865072041681905260877596484059410831"
+        }
+      ],
+      [
+        "charlie",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "eve",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "null",
+        {
+          "#bigint": "0"
+        }
+      ]
+    ]
+  },
+  "minter": "bob",
+  "nondet_picks": {
+    "amount": {
+      "tag": "Some",
+      "value": {
+        "#bigint": "111009104957917492842738448433884729279015865072041681905260877596484059410831"
+      }
+    },
+    "eveToBob": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "mintBob": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "mintEve": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "receiver": {
+      "tag": "Some",
+      "value": "bob"
+    },
+    "sender": {
+      "tag": "Some",
+      "value": "bob"
+    }
+  }
+}
 ```
 
 ### Run without violation outputs ITF

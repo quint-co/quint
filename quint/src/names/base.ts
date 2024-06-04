@@ -43,8 +43,10 @@ export type LookupDefinition = (QuintDef | ({ kind: 'param' } & QuintLambdaParam
    * Some types in `QuintDef` already have a `typeAnnotation` field. This
    * ensures that this field is always accessible */
   typeAnnotation?: QuintType
-  /** optional depth of the definition, 0 if top-level. Only for `QuintOpDef`. */
+  /* optional depth of the definition, 0 if top-level. Only for `QuintOpDef`. */
   depth?: number
+  /* optional flag to tell if this is shadowing another def, therefore needing to be unshadowed during compilation */
+  shadowing?: boolean
 }
 
 /**
@@ -170,6 +172,7 @@ export const builtinNames = [
   'powerset',
   'flatten',
   'allLists',
+  'allListsUpTo',
   'chooseSome',
   'oneOf',
   'isFinite',

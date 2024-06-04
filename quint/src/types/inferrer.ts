@@ -30,7 +30,8 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
   }
 
   /**
-   * Infers a type for each expression in a list of QuintDeclarations
+   * Infers a type for each expression in a list of QuintDeclarations. If there
+   * are missing types in the type map, there will be at least one error.
    *
    * @param declarations: the list of QuintDeclarations to infer types for
    *

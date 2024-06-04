@@ -21,10 +21,10 @@ again.
 
 <!-- !test in server not running -->
 ```
-quint verify ../examples/language-features/booleans.qnt | \
+quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
   sed 's!https://.*!(asseturl)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
-quint verify ../examples/language-features/booleans.qnt | \
+quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
   sed 's!\(Using existing Apalache distribution in \).*!\1(distdir)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
 ```
@@ -33,9 +33,5 @@ quint verify ../examples/language-features/booleans.qnt | \
 ```
 Downloading Apalache distribution... done.
 [ok] No violation found (duration).
-You may increase --max-steps.
-Use --verbosity to produce more (or less) output.
 [ok] No violation found (duration).
-You may increase --max-steps.
-Use --verbosity to produce more (or less) output.
 ```

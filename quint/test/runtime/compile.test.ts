@@ -35,7 +35,15 @@ const idGen = newIdGenerator()
 function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
   const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
+  const context = compileFromCode(
+    idGen,
+    moduleText,
+    '__runtime',
+    mockLookupPath,
+    noExecutionListener,
+    newRng().next,
+    false
+  )
 
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
@@ -64,7 +72,15 @@ function assertComputableAsString(computable: Computable, expected: string | und
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
+  const context = compileFromCode(
+    idGen,
+    moduleText,
+    '__runtime',
+    mockLookupPath,
+    noExecutionListener,
+    newRng().next,
+    false
+  )
   return callable(context)
 }
 
@@ -830,6 +846,16 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('[].select(e => e % 2 == 0)', 'List()')
       assertResultAsString('[4, 5, 6].select(e => e % 2 == 0)', 'List(4, 6)')
     })
+
+    it('allListsUpTo', () => {
+      assertResultAsString(
+        'Set(1, 2, 3).allListsUpTo(2)',
+        'Set(List(), List(1, 1), List(1, 2), List(1, 3), List(1), List(2, 1), List(2, 2), List(2, 3), List(2), List(3, 1), List(3, 2), List(3, 3), List(3))'
+      )
+      assertResultAsString('Set(1).allListsUpTo(3)', 'Set(List(), List(1, 1, 1), List(1, 1), List(1))')
+      assertResultAsString('Set().allListsUpTo(3)', 'Set(List())')
+      assertResultAsString('Set(1).allListsUpTo(0)', 'Set(List())')
+    })
   })
 
   describe('compile over records', () => {
@@ -1150,6 +1176,7 @@ describe('incremental compilation', () => {
       newEvaluationState(noExecutionListener),
       flattenedTable,
       dummyRng.next,
+      false,
       moduleToCompile.declarations
     )
   }
@@ -1165,7 +1192,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-      const context = compileExpr(compilationState, evaluationState, dummyRng, expr!)
+      const context = compileExpr(compilationState, evaluationState, dummyRng, false, expr!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
 
@@ -1184,7 +1211,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
-      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, defs!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
@@ -1205,7 +1232,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
@@ -1226,7 +1253,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       const typeDecl = decls[0]
       assert(typeDecl.kind === 'typedef')
@@ -1245,7 +1272,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
 
       assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
       // Sum type declarations are expanded to add an
