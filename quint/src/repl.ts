@@ -12,7 +12,7 @@ import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
 import { Maybe, just, none } from '@sweet-monads/maybe'
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
@@ -39,10 +39,10 @@ import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
-import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
 import { mkErrorMessage } from './cliCommands'
 import { QuintError } from './quintError'
 import { ErrorMessage } from './ErrorMessage'
+import { EvaluationState, newEvaluationState } from './runtime/impl/base'
 
 // tunable settings
 export const settings = {
@@ -709,30 +709,28 @@ function countBraces(str: string): [number, number, number] {
 function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   const computable = contextNameLookup(state.evaluationState.context, inputDefName, 'callable')
   const columns = terminalWidth()
-  const result = computable
-    .mapRight(comp => {
-      return comp
-        .eval()
-        .map(value => {
-          const ex = value.toQuintEx(state.compilationState.idGen)
-          out(format(columns, 0, prettyQuintEx(ex)))
-          out('\n')
+  const result = computable.chain(comp => {
+    return comp
+      .eval()
+      .chain(value => {
+        const ex = value.toQuintEx(state.compilationState.idGen)
+        out(format(columns, 0, prettyQuintEx(ex)))
+        out('\n')
 
-          if (ex.kind === 'bool' && ex.value) {
-            // A Boolean expression may be an action or a run.
-            // Save the state, if there were any updates to variables.
-            saveVars(state.evaluationState.vars, state.evaluationState.nextVars).map(missing => {
-              if (missing.length > 0) {
-                out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
-              }
-            })
-          }
-          return right<string, QuintEx>(ex)
-        })
-        .or(just(left<string, QuintEx>('<undefined value>')))
-        .unwrap()
-    })
-    .join()
+        if (ex.kind === 'bool' && ex.value) {
+          // A Boolean expression may be an action or a run.
+          // Save the state, if there were any updates to variables.
+          saveVars(state.evaluationState.vars, state.evaluationState.nextVars).map(missing => {
+            if (missing.length > 0) {
+              out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
+            }
+          })
+        }
+        return right(ex)
+      })
+      .mapLeft(e => state.evaluationState.errorTracker.addRuntimeError(e.reference, e))
+      .mapLeft(_ => '<undefined value>')
+  })
 
   if (verbosity.hasUserOpTracking(state.verbosity)) {
     const trace = state.recorder.getBestTrace()

@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
-import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/ir/IRprinting'
 import { Callable, Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
@@ -22,7 +21,7 @@ import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
 import { flattenModules } from '../../src/flattening/fullFlattener'
-import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
+import { newEvaluationState } from '../../src/runtime/impl/base'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -64,7 +63,7 @@ function assertComputableAsString(computable: Computable, expected: string | und
     .map(r => r.toQuintEx(idGen))
     .map(expressionToString)
     .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
-  if (result.isNone()) {
+  if (result.isLeft()) {
     assert(expected === undefined, `Expected ${expected}, found undefined`)
   }
 }
@@ -123,29 +122,26 @@ function evalVarAfterRun(varName: string, callee: string, input: string): Either
   // Recall that left(...) is used for errors,
   // whereas right(...) is used for non-errors in sweet monads.
   const callback = (ctx: CompilationContext): Either<string, string> => {
-    return callableFromContext(ctx, callee)
-      .mapRight(run => {
-        return run
-          .eval()
-          .map(res => {
-            if ((res as RuntimeValue).toBool() === true) {
-              // extract the value of the state variable
-              const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
-              if (nextVal.isNone()) {
-                return left(`Value of the variable ${varName} is undefined`)
-              } else {
-                return right(expressionToString(nextVal.value.toQuintEx(idGen)))
-              }
+    return callableFromContext(ctx, callee).chain(run => {
+      return run
+        .eval()
+        .mapLeft(quintErrorToString)
+        .chain(res => {
+          if ((res as RuntimeValue).toBool() === true) {
+            // extract the value of the state variable
+            const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
+            if (nextVal.isLeft()) {
+              return left(`Value of the variable ${varName} is undefined`)
             } else {
-              const s = expressionToString(res.toQuintEx(idGen))
-              const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
-              return left<string, string>(m)
+              return right(expressionToString(nextVal.value.toQuintEx(idGen)))
             }
-          })
-          .or(just(left(`Value of ${callee} is undefined`)))
-          .unwrap()
-      })
-      .join()
+          } else {
+            const s = expressionToString(res.toQuintEx(idGen))
+            const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
+            return left<string, string>(m)
+          }
+        })
+    })
   }
 
   return evalInContext(input, callback)
@@ -156,17 +152,14 @@ function evalRun(callee: string, input: string): Either<string, string> {
   // Recall that left(...) is used for errors,
   // whereas right(...) is used for non-errors in sweet monads.
   const callback = (ctx: CompilationContext): Either<string, string> => {
-    return callableFromContext(ctx, callee)
-      .mapRight(run => {
-        return run
-          .eval()
-          .map(res => {
-            return right<string, string>(expressionToString(res.toQuintEx(idGen)))
-          })
-          .or(just(left(`Value of ${callee} is undefined`)))
-          .unwrap()
-      })
-      .join()
+    return callableFromContext(ctx, callee).chain(run => {
+      return run
+        .eval()
+        .mapLeft(quintErrorToString)
+        .chain(res => {
+          return right<string, string>(expressionToString(res.toQuintEx(idGen)))
+        })
+    })
   }
 
   return evalInContext(input, callback)
@@ -1006,7 +999,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
     })
 
     it('then returns false when rhs is false', () => {
@@ -1045,7 +1038,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
     })
 
     it('fail', () => {

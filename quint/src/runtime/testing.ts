@@ -18,8 +18,8 @@ import { LookupTable } from '../names/base'
 import { Computable, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
-import { newEvaluationState } from './impl/compilerImpl'
 import { QuintError } from '../quintError'
+import { newEvaluationState, toMaybe } from './impl/base'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -142,20 +142,20 @@ export function compileAndTest(
           const trace = ctx.evaluationState.trace.get()
 
           if (trace.length > 0) {
-            recorder.onRunReturn(result, trace)
+            recorder.onRunReturn(toMaybe(result), trace)
           } else {
             // Report a non-critical error
             console.error('Missing a trace')
-            recorder.onRunReturn(result, [])
+            recorder.onRunReturn(toMaybe(result), [])
           }
 
           // evaluate the result
-          if (result.isNone()) {
+          if (result.isLeft()) {
             // if the test failed, return immediately
             return {
               name,
               status: 'failed',
-              errors: ctx.getRuntimeErrors(),
+              errors: ctx.getRuntimeErrors().concat(result.value),
               seed,
               frames: recorder.getBestTrace().subframes,
               nsamples: nsamples,
