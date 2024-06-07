@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
-- Fixed a problem where random numbers where internally produced without being
+- Fixed a problem where random numbers were internally produced without being
   used. This affects behavior of randomness, and therefore same seeds will
   behave differently before and after this version (#1453).
 
