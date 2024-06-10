@@ -737,7 +737,7 @@ error: Invariant violated
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq '.[0].states[0]."balances"."#map"[0]'
+cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
@@ -758,7 +758,7 @@ rm out-itf-example.itf.json
 quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv --mbt\
   ../examples/solidity/Coin/coin.qnt
-cat out-itf-mbt-example.itf.json | jq '.[0].states[1]'
+cat out-itf-mbt-example.itf.json | jq '.states[1]'
 rm out-itf-mbt-example.itf.json
 ```
 
@@ -846,7 +846,7 @@ rm out-itf-mbt-example.itf.json
 <!-- !test in sucessful run itf -->
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq '.[0].states[0]."balances"."#map"[0]'
+cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
@@ -864,14 +864,33 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=5 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq 'length'
-rm out-itf-example.itf.json
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+cat out-itf-example0.itf.json | jq '.["#meta"].status'
+rm out-itf-example*.itf.json
 ```
 
 <!-- !test out run with n-traces itf -->
 ```
-5
+"ok"
+```
+
+### Run to generate multiple ITF traces with violation
+
+<!-- !test in run with n-traces itf violation -->
+```
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt \
+   --invariant=totalSupplyDoesNotOverflowInv 
+cat out-itf-example0.itf.json | jq '.["#meta"].status'
+cat out-itf-example1.itf.json | jq '.["#meta"].status'
+cat out-itf-example2.itf.json | jq '.["#meta"].status'
+rm out-itf-example*.itf.json
+```
+
+<!-- !test out run with n-traces itf violation -->
+```
+"violation"
+"violation"
+"violation"
 ```
 
 ### Test outputs ITF

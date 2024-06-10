@@ -16,7 +16,7 @@ import { CompilationContext, CompilationState, compile } from './compile'
 import { zerog } from './../idGenerator'
 import { LookupTable } from '../names/base'
 import { Computable, kindName } from './runtime'
-import { ExecutionFrame, newTraceRecorder } from './trace'
+import { ExecutionFrame, Trace, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
 import { QuintError } from '../quintError'
 import { newEvaluationState, toMaybe } from './impl/base'
@@ -104,11 +104,11 @@ export function compileAndTest(
     return left(ctxErrors)
   }
 
-  const saveTrace = (index: number, name: string, status: string) => {
+  const saveTrace = (trace: ExecutionFrame, index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
     // If a test failed, it is the first failing trace.
     // Otherwise, it is the longest trace explored by the test.
-    const states = recorder.getBestTrace().args.map(e => e.toQuintEx(zerog))
+    const states = trace.args.map(e => e.toQuintEx(zerog))
     options.onTrace(
       index,
       name,
@@ -149,6 +149,7 @@ export function compileAndTest(
             recorder.onRunReturn(toMaybe(result), [])
           }
 
+          const bestTrace = recorder.getBestTraces(1)[0].frame
           // evaluate the result
           if (result.isLeft()) {
             // if the test failed, return immediately
@@ -157,7 +158,7 @@ export function compileAndTest(
               status: 'failed',
               errors: ctx.getRuntimeErrors().concat(result.value),
               seed,
-              frames: recorder.getBestTrace().subframes,
+              frames: bestTrace.subframes,
               nsamples: nsamples,
             }
           }
@@ -170,7 +171,7 @@ export function compileAndTest(
               status: 'ignored',
               errors: [],
               seed: seed,
-              frames: recorder.getBestTrace().subframes,
+              frames: bestTrace.subframes,
               nsamples: nsamples,
             }
           }
@@ -182,26 +183,26 @@ export function compileAndTest(
               message: `Test ${name} returned false`,
               reference: def.id,
             }
-            saveTrace(index, name, 'failed')
+            saveTrace(bestTrace, index, name, 'failed')
             return {
               name,
               status: 'failed',
               errors: [error],
               seed: seed,
-              frames: recorder.getBestTrace().subframes,
+              frames: bestTrace.subframes,
               nsamples: nsamples,
             }
           } else {
             if (options.rng.getState() === seed) {
               // This successful test did not use non-determinism.
               // Running it one time is sufficient.
-              saveTrace(index, name, 'passed')
+              saveTrace(bestTrace, index, name, 'passed')
               return {
                 name,
                 status: 'passed',
                 errors: [],
                 seed: seed,
-                frames: recorder.getBestTrace().subframes,
+                frames: bestTrace.subframes,
                 nsamples: nsamples,
               }
             }
@@ -209,13 +210,14 @@ export function compileAndTest(
         }
 
         // the test was run maxSamples times, and no errors were found
-        saveTrace(index, name, 'passed')
+        const bestTrace = recorder.getBestTraces(1)[0].frame
+        saveTrace(bestTrace, index, name, 'passed')
         return {
           name,
           status: 'passed',
           errors: [],
           seed: seed,
-          frames: recorder.getBestTrace().subframes,
+          frames: bestTrace.subframes,
           nsamples: nsamples - 1,
         }
       })

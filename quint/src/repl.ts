@@ -733,7 +733,7 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   })
 
   if (verbosity.hasUserOpTracking(state.verbosity)) {
-    const trace = state.recorder.getBestTrace()
+    const trace = state.recorder.getBestTraces(1)[0].frame
     if (trace.subframes.length > 0) {
       out('\n')
       trace.subframes.forEach((f, i) => {

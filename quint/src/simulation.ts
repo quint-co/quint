@@ -13,7 +13,7 @@ import { Either } from '@sweet-monads/either'
 import { compileFromCode, contextNameLookup } from './runtime/compile'
 import { QuintEx } from './ir/quintIr'
 import { Computable } from './runtime/runtime'
-import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
+import { ExecutionFrame, Trace, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
@@ -31,9 +31,11 @@ export interface SimulatorOptions {
   invariant: string
   maxSamples: number
   maxSteps: number
+  numberOfTraces: number
   rng: Rng
   verbosity: number
   storeMetadata: boolean
+  onTrace(index: number, status: string, vars: string[], states: QuintEx[]): void
 }
 
 /** The outcome of a simulation
@@ -95,11 +97,11 @@ export function compileAndRun(
   const o = options
   // Defs required by the simulator, to be added to the main module before compilation
   const extraDefs = [
-    `def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false`,
+    `def q::test(q::nrunsArg, q::nstepsArg, q::ntracesArg, q::initArg, q::nextArg, q::invArg) = false`,
     `action q::init = { ${o.init} }`,
     `action q::step = { ${o.step} }`,
     `val q::inv = { ${o.invariant} }`,
-    `val q::runResult = q::test(${o.maxSamples}, ${o.maxSteps}, q::init, q::step, q::inv)`,
+    `val q::runResult = q::test(${o.maxSamples}, ${o.maxSteps}, ${o.numberOfTraces}, q::init, q::step, q::inv)`,
   ]
 
   // Construct the modules' code, adding the extra definitions to the main module
@@ -132,8 +134,23 @@ export function compileAndRun(
     res.value.eval()
   }
 
-  const topFrame: ExecutionFrame = recorder.getBestTrace()
+  const topTraces: Trace[] = recorder.getBestTraces(options.numberOfTraces)
+  const vars = evaluationState.vars.map(v => v.name)
 
+  topTraces.forEach((trace, index) => {
+    const maybeEvalResult = trace.frame.result
+    assert(maybeEvalResult.isJust(), 'invalid simulation failed to produce a result')
+    const quintExResult = maybeEvalResult.value.toQuintEx(idGen)
+    assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
+    const simulationSucceeded = quintExResult.value
+    const status = simulationSucceeded ? 'ok' : 'violation'
+    const states = trace.frame.args.map(e => e.toQuintEx(idGen))
+
+    options.onTrace(index, status, vars, states)
+  })
+
+  const topFrame = topTraces[0].frame
+  const seed = topTraces[0].seed
   // Validate required outcome of correct simulation
   const maybeEvalResult = topFrame.result
   assert(maybeEvalResult.isJust(), 'invalid simulation failed to produce a result')
@@ -141,10 +158,8 @@ export function compileAndRun(
   assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
   const simulationSucceeded = quintExResult.value
 
-  const vars = evaluationState.vars.map(v => v.name)
   const states = topFrame.args.map(e => e.toQuintEx(idGen))
   const frames = topFrame.subframes
-  const seed = recorder.getBestTraceSeed()
 
   const runtimeErrors = ctx.getRuntimeErrors()
   if (runtimeErrors.length > 0) {

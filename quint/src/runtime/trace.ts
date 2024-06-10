@@ -16,6 +16,7 @@ import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { rv } from './impl/runtimeValue'
+import { take } from 'lodash'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -48,6 +49,11 @@ export interface ExecutionFrame {
    * The frames of the operators that were called by this operator.
    */
   subframes: ExecutionFrame[]
+}
+
+export interface Trace {
+  frame: ExecutionFrame
+  seed: bigint
 }
 
 /**
@@ -163,16 +169,11 @@ export interface TraceRecorder extends ExecutionListener {
   clear: () => void
 
   /**
-   * Get the best recorded trace.
-   * @returns the best recorded trace.
+   * Get the best recorded traces.
+   * @param n the number of traces to get
+   * @returns the best recorded traces.
    */
-  getBestTrace: () => ExecutionFrame
-
-  /**
-   * Get the seed of the best recorded trace.
-   * @returns the seed that was used to generate the best trace.
-   */
-  getBestTraceSeed: () => bigint
+  getBestTraces(n: number): Trace[]
 }
 
 // a trace recording listener
@@ -184,10 +185,8 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng): TraceRecorde
 class TraceRecorderImpl implements TraceRecorder {
   verbosityLevel: number
   rng: Rng
-  // the best trace is stored here
-  private bestTrace: ExecutionFrame
-  // the seed value for the best trace is stored here
-  private bestTraceSeed: bigint
+  // all trace are stored here with their respective seeds
+  private traces: Trace[]
   // whenever a run is entered, we store its seed here
   private runSeed: bigint
   // During simulation, a trace is built here.
@@ -201,24 +200,19 @@ class TraceRecorderImpl implements TraceRecorder {
     this.verbosityLevel = verbosityLevel
     this.rng = rng
     const bottom = this.newBottomFrame()
-    this.bestTrace = bottom
-    this.bestTraceSeed = rng.getState()
-    this.runSeed = this.bestTraceSeed
+    this.traces = []
+    this.runSeed = this.rng.getState()
     this.frameStack = [bottom]
   }
 
   clear() {
+    this.traces = []
     const bottom = this.newBottomFrame()
-    this.bestTrace = bottom
     this.frameStack = [bottom]
   }
 
-  getBestTrace(): ExecutionFrame {
-    return this.bestTrace
-  }
-
-  getBestTraceSeed(): bigint {
-    return this.bestTraceSeed
+  getBestTraces(n: number): Trace[] {
+    return take(this.tracesByQuality(), n)
   }
 
   onUserOperatorCall(app: QuintApp) {
@@ -325,8 +319,14 @@ class TraceRecorderImpl implements TraceRecorder {
 
   onRunReturn(outcome: Maybe<EvalResult>, trace: EvalResult[]) {
     assert(this.frameStack.length > 0)
-    const bottom = this.frameStack[0]
+    const traceToSave = this.frameStack[0]
+    traceToSave.result = outcome
+    traceToSave.args = trace
 
+    this.traces.push({ frame: traceToSave, seed: this.runSeed })
+  }
+
+  private tracesByQuality(): Trace[] {
     const fromResult = (r: Maybe<EvalResult>) => {
       if (r.isNone()) {
         return true
@@ -336,23 +336,28 @@ class TraceRecorderImpl implements TraceRecorder {
       }
     }
 
-    const notOk = fromResult(outcome)
-    const prevNotOk = fromResult(this.bestTrace.result)
-
-    // Prefer short traces for error, and longer traces for non error.
-    // Therefore, override the best trace only if:
-    //  - there is an error, the new trace is shorter, or the old trace is non-error;
-    //  - there is no error, the new trace is longer, and there was no error before.
-    const override = notOk
-      ? this.bestTrace.args.length === 0 || !prevNotOk || this.bestTrace.args.length >= bottom.args.length
-      : !prevNotOk && this.bestTrace.args.length <= bottom.args.length
-
-    if (override) {
-      this.bestTrace = bottom
-      this.bestTraceSeed = this.runSeed
-      this.bestTrace.result = outcome
-      this.bestTrace.args = trace
-    }
+    return this.traces.sort((a, b) => {
+      // Prefer short traces for error, and longer traces for non error.
+      // Therefore, trace a is better than trace b if
+      //  - a has an error, a is shorter, or b has error;
+      //  - a has no error, a is longer, and b has no error.
+      const aNotOk = fromResult(a.frame.result)
+      const bNotOk = fromResult(b.frame.result)
+      if (aNotOk) {
+        if (bNotOk) {
+          return a.frame.args.length - b.frame.args.length
+        } else {
+          return -1
+        }
+      } else {
+        // a is ok
+        if (bNotOk) {
+          return 1
+        } else {
+          return b.frame.args.length - a.frame.args.length
+        }
+      }
+    })
   }
 
   // create a bottom frame, which encodes the whole trace
