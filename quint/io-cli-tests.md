@@ -758,7 +758,7 @@ rm out-itf-example.itf.json
 quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv --mbt\
   ../examples/solidity/Coin/coin.qnt
-cat out-itf-mbt-example.itf.json | jq '.states[1]'
+cat out-itf-mbt-example.itf.json | jq '.[0].states[1]'
 rm out-itf-mbt-example.itf.json
 ```
 

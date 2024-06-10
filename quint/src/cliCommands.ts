@@ -532,23 +532,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
 
-  const rngOrError = mkRng(prev.args.seed)
-  if (rngOrError.isLeft()) {
-    return cliErr(rngOrError.value, { ...simulator, errors: [] })
-  }
-  const rng = rngOrError.unwrap()
-
-  const options: SimulatorOptions = {
-    init: prev.args.init,
-    step: prev.args.step,
-    invariant: prev.args.invariant,
-    maxSamples: prev.args.maxSamples,
-    maxSteps: prev.args.maxSteps,
-    rng,
-    verbosity: verbosityLevel,
-    storeMetadata: prev.args.mbt,
-  }
-
   const startMs = Date.now()
 
   const mainText = prev.sourceCode.get(prev.path)!
@@ -576,6 +559,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maxSteps: prev.args.maxSteps,
       rng,
       verbosity: verbosityLevel,
+      storeMetadata: prev.args.mbt,
     }
 
     results.push(compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options))
