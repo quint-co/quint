@@ -13,7 +13,7 @@ import { SourceMap, parse, parsePhase3importAndNameResolution } from '../parsing
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
 import { FlatModule, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
-import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
+import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
@@ -22,9 +22,10 @@ import { SourceLookupPath } from '../parsing/sourceResolver'
 import { Rng } from '../rng'
 import { flattenModules } from '../flattening/fullFlattener'
 import { QuintError } from '../quintError'
+import { EvaluationState, newEvaluationState } from './impl/base'
 
 /**
- * The name of the shadow variable that stores the last found trace.
+ * The name of the builtin name that returns the last found trace.
  */
 export const lastTraceName = 'q::lastTrace'
 
@@ -132,6 +133,7 @@ export function contextNameLookup(
  * @param evaluationState the state of the compiler visitor
  * @param lookupTable lookup table as produced by the parser
  * @param rand the random number generator
+ * @param storeMetadata whether to store metadata in the trace states
  * @param defs the definitions to compile
  * @returns the compilation context
  */
@@ -140,11 +142,10 @@ export function compile(
   evaluationState: EvaluationState,
   lookupTable: LookupTable,
   rand: (bound: bigint) => bigint,
+  storeMetadata: boolean,
   defs: QuintDef[]
 ): CompilationContext {
-  const { analysisOutput } = compilationState
-
-  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
+  const visitor = new CompilerVisitor(lookupTable, rand, evaluationState, storeMetadata)
 
   defs.forEach(def => walkDefinition(visitor, def))
 
@@ -169,6 +170,7 @@ export function compile(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
+ * @param storeMetadata - whether to store metadata in the trace states
  * @param expr - The Quint exporession to be compiled
  *
  * @returns A compilation context with the compiled expression or its errors
@@ -177,6 +179,7 @@ export function compileExpr(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
+  storeMetadata: boolean,
   expr: QuintEx
 ): CompilationContext {
   // Create a definition to encapsulate the parsed expression.
@@ -184,7 +187,7 @@ export function compileExpr(
   // Hence, we have to compile it via an auxilliary definition.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: inputDefName, expr, id: state.idGen.nextId() }
 
-  return compileDecls(state, evaluationState, rng, [def])
+  return compileDecls(state, evaluationState, rng, storeMetadata, [def])
 }
 
 /**
@@ -195,6 +198,7 @@ export function compileExpr(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
+ * @param storeMetadata - whether to store metadata in the trace states
  * @param decls - The Quint declarations to be compiled
  *
  * @returns A compilation context with the compiled definition or its errors
@@ -203,6 +207,7 @@ export function compileDecls(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
+  storeMetadata: boolean,
   decls: QuintDeclaration[]
 ): CompilationContext {
   if (state.originalModules.length === 0 || state.modules.length === 0) {
@@ -253,7 +258,7 @@ export function compileDecls(
   // Filter definitions that were not compiled yet
   const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
 
-  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, storeMetadata, defsToCompile)
 
   return { ...ctx, analysisErrors }
 }
@@ -268,6 +273,7 @@ export function compileDecls(
  * @param mainName the name of the module that may contain state varibles
  * @param execListener execution listener
  * @param rand the random number generator
+ * @param storeMetadata whether to store metadata in the trace states
  * @returns the compilation context
  */
 export function compileFromCode(
@@ -276,7 +282,8 @@ export function compileFromCode(
   mainName: string,
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint
+  rand: (bound: bigint) => bigint,
+  storeMetadata: boolean
 ): CompilationContext {
   // parse the module text
   // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
@@ -313,7 +320,14 @@ export function compileFromCode(
         },
       ]
   const defsToCompile = main ? main.declarations : []
-  const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
+  const ctx = compile(
+    compilationState,
+    newEvaluationState(execListener),
+    flattenedTable,
+    rand,
+    storeMetadata,
+    defsToCompile
+  )
 
   return {
     ...ctx,

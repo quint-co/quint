@@ -14,6 +14,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.14.4 -- 2024-05-22
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.3 -- 2024-05-14
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.2 -- 2024-05-07
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.1 -- 2024-04-09
+
+### Added
+### Changed
+
+- Updated the logo
+
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.0 -- 2024-03-26
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.7 -- 2024-02-08
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.6 -- 2024-02-08
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.5 -- 2024-02-08
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.4 -- 2024-02-08
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.3 -- 2024-02-08
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.13.2 -- 2024-01-26
 
 ### Added

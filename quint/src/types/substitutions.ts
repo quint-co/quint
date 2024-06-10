@@ -97,11 +97,11 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
           // start as one, and applying substitions cannot result in a wider type
           fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
         }
-
-      case 'abs':
-        throw new Error(`Not yet implemented: https://github.com/informalsystems/quint/issues/1298`)
       case 'app':
-        throw new Error(`Not yet implemented: https://github.com/informalsystems/quint/issues/1298`)
+        return {
+          ...t,
+          args: t.args.map(a => applySubstitution(table, subs, a)),
+        }
 
       // The basic types have no variables, so don't require substitution
       case 'int':

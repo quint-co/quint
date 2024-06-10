@@ -4,4 +4,5 @@ module m {
   type Result[ok, err] =
     | Ok(ok)
     | Err(err)
+  val test: Result[(), str] = Err("my error")
 }

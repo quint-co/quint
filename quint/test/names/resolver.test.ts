@@ -4,7 +4,7 @@ import { assert } from 'chai'
 import { NameResolutionResult } from '../../src/names/base'
 import { resolveNames } from '../../src/names/resolver'
 import { buildModule, buildModuleWithDecls } from '../builders/ir'
-import { zerog } from '../../src/idGenerator'
+import { IdGenerator, newIdGenerator, zerog } from '../../src/idGenerator'
 
 describe('resolveNames', () => {
   const baseDefs = [
@@ -13,14 +13,16 @@ describe('resolveNames', () => {
     'type MY_TYPE = int',
   ]
 
-  function resolveNamesForExprs(exprs: string[]): NameResolutionResult {
-    const module = buildModule(baseDefs, exprs, undefined, zerog)
+  function resolveNamesForExprs(exprs: string[], idGenerator?: IdGenerator): NameResolutionResult {
+    const idGen = idGenerator ?? zerog
+    const module = buildModule(baseDefs, exprs, undefined, idGen)
 
     return resolveNames([module])
   }
 
-  function resolveNamesForDefs(defs: string[]): NameResolutionResult {
-    const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, zerog)
+  function resolveNamesForDefs(defs: string[], idGenerator?: IdGenerator): NameResolutionResult {
+    const idGen = idGenerator ?? zerog
+    const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, idGen)
 
     return resolveNames([module])
   }
@@ -80,6 +82,44 @@ describe('resolveNames', () => {
         { code: 'QNT404', message: "Name 'x' not found", reference: 0n, data: {} },
       ])
     })
+
+    it('finds a definition itself with depth information', () => {
+      const result = resolveNamesForExprs([], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+
+      const def = [...result.table.values()].find(def => def.name === 'unscoped_def' || def.kind === 'def')
+
+      assert.isNotNull(def)
+      assert.deepEqual(result.table.get(def!.id)?.depth, 0)
+    })
+  })
+
+  describe('shadowing', () => {
+    it('resolves shadowed names', () => {
+      const result = resolveNamesForDefs(
+        ['val shadowing = def foo = (shadowing) => shadowing { foo(1) }', 'val a = shadowing'],
+        newIdGenerator()
+      )
+
+      assert.isEmpty(result.errors)
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'def'))
+      assert.isTrue([...result.table.values()].some(def => def.name === 'shadowing' && def.kind === 'param'))
+    })
+
+    it('collects depth and shadowing information properly', () => {
+      const result = resolveNamesForDefs(['val shadowing = val a = 1 { val a = 2 { a } }'], newIdGenerator())
+
+      assert.isEmpty(result.errors)
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 2),
+        'Could not find first a'
+      )
+      assert.isTrue(
+        [...result.table.values()].some(def => def.name === 'a' && def.depth === 3 && def.shadowing === true),
+        'Could not find second a'
+      )
+    })
   })
 
   describe('type aliases', () => {
@@ -93,7 +133,7 @@ describe('resolveNames', () => {
       const result = resolveNamesForDefs([
         'const a: UNKNOWN_TYPE_0',
         'var b: UNKNOWN_TYPE_1',
-        'type C = Set[t]',
+        'type C[t] = Set[t]',
         'assume d = 1',
       ])
 

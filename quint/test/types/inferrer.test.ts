@@ -2,8 +2,9 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
-import { errorTreeToString } from '../../src/errorTree'
+import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
+import { TypeApplicationResolver } from '../../src/types/typeApplicationResolution'
 
 // Utility used to print update `stringType` values to make
 // updating the expected values in the following tests less
@@ -16,10 +17,22 @@ function _printUpdatedStringTypes(stringTypes: (string | bigint)[][]) {
 
 describe('inferTypes', () => {
   function inferTypesForModules(text: string): TypeInferenceResult {
-    const { modules, table } = parseMockedModule(text)
+    const { modules: parsedModules, table } = parseMockedModule(text)
 
+    // Type inference assumes all type applications (e.g., `Foo[int, str]`) have been resolved.
+    const resolver = new TypeApplicationResolver(table)
     const inferrer = new TypeInferrer(table)
-    return inferrer.inferTypes(modules.flatMap(m => m.declarations))
+
+    // Used to collect errors found during type application
+    let typeAppErrs: Map<bigint, ErrorTree> = new Map()
+    const modules = parsedModules.map(m => {
+      const [errs, declarations] = resolver.resolveTypeApplications(m.declarations)
+      typeAppErrs = new Map([...typeAppErrs, ...errs])
+      return { ...m, declarations }
+    })
+    const [inferenceErrors, inferenceSchemes] = inferrer.inferTypes(modules.flatMap(m => m.declarations))
+    const combinedErrors = new Map([...inferenceErrors, ...typeAppErrs])
+    return [combinedErrors, inferenceSchemes]
   }
 
   function inferTypesForDefs(defs: string[]): TypeInferenceResult {
@@ -84,11 +97,11 @@ describe('inferTypes', () => {
       [14n, 'int'],
       [15n, '((bool) => int, bool) => int'],
       [16n, '((bool) => int, bool) => int'],
-      [1n, '∀ t0, t1 . (t0) => t1'],
-      [2n, '∀ t0 . t0'],
-      [3n, '∀ t0 . t0'],
-      [4n, '∀ t0 . t0'],
-      [5n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
+      [1n, '(t_p_2) => _t4'],
+      [2n, 't_p_2'],
+      [3n, 't_p_2'],
+      [4n, '_t4'],
+      [5n, '((t_p_2) => _t4, t_p_2) => _t4'],
       [6n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
     ])
   })
@@ -116,14 +129,14 @@ describe('inferTypes', () => {
       [10n, '{ f1: int, f2: bool }'],
       [11n, 'Set[{ f1: int, f2: bool }]'],
       [12n, 'Set[{ f1: int, f2: bool }]'],
-      [13n, '∀ r0 . { f1: int | r0 }'],
+      [13n, '{ f1: int | tail__t3 }'],
       [14n, '{ f1: int, f2: bool }'],
       [15n, 'str'],
-      [16n, '∀ r0 . { f1: int | r0 }'],
+      [16n, '{ f1: int | tail__t3 }'],
       [17n, 'str'],
       [18n, 'int'],
       [19n, '{ f1: int, f2: bool }'],
-      [20n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
+      [20n, '({ f1: int | tail__t3 }) => { f1: int, f2: bool }'],
       [21n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
       [23n, 'str'],
       [22n, 'int'],
@@ -143,16 +156,16 @@ describe('inferTypes', () => {
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
     // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [1n, '∀ t0, r0 . (t0 | r0)'],
-      [2n, '∀ t0, t1, r0 . (t0, t1 | r0)'],
-      [3n, '∀ t0, r0 . (t0 | r0)'],
+      [1n, '(_t0 | tail__t0)'],
+      [2n, '(tup__t1_0, _t1 | tail__t1)'],
+      [3n, '(_t0 | tail__t0)'],
       [4n, 'int'],
-      [5n, '∀ t0 . t0'],
-      [6n, '∀ t0, t1, r0 . (t0, t1 | r0)'],
+      [5n, '_t0'],
+      [6n, '(tup__t1_0, _t1 | tail__t1)'],
       [7n, 'int'],
-      [8n, '∀ t0 . t0'],
-      [9n, '∀ t0, t1 . (t0, t1)'],
-      [10n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
+      [8n, '_t1'],
+      [9n, '(_t0, _t1)'],
+      [10n, '((_t0 | tail__t0), (tup__t1_0, _t1 | tail__t1)) => (_t0, _t1)'],
       [11n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
     ])
   })
@@ -164,21 +177,22 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
-      [16n, '(A(int) | B({}))'],
-      [17n, '(A(int) | B({}))'],
-      [10n, 'str'],
-      [11n, '{}'],
-      [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
-      [5n, 'int'],
-      [4n, 'str'],
+      [15n, 'str'],
+      [16n, 'int'],
+      [17n, '(A(int) | B(()))'],
+      [18n, '(A(int) | B(()))'],
       [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
-      [9n, '(int) => (A(int) | B({}))'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B(()))'],
+      [9n, '(int) => (A(int) | B(()))'],
+      [10n, '(int) => (A(int) | B(()))'],
+      [11n, 'str'],
+      [12n, '()'],
+      [13n, '(B(()) | A(int))'],
+      [14n, '(B(()) | A(int))'],
     ])
   })
 
@@ -205,34 +219,35 @@ module B {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
-      [16n, '(A(int) | B({}))'],
-      [17n, '(A(int) | B({}))'],
-      [10n, 'str'],
-      [11n, '{}'],
-      [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
-      [18n, '(A(int) | B({}))'],
-      [24n, 'str'],
-      [26n, 'int'],
-      [19n, 'int'],
+      [15n, 'str'],
+      [16n, 'int'],
+      [17n, '(A(int) | B(()))'],
+      [18n, '(A(int) | B(()))'],
+      [6n, 'int'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B(()))'],
+      [9n, '(int) => (A(int) | B(()))'],
+      [10n, '(int) => (A(int) | B(()))'],
+      [11n, 'str'],
+      [12n, '()'],
+      [13n, '(B(()) | A(int))'],
+      [14n, '(B(()) | A(int))'],
+      [19n, '(A(int) | B(()))'],
+      [25n, 'str'],
+      [27n, 'int'],
       [20n, 'int'],
       [21n, 'int'],
-      [25n, '(int) => int'],
-      [27n, 'str'],
-      [29n, '{}'],
       [22n, 'int'],
-      [28n, '({}) => int'],
+      [26n, '(int) => int'],
+      [28n, 'str'],
+      [30n, '()'],
       [23n, 'int'],
-      [30n, 'int'],
-      [5n, 'int'],
-      [4n, 'str'],
-      [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
-      [9n, '(int) => (A(int) | B({}))'],
+      [29n, '(()) => int'],
+      [24n, 'int'],
+      [31n, 'int'],
     ])
   })
 
@@ -360,14 +375,14 @@ module B {
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
     // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [1n, '(int -> str)'],
+      [4n, '(int -> str)'],
       [6n, '(int -> str)'],
       [7n, 'Set[int]'],
       [8n, 'Set[int]'],
       [9n, 'int'],
       [10n, 'int'],
+      [11n, '((int -> str)) => int'],
       [12n, '((int -> str)) => int'],
-      [13n, '((int -> str)) => int'],
     ])
   })
 
@@ -395,6 +410,75 @@ module B {
     )
   })
 
+  it('checks correct polymorphic types', () => {
+    const defs = [
+      'type Option[a] = Some(a) | None',
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `def result_map(r: Result[a, e], f: a => b): Result[b, e] =
+          match r {
+          | Ok(x)  => Ok(f(x))
+          | Err(_) => r
+          }`,
+      `def option_to_result(o: Option[ok], e: err): Result[ok, err] =
+          match o {
+          | Some(x) => Ok(x)
+          | None    => Err(e)
+          }`,
+      'val nested_type_application: Result[Option[int], str] = Ok(Some(42))',
+    ]
+
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.sameDeepMembers([...errors.entries()], [])
+  })
+
+  it('fails when polymorphic types are not unifiable', () => {
+    const defs = [
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `def result_map(r: Result[bool, e]): Result[int, e] =
+          match r {
+          | Ok(x)  => Ok(x)
+          | Err(_) => r
+          }`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty([...errors.entries()])
+
+    const actualErrors = [...errors.entries()].map(e => errorTreeToString(e[1]))
+    const expectedError = `Couldn't unify bool and int
+Trying to unify bool and int
+Trying to unify { Ok: bool, Err: _t5 } and { Ok: int, Err: _t5 }
+Trying to unify (Ok(bool) | Err(_t5)) and (Ok(int) | Err(_t5))
+Trying to unify ((Ok(bool) | Err(_t5))) => (Ok(bool) | Err(_t5)) and ((Ok(bool) | Err(_t5))) => (Ok(int) | Err(_t5))
+`
+    assert.deepEqual(actualErrors, [expectedError])
+  })
+
+  it('errors when polymorphic types are applied to invalid numbers of arguments', () => {
+    const defs = [
+      'type Result[ok, err] = Ok(ok) | Err(err)',
+      `val too_many: Result[a, b, c] = Ok(1)`,
+      `val too_few: Result[a] = Ok(1)`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty([...errors.entries()])
+
+    const actualErrors = [...errors.entries()].map(e => errorTreeToString(e[1]))
+    const expectedErrors = [
+      `Couldn't unify sum and app
+Trying to unify (Ok(int) | Err(_t3)) and Result[a, b, c]
+`,
+      `too many arguments supplied: Result only accepts 2 parameters
+applying type constructor Result to arguments a, b, c
+`,
+      `too few arguments supplied: Result only accepts 2 parameters
+applying type constructor Result to arguments a
+`,
+    ]
+    assert.deepEqual(actualErrors, expectedErrors)
+  })
+
   it('fails when types are not unifiable', () => {
     const defs = ['def a = 1.map(p => p + 10)']
 
@@ -418,5 +502,25 @@ module B {
         ],
       ]
     )
+  })
+
+  it('prioritizes solving constraints from type annotations', () => {
+    // Regression test for https://github.com/informalsystems/quint/issues/1177
+    // The point is that we expect to report an error trying to unify a string with a
+    const defs = [
+      `pure def foo(s: str): int = {
+  val x = 1.in(s) // We SHOULD identify an error here, since s is annotated as a str
+  val y = s + 1   // and NOT identify an error here, incorrectly expecting s to be a set
+  y
+}`,
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    const msgs: string[] = [...errors.values()].map(errorTreeToString)
+    const expectedMessage = `Couldn't unify set and str
+Trying to unify Set[int] and str
+Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
+`
+    assert.equal(msgs[0], expectedMessage)
   })
 })

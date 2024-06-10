@@ -136,7 +136,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -147,7 +147,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -194,7 +194,7 @@ describe('syntax errors', () => {
     assert.isAtLeast(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -217,6 +217,24 @@ describe('syntax errors', () => {
     assert.isAtLeast(errors.length, 1)
     assert.equal(errors[0].message, `mismatched input ''' expecting STRING`)
     assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on type declarations with undeclared variables', () => {
+    // we should use double quotes
+    const code = `module singleQuotes {  type T = (List[a], Set[b]) }`
+    const [error] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error.code, 'QNT014')
+    assert.deepEqual(
+      error.message,
+      `the type variables a, b are unbound.
+E.g., in
+
+   type T = List[a]
+
+type variable 'a' is unbound. To fix it, write
+
+   type T[a] = List[a]`
+    )
   })
 })
 

@@ -65,6 +65,13 @@ quint verify ../examples/verification/defaultOpNames.qnt
 quint verify --invariant inv ../examples/verification/defaultOpNames.qnt
 ```
 
+### Can verify with custom server endpoint
+
+<!-- !test check can specify --server-endpoint -->
+```
+quint verify --server-endpoint=0.0.0.0:8822 --max-steps=2 ../examples/verification/defaultOpNames.qnt
+```
+
 ### Can verify with two invariants
 
 <!-- !test check can specify multiple invariants -->
@@ -218,4 +225,186 @@ An example execution:
   __InLoop: true,
   __saved_n: 1,
   n: 1
+```
+
+## Compiling to TLA+
+
+### Test that we can compile to TLA+ of the expected form
+
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ -->
+```
+quint compile --target tlaplus ./testFixture/ApalacheCompilation.qnt
+```
+
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ -->
+```
+-------------------------- MODULE ApalacheCompilation --------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
+
+VARIABLE
+  (*
+    @type: Int;
+  *)
+  x
+
+(*
+  @type: (() => A(UNIT) | B(Int));
+*)
+A == Variant("A", "U_OF_UNIT")
+
+(*
+  @type: ((Int) => A(UNIT) | B(Int));
+*)
+B(__BParam_31) == Variant("B", __BParam_31)
+
+(*
+  @type: ((a) => a);
+*)
+foo_bar(id__123_35) == id__123_35
+
+(*
+  @type: (() => Int);
+*)
+importedValue == 0
+
+(*
+  @type: (() => Int);
+*)
+ApalacheCompilation_ModuleToInstantiate_C == 0
+
+(*
+  @type: (() => Bool);
+*)
+altInit == x' := 0
+
+(*
+  @type: (() => Bool);
+*)
+step == x' := (x + 1)
+
+(*
+  @type: (() => Bool);
+*)
+altStep == x' := (x + 0)
+
+(*
+  @type: (() => Bool);
+*)
+inv == x >= 0
+
+(*
+  @type: (() => Bool);
+*)
+altInv == x >= 0
+
+(*
+  @type: (() => Int);
+*)
+ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
+  ApalacheCompilation_ModuleToInstantiate_C
+
+(*
+  @type: (() => Bool);
+*)
+init ==
+  x'
+    := (importedValue
+      + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
+
+(*
+  @type: (() => Bool);
+*)
+q_step == step
+
+(*
+  @type: (() => Bool);
+*)
+q_init == init
+
+================================================================================
+```
+
+### Test that we can compile to TLA+ of the expected form with CLI configs
+
+We check that specifying `--init`, `--step`, and `--invariant` work as expected
+
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ with CLI config -->
+```
+quint compile --target tlaplus \
+  --init altInit --step altStep --invariant altInv \
+  ./testFixture/ApalacheCompilation.qnt \
+  | grep -e q_init -e q_step -e q_inv
+```
+
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ with CLI config -->
+```
+q_init == altInit
+q_step == altStep
+q_inv == altInv
+```
+
+### Test that we can compile to TLA+ of the expected form, specifying `--main`
+
+<!-- !test in can convert ApalacheCompliation.qnt to TLA+ with alt main -->
+```
+quint compile --target tlaplus --main ModuleToImport ./testFixture/ApalacheCompilation.qnt
+```
+
+<!-- !test out can convert ApalacheCompliation.qnt to TLA+ with alt main -->
+```
+---------------------------- MODULE ModuleToImport ----------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
+
+(*
+  @type: (() => Bool);
+*)
+step == TRUE
+
+(*
+  @type: (() => Int);
+*)
+importedValue == 0
+
+(*
+  @type: (() => Bool);
+*)
+init == TRUE
+
+(*
+  @type: (() => Bool);
+*)
+q_init == init
+
+(*
+  @type: (() => Bool);
+*)
+q_step == step
+
+================================================================================
+```
+
+### Test that we can compile a module to TLA+ that instantiates but has no declarations
+
+
+<!-- !test in can convert clockSync3.qnt to TLA+ -->
+```
+quint compile --target tlaplus  ../examples/classic/distributed/ClockSync/clockSync3.qnt | head
+```
+
+The compiled module is not empty:
+
+<!-- !test out can convert clockSync3.qnt to TLA+ -->
+```
+------------------------------ MODULE clockSync3 ------------------------------
+
+EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
+
+VARIABLE
+  (*
+    @type: Int;
+  *)
+  clockSync3_clockSync3Spec_time
+
 ```

@@ -14,6 +14,8 @@ and integration with other tools.
 The main commands of `quint` are as follows:
 
  - [x] `repl` starts the REPL (Read-Eval-Print loop) for Quint
+ - [x] `compile` parses, typechecks, and processes a quint specification
+       into the `--target` format, writing the results to stdout
  - [x] `parse` parses a Quint specification and resolves names
  - [x] `typecheck` infers types in a Quint specification
  - [x] `run` executes a Quint specification via random simulation
@@ -65,13 +67,58 @@ The REPL is especially useful for learning the language. See the
 The verbosity levels 3 and 4 are used to show execution details. They are
 especially useful for debugging complex specifications.
 
+## Command `compile`
+
+```sh
+$  quint compile --help
+quint compile <input>
+
+compile a Quint specification into the target, the output is written to stdout
+
+Options:
+  --help       Show help                                               [boolean]
+  --version    Show version number                                     [boolean]
+  --out        output file (suppresses all console output)              [string]
+  --main       name of the main module (by default, computed from filename)
+                                                                        [string]
+  --init       name of the initializer action         [string] [default: "init"]
+  --step       name of the step action                [string] [default: "step"]
+  --invariant  the invariants to check, separated by commas (e.g.)      [string]
+  --temporal   the temporal properties to check, separated by commas    [string]
+  --target     the compilation target. Supported values: tlaplus, json
+                                                      [string] [default: "json"]
+  --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
+```
+
+Given a quint specification as input, this command parses, resolves imports,
+typechecks, and then "flattens" the specification into on module containing just
+the needed definitions.
+
+The main module is determined as follows: If a module name is specified by
+`--main`, that takes precedence. Otherwise, if there is only one module in the
+input file, that is the main module. Otherwise, the module with the same name as
+the file is taken to be the main module.
+
+The main module must specify a state machine. This means it must either define
+actions named `init` and `step`, specifying the initial state and the
+transition action respectively, or suitable actions defined in the main module
+must be indicated using the `--init` and `--step` options.
+
+The following compilation targets are supported
+
+- `json`: The default target, this produces a json representation, in the same
+  format which is described under [`parse`](#command-parse) and
+  [`typecheck`](#command-typecheck), below.
+- `tlaplus`: Quint uses its integration with Apalache to compile the
+  specification into TLA+.
+
 ## Command `parse`
 
 *Warning: The language is still in active development, and breaking changes are
 to be expected.*
 
 ```sh
-$ quint parse --help    
+$ quint parse --help
 quint parse <input>
 
 parse a Quint specification
@@ -184,6 +231,8 @@ Options:
   --invariant    invariant to check: a definition name or an expression
                                                     [string] [default: ["true"]]
   --seed         random seed to use for non-deterministic choice        [string]
+  --mbt          (experimental) whether to produce metadata to be used by
+                 model-based testing                  [boolean] [default: false]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
@@ -207,6 +256,19 @@ Options:
    ```
 
    The errors and warnings are written in the format of [ADR002][].
+
+### The `--mbt` flag
+When this flag is given, the Quint simulator will keep track of two additional
+variables on the traces it produces:
+- `action_taken`: The first action executed by the simulator on each step, reset
+  at every `any` evaluation. That is, if the spec has nested `any` statements,
+  `action_taken` will correspond to the action picked in the innermost `any`.
+- `nondet_picks`: A record with all `nondet` values that were picked since the
+  last `any` was called (or since the start, if there were no `any` calls in the
+  step).
+
+Keep in mind that this is an experimental flag and it is specially subject to
+changes in its behavior.
 
 ## Command test
 
@@ -258,30 +320,32 @@ Options:
 ## Command verify
 
 ```sh
-$ quint verify <input>
+$  quint verify --help
+quint verify <input>
 
 Verify a Quint specification via Apalache
 
 Options:
-  --help             Show help                                         [boolean]
-  --version          Show version number                               [boolean]
-  --main             name of the main module (by default, computed from
-                     filename)                                          [string]
-  --out              output file (suppresses all console output)        [string]
-  --out-itf          output the trace in the Informal Trace Format to file
-                     (suppresses all console output)                     [string]
-  --max-steps        the maximum number of steps in every trace
-                                                          [number] [default: 10]
-  --init             name of the initializer action   [string] [default: "init"]
-  --step             name of the step action          [string] [default: "step"]
-  --invariant        the invariants to check, separated by a comma      [string]
-  --temporal         the temporal properties to check, separated by a comma
+  --help                Show help                                      [boolean]
+  --version             Show version number                            [boolean]
+  --out                 output file (suppresses all console output)     [string]
+  --main                name of the main module (by default, computed from
+                        filename)                                       [string]
+  --init                name of the initializer action[string] [default: "init"]
+  --step                name of the step action       [string] [default: "step"]
+  --invariant           the invariants to check, separated by commas (e.g.)
                                                                         [string]
+  --temporal            the temporal properties to check, separated by commas
+                                                                        [string]
+  --out-itf             output the trace in the Informal Trace Format to file
+                        (suppresses all console output)                 [string]
+  --max-steps           the maximum number of steps in every trace
+                                                          [number] [default: 10]
   --random-transitions  choose transitions at random (= use symbolic simulation)
                                                       [boolean] [default: false]
   --apalache-config     path to an additional Apalache configuration file (in
                         JSON)                                           [string]
-  --verbosity        control how much output is produced (0 to 5)
+  --verbosity           control how much output is produced (0 to 5)
                                                            [number] [default: 2]
 ```
 
@@ -298,7 +362,7 @@ steps:
 Apalache uses bounded model checking. This technique checks *all runs* up to
 `--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache
 configuration](https://apalache.informal.systems/docs/apalache/config.html?highlight=configuration#apalache-configuration)
-for guidance. 
+for guidance.
 
 - If there are no critical errors (e.g., in parsing, typechecking, etc.), this
 command sends the Quint specification to the [Apalache][] model checker, which

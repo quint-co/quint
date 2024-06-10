@@ -69,22 +69,22 @@ export interface QuintTupleType extends WithOptionalId {
   fields: Row
 }
 
-export interface QuintRecordType extends WithOptionalId {
-  kind: 'rec'
-  fields: Row
-}
-
 // A value of the unit type, i.e. an empty record
-export function unitType(id: bigint): QuintRecordType {
+export function unitType(id: bigint): QuintTupleType {
   return {
     id,
-    kind: 'rec',
+    kind: 'tup',
     fields: { kind: 'row', fields: [], other: { kind: 'empty' } },
   }
 }
 
 export function isUnitType(r: QuintType): Boolean {
-  return r.kind === 'rec' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
+  return r.kind === 'tup' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
+}
+
+export interface QuintRecordType extends WithOptionalId {
+  kind: 'rec'
+  fields: Row
 }
 
 export interface QuintSumType extends WithOptionalId {
@@ -98,26 +98,20 @@ export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, 
   return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
 }
 
-/** Type abstraction
+/**
+ * Type application
  *
- * In System-F, this corresponds to Λτ1.(...(Λτ2.(Τ)).
- */
-export interface QuintAbsType extends WithOptionalId {
-  kind: 'abs'
-  vars: QuintVarType[] /** The bound variables */
-  body: QuintType /** The body of the abstraction */
-}
-
-/** Type application: (Λτ.Τ)υ
+ * E.g.,
  *
- * In System-F, this corresponds to (Λτ.Τ)υ
+ * ```
+ * T[int, str]
+ * ```
  *
- * Type application is only well well-formed if `ctor` is (resolved to) an
- * n-ary type abstraction, and `args.length === n`
+ * for a type constant `T`.
  */
 export interface QuintAppType extends WithOptionalId {
   kind: 'app'
-  ctor: QuintType /** The type "constructor" applied */
+  ctor: QuintConstType /** The type constructor applied */
   args: QuintType[] /** The arguments to which the constructor is applied */
 }
 
@@ -137,7 +131,6 @@ export type QuintType =
   | QuintTupleType
   | QuintRecordType
   | QuintSumType
-  | QuintAbsType
   | QuintAppType
 
 /**

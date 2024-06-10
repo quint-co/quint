@@ -143,6 +143,7 @@ export const setOperators = [
   { name: 'powerset', effect: standardPropagation(1) },
   { name: 'flatten', effect: standardPropagation(1) },
   { name: 'allLists', effect: standardPropagation(1) },
+  { name: 'allListsUpTo', effect: standardPropagation(2) },
   { name: 'chooseSome', effect: standardPropagation(1) },
   { name: 'oneOf', effect: standardPropagation(1) },
   { name: 'isFinite', effect: standardPropagation(1) },
@@ -224,6 +225,7 @@ const otherOperators = [
   { name: 'fail', effect: propagateComponents(['read', 'update'])(1) },
   { name: 'assert', effect: propagateComponents(['read'])(1) },
   { name: 'q::debug', effect: propagateComponents(['read'])(2) },
+  { name: 'q::lastTrace', effect: parseAndQuantify('Pure') }, // FIXME: Should be in run mode
   {
     name: 'ite',
     effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),

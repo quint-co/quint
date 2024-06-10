@@ -9,19 +9,17 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { just } from '@sweet-monads/maybe'
 
 import { QuintEx, QuintOpDef } from '../ir/quintIr'
 
-import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
+import { CompilationContext, CompilationState, compile } from './compile'
 import { zerog } from './../idGenerator'
 import { LookupTable } from '../names/base'
-import { Computable, Register, kindName } from './runtime'
+import { Computable, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
-import { RuntimeValue, rv } from './impl/runtimeValue'
-import { newEvaluationState } from './impl/compilerImpl'
 import { QuintError } from '../quintError'
+import { newEvaluationState, toMaybe } from './impl/base'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -90,7 +88,14 @@ export function compileAndTest(
   }
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.declarations)
+  const ctx = compile(
+    compilationState,
+    newEvaluationState(recorder),
+    lookupTable,
+    options.rng.next,
+    false,
+    main.declarations
+  )
 
   const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors, ctx.analysisErrors)
   if (ctxErrors.length > 0) {
@@ -130,28 +135,27 @@ export function compileAndTest(
           seed = options.rng.getState()
           recorder.onRunCall()
           // reset the trace
-          const traceReg = ctx.evaluationState.context.get(kindName('shadow', lastTraceName)) as Register
-          traceReg.registerValue = just(rv.mkList([]))
+          ctx.evaluationState.trace.reset()
           // run the test
           const result = comp.eval()
           // extract the trace
-          const trace = traceReg.eval()
+          const trace = ctx.evaluationState.trace.get()
 
-          if (trace.isJust()) {
-            recorder.onRunReturn(result, [...(trace.value as RuntimeValue).toList()])
+          if (trace.length > 0) {
+            recorder.onRunReturn(toMaybe(result), trace)
           } else {
             // Report a non-critical error
             console.error('Missing a trace')
-            recorder.onRunReturn(result, [])
+            recorder.onRunReturn(toMaybe(result), [])
           }
 
           // evaluate the result
-          if (result.isNone()) {
+          if (result.isLeft()) {
             // if the test failed, return immediately
             return {
               name,
               status: 'failed',
-              errors: ctx.getRuntimeErrors(),
+              errors: ctx.getRuntimeErrors().concat(result.value),
               seed,
               frames: recorder.getBestTrace().subframes,
               nsamples: nsamples,

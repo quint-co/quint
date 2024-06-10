@@ -25,3 +25,19 @@ export function tooManySpreadsError(id: bigint): QuintError {
     data: {},
   }
 }
+
+export function undeclaredTypeParamsError(id: bigint, unboundTypeVariables: string[]): QuintError {
+  return {
+    code: 'QNT014',
+    message: `the type variables ${unboundTypeVariables.join(', ')} are unbound.
+E.g., in
+
+   type T = List[a]
+
+type variable 'a' is unbound. To fix it, write
+
+   type T[a] = List[a]`,
+    reference: id,
+    data: {},
+  }
+}

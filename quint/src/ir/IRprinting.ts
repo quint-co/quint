@@ -121,7 +121,8 @@ export function definitionToString(def: QuintDef, includeBody: boolean = true, t
       return `assume ${def.name} = ${expressionToString(def.assumption)}`
     case 'typedef':
       if (def.type) {
-        return `type ${def.name} = ${typeToString(def.type)}`
+        const params = def.params && def.params.length > 0 ? `[${def.params.join(', ')}]` : ''
+        return `type ${def.name}${params} = ${typeToString(def.type)}`
       } else {
         return `type ${def.name}`
       }
@@ -186,11 +187,6 @@ export function typeToString(type: QuintType): string {
     }
     case 'sum': {
       return sumToString(type)
-    }
-    case 'abs': {
-      const vars = type.vars.map(typeToString).join(', ')
-      const body = typeToString(type.body)
-      return `Λ(${vars}).${body}`
     }
     case 'app': {
       const abs = typeToString(type.ctor)

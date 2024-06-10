@@ -19,7 +19,7 @@ import { QuintApp, QuintLambda, QuintLambdaParameter, QuintLet, QuintModule, Qui
 /**
  * Replace all names with unique names, to avoid shadowing.
  * - Lambda parameters are renamed to `<name>_<lambda-id>`
- * - Nested definitions (from let expressions) are renamed to `<name>_<let-id>`
+ * - Nested definitions (from let expressions) are renamed to `<name>_<let-id>` only if they shadow another name
  *
  * @param module The module to unshadow
  * @param lookupTable The lookup table with the module's name references
@@ -41,6 +41,9 @@ class Unshadower implements IRTransformer {
 
   enterLambda(lambda: QuintLambda): QuintLambda {
     const newParams: QuintLambdaParameter[] = lambda.params.map(p => {
+      // Ideally, we should only rename if `this.lookupTable.get(p.id)?.shadowing` is true, as we do in let.
+      // However, this currently is a problem with Apalache, see issue #1443.
+
       const newName = `${p.name}_${lambda.id}`
       this.nestedNames.set(p.id, newName)
 
@@ -50,6 +53,11 @@ class Unshadower implements IRTransformer {
   }
 
   enterLet(expr: QuintLet): QuintLet {
+    if (!this.lookupTable.get(expr.opdef.id)?.shadowing) {
+      // nothing to do
+      return expr
+    }
+
     const newName = `${expr.opdef.name}_${expr.id}`
     this.nestedNames.set(expr.opdef.id, newName)
 

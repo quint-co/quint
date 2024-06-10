@@ -7,14 +7,18 @@
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
+ * @author Igor Konnov, konnov.phd, 2024
  */
 
+import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
   CLIProcedure,
+  compile,
   docs,
   load,
+  outputCompilationTarget,
   outputResult,
   parse,
   runRepl,
@@ -27,12 +31,39 @@ import {
 import { verbosity } from './verbosity'
 
 import { version } from './version'
+import { parseServerEndpoint } from './apalache'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
     desc: 'output file (suppresses all console output)',
     type: 'string',
   })
+
+// Arguments used by routines that pass thru the `compile` stage
+const compileOpts = (yargs: any) =>
+  defaultOpts(yargs)
+    .option('main', {
+      desc: 'name of the main module (by default, computed from filename)',
+      type: 'string',
+    })
+    .option('init', {
+      desc: 'name of the initializer action',
+      type: 'string',
+      default: 'init',
+    })
+    .option('step', {
+      desc: 'name of the step action',
+      type: 'string',
+      default: 'step',
+    })
+    .option('invariant', {
+      desc: 'the invariants to check, separated by commas (e.g.)',
+      type: 'string',
+    })
+    .option('temporal', {
+      desc: 'the temporal properties to check, separated by commas',
+      type: 'string',
+    })
 
 // Chain async CLIProcedures
 //
@@ -58,7 +89,7 @@ const parseCmd = {
       desc: 'name of the source map',
       type: 'string',
     }),
-  handler: async (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
+  handler: (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
 }
 
 // construct typecheck commands with yargs
@@ -67,6 +98,51 @@ const typecheckCmd = {
   desc: 'check types and effects of a Quint specification',
   builder: defaultOpts,
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
+}
+
+const supportedTarges = ['tlaplus', 'json']
+// construct the compile subcommand
+const compileCmd = {
+  command: 'compile <input>',
+  desc: 'compile a Quint specification into the target, the output is written to stdout',
+  builder: (yargs: any) =>
+    compileOpts(yargs)
+      .option('target', {
+        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
+        type: 'string',
+        default: 'json',
+      })
+      .coerce('target', (target: string): string => {
+        if (!supportedTarges.includes(target)) {
+          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
+        }
+        return target
+      })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+        default: verbosity.defaultLevel,
+      })
+      .option('server-endpoint', {
+        desc: 'Apalache server endpoint hostname:port',
+        type: 'string',
+        default: 'localhost:8822',
+      })
+      .coerce('server-endpoint', (arg: string) => {
+        const errorOrEndpoint = parseServerEndpoint(arg)
+        if (errorOrEndpoint.isLeft()) {
+          throw new Error(errorOrEndpoint.value)
+        } else {
+          return errorOrEndpoint.value
+        }
+      }),
+  handler: (args: any) =>
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(compile))
+      .then(chainCmd(outputCompilationTarget))
+      .then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -190,6 +266,11 @@ const runCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('mbt', {
+        desc: '(experimental) whether to produce metadata to be used by model-based testing',
+        type: 'boolean',
+        default: false,
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -207,15 +288,7 @@ const verifyCmd = {
   command: 'verify <input>',
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
-    yargs
-      .option('main', {
-        desc: 'name of the main module (by default, computed from filename)',
-        type: 'string',
-      })
-      .option('out', {
-        desc: 'output file (suppresses all console output)',
-        type: 'string',
-      })
+    compileOpts(yargs)
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
@@ -224,26 +297,6 @@ const verifyCmd = {
         desc: 'the maximum number of steps in every trace',
         type: 'number',
         default: 10,
-      })
-      .option('init', {
-        desc: 'name of the initializer action',
-        type: 'string',
-        default: 'init',
-      })
-      .option('step', {
-        desc: 'name of the step action',
-        type: 'string',
-        default: 'step',
-      })
-      .option('invariant', {
-        desc: 'the invariants to check, separated by a comma',
-        type: 'string',
-        coerce: (s: string) => s.split(','),
-      })
-      .option('temporal', {
-        desc: 'the temporal properties to check, separated by a comma',
-        type: 'string',
-        coerce: (s: string) => s.split(','),
       })
       .option('random-transitions', {
         desc: 'choose transitions at random (= use symbolic simulation)',
@@ -258,6 +311,19 @@ const verifyCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('server-endpoint', {
+        desc: 'Apalache server endpoint hostname:port',
+        type: 'string',
+        default: 'localhost:8822',
+      })
+      .coerce('server-endpoint', (arg: string) => {
+        const errorOrEndpoint = parseServerEndpoint(arg)
+        if (errorOrEndpoint.isLeft()) {
+          throw new Error(errorOrEndpoint.value)
+        } else {
+          return errorOrEndpoint.value
+        }
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -267,7 +333,12 @@ const verifyCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(verifySpec)).then(outputResult),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(compile))
+      .then(chainCmd(verifySpec))
+      .then(outputResult),
 }
 
 // construct documenting commands with yargs
@@ -297,6 +368,7 @@ async function main() {
   await yargs(process.argv.slice(2))
     .command(parseCmd)
     .command(typecheckCmd)
+    .command(compileCmd)
     .command(replCmd)
     .command(runCmd)
     .command(testCmd)

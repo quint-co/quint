@@ -34,6 +34,7 @@ import {
   addNamespacesToDef,
   builtinNames,
   copyNames,
+  getTopLevelDef,
 } from './base'
 import {
   moduleNotFoundError,
@@ -42,7 +43,7 @@ import {
   paramNotFoundError,
   selfReferenceError,
 } from './importErrors'
-import { compact } from 'lodash'
+import { cloneDeep, compact } from 'lodash'
 
 /**
  * Collects all top-level definitions in Quint modules. Used internally by
@@ -118,7 +119,7 @@ export class NameCollector implements IRVisitor {
       return
     }
 
-    const instanceTable = new Map([...moduleTable.entries()])
+    const instanceTable = cloneDeep(moduleTable)
     if (decl.qualifiedName) {
       // Add the qualifier to `definitionsMyModule` map with a copy of the
       // definitions, so if there is an export of that qualifier, we know which
@@ -129,7 +130,8 @@ export class NameCollector implements IRVisitor {
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
     decl.overrides.forEach(([param, ex]) => {
-      const constDef = instanceTable.get(param.name)
+      // Constants are always top-level
+      const constDef = getTopLevelDef(instanceTable, param.name)
 
       if (!constDef) {
         this.errors.push(paramNotFoundError(decl, param))
@@ -142,13 +144,14 @@ export class NameCollector implements IRVisitor {
       }
 
       // Update the definition to point to the expression being overriden
-      instanceTable.set(param.name, { ...constDef, id: ex.id })
+      constDef.id = ex.id
+      constDef.hidden = false
     })
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
     const newDefs = copyNames(instanceTable, decl.qualifiedName, true)
-    this.collectDefinitions(newDefs, decl)
+    this.collectTopLevelDefinitions(newDefs, decl)
   }
 
   enterImport(decl: QuintImport): void {
@@ -158,7 +161,7 @@ export class NameCollector implements IRVisitor {
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(decl.protoName)
+    const moduleTable = cloneDeep(this.definitionsByModule.get(decl.protoName))
 
     if (!moduleTable) {
       // Importing non-existing module
@@ -178,12 +181,12 @@ export class NameCollector implements IRVisitor {
 
     if (!decl.defName || decl.defName === '*') {
       // Imports all definitions
-      this.collectDefinitions(importableDefinitions, decl)
+      this.collectTopLevelDefinitions(importableDefinitions, decl)
       return
     }
 
     // Tries to find a specific definition, reporting an error if not found
-    const newDef = importableDefinitions.get(decl.defName)
+    const newDef = getTopLevelDef(importableDefinitions, decl.defName)
     if (!newDef) {
       this.errors.push(nameNotFoundError(decl))
       return
@@ -203,7 +206,7 @@ export class NameCollector implements IRVisitor {
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(decl.protoName)
+    const moduleTable = cloneDeep(this.definitionsByModule.get(decl.protoName))
     if (!moduleTable) {
       // Exporting non-existing module
       this.errors.push(moduleNotFoundError(decl))
@@ -214,12 +217,12 @@ export class NameCollector implements IRVisitor {
 
     if (!decl.defName || decl.defName === '*') {
       // Export all definitions
-      this.collectDefinitions(exportableDefinitions, decl)
+      this.collectTopLevelDefinitions(exportableDefinitions, decl)
       return
     }
 
     // Tries to find a specific definition, reporting an error if not found
-    const newDef = exportableDefinitions.get(decl.defName)
+    const newDef = getTopLevelDef(exportableDefinitions, decl.defName)
 
     if (!newDef) {
       this.errors.push(nameNotFoundError(decl))
@@ -242,29 +245,51 @@ export class NameCollector implements IRVisitor {
    * than `def.name` (i.e. in import-like statements).
    * @param source - An optional source identifier for the definition, if the
    * source is different than `def.id` (i.e. in import-like statements).
+   *
+   * @returns The definition object that was collected.
    */
-  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): void {
+  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): LookupDefinition {
     const identifier = (importedFrom as QuintImport)?.defName ?? def.name
     const source = importedFrom?.id ?? def.id
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
-      return
+      return def
     }
 
     if (builtinNames.includes(identifier)) {
       // Conflict with a built-in name
       this.recordConflict(identifier, undefined, source)
-      return
+      return def
     }
 
-    if (this.definitionsByName.has(identifier) && this.definitionsByName.get(identifier)!.id != def.id) {
-      // Conflict with a previous definition
-      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.id, source)
-      return
-    }
-
+    def.depth ??= 0
     const namespaces = importedFrom ? this.namespaces(importedFrom) : []
-    this.definitionsByName.set(identifier, { ...addNamespacesToDef(def, namespaces), importedFrom })
+
+    if (!this.definitionsByName.has(identifier)) {
+      // No existing defs with this name. Create an entry with a single def.
+      this.definitionsByName.set(identifier, [{ ...addNamespacesToDef(def, namespaces), importedFrom }])
+      return def
+    }
+
+    // Else: There are exiting defs. We need to check for conflicts
+    const existingEntries = this.definitionsByName.get(identifier)!
+    // Entries conflict if they have different ids, but the same depth.
+    // Entries with different depths are ok, because one is shadowing the
+    // other.
+    const conflictingEntries = existingEntries.filter(entry => entry.id !== def.id && entry.depth === def.depth)
+
+    // Record potential errors and move on
+    conflictingEntries.forEach(existingEntry => {
+      this.recordConflict(identifier, existingEntry.id, source)
+    })
+
+    // Keep entries with different ids. DON'T keep the whole
+    // `existingEntries` since those may contain the same exact defs, but
+    // hidden.
+    const newDef = { ...addNamespacesToDef(def, namespaces), importedFrom, shadowing: existingEntries.length > 0 }
+    this.definitionsByName.set(identifier, existingEntries.filter(entry => entry.id !== def.id).concat([newDef]))
+
+    return newDef
   }
 
   /**
@@ -273,11 +298,12 @@ export class NameCollector implements IRVisitor {
    * @param identifier - The identifier of the definition to delete.
    */
   deleteDefinition(identifier: string): void {
-    this.definitionsByName.delete(identifier)
+    this.definitionsByName.get(identifier)?.pop()
+    return
   }
 
   /**
-   * Obtains a collected definition.
+   * Gets the definition with the given name, in the current (visiting) scope
    *
    * @param identifier - The identifier of the definition to retrieve.
    *
@@ -285,7 +311,12 @@ export class NameCollector implements IRVisitor {
    * definitions with that identifier was never collected.
    */
   getDefinition(identifier: string): LookupDefinition | undefined {
-    return this.definitionsByName.get(identifier)
+    const defs = this.definitionsByName.get(identifier)
+    if (defs === undefined || defs.length === 0) {
+      return
+    }
+
+    return defs[defs.length - 1]
   }
 
   private namespaces(decl: QuintImport | QuintInstance | QuintExport): string[] {
@@ -297,18 +328,33 @@ export class NameCollector implements IRVisitor {
     return namespace ? [namespace] : []
   }
 
-  private collectDefinitions(
+  private collectTopLevelDefinitions(
     newDefs: DefinitionsByName,
     importedFrom?: QuintImport | QuintExport | QuintInstance
   ): void {
     const namespaces = importedFrom ? this.namespaces(importedFrom) : []
-    const newEntries: [string, LookupDefinition][] = [...newDefs.entries()].map(([identifier, def]) => {
-      const existingEntry = this.definitionsByName.get(identifier)
-      if (existingEntry && existingEntry.id !== def.id) {
-        this.recordConflict(identifier, existingEntry.id, def.id)
-      }
-      return [identifier, { ...addNamespacesToDef(def, namespaces), importedFrom }]
-    })
+    const newEntries: [string, LookupDefinition[]][] = compact(
+      [...newDefs.keys()].map(identifier => {
+        const def = getTopLevelDef(newDefs, identifier)
+        if (!def) {
+          return
+        }
+
+        const existingEntries = this.definitionsByName.get(identifier)
+        if (existingEntries) {
+          const conflictingEntries = existingEntries.filter(entry => entry.id !== def.id)
+          conflictingEntries.forEach(existingEntry => {
+            this.recordConflict(identifier, existingEntry.id, def.id)
+          })
+
+          // Keep conflicting entries and add the new one. DON'T keep the whole
+          // `existingEntries` since those may contain the same exact defs, but
+          // hidden.
+          return [identifier, conflictingEntries.concat([{ ...addNamespacesToDef(def, namespaces), importedFrom }])]
+        }
+        return [identifier, [{ ...addNamespacesToDef(def, namespaces), importedFrom }]]
+      })
+    )
 
     this.definitionsByName = new Map([...this.definitionsByName.entries(), ...newEntries])
   }

@@ -856,30 +856,6 @@ describe('walkModule', () => {
       assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
-    it('finds type abstractions', () => {
-      const quintModule = buildModuleWithDecls(['type StrMap[a] = str -> a'])
-
-      class TestVisitor implements IRVisitor {
-        entered: QuintType[] = []
-        exited: QuintType[] = []
-
-        enterAbsType(type: QuintType): void {
-          this.entered.push(type)
-        }
-
-        exitAbsType(type: QuintType): void {
-          this.exited.push(type)
-        }
-      }
-
-      const expectedTypes = ['Λ(a).(str -> a)']
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(typeToString), expectedTypes)
-      assert.deepEqual(visitor.exited.map(typeToString), expectedTypes)
-    })
-
     it('finds type applications', () => {
       const quintModule = buildModuleWithDecls(['val strMap: StrMap[int] = Map("a" -> 1, "b" -> 2)'])
       class TestVisitor implements IRVisitor {
@@ -901,6 +877,26 @@ describe('walkModule', () => {
       walkModule(visitor, quintModule)
       assert.deepEqual(visitor.entered.map(typeToString), expectedTypes)
       assert.deepEqual(visitor.exited.map(typeToString), expectedTypes)
+    })
+
+    it('finds paramater type annotations', () => {
+      class TestVisitor implements IRVisitor {
+        typesVisited: QuintType[] = []
+        exitType(t: QuintType) {
+          this.typesVisited.push(t)
+        }
+      }
+
+      const visitor = new TestVisitor()
+
+      const m = buildModuleWithDecls(['def foo(x: int, b: str): bool = true'])
+      walkModule(visitor, m)
+      const actualTypes = visitor.typesVisited.map(typeToString)
+      // `int` and `str` should each show up TWICE:
+      // - once from of the lambda type annotations
+      // - once from of the parameter type annotation
+      const expectedTypes = ['int', 'str', 'bool', '(int, str) => bool', 'int', 'str']
+      assert.deepEqual(actualTypes, expectedTypes)
     })
   })
 })

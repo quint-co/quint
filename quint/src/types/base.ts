@@ -21,11 +21,12 @@ export type Constraint =
  */
 const constraintKinds = ['empty', 'eq', 'conjunction', 'isDefined'] as const
 
-export interface TypeScheme {
-  type: QuintType
+export interface QuantifiedVariables {
   typeVariables: Set<string>
   rowVariables: Set<string>
 }
+
+export type TypeScheme = { type: QuintType } & QuantifiedVariables
 
 export type Signature = (_arity: number) => TypeScheme
 

@@ -59,6 +59,7 @@ const setOperators = [
   { name: 'powerset', type: '(Set[a]) => Set[Set[a]]' },
   { name: 'flatten', type: '(Set[Set[a]]) => Set[a]' },
   { name: 'allLists', type: '(Set[a]) => Set[List[a]]' },
+  { name: 'allListsUpTo', type: '(Set[a], int) => Set[List[a]]' },
   { name: 'chooseSome', type: '(Set[a]) => a' },
   { name: 'oneOf', type: '(Set[a]) => a' },
   { name: 'isFinite', type: '(Set[a]) => bool' },
@@ -127,6 +128,7 @@ const otherOperators = [
   { name: 'fail', type: '(bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
   { name: 'q::debug', type: '(str, a) => a' },
+  { name: 'q::lastTrace', type: 'List[a]' },
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {

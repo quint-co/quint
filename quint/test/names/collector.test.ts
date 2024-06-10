@@ -4,7 +4,7 @@ import { buildModuleWithDecls } from '../builders/ir'
 import { QuintError, QuintModule } from '../../src'
 import { NameCollector } from '../../src/names/collector'
 import { walkModule } from '../../src/ir/IRVisitor'
-import { DefinitionsByName } from '../../src/names/base'
+import { DefinitionsByName, getTopLevelDef } from '../../src/names/base'
 import { zerog } from '../../src/idGenerator'
 
 describe('NameCollector', () => {
@@ -31,8 +31,8 @@ describe('NameCollector', () => {
       assert.deepInclude([...definitions.keys()], 'a')
       assert.notDeepInclude([...definitions.keys()], 'b')
 
-      assert.deepEqual(definitions.get('a')?.importedFrom?.kind, 'import')
-      assert.deepEqual(definitions.get('a')?.namespaces ?? [], [])
+      assert.deepEqual(getTopLevelDef(definitions, 'a')?.importedFrom?.kind, 'import')
+      assert.deepEqual(getTopLevelDef(definitions, 'a')?.namespaces ?? [], [])
     })
 
     it('imports all definitions', () => {
@@ -51,7 +51,7 @@ describe('NameCollector', () => {
 
       assert.isEmpty(errors)
 
-      const def = definitions.get('test_module::a')
+      const def = getTopLevelDef(definitions, 'test_module::a')
       assert.isTrue(def!.hidden)
       assert.deepEqual(def?.kind, 'def')
     })
@@ -63,7 +63,7 @@ describe('NameCollector', () => {
 
       assert.isEmpty(errors)
 
-      const def = definitions.get('my_import::a')
+      const def = getTopLevelDef(definitions, 'my_import::a')
       assert.isTrue(def!.hidden)
       assert.deepEqual(def?.kind, 'def')
     })
@@ -81,8 +81,8 @@ describe('NameCollector', () => {
       assert.includeDeepMembers([...definitions.keys()], ['test_module_instance::c1', 'test_module_instance::c2'])
       assert.includeDeepMembers([...definitions.keys()], ['test_module_instance::T'])
 
-      assert.deepEqual(definitions.get('test_module_instance::a')?.importedFrom?.kind, 'instance')
-      assert.deepEqual(definitions.get('test_module_instance::a')?.namespaces ?? [], [
+      assert.deepEqual(getTopLevelDef(definitions, 'test_module_instance::a')?.importedFrom?.kind, 'instance')
+      assert.deepEqual(getTopLevelDef(definitions, 'test_module_instance::a')?.namespaces ?? [], [
         'test_module_instance',
         'wrapper',
       ])
@@ -114,7 +114,7 @@ describe('NameCollector', () => {
         zerog
       )
 
-      const [errors, _definitions] = collect(quintModule)
+      const [errors, definitions] = collect(quintModule)
 
       assert.sameDeepMembers(errors, [
         {
@@ -124,6 +124,8 @@ describe('NameCollector', () => {
           data: {},
         },
       ])
+
+      assert.deepEqual(getTopLevelDef(definitions, 'test_module_instance::a')?.kind, 'def')
     })
 
     it('fails importing itself', () => {
@@ -148,8 +150,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.isNotTrue(definitions.get('a')!.hidden)
-      assert.isNotTrue(definitions.get('T')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'T')!.hidden)
     })
 
     it('exports previously imported definitions', () => {
@@ -158,8 +160,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.isNotTrue(definitions.get('a')!.hidden)
-      assert.isNotTrue(definitions.get('T')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'T')!.hidden)
     })
 
     it('exports imported definitions that were previously qualified', () => {
@@ -168,8 +170,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.isNotTrue(definitions.get('a')!.hidden)
-      assert.isNotTrue(definitions.get('T')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'T')!.hidden)
     })
 
     it('exports specific definitions', () => {
@@ -179,9 +181,9 @@ describe('NameCollector', () => {
 
       assert.isEmpty(errors)
       // a is not hidden anymore
-      assert.isNotTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'a')!.hidden)
       // T is still hidden
-      assert.isTrue(definitions.get('T')!.hidden)
+      assert.isTrue(getTopLevelDef(definitions, 'T')!.hidden)
     })
 
     it('exports definitions with qualifier', () => {
@@ -194,8 +196,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.isTrue(definitions.get('a')!.hidden)
-      assert.isNotTrue(definitions.get('my_export::a')!.hidden)
+      assert.isTrue(getTopLevelDef(definitions, 'a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'my_export::a')!.hidden)
     })
 
     it('exports definitions with namespace', () => {
@@ -205,14 +207,14 @@ describe('NameCollector', () => {
 
       assert.isEmpty(errors)
 
-      assert.isTrue(definitions.get('a')!.hidden)
-      assert.isNotTrue(definitions.get('test_module::a')!.hidden)
+      assert.isTrue(getTopLevelDef(definitions, 'a')!.hidden)
+      assert.isNotTrue(getTopLevelDef(definitions, 'test_module::a')!.hidden)
 
-      assert.deepEqual(definitions.get('a')?.importedFrom?.kind, 'import')
-      assert.deepEqual(definitions.get('test_module::a')?.importedFrom?.kind, 'export')
+      assert.deepEqual(getTopLevelDef(definitions, 'a')?.importedFrom?.kind, 'import')
+      assert.deepEqual(getTopLevelDef(definitions, 'test_module::a')?.importedFrom?.kind, 'export')
 
-      assert.deepEqual(definitions.get('a')?.namespaces ?? [], [])
-      assert.deepEqual(definitions.get('test_module::a')?.namespaces ?? [], ['test_module'])
+      assert.deepEqual(getTopLevelDef(definitions, 'a')?.namespaces ?? [], [])
+      assert.deepEqual(getTopLevelDef(definitions, 'test_module::a')?.namespaces ?? [], ['test_module'])
     })
 
     it('fails exporting unexisting definition', () => {

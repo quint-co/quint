@@ -10,7 +10,7 @@
 
 import { Either } from '@sweet-monads/either'
 
-import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import { compileFromCode, contextNameLookup } from './runtime/compile'
 import { QuintEx } from './ir/quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
@@ -33,6 +33,7 @@ export interface SimulatorOptions {
   maxSteps: number
   rng: Rng
   verbosity: number
+  storeMetadata: boolean
 }
 
 /** The outcome of a simulation
@@ -94,7 +95,6 @@ export function compileAndRun(
   const o = options
   // Defs required by the simulator, to be added to the main module before compilation
   const extraDefs = [
-    `val ${lastTraceName} = [];`,
     `def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false`,
     `action q::init = { ${o.init} }`,
     `action q::step = { ${o.step} }`,
@@ -107,7 +107,15 @@ export function compileAndRun(
   const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compileFromCode(idGen, codeWithExtraDefs, mainName, mainPath, recorder, options.rng.next)
+  const ctx = compileFromCode(
+    idGen,
+    codeWithExtraDefs,
+    mainName,
+    mainPath,
+    recorder,
+    options.rng.next,
+    options.storeMetadata
+  )
 
   const compilationErrors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
   if (compilationErrors.length > 0) {

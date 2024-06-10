@@ -489,10 +489,7 @@ module state {
       )
       // assert that aggregated sum in `polls[poll_id]` equals the sum from above
       val poll = state.polls.get(poll_id)
-      poll.options.listForall(option =>
-        val optionKey = option._1
-        // FIXME(#1167): Type annotation below is a workaround, inferred type is too general
-        val optionSum: int = option._2
+      poll.options.listForall(((optionKey, optionSum)) =>
         // `ballots` only contains entries if there are > 0 votes.
         optionSum > 0 implies and {
           summed_ballots.keys().contains(optionKey),
@@ -513,5 +510,5 @@ module state {
   //        already submitted ballots in `ballots`, but `execute_vote` adjusts
   //        the sum differently based on whether such a ballot is present.]
   val invAllBallotsPositive = query_all_polls(state).polls.listForall(poll =>
-                                poll.options.listForall(opt => opt._2 >= 0))
+                                poll.options.listForall2(opt => opt._2 >= 0))
 }

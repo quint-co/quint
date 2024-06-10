@@ -24,11 +24,15 @@ We want to ensure we do not throw uncaught exceptions when the input file is
 doesn't exist.
 
 <!-- !test in non-existent file -->
-    quint parse ../examples/non-existent.file
+```
+quint parse ../examples/non-existent.file
+```
 
 <!-- !test exit 1 -->
 <!-- !test err non-existent file -->
-    error: file ../examples/non-existent.file does not exist
+```
+error: file ../examples/non-existent.file does not exist
+```
 
 ### User error on parse with junk after modules
 
@@ -37,14 +41,18 @@ We want to ensure that the parser shows an error, when it detects junk in
 the end of file.
 
 <!-- !test in junk -->
-    quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
+quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+```
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
-    9: the parser
-       ^^^
+```
+Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+9: the parser
+   ^^^
 
-    error: parsing failed
+error: parsing failed
+```
 
 ### User error on parse with invalid input
 
@@ -169,6 +177,38 @@ Trying to unify bool and int
                   ^
 
 error: typechecking failed
+```
+
+## The `compile` commaind
+
+### Reports in error for invalid `--target`
+
+We pipe stderr to `tail` here. Following https://stackoverflow.com/a/52575213/1187277
+This is a clean CLI interface error, but we don't want to put the entire output
+in the test, lest it require fiddling when unrelated things are updated.
+
+<!-- !test exit 1 -->
+<!-- !test in compile to invalid target -->
+```
+quint compile --target invalidTarget ../examples/language-features/booleans.qnt 2> >(tail -1 >&2)
+```
+
+<!-- !test err compile to invalid target -->
+```
+Invalid option for --target: invalidTarget. Valid options: tlaplus, json
+```
+
+
+### Can compile `booleans.qnt` to JSON
+
+<!-- !test in compile booleans.qnt to json -->
+```
+quint compile --target json ../examples/language-features/booleans.qnt  | jq '.modules[0].name'
+```
+
+<!-- !test out compile booleans.qnt to json -->
+```
+"booleans"
 ```
 
 ## Use of `repl`, `test`, and `run`
@@ -408,6 +448,40 @@ Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
 
+### Run finds an invariant violation with metadata
+
+The command `run` finds an invariant violation and outputs metadata for MBT, when given the `--mbt` flag.
+
+<!-- !test in run finds violation with metadata -->
+```
+output=$(quint run --seed=0x308623f2a48e7 --mbt --max-steps=4 \
+  --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run finds violation with metadata -->
+```
+An example execution:
+
+[State 0] { action_taken: "q::init", n: 1, nondet_picks: {  } }
+
+[State 1] { action_taken: "OnPositive", n: 2, nondet_picks: {  } }
+
+[State 2] { action_taken: "OnPositive", n: 3, nondet_picks: {  } }
+
+[State 3] { action_taken: "OnDivByThree", n: 6, nondet_picks: {  } }
+
+[State 4] { action_taken: "OnDivByThree", n: 12, nondet_picks: {  } }
+
+[violation] Found an issue (duration).
+Use --seed=0x308623f2a48e7 to reproduce.
+Use --verbosity=3 to show executions.
+error: Invariant violated
+```
+
 ### Run finds an example
 
 The command `run` finds an example.
@@ -491,10 +565,10 @@ An example execution:
     Map(
       "alice" -> 0,
       "bob" -> 0,
-      "charlie" ->
-        44102953916667308628507282398473780107575312859495896164716387801811669677303,
+      "charlie" -> 0,
       "eve" -> 0,
-      "null" -> 0
+      "null" ->
+        47468303772350480796754932551497789850659553878128630540503207933116325625281
     ),
   minter: "alice"
 }
@@ -505,17 +579,17 @@ An example execution:
     Map(
       "alice" -> 0,
       "bob" -> 0,
-      "charlie" ->
-        44102953916667308628507282398473780107575312859495896164716387801811669677303,
-      "eve" -> 0,
+      "charlie" -> 0,
+      "eve" ->
+        86701019854146491074035808072771270690110858489697827845755906419340818387504,
       "null" ->
-        106908608291568456374887716989928730685737039774957994870160634616776887554850
+        47468303772350480796754932551497789850659553878128630540503207933116325625281
     ),
   minter: "alice"
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1e352e160ffa12 to reproduce.
+Use --seed=0x1e352e160ffbb3 to reproduce.
 Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
@@ -550,7 +624,7 @@ q::initAndInvariant => true
 {
   balances:
     Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-  minter: "bob"
+  minter: "alice"
 }
 
 [Frame 1]
@@ -558,17 +632,17 @@ q::stepAndInvariant => true
 ├─ q::step => true
 │  └─ step => true
 │     └─ mint(
-│          "bob",
-│          "null",
-│          65338262739825284111745959589547129900185534924167607765304796328491174113858
+│          "alice",
+│          "eve",
+│          33944027745092921485394061592130395256199599638916782090017603421409072478812
 │        ) => true
 │        ├─ require(true) => true
 │        └─ require(true) => true
 │           └─ isUInt(
-│                65338262739825284111745959589547129900185534924167607765304796328491174113858
+│                33944027745092921485394061592130395256199599638916782090017603421409072478812
 │              ) => true
 └─ isUInt(
-     65338262739825284111745959589547129900185534924167607765304796328491174113858
+     33944027745092921485394061592130395256199599638916782090017603421409072478812
    ) => true
 
 [State 1]
@@ -578,33 +652,29 @@ q::stepAndInvariant => true
       "alice" -> 0,
       "bob" -> 0,
       "charlie" -> 0,
-      "eve" -> 0,
-      "null" ->
-        65338262739825284111745959589547129900185534924167607765304796328491174113858
+      "eve" ->
+        33944027745092921485394061592130395256199599638916782090017603421409072478812,
+      "null" -> 0
     ),
-  minter: "bob"
+  minter: "alice"
 }
 
 [Frame 2]
 q::stepAndInvariant => true
 ├─ q::step => true
 │  └─ step => true
-│     └─ send(
-│          "null",
-│          "charlie",
-│          27846403266649766800055905337678576473819522457314621838114493230792952096574
+│     └─ mint(
+│          "alice",
+│          "eve",
+│          37478542505835205046968520025158070945751003972871720238447843997511300995974
 │        ) => true
 │        ├─ require(true) => true
-│        ├─ require(true) => true
-│        │  └─ isUInt(
-│        │       37491859473175517311690054251868553426366012466852985927190303097698222017284
-│        │     ) => true
 │        └─ require(true) => true
 │           └─ isUInt(
-│                27846403266649766800055905337678576473819522457314621838114493230792952096574
+│                71422570250928126532362581617288466201950603611788502328465447418920373474786
 │              ) => true
 └─ isUInt(
-     65338262739825284111745959589547129900185534924167607765304796328491174113858
+     71422570250928126532362581617288466201950603611788502328465447418920373474786
    ) => true
 
 [State 2]
@@ -613,13 +683,12 @@ q::stepAndInvariant => true
     Map(
       "alice" -> 0,
       "bob" -> 0,
-      "charlie" ->
-        27846403266649766800055905337678576473819522457314621838114493230792952096574,
-      "eve" -> 0,
-      "null" ->
-        37491859473175517311690054251868553426366012466852985927190303097698222017284
+      "charlie" -> 0,
+      "eve" ->
+        71422570250928126532362581617288466201950603611788502328465447418920373474786,
+      "null" -> 0
     ),
-  minter: "bob"
+  minter: "alice"
 }
 
 [Frame 3]
@@ -627,17 +696,17 @@ q::stepAndInvariant => true
 ├─ q::step => true
 │  └─ step => true
 │     └─ mint(
-│          "bob",
-│          "bob",
-│          78309058398957644239556030729021834730669174305685174769880015395650570612692
+│          "alice",
+│          "null",
+│          109067983118832076063755963802104322727953985633488183463930115464609414175363
 │        ) => true
 │        ├─ require(true) => true
 │        └─ require(true) => true
 │           └─ isUInt(
-│                78309058398957644239556030729021834730669174305685174769880015395650570612692
+│                109067983118832076063755963802104322727953985633488183463930115464609414175363
 │              ) => true
 └─ isUInt(
-     143647321138782928351301990318568964630854709229852782535184811724141744726550
+     180490553369760202596118545419392788929904589245276685792395562883529787650149
    ) => false
 
 [State 3]
@@ -645,19 +714,18 @@ q::stepAndInvariant => true
   balances:
     Map(
       "alice" -> 0,
-      "bob" ->
-        78309058398957644239556030729021834730669174305685174769880015395650570612692,
-      "charlie" ->
-        27846403266649766800055905337678576473819522457314621838114493230792952096574,
-      "eve" -> 0,
+      "bob" -> 0,
+      "charlie" -> 0,
+      "eve" ->
+        71422570250928126532362581617288466201950603611788502328465447418920373474786,
       "null" ->
-        37491859473175517311690054251868553426366012466852985927190303097698222017284
+        109067983118832076063755963802104322727953985633488183463930115464609414175363
     ),
-  minter: "bob"
+  minter: "alice"
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1786e678d45fe0 to reproduce.
+Use --seed=0x1786e678d460fe to reproduce.
 Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
@@ -681,6 +749,96 @@ rm out-itf-example.itf.json
     "#bigint": "0"
   }
 ]
+```
+
+### Run outputs ITF with metadata
+
+<!-- !test in run itf with metadata -->
+```
+quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
+  --invariant=totalSupplyDoesNotOverflowInv --mbt\
+  ../examples/solidity/Coin/coin.qnt
+cat out-itf-mbt-example.itf.json | jq '.states[1]'
+rm out-itf-mbt-example.itf.json
+```
+
+<!-- !test out run itf with metadata -->
+```
+{
+  "#meta": {
+    "index": 1
+  },
+  "action_taken": "mint",
+  "balances": {
+    "#map": [
+      [
+        "alice",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "bob",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "charlie",
+        {
+          "#bigint": "49617995555028370892926474303042238797407019137772330780016167115018841762373"
+        }
+      ],
+      [
+        "eve",
+        {
+          "#bigint": "0"
+        }
+      ],
+      [
+        "null",
+        {
+          "#bigint": "0"
+        }
+      ]
+    ]
+  },
+  "minter": "bob",
+  "nondet_picks": {
+    "amount": {
+      "tag": "Some",
+      "value": {
+        "#bigint": "49617995555028370892926474303042238797407019137772330780016167115018841762373"
+      }
+    },
+    "eveToBob": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "mintBob": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "mintEve": {
+      "tag": "None",
+      "value": {
+        "#tup": []
+      }
+    },
+    "receiver": {
+      "tag": "Some",
+      "value": "charlie"
+    },
+    "sender": {
+      "tag": "Some",
+      "value": "bob"
+    }
+  }
+}
 ```
 
 ### Run without violation outputs ITF
@@ -832,7 +990,7 @@ exit $exit_code
 ```
 
   coin
-    1) mintTwiceThenSendError failed after 1 test(s)
+    1) mintTwiceThenSendError failed after 2 test(s)
 
   1 failed
 
@@ -845,45 +1003,45 @@ init => true
 
 [Frame 1]
 mint(
+  "alice",
   "eve",
-  "eve",
-  73435308175381280179895447726690458129319530672748326532002365461395069401291
+  62471107147077426559451191183102889181018012614560866566772535482230624081662
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        73435308175381280179895447726690458129319530672748326532002365461395069401291
+        62471107147077426559451191183102889181018012614560866566772535482230624081662
       ) => true
 
 [Frame 2]
 mint(
-  "eve",
+  "alice",
   "bob",
-  99734648034668586428235027805035599638068011144525474004474309631475456844332
+  108068598360285515924422306643202051157703255799754639660642704769543958308579
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        99734648034668586428235027805035599638068011144525474004474309631475456844332
+        108068598360285515924422306643202051157703255799754639660642704769543958308579
       ) => true
 
 [Frame 3]
 send(
   "eve",
   "bob",
-  31114836464924134533662521748469381767604427020159348918484988427058728862690
+  17111225533527540742175456584955554462321462289172248790585577326828420782641
 ) => false
 ├─ require(true) => true
 ├─ require(true) => true
 │  └─ isUInt(
-│       42320471710457145646232925978221076361715103652588977613517377034336340538601
+│       45359881613549885817275734598147334718696550325388617776186958155402203299021
 │     ) => true
 └─ require(false) => false
    └─ isUInt(
-        130849484499592720961897549553504981405672438164684822922959298058534185707022
+        125179823893813056666597763228157605620024718088926888451228282096372379091220
       ) => false
 
-    Use --seed=0x1cce8452305113 --match=mintTwiceThenSendError to repeat.
+    Use --seed=0x1cce845230512f --match=mintTwiceThenSendError to repeat.
 ```
 
 ### test fails on invalid seed
@@ -1112,7 +1270,7 @@ rm xTest.itf.json
 
 <!-- !test out variants in itf -->
 ```
-[{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
+[{"#meta":{"index":0},"x":{"tag":"None","value":{"#tup":[]}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
 ```
 
 ### FAIL on parsing filenames with different casing

@@ -41,6 +41,26 @@ describe('enterExpr', () => {
 
     assert.deepEqual(moduleToString(result), moduleToString(expectedModule))
   })
+
+  it('transforms paramater type annotations', () => {
+    class TestTransformer implements IRTransformer {
+      exitType(_: QuintType): QuintType {
+        return { kind: 'var', name: 'trans' }
+      }
+    }
+
+    const transformer = new TestTransformer()
+
+    const m = buildModuleWithDecls(['def foo(x: int, b: int, c: str): int = 42'])
+
+    const transformedDecl = transformModule(transformer, m).declarations[0]
+    assert(transformedDecl.kind === 'def')
+    assert(transformedDecl.expr.kind === 'lambda')
+    transformedDecl.expr.params.forEach(p => {
+      assert(p.typeAnnotation)
+      assert.deepEqual(p.typeAnnotation, { kind: 'var', name: 'trans' })
+    })
+  })
 })
 
 describe('enterDecl', () => {

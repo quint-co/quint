@@ -6,7 +6,7 @@
  *  2. Make it expressive enough to capture all of the TLA logic.
  *
  * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec, Thomas Pani
- *          Informal Systems, 2021-2023
+ *          Informal Systems, 2021-2024
  */
 grammar Quint;
 
@@ -25,31 +25,37 @@ documentedDeclaration : DOCCOMMENT* declaration;
 // a module declaration
 declaration : 'const' qualId ':' type                     # const
             | 'var'   qualId ':' type                     # var
-            | 'assume' identOrHole '=' expr               # assume
+            | 'assume' (assumeName=identOrHole) '=' expr  # assume
             | instanceMod                                 # instance
             | operDef                                     # oper
             | typeDef                                     # typeDefs
             | importMod                                   # importDef
             | exportMod                                   # exportDef
-            // https://github.com/informalsystems/quint/issues/378
-            //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
-            //  const m = "QNT007: 'nondet' is only allowed inside actions"
-            //  this.notifyErrorListeners(m)
-            //}                                                 # nondetError
             ;
 
 // An operator definition.
-// We embed two kinds of parameters right in this rule.
-// Otherwise, the parser would start recognizing parameters everywhere.
-operDef : qualifier normalCallName
-            ( /* ML-like parameter lists */
-                '(' (parameter (',' parameter)*)? ')' (':' type)?
-                | ':' type
-              /* C-like parameter lists */
-                | '(' (parameter ':' type (',' parameter ':' type)*) ')' ':' type
-            )?
-            ('=' expr)? ';'?
-        ;
+operDef
+    : qualifier normalCallName
+        // Fully-annotated parameter list with at least one parameter
+        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*) ')'
+        // Mandatory annotation for return type
+        ':' type
+        // We support header declaration with no implementation for documentation genaration
+        ('=' expr)?
+        // Optionally terminated with a semicolon
+        ';'?
+        # annotatedOperDef
+    | qualifier normalCallName // TODO: Remove as per https://github.com/informalsystems/quint/issues/923
+        // Unannotated parameter list
+        ('(' (operParam+=parameter (',' operParam+=parameter)*)? ')')?
+        // Optional type annotation using the deprecated format
+        (':' annotatedRetType=type)?
+        // We support header declaration with no implementation for documentation genaration
+        ('=' expr)?
+        // Optionally terminated with a semicolon
+        ';'?
+        # deprecatedOperDef
+    ;
 
 typeDef
     : 'type' qualId                             # typeAbstractDef
@@ -57,15 +63,13 @@ typeDef
     | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
     ;
 
-typeDefHead : typeName=qualId ('[' typeVars+=typeVar(',' typeVars+=typeVar)* ']')?;
+typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
 
 sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
 
 // A single variant case in a sum type definition or match statement.
 // E.g., `A(t)` or `A`.
 typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
-
-nondetOperDef : 'nondet' qualId (':' type)? '=' expr ';'?;
 
 qualifier : 'val'
           | 'def'
@@ -74,6 +78,7 @@ qualifier : 'val'
           | 'action'
           | 'run'
           | 'temporal'
+          | 'nondet'
           ;
 
 importMod : 'import' name '.' identOrStar ('from' fromSource)?
@@ -108,6 +113,8 @@ type
     | SET '[' type ']'                                           # typeSet
     // TODO: replace List with general type application
     | LIST '[' type ']'                                          # typeList
+    // Parse tuples of size 0 or 2+, but not 1. (int) should be parsed as int.
+    | '(' ')'                                                    # typeUnit
     | '(' type ',' type (',' type)* ','? ')'                     # typeTuple
     | '{' row? '}'                                               # typeRec
     | 'int'                                                      # typeInt
@@ -116,7 +123,7 @@ type
     | typeVar                                                    # typeVarCase
     | qualId                                                     # typeConst
     | '(' type ')'                                               # typeParen
-    | typeCtor=type ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
+    | typeCtor=qualId ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
     ;
 
 typeVar: LOW_ID;
@@ -165,8 +172,9 @@ expr:           // apply a built-in operator via the dot notation
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( qualId | INT | BOOL | STRING)                     # literalOrId
-        //      a tuple constructor, the form tup(...) is just an operator call
+        //      a tuple constructor, the form Tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
+        |       '(' ')'                                             # unit
         //      short-hand syntax for pairs, mainly designed for maps
         |       expr '->' expr                                      # pair
         |       '{' recElem (',' recElem)* ','? '}'                 # record
@@ -174,7 +182,6 @@ expr:           // apply a built-in operator via the dot notation
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
-        |       nondetOperDef expr                                  # nondet
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
@@ -205,10 +212,12 @@ lambdaUnsugared : parameter '=>' expr
 lambdaTupleSugar : '(' '(' parameter (',' parameter)+ ')' ')' '=>' expr;
 
 // an identifier or a hole '_'
-identOrHole :   '_' | qualId
-        ;
+identOrHole : '_' | qualId;
 
-parameter: identOrHole;
+// TODO: Combine these into a single rule that support optionally annotated parameters
+//       Requires https://github.com/informalsystems/quint/issues/923
+parameter: paramName=identOrHole;
+annotatedParameter: paramName=identOrHole ':' type;
 
 // an identifier or a star '*'
 identOrStar :   '*' | qualId

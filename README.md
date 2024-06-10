@@ -1,8 +1,10 @@
 <div align="center">
 
 <!-- Title -->
-<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="90"/>
-<h1>Quint Lang</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./logos/quint-logo-light.png">
+  <img alt="Quint Lang" src="./logos/quint-logo-dark.png" width=700>
+</picture>
 
 <!-- Menu -->
 <p>
@@ -28,11 +30,16 @@
             src="https://img.shields.io/npm/v/@informalsystems/quint"
             alt="npm (scoped)">
     </a>
+    <a href="https://t.me/quint_lang">
+        <img
+            src="https://img.shields.io/badge/chat-telegram-blue"
+            alt="telegram group">
+    </a>
 </p>
 </div>
 
 
-## Overview
+# The Quint specification language
 
 Quint is a modern specification language that is a particularly good fit for
 distributed systems, such as blockchain protocols, distributed databases, and
@@ -253,10 +260,14 @@ Cosmos in 2023.
 
 ## Community
 
-- Join the chat in the [Quint zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
+- Join the chat in the [Telegram group](https://t.me/quint_lang) or in the [Zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
 - Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
 - [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
+- Join or co-design meetings: We hold fortnightly meetings with users and those
+  interested in contributing to the design and development of Quint. Contact us if
+  you would like an invitation.
+
 
 ## Documentation
 
@@ -276,7 +287,7 @@ become referenced artifacts.
 ## Acknowledgments
 
 Quint has been designed and developed by the [Apalache][] team: [Gabriela
-Moreira](https://github.com/bugarela), [Igor Konnov](https://konnov.github.io/),
+Moreira](https://bugarela.com), [Igor Konnov](https://konnov.github.io/),
 [Jure Kukovec](https://github.com/Kukovec), [Shon Feder](http://shonfeder.net),
 and [Thomas Pani](https://thpani.net/). :heart:
 

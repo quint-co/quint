@@ -95,8 +95,6 @@ export interface IRVisitor {
   exitSumType?: (_type: t.QuintSumType) => void
   enterAppType?: (_type: t.QuintAppType) => void
   exitAppType?: (_type: t.QuintAppType) => void
-  enterAbsType?: (_type: t.QuintAbsType) => void
-  exitAbsType?: (_type: t.QuintAbsType) => void
 
   /** Row types */
   enterRow?: (_row: t.Row) => void
@@ -247,13 +245,6 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
       visitor.enterSumType?.(type)
       walkRow(visitor, type.fields)
       visitor.exitSumType?.(type)
-      break
-
-    case 'abs':
-      visitor.enterAbsType?.(type)
-      type.vars.map(t => walkType(visitor, t))
-      walkType(visitor, type.body)
-      visitor.exitAbsType?.(type)
       break
 
     case 'app':
@@ -453,17 +444,30 @@ export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
       break
     }
     case 'lambda':
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth++
+      }
       if (visitor.enterLambda) {
         visitor.enterLambda(expr)
       }
-
+      expr.params.forEach(p => {
+        if (p.typeAnnotation) {
+          walkType(visitor, p.typeAnnotation)
+        }
+      })
       walkExpression(visitor, expr.expr)
 
       if (visitor.exitLambda) {
         visitor.exitLambda(expr)
       }
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth--
+      }
       break
     case 'let':
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth++
+      }
       if (visitor.enterLet) {
         visitor.enterLet(expr)
       }
@@ -473,6 +477,9 @@ export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
 
       if (visitor.exitLet) {
         visitor.exitLet(expr)
+      }
+      if (visitor.definitionDepth !== undefined) {
+        visitor.definitionDepth--
       }
       break
     default:
