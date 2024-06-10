@@ -224,6 +224,8 @@ Options:
                  (suppresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
+  --n-traces     how many traces to generate (only affects output to out-itf)
+                                                           [number] [default: 1]                                                       
   --max-steps    the maximum on the number of steps in every trace
                                                           [number] [default: 20]
   --init         name of the initializer action       [string] [default: "init"]
@@ -241,7 +243,7 @@ Options:
  violating trace, it prints the longest sample trace that the simulator has
  found during the execution. When the parameter `--out` is supplied, the trace
  is written as a JSON representation of Quint IR in the output file. When the
- parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
+ parameter `--out-itf` is supplied, the traces are written in the [Informal Trace
  Format][]. This output can be conviently displayed with the [ITF Trace
  Viewer][], or just with [jq][].
 

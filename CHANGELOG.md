@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   produced in a single CLI call (#1365).
 
 ### Changed
-
-- The `run` subcommand, when used with `--out-itf`, now produces a list of
-  objects, just like `verify` (#1365).
-
 ### Deprecated
 ### Removed
 ### Fixed
