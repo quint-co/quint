@@ -678,10 +678,10 @@ describe('repl ok', () => {
       |action Init = n' = 0
       |action Next = n' = n + 1
       |val Inv = n < 10
-      |q::testOnce(5, Init, Next, Inv)
-      |q::testOnce(10, Init, Next, Inv)
-      |q::test(5, 5, Init, Next, Inv)
-      |q::test(5, 10, Init, Next, Inv)
+      |q::testOnce(5, 1, Init, Next, Inv)
+      |q::testOnce(10, 1, Init, Next, Inv)
+      |q::test(5, 5, 1, Init, Next, Inv)
+      |q::test(5, 10, 1, Init, Next, Inv)
       |q::lastTrace.length()
       |q::lastTrace.nth(q::lastTrace.length() - 1)
       |`
@@ -696,13 +696,13 @@ describe('repl ok', () => {
       |
       |>>> val Inv = n < 10
       |
-      |>>> q::testOnce(5, Init, Next, Inv)
+      |>>> q::testOnce(5, 1, Init, Next, Inv)
       |true
-      |>>> q::testOnce(10, Init, Next, Inv)
+      |>>> q::testOnce(10, 1, Init, Next, Inv)
       |false
-      |>>> q::test(5, 5, Init, Next, Inv)
+      |>>> q::test(5, 5, 1, Init, Next, Inv)
       |true
-      |>>> q::test(5, 10, Init, Next, Inv)
+      |>>> q::test(5, 10, 1, Init, Next, Inv)
       |false
       |>>> q::lastTrace.length()
       |11

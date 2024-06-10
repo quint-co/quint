@@ -24,7 +24,7 @@ import {
 } from './parsing/quintParserFrontend'
 import { ErrorMessage } from './ErrorMessage'
 
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { fail } from 'assert'
 import { EffectScheme } from './effects/base'
 import { LookupTable, UnusedDefinitions } from './names/base'
@@ -36,8 +36,8 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { IdGenerator, newIdGenerator } from './idGenerator'
-import { SimulatorOptions, compileAndRun, SimulatorResult, Outcome } from './simulation'
-import { ItfTrace, ofItf, toItf } from './itf'
+import { SimulatorOptions, compileAndRun } from './simulation'
+import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -532,17 +532,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
 
-  const startMs = Date.now()
-
-  const mainText = prev.sourceCode.get(prev.path)!
-  const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const mainModule = prev.modules.find(m => m.name === mainName)
-  if (mainModule === undefined) {
-    return cliErr(`Main module ${mainName} not found`, { ...simulator, errors: [] })
-  }
-  const mainId = mainModule.id
-  const mainStart = prev.sourceMap.get(mainId)!.start.index
-  const mainEnd = prev.sourceMap.get(mainId)!.end!.index
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...simulator, errors: [] })
@@ -574,9 +563,20 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     },
   }
 
-  const elapsedMs = Date.now() - startMs
+  const startMs = Date.now()
 
+  const mainText = prev.sourceCode.get(prev.path)!
+  const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
+  const mainModule = prev.modules.find(m => m.name === mainName)
+  if (mainModule === undefined) {
+    return cliErr(`Main module ${mainName} not found`, { ...simulator, errors: [] })
+  }
+  const mainId = mainModule.id
+  const mainStart = prev.sourceMap.get(mainId)!.start.index
+  const mainEnd = prev.sourceMap.get(mainId)!.end!.index
   const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
+
+  const elapsedMs = Date.now() - startMs
 
   switch (result.outcome.status) {
     case 'error':

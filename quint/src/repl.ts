@@ -481,8 +481,16 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 // In the future, we will declare them in a separate module.
 function simulatorBuiltins(st: CompilationState): QuintDef[] {
   return [
-    parseDefOrThrow(`def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
-    parseDefOrThrow(`def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
+    parseDefOrThrow(
+      `def q::test = (q::nruns, q::nsteps, q::ntraces, q::init, q::next, q::inv) => false`,
+      st.idGen,
+      st.sourceMap
+    ),
+    parseDefOrThrow(
+      `def q::testOnce = (q::nsteps, q::ntraces, q::init, q::next, q::inv) => false`,
+      st.idGen,
+      st.sourceMap
+    ),
   ]
 }
 
@@ -733,7 +741,7 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   })
 
   if (verbosity.hasUserOpTracking(state.verbosity)) {
-    const trace = state.recorder.getBestTraces(1)[0].frame
+    const trace = state.recorder.currentFrame
     if (trace.subframes.length > 0) {
       out('\n')
       trace.subframes.forEach((f, i) => {

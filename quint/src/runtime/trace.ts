@@ -164,6 +164,11 @@ export interface TraceRecorder extends ExecutionListener {
   rng: Rng
 
   /**
+   * The current frame that is being recorded.
+   */
+  currentFrame: ExecutionFrame
+
+  /**
    * Clear the recorded trace
    */
   clear: () => void
@@ -185,6 +190,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng): TraceRecorde
 class TraceRecorderImpl implements TraceRecorder {
   verbosityLevel: number
   rng: Rng
+  currentFrame: ExecutionFrame
   // all trace are stored here with their respective seeds
   private traces: Trace[]
   // whenever a run is entered, we store its seed here
@@ -202,12 +208,14 @@ class TraceRecorderImpl implements TraceRecorder {
     const bottom = this.newBottomFrame()
     this.traces = []
     this.runSeed = this.rng.getState()
+    this.currentFrame = bottom
     this.frameStack = [bottom]
   }
 
   clear() {
     this.traces = []
     const bottom = this.newBottomFrame()
+    this.currentFrame = bottom
     this.frameStack = [bottom]
   }
 

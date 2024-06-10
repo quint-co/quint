@@ -1432,8 +1432,8 @@ export class CompilerVisitor implements IRVisitor {
       return
     }
 
-    const [nruns, nsteps, nstraces, init, next, inv] = this.compStack.splice(-6)
-    this.runTestSimulation(nruns, nsteps, nstraces, init, next, inv)
+    const [nruns, nsteps, ntraces, init, next, inv] = this.compStack.splice(-6)
+    this.runTestSimulation(nruns, nsteps, ntraces, init, next, inv)
   }
 
   private testOnce(sourceId: bigint) {
@@ -1442,9 +1442,9 @@ export class CompilerVisitor implements IRVisitor {
       return
     }
 
-    const [nsteps, nstraces, init, next, inv] = this.compStack.splice(-5)
+    const [nsteps, ntraces, init, next, inv] = this.compStack.splice(-5)
     const nruns = mkConstComputable(rv.mkInt(1n))
-    this.runTestSimulation(nruns, nsteps, nstraces, init, next, inv)
+    this.runTestSimulation(nruns, nsteps, ntraces, init, next, inv)
   }
 
   // The simulator core: produce multiple random runs
