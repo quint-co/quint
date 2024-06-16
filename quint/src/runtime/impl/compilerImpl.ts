@@ -1427,24 +1427,24 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   private test(sourceId: bigint) {
-    if (this.compStack.length < 5) {
+    if (this.compStack.length < 6) {
       this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments on stack for "q::test"')
       return
     }
 
-    const [nruns, nsteps, init, next, inv] = this.compStack.splice(-5)
-    this.runTestSimulation(nruns, nsteps, init, next, inv)
+    const [nruns, nsteps, ntraces, init, next, inv] = this.compStack.splice(-6)
+    this.runTestSimulation(nruns, nsteps, ntraces, init, next, inv)
   }
 
   private testOnce(sourceId: bigint) {
-    if (this.compStack.length < 4) {
+    if (this.compStack.length < 5) {
       this.errorTracker.addCompileError(sourceId, 'QNT501', 'Not enough arguments on stack for "q::testOnce"')
       return
     }
 
-    const [nsteps, init, next, inv] = this.compStack.splice(-4)
+    const [nsteps, ntraces, init, next, inv] = this.compStack.splice(-5)
     const nruns = mkConstComputable(rv.mkInt(1n))
-    this.runTestSimulation(nruns, nsteps, init, next, inv)
+    this.runTestSimulation(nruns, nsteps, ntraces, init, next, inv)
   }
 
   // The simulator core: produce multiple random runs
@@ -1455,29 +1455,31 @@ export class CompilerVisitor implements IRVisitor {
   private runTestSimulation(
     nrunsComp: Computable,
     nstepsComp: Computable,
+    ntracesComp: Computable,
     init: Computable,
     next: Computable,
     inv: Computable
   ) {
     const doRun = (): EvaluationResult => {
-      return mergeInMany([nrunsComp, nstepsComp].map(c => c.eval()))
+      return mergeInMany([nrunsComp, nstepsComp, ntracesComp].map(c => c.eval()))
         .mapLeft((errors): QuintError => {
           return { code: 'QNT501', message: errors.map(quintErrorToString).join('\n') }
         })
-        .chain(([nrunsRes, nstepsRes]) => {
+        .chain(([nrunsRes, nstepsRes, nTracesRes]) => {
           const isTrue = (res: EvaluationResult) => {
             return !res.isLeft() && (res.value as RuntimeValue).toBool() === true
           }
           // a failure flag for the case a runtime error is found
           let failure = false
-          // the value to be returned in the end of evaluation
-          let errorFound = false
+          // counter for errors found
+          let errorsFound = 0
           // save the registers to recover them later
           const vars = this.snapshotVars()
           const nextVars = this.snapshotNextVars()
           // do multiple runs, stop at the first failing run
           const nruns = (nrunsRes as RuntimeValue).toInt()
-          for (let runNo = 0; !errorFound && !failure && runNo < nruns; runNo++) {
+          const ntraces = (nTracesRes as RuntimeValue).toInt()
+          for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
             this.execListener.onRunCall()
             this.trace.reset()
             // check Init()
@@ -1497,11 +1499,11 @@ export class CompilerVisitor implements IRVisitor {
               this.execListener.onUserOperatorReturn(initApp, [], toMaybe(initResult))
               failure = invResult.isLeft() || failure
               if (!isTrue(invResult)) {
-                errorFound = true
+                errorsFound++
               } else {
                 // check all { Next(), shift(), Inv } in a loop
                 const nsteps = (nstepsRes as RuntimeValue).toInt()
-                for (let i = 0; !errorFound && !failure && i < nsteps; i++) {
+                for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
                   const nextApp: ir.QuintApp = {
                     id: 0n,
                     kind: 'app',
@@ -1514,7 +1516,7 @@ export class CompilerVisitor implements IRVisitor {
                   if (isTrue(nextResult)) {
                     this.shiftVars()
                     this.trace.extend(this.varsToRecord())
-                    errorFound = !isTrue(inv.eval())
+                    errorsFound += isTrue(inv.eval()) ? 0 : 1
                     this.execListener.onUserOperatorReturn(nextApp, [], toMaybe(nextResult))
                   } else {
                     // Otherwise, the run cannot be extended.
@@ -1531,7 +1533,7 @@ export class CompilerVisitor implements IRVisitor {
                 }
               }
             }
-            const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
+            const outcome = !failure ? just(rv.mkBool(errorsFound == 0)) : none()
             this.execListener.onRunReturn(outcome, this.trace.get())
             // recover the state variables
             this.recoverVars(vars)
@@ -1539,7 +1541,7 @@ export class CompilerVisitor implements IRVisitor {
           } // end of a single random run
 
           // finally, return true, if no error was found
-          return !failure ? right(rv.mkBool(!errorFound)) : left({ code: 'QNT501', message: 'Simulation failure' })
+          return !failure ? right(rv.mkBool(errorsFound == 0)) : left({ code: 'QNT501', message: 'Simulation failure' })
         })
     }
     this.compStack.push(mkFunComputable(doRun))

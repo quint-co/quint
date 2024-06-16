@@ -860,6 +860,39 @@ rm out-itf-example.itf.json
 ]
 ```
 
+### Run to generate multiple ITF traces
+
+<!-- !test in run with n-traces itf -->
+```
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+cat out-itf-example0.itf.json | jq '.["#meta"].status'
+rm out-itf-example*.itf.json
+```
+
+<!-- !test out run with n-traces itf -->
+```
+"ok"
+```
+
+### Run to generate multiple ITF traces with violation
+
+<!-- !test in run with n-traces itf violation -->
+```
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt \
+   --invariant=totalSupplyDoesNotOverflowInv 
+cat out-itf-example0.itf.json | jq '.["#meta"].status'
+cat out-itf-example1.itf.json | jq '.["#meta"].status'
+cat out-itf-example2.itf.json | jq '.["#meta"].status'
+rm out-itf-example*.itf.json
+```
+
+<!-- !test out run with n-traces itf violation -->
+```
+"violation"
+"violation"
+"violation"
+```
+
 ### Test outputs ITF
 
 TODO: output states after fix: https://github.com/informalsystems/quint/issues/288

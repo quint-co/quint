@@ -24,8 +24,8 @@ import {
 } from './parsing/quintParserFrontend'
 import { ErrorMessage } from './ErrorMessage'
 
-import { fail } from 'assert'
 import { Either, left, right } from '@sweet-monads/either'
+import { fail } from 'assert'
 import { EffectScheme } from './effects/base'
 import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
@@ -547,6 +547,20 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     rng,
     verbosity: verbosityLevel,
     storeMetadata: prev.args.mbt,
+    numberOfTraces: prev.args.nTraces,
+    onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
+      const itfFile: string | undefined = prev.args.outItf
+      if (itfFile) {
+        const filename = prev.args.nTraces > 1 ? itfFile.replaceAll('.itf.json', `${index}.itf.json`) : itfFile
+        const trace = toItf(vars, states)
+        if (trace.isRight()) {
+          const jsonObj = addItfHeader(prev.args.input, status, trace.value)
+          writeToJson(filename, jsonObj)
+        } else {
+          console.error(`ITF conversion failed on ${index}: ${trace.value}`)
+        }
+      }
+    },
   }
 
   const startMs = Date.now()
@@ -564,16 +578,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const elapsedMs = Date.now() - startMs
 
-  if (prev.args.outItf) {
-    const trace = toItf(result.vars, result.states)
-    if (trace.isRight()) {
-      const jsonObj = addItfHeader(prev.args.input, result.outcome.status, trace.value)
-      writeToJson(prev.args.outItf, jsonObj)
-    } else {
-      return cliErr(`ITF conversion failed: ${trace.value}`, { ...simulator, errors: [] })
-    }
-  }
-
   switch (result.outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
@@ -588,11 +592,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
-        if (verbosity.hasHints(options.verbosity)) {
+        if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
+
       return right({
         ...simulator,
         status: result.outcome.status,
@@ -605,7 +610,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
         console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
 
-        if (verbosity.hasHints(options.verbosity)) {
+        if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }

@@ -15,7 +15,7 @@ describe('newTraceRecorder', () => {
     rec.onUserOperatorReturn(A, [], none())
     rec.onUserOperatorCall(A)
     rec.onUserOperatorReturn(A, [], none())
-    const trace = rec.getBestTrace()
+    const trace = rec.currentFrame
     assert(trace.subframes.length === 2)
     assert(trace.subframes[0].app === A)
     assert(trace.subframes[0].subframes.length === 0)
@@ -36,7 +36,7 @@ describe('newTraceRecorder', () => {
     rec.onUserOperatorReturn(A, [], none())
     rec.onUserOperatorCall(A)
     rec.onUserOperatorReturn(A, [], none())
-    const trace = rec.getBestTrace()
+    const trace = rec.currentFrame
     assert(trace.subframes.length === 2)
     assert(trace.subframes[0].app === A)
     assert(trace.subframes[0].subframes.length === 2)
@@ -87,7 +87,7 @@ describe('newTraceRecorder', () => {
     rec.onUserOperatorCall(A)
     rec.onUserOperatorReturn(A, [], none())
 
-    const trace = rec.getBestTrace()
+    const trace = rec.currentFrame
     assert(trace.subframes.length === 4)
     // A() is the operator before `any { ... }`
     assert(trace.subframes[0].app === A)
