@@ -346,9 +346,9 @@ class TraceRecorderImpl implements TraceRecorder {
 
     return this.traces.sort((a, b) => {
       // Prefer short traces for error, and longer traces for non error.
-      // Therefore, trace a is better than trace b if
-      //  - a has an error, a is shorter, or b has error;
-      //  - a has no error, a is longer, and b has no error.
+      // Therefore, trace a is better than trace b iff
+      //  - when a has an error: a is shorter or b has no error;
+      //  - when a has no error: a is longer and b has no error.
       const aNotOk = fromResult(a.frame.result)
       const bNotOk = fromResult(b.frame.result)
       if (aNotOk) {
