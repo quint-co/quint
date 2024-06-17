@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.21.0 -- 2024-06-16
+
+### Added
 
 - Added an `--n-traces` option to the `run` subcommand so multiple traces can be
   produced in a single CLI call (#1365).
