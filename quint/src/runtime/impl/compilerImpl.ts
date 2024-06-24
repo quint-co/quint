@@ -813,6 +813,9 @@ export class CompilerVisitor implements IRVisitor {
           this.applyOneOf(app.id)
           break
 
+        case 'generate':
+          return left({ code: 'QNT515', message: "Operator 'generate' is not supported by the random simulator" })
+
         case 'exists':
           this.mapLambdaThenReduce(app.id, set => rv.mkBool(set.find(([result, _]) => result.toBool()) !== undefined))
           break

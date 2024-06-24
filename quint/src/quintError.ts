@@ -115,6 +115,8 @@ export type ErrorCode =
   | 'QNT513'
   /* QNT514: Cardinality is infinite */
   | 'QNT514'
+  /* QNT515: 'generate' is not supported by the simulator */
+  | 'QNT515'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

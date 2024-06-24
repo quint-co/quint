@@ -156,6 +156,7 @@ export const builtinOpCodes = [
   'foldl',
   'foldr',
   'forall',
+  'generate',
   'get',
   'head',
   'iadd',
