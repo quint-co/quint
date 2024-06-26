@@ -202,7 +202,7 @@ export const integerOperators = [
   { name: 'ilte', effect: standardPropagation(2) },
   { name: 'igte', effect: standardPropagation(2) },
   { name: 'to', effect: standardPropagation(2) },
-  { name: 'generate', effect: standardPropagation(1) },
+  { name: 'generate', effect: standardPropagation(2) },
 ]
 
 const temporalOperators = [
