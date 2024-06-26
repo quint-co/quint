@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+dl {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+dt {
+  margin-top: 1rem;
+}
+dd {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+}
+
+.nx-text-primary-600 {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%) !important;
+}
+:is(html[class~="dark"] .dark\:nx-text-primary-600) {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%) !important;
+}

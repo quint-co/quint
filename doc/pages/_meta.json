@@ -1,0 +1,17 @@
+{
+  "index": {
+    "type": "page",
+    "title": "Home",
+    "theme": {
+      "layout": "raw"
+    }
+  },
+  "docs": {
+    "type": "page",
+    "title": "Documentation"
+  },
+  "community": {
+    "type": "page",
+    "title": "Community"
+  }
+}
