@@ -616,6 +616,10 @@ video {
   display: grid;
 }
 
+.contents {
+  display: contents;
+}
+
 .h-6 {
   height: 1.5rem;
 }
