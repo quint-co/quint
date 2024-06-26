@@ -51,7 +51,7 @@ export function Home() {
             </dl>
             {/* <p className="mt-2 text-lg text-gray-600 sm:mt-6 font-inter">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vehicula massa in enim luctus. Rutrum arcu.</p> */}
 
-            <a href="#" title="" className="inline-flex px-8 py-4 mt-8 text-lg font-bold transition-all duration-200 bg-quint-purple text-white border border-transparent rounded sm:mt-10 font-pj hover:bg-[#2d0075] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900" role="button">
+            <a href="/docs/getting-started" title="" className="inline-flex px-8 py-4 mt-8 text-lg font-bold transition-all duration-200 bg-quint-purple text-white border border-transparent rounded sm:mt-10 font-pj hover:bg-[#2d0075] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900" role="button">
               Get started
             </a>
 
