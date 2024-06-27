@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Add the operator `generate` to mirror `Apalache!Gen`.
+
 ### Changed
 ### Deprecated
 ### Removed
