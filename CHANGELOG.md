@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add the operator `generate` to mirror `Apalache!Gen`.
+- Add the operator `generate` to mirror `Apalache!Gen` (see #1455).
 
 ### Changed
 ### Deprecated
