@@ -106,7 +106,7 @@ const integerOperators = [
   { name: 'igte', type: '(int, int) => bool' },
   { name: 'to', type: '(int, int) => Set[int]' },
   { name: 'iuminus', type: '(int) => int' },
-  { name: 'generate', type: '(a, int) => Set[a]' },
+  { name: 'generate', type: '(int, Set[a]) => a' },
 ]
 const temporalOperators = [
   { name: 'always', type: '(bool) => bool' },

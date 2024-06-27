@@ -92,7 +92,7 @@ export class NondetChecker implements IRVisitor {
     if (body.kind !== 'app' || (body.opcode !== 'oneOf' && body.opcode !== 'generate')) {
       this.errors.push({
         code: 'QNT204',
-        message: `'oneOf' or 'generate' must be the outermost expression in a nondet definition`,
+        message: `'oneOf' and 'generate' must be the outermost expressions in a nondet definition`,
         reference: body.id,
         data: {},
       })

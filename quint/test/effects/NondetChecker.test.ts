@@ -61,7 +61,7 @@ describe('checkNondets', () => {
     assert.sameDeepMembers(errors, [
       {
         code: 'QNT204',
-        message: "'oneOf' must be the outermost expression in a nondet definition",
+        message: "'oneOf' and 'generate' must be the outermost expressions in a nondet definition",
         reference: 8n,
         data: {},
       },
