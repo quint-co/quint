@@ -19,7 +19,8 @@ describe('produceDocs', () => {
       [...docs.values()],
       [
         {
-          label: 'val foo',
+          name: 'foo',
+          signature: 'val foo',
           documentation: 'This is a docstring for foo',
         },
       ]
@@ -29,7 +30,8 @@ describe('produceDocs', () => {
 
 describe('toMarkdown', () => {
   const doc = {
-    label: 'val foo',
+    name: 'foo',
+    signature: 'val foo',
     documentation: 'This is a docstring for foo',
   }
 
