@@ -4,8 +4,8 @@ module gen {
   var T: Set[{ x: int, y: bool }]
 
   action init = {
-    nondet iS = generate(10, Set(Set(0)))
-    nondet iT = generate(20, Set(Set({ x: 0, y: false })))
+    nondet iS = generate(10, Set(0))
+    nondet iT = generate(20, Set({ x: 0, y: false }))
     all {
       S' = iS,
       T' = iT,
