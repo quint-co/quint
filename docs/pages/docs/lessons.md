@@ -2,7 +2,7 @@
 
 We are introducing language tutorials in two formats.
 
-## 1. Classic markdown
+## 1. Classic tutorials
 
 These are simply tutorials written in Markdown. The only thing needed is your
 browser. If you want to run the examples in REPL, check how to install
@@ -10,12 +10,11 @@ browser. If you want to run the examples in REPL, check how to install
 
 These tutorials are currently available in the classic format:
 
- - [Hello, world!](./lesson0-helloworld/hello.md)
- - [REPL](./repl/repl.md)
- - [Tutorial on Booleans](./lesson1-booleans/booleans.md)
- - [Tutorial on integers](./lesson2-integers/integers.md)
- - [Tutorial on basic protocol anatomy and tests](./lesson3-anatomy/coin.md)
- - [Tutorial on sets](./lesson4-sets/sets.md)
+ - [Hello, world!](./lessons/hello.md)
+ - [Tutorial on Booleans](./lessons/booleans.md)
+ - [Tutorial on integers](./lessons/integers.md)
+ - [Tutorial on basic protocol anatomy and tests](./lessons/coin.md)
+ - [Tutorial on sets](./lessons/sets.md)
 
 ## 2. CodeTour tutorials
 
@@ -25,10 +24,10 @@ tutorials using [CodeTour][]. You have to install two extensions:
  - [Quint VSCode][] is our language extension,
  - [CodeTour][] is the extension of replaying code tutorials.
 
-To start a tour, open the [tutorials](./) folder in VSCode and start the tour:
+To start a tour, open the [codetour](https://github.com/informalsystems/quint/tree/main/docs/codetour) folder in VSCode and start the tour:
 
-![CodeTour Animation](../../public/tutorials-1671180664875.gif)
+![CodeTour Animation](../../public/codetour.gif)
 
-[Quint]: ../quint/README.md
+[Quint]: ./getting-started
 [Quint VSCode]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [CodeTour]: https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour
