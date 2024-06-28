@@ -20,3 +20,11 @@ dd {
 :is(html[class~="dark"] .dark\:nx-text-primary-600) {
   color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%) !important;
 }
+
+.text-lg code {
+  font-size: 1rem;
+}
+
+:root {
+  --shiki-token-keyword: #9d6ce5;
+}

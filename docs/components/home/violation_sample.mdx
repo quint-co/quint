@@ -1,0 +1,14 @@
+```sh
+$ quint run bank.qnt --invariant=no_negatives
+An example execution:
+
+[State 0] {
+  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0)
+}
+
+[State 1] {
+  balances: Map("alice" -> 0, "bob" -> -73, "charlie" -> 0)
+}
+
+[violation] Found an issue (42ms).
+```
