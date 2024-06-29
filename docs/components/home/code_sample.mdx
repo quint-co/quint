@@ -1,4 +1,4 @@
-```quint
+```quint filename="bank.qnt"
 /// A state variable to store the balance of each account
 var balances: str -> int
 
@@ -17,3 +17,4 @@ val no_negatives = ADDRESSES.forall(addr =>
   balances.get(addr) >= 0
 )
 ```
+
