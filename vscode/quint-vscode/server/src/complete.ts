@@ -187,7 +187,7 @@ function builtinCompletionsWithDocs(
     return {
       label: op.name,
       kind: CompletionItemKind.Function,
-      detail: docs?.label,
+      detail: docs?.signature,
       documentation: md(docs?.documentation),
     }
   })
