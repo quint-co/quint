@@ -156,7 +156,11 @@ export class QuintLanguageServer {
       }
 
       const signatureWithMarkupKind = signature?.documentation
-        ? { name: signature.name, label: signature.signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
+        ? {
+            name: signature.name,
+            label: signature.signature,
+            documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent,
+          }
         : { name: signature.name, label: signature.signature }
 
       return {
