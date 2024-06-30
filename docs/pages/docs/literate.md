@@ -10,13 +10,13 @@ model based testing.
 ## Prerequisites
 
 - An [installation of go](https://go.dev/doc/install)
-- An [installation of quint](../../quint/README.md)
+- An [installation of quint](/docs/getting-started)
 - An [installation of make](https://en.wikipedia.org/wiki/Make_(software))
   (probably already on your system)
 - An installation of lmt via `go install github.com/driusan/lmt@latest` (or
   following the [lmt instructions to install from source](https://github.com/driusan/lmt#installing-lmt))
 
-If you use nix, you can use [this nix expression](../tutorials/default.nix).
+If you use nix, you can use [this nix expression](https://github.com/informalsystems/quint/tree/main/docs/default.nix).
 
 ## Writing a literate spec
 

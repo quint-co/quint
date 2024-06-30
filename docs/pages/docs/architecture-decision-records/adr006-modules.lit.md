@@ -64,7 +64,7 @@ We encapsulate pure functional definitions in a distinct module (called `fun`
 below), and import its definitions in the module that specifies the general
 behavior of the state machine (called `general` below):
 
-```bluespec generated/adr006before.qnt +=
+```quint generated/adr006before.qnt +=
 module fun {
   pure def dec(i) = i - 1
   pure def inc(i) = i + 1
@@ -109,7 +109,7 @@ graph LR
 We define constants, variables, and actions of `general` as follows:
 
 
-```bluespec "definitions" +=
+```quint "definitions" +=
   const N: int
   var x: int
 
@@ -122,7 +122,7 @@ We define constants, variables, and actions of `general` as follows:
 Having defined `general`, we define its fixed-size instances in the module
 `fixed`:
 
-```bluespec generated/adr006before.qnt +=
+```quint generated/adr006before.qnt +=
 module fixed {
   module I3 = general(N = 3)
   module I5 = general(N = 5)
@@ -243,7 +243,7 @@ currently point to the same variable.
 
 Recall how we produced new instances in our example:
 
-```bluespec
+```quint
 module general {
   module I3 = general(N = 3)
   module I5 = general(N = 5)
@@ -345,7 +345,7 @@ operator parameters. This rework is planned in [issue
 
 Let's revisit the definition of the module `fun`:
 
-```bluespec generated/adr006after.qnt +=
+```quint generated/adr006after.qnt +=
 module fun {
   pure def dec(i) = i - 1
   pure def inc(i) = i + 1
@@ -420,7 +420,7 @@ graph TB
 
 Now, let's have a look at the module `general`:
 
-```bluespec generated/adr006after.qnt +=
+```quint generated/adr006after.qnt +=
 module general {
   import fun.*
 
@@ -511,7 +511,7 @@ module and tune them with the supplied expressions for the constants.
 Effectively, the flattener would transform the module `fixed` of our example
 into the following code:
 
-```bluespec generated/adr006instances.qnt +=
+```quint generated/adr006instances.qnt +=
 module fixed {
   // the instance general(N = 3)
 
@@ -557,7 +557,7 @@ The last name may be replaced with `_` to indicate that no prefix is required.
 
 Using this syntax, our example looks like follows:
 
-```bluespec
+```quint
 module fixed {
   import general(N = 3).*
   import general(N = 5) as I5

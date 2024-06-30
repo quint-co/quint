@@ -48,7 +48,7 @@ In this tutorial, you will see how to:
         
 
 If you would like to see the complete code before diving into
-the details, check [coin.qnt](./coin.qnt).
+the details, check [coin.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/coin.qnt).
         
 ## 2. Declare a single module
 

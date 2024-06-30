@@ -346,7 +346,7 @@ Try `iff` for all combinations of `false` and `true`:
         <description>
 We have covered all the operators over Booleans.
 If you want to see all operators in one place,
-check [booleans.qnt](./booleans.qnt).
+check [booleans.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/booleans.qnt).
 
 We are experimenting with different kinds of tutorials.
 It would be great to learn, whether you liked this tutorial format, or not.

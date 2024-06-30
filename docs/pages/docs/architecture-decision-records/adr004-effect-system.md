@@ -375,14 +375,14 @@ takes a list of component kinds and returns a function that takes the arity of
 the operator and returns the signature for that arity. The signature for arity 2
 is the following:
 
-```bluespec
+```quint
 propagateComponents(['read', 'temporal'])(2):
   (Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]
 ```
 
 Here are some examples of signatures for non-general operators:
 
-```bluespec
+```quint
 always: (Read[r] & Temporal[t]) => Temporal[r, t]
 guess: (Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]
 assign: (Read[r1], Read[r2]) => Read[r2] & Update[r1]
@@ -398,7 +398,7 @@ inferred effect.
 
 Consider the following example:
 
-```bluespec
+```quint
 module foo {
   var x: int
 
@@ -431,7 +431,7 @@ possible to report meaningful error messages.
 
 Consider the following spec that updates variable `x` twice:
 
-```bluespec
+```quint
 module foo {
   var x: int
 

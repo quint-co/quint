@@ -25,7 +25,7 @@ state machine that describes how it works from the user's point of view:
 
 ## 1. Installation
 
-You have to install `quint` first. See the [README](../../README.md#installation).
+You have to install `quint` first. See [Getting Started](getting-started).
 
 ## 2. Running REPL
 
@@ -709,4 +709,4 @@ features, check [Tutorial 3][].
 [VSCode Plugin]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [Literate programming]: https://en.wikipedia.org/wiki/Literate_programming
 [lmt]: https://github.com/driusan/lmt
-[Tutorial 3]: ../lesson3-anatomy/coin.md
+[Tutorial 3]: lessons/coin

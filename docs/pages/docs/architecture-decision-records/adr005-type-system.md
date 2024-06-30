@@ -25,7 +25,7 @@ as basis, the proposed type system should be able to infer simple types, match
 annotations and handle row types from records and tuples variants.
 
 The type grammar for Quint is already defined at the [Language
-Manual](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12),
+Manual](/docs/lang),
 so this ADR will cover only type inference and type checking.
 
 ## Options

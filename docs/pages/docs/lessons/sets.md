@@ -34,9 +34,9 @@ For example, @KryptoCoffeeCat want to know whether they could exchange BTC
 for ATOM by doing up to three swaps. Unfortunately, @KryptoCoffeeCat have lost
 access to their browser, as they did not update it as often as it was required.
 Now they are stuck with the
-[Quint REPL](https://github.com/informalsystems/quint/blob/main/doc/quint.md#command-repl).
+[Quint REPL](https://quint-lang.org/docs/quint#command-repl).
 Fortunately, they have found the
-[Quint cheatsheet](https://github.com/informalsystems/quint/blob/main/doc/quint-cheatsheet.pdf).
+[Quint cheatsheet](https://quint-lang.org/quint-cheatsheet.pdf).
 We will help them!
 
 In this tutorial, you will see how to:
@@ -51,7 +51,7 @@ In this tutorial, you will see how to:
         
 
 If you would like to see the complete code before diving into
-the details, check [sets.qnt](./sets.qnt).
+the details, check [sets.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/sets.qnt).
         
 ## 2. Defining swap pairs
 
@@ -641,7 +641,7 @@ echo 'cycles4' | quint -r sets.qnt::sets
 
 @KryptoCoffeeCat has learned a lot in this tutorial.
 By looking at the
-[Quint cheatsheet](https://github.com/informalsystems/quint/blob/main/doc/quint-cheatsheet.pdf),
+[Quint cheatsheet](https://quint-lang.org/quint-cheatsheet.pdf),
 they have found that this tutorial did not cover two operators on sets.
 Can you find them too?
 

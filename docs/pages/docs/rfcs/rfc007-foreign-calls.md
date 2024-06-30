@@ -218,7 +218,7 @@ space outlined by the four examples is quite large.
 [SHA-2]: https://en.wikipedia.org/wiki/SHA-2
 [Cosmos Accounts]: https://docs.cosmos.network/v0.45/basics/accounts.html#signatures
 [ITF Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
-[Quint manual]: https://github.com/informalsystems/quint/blob/main/doc/quint.md
+[Quint manual]: /docs/quint
 [Issue 2453]: https://github.com/informalsystems/apalache/issues/2453
 [Issue 143]: https://github.com/informalsystems/quint/issues/143
 [eval]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval

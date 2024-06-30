@@ -396,5 +396,5 @@ field `apalacheJson`:
 it may emit an error, see [Errors][].
 
 
-[Errors]: ./adr002-errors.md
+[Errors]: ./adr002-errors
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html

@@ -88,7 +88,7 @@
     },
     {
       "title": "Suming it up",
-      "description": "\nWe have covered all the operators over Booleans.\nIf you want to see all operators in one place,\ncheck [booleans.qnt](./booleans.qnt).\n\nWe are experimenting with different kinds of tutorials.\nIt would be great to learn, whether you liked this tutorial format, or not.\nPlease vote in the\n[discussion](https://github.com/informalsystems/quint/discussions/516).\n        ",
+      "description": "\nWe have covered all the operators over Booleans.\nIf you want to see all operators in one place,\ncheck [booleans.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/booleans.qnt).\n\nWe are experimenting with different kinds of tutorials.\nIt would be great to learn, whether you liked this tutorial format, or not.\nPlease vote in the\n[discussion](https://github.com/informalsystems/quint/discussions/516).\n        ",
       "line": 64,
       "file": "lesson1-booleans/booleans.qnt"
     }

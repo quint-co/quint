@@ -89,7 +89,7 @@ For instances, we need to ensure uniqueness, since the same names in the instanc
 ##### Namespaces for exports
 
 Exports have a particularity: they can remove namespaces. Consider the example:
-```bluespec
+```quint
 module A {
   const N: int
   val a = N
@@ -106,7 +106,7 @@ In this example, `export A1.*` is taking the definitions from `A1` and making th
 This scenario is tricky and, as discussed in a Quint meeting, we could not support it in the first version. Current flattening does support this, but it is not able to distinguish different instances, so problems arise. We are not sure how useful and clear this scenario is for users.
 
 So, exports that change the namespaces of the previously imported definitions are not supported in the first version of the new flattener. We should raise a proper error when an export like that is found. The example above could be rewritten as:
-```bluespec
+```quint
 module A {
   const N: int
   val a = N
@@ -137,7 +137,7 @@ All of this tinkering on names and the addition of a matching import statement m
 #### Example
 
 Take this module as example, where `A` is instanced twice with the same name:
-```bluespec
+```quint
 module A {
   const N: int // id 1
   val a = N // id 2
@@ -155,7 +155,7 @@ module C {
 ```
 
 The instance flattener will create two new modules: `B::A1` and `C::A1`, with new ids for the definitions inside it.
-```bluespec
+```quint
 module A {
   const N: int // id 1
   val a = N // id 2

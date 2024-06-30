@@ -42,7 +42,7 @@ around and which values they carry.*
 
 Assume that we have initialized the protocol state with `init`:
 
-```bluespec
+```quint
 >>> init
 true
 ```
@@ -50,7 +50,7 @@ true
 **Current interface**. Currently, we can inspect the state, by evaluating
 the variable names:
 
-```bluespec
+```quint
 >>> temperature
 20
 >>> heatingOn
@@ -65,7 +65,7 @@ highlight this idea.
 
 A workaround is to introduce a definition like the following one:
 
-```bluespec
+```quint
 // a handy definition that captures the state in a record
 val kettleState = {
   heatingOn: heatingOn,
@@ -78,7 +78,7 @@ val kettleState = {
 system state as a record that is accessible via a standard name. We decided to
 use the name `q::state`. Here is an example:
 
-```bluespec
+```quint
 >>> q::state
 {
   beeping: false,
@@ -89,7 +89,7 @@ use the name `q::state`. Here is an example:
 
 Since `q::state` is simply a `val`, we would be do all kinds of programmatic things with it:
 
-```bluespec
+```quint
 >>> q::state.fieldNames()
 Set("beeping", "heatingOn", "temperature")
 
@@ -108,7 +108,7 @@ progressing.*
 
 Assume that we have executed a few steps:
 
-```bluespec
+```quint
 >>> init
 true
 >>> pressButton
@@ -133,7 +133,7 @@ name such as `q::trace`.
 For the sequence `init.then(pressButton).then(heat).then(depressButton)`, we
 expect `q::trace` to evaluate as follows:
 
-```bluespec
+```quint
 >>> q::trace
 [
   // 0
@@ -153,7 +153,7 @@ helpful comments: It should print the state numbers and highlight the active
 state (with a `*`). However, the fact that `q::trace` is a value, lets us to
 access it programmatically:
 
-```bluespec
+```quint
 >>> q::trace.length()
 4
 >>> q::trace[3].temperature - q::trace[0].temperature
@@ -170,7 +170,7 @@ so I can evaluate invariants against them and explore different paths.*
 
 As in Story 2, assume that we have executed a few steps:
 
-```bluespec
+```quint
 >>> init
 true
 >>> pressButton
@@ -193,7 +193,7 @@ executing `init`, then `pressButton`, then `heat`.
 
 The following REPL session highlights the expected interface:
 
-```bluespec
+```quint
 >>> init.then(pressButton).then(heat).then(depressButton)
 true
 >>> q::jump(2)
@@ -224,7 +224,7 @@ important, since some of the actions may be non-deterministic.
 
 ### 3.2. Continue trace from the active state
 
-```bluespec
+```quint
 >>> // ...continue the above session
 >>> heat
 true
@@ -250,7 +250,7 @@ cleared, and the new state is added after the active state.
 The trace is accumulating the states, even when `init` is executed. Hence, at
 some point, we have to clear the trace:
 
-```bluespec
+```quint
 >>> // ...continue the above session
 >>> q::reset
 true
@@ -265,4 +265,4 @@ true
 [#347]: https://github.com/informalsystems/quint/issues/347
 [#303]: https://github.com/informalsystems/quint/issues/303
 [#288]: https://github.com/informalsystems/quint/issues/288
-[kettle]: https://github.com/informalsystems/quint/blob/main/tutorials/repl/kettle.qnt
+[kettle]: https://github.com/informalsystems/quint/blob/main/docs/repl/kettle.qnt
