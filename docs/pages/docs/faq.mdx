@@ -59,7 +59,7 @@ specifications.
   on [Spells][].
 </FAQBox>
 
-<FAQBox title="Difference between pure def and def">
+<FAQBox title="What is the difference between pure def and def">
 
 Definitions that are tagged as `pure def` are not allowed to read state
 variables (that is, the names declared with `var`). Definitions that are tagged
@@ -95,7 +95,7 @@ In the above example, `minWithLimit(10, 20)` produces the value `10`, when
 
 </FAQBox>
 
-<FAQBox title="Difference between val and def">
+<FAQBox title="What is the difference between val and def?">
 The definitions that have at least one parameter should be tagged with `def`,
 whereas the definitions that have no parameters should be tagged with `val`. We
 could say that `val`'s are nullary `def`'s.
@@ -122,7 +122,7 @@ changing with the values of `time` and `velocity`.
 
 </FAQBox>
 
-<FAQBox title="Difference between pure val and const">
+<FAQBox title="What is the difference between pure val and const?">
 A value that is defined via `pure val` is constant in the sense that it never
 changes in an execution. A `const` definition also declares a constant value.
 However, the value of `const` is not fixed at the time of specification writing,
