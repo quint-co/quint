@@ -1,5 +1,5 @@
 ##
-# Quint tutorials
+# Quint Codetour and markdown tutorials
 #
 # @file
 # @version 0.1
@@ -13,14 +13,6 @@ tutorials: lesson0-helloworld/hello.qnt \
 			lesson3-anatomy/coin.qnt \
 			lesson4-sets/sets.qnt
 	@echo "Updated all tutorials"
-
-./repl/kettle.qnt: ./repl/repl.md
-	lmt $^
-	cat ./repl/replTest.txt |\
-		egrep '^(>>>|\.\.\.) ' | sed 's/^>>> //g' | sed 's/^\.\.\. //g' \
-		>./repl/replTestIn.txt
-	cat ./repl/replTest.txt |\
-		egrep -v '^(>>>|\.\.\.) ' >./repl/replTestOut.txt
 
 %.qnt: %.template.qnt
 	./script/mk-tutorial.py $^ $*

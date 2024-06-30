@@ -11,8 +11,8 @@ https://github.com/driusan/lmt
 
 As a result, this document produces two checkable artifacts:
 
- 1. ./repl/kettle.qnt is the specification that we construct.
- 2. ./repl/replTest.txt is the replayable REPL session.
+ 1. ../../../examples/tutorials/repl/kettle.qnt is the specification that we construct.
+ 2. ../../../examples/tutorials/repl/replTest.txt is the replayable REPL session.
 -->
 
 A [REPL][] is a read-eval-print loop. A REPL is usually a good way to start
@@ -48,10 +48,11 @@ You can type `.help` and then press `<ENTER>` for supported REPL commands.
 ## 3. Preloading definitions
 
 In this tutorial, we are interactively constructing the module
-[kettle.qnt](./kettle.qnt). You can load this file in the [VSCode Plugin][] and
-read it, if you would like to have a better overview of the module that we are
-constructing. You can also load this file into REPL, if you only want to
-evaluate expressions without copying the definitions by hand:
+[kettle.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/repl/kettle.qnt).
+You can load this file in the [VSCode Plugin][] and read it, if you would like
+to have a better overview of the module that we are constructing. You can also
+load this file into REPL, if you only want to evaluate expressions without
+copying the definitions by hand:
 
 ```sh
 $ quint -r kettle.qnt::kettle
@@ -60,7 +61,7 @@ $ quint -r kettle.qnt::kettle
 When you load `kettle.qnt` this way, REPL prints `true` indicating that the
 module has been loaded successfully:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 true
 
 ```
@@ -77,14 +78,14 @@ specifications in Markdown and like to connect it to Quint specifications.
 The core interaction with a REPL is to enter an expression and get back the
 result of its evaluation. Like this:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> 1 + 3
 4
 ```
 
 Or like this:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> Set(1, 2, 3).map(i => i * 2)
 Set(2, 4, 6)
 ```
@@ -94,7 +95,7 @@ Set(2, 4, 6)
 In this tutorial, we are interactively constructing the module
 [kettle.qnt](./kettle.qnt) that has the following structure:
 
-```quint ./repl/kettle.qnt +=
+```quint ../../../examples/tutorials/repl/kettle.qnt +=
 // -*- mode: Bluespec; -*-
 // The example from the REPL tutorial
 module kettle {
@@ -144,7 +145,7 @@ temperature in Celsius:
 
 We can use the values and definitions in later expressions and declarations:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> fahrenheit(freezingTemperature)
 32
 >>> fahrenheit(boilingTemperature)
@@ -169,7 +170,7 @@ operators:
 
 This is how REPL evaluates the expressions that use the above definitions:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> veryCold
 -40
 >>> veryHot
@@ -219,9 +220,9 @@ In addition to definitions and values, we also declare state variables:
 By default, a state variable is not assigned any value and a reference to
 a declared but unassigned state variable will produce a runtime error:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> temperature
-runtime error: error: Variable temperature is not set
+runtime error: error: [QNT502] Variable temperature is not set
     var temperature: int
     ^^^^^^^^^^^^^^^^^^^^
 
@@ -247,7 +248,7 @@ is how we initialize our kettle:
 The action `init` is just an action definition, which can be applied later. To
 apply it, we simply type `init`:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> init
 true
 ```
@@ -259,7 +260,7 @@ prevented the action from being applied; more on that later.
 Now we can check that `init` has indeed initialized the state variables as
 expected:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> temperature
 20
 >>> heatingOn
@@ -282,7 +283,7 @@ collects all of our state variables in a single record:
 If we evaluate `kettleState` in the current state, we should get the following
 output:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> kettleState
 { beeping: false, heatingOn: false, temperature: 20 }
 ```
@@ -306,14 +307,14 @@ which turns on the heating element of our kettle.
 Again, we have just defined the action `pressButton`, but that action
 is not applied automatically. To apply it, we simply type its name:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> pressButton
 true
 ```
 
 We can check our state variables to make sure that the action indeed took place:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> kettleState
 { beeping: false, heatingOn: true, temperature: 20 }
 ```
@@ -323,7 +324,7 @@ The heat is on now!
 Interestingly, if we try to apply `pressButton` once again, it would not
 work, as indicated by the `false` result:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> pressButton
 false
 ```
@@ -351,14 +352,14 @@ puzzled, call `fahrenheit(100)` in REPL ;-)
 
 If we apply `failover` to the current state, it will not execute:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> failover
 false
 ```
 
 Indeed, `temperature` is equal to 20 in the current state of REPL:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> temperature
 20
 ```
@@ -367,7 +368,7 @@ To properly test `failover`, we should probably define the action `heat`
 in our spec. But since we are in REPL, we can also take a shortcut, by
 simply setting the state variables to the state we need:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> all { temperature' = 100, heatingOn' = true, beeping' = false }
 true
 ```
@@ -381,7 +382,7 @@ values of `heatingOn` and `beeping` would have become undefined.
 
 Now we can apply `failover`:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> failover
 true
 >>> heatingOn
@@ -396,7 +397,7 @@ To reset the state to the previous one, we can simply evaluate `init` and
 `pressButton` again (there is a better way to do that, which we will show
 later):
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> init
 true
 >>> pressButton
@@ -421,7 +422,7 @@ Now it is time to specify the action `heat`:
 
 By applying `heat` several times, we can see that it heats up the kettle a bit:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> heat
 true
 >>> temperature
@@ -462,7 +463,7 @@ This action should be easy to define:
 Now we can execute four actions and observe that we managed to heat the kettle
 by 1 degree and turn it off:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> init
 true
 >>> pressButton
@@ -478,7 +479,7 @@ true
 Notice that our specification allows for a new interesting behavior. Evaluate
 the following expressions:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> depressButton
@@ -512,7 +513,7 @@ How do we describe in the specification that one of the actions may apply,
 whichever happens first, and we do not control which one? Quint has the operator
 `any` to do exactly this:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> any {
@@ -547,7 +548,7 @@ Now it is time to define all possible transitions of the kettle in one place:
 Having defined `step`, we can conveniently execute steps without specifying
 the action that should be executed next:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> init
 true
 >>> step
@@ -609,7 +610,7 @@ temperature should be somewhere in the range of -40 to 40 degrees:
 
 Let's see how it works. Execute `initNondet` for the first time:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> initNondet
 true
 ```
@@ -663,7 +664,7 @@ close the REPL.
 
 You can save the REPL session with the builtin command `.save`:
 
-```quint ./repl/replTest.txt +=
+```quint ../../../examples/tutorials/repl/replTest.txt +=
 >>> .save kettle.qnt
 Session saved to: kettle.qnt
 

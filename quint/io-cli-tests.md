@@ -520,7 +520,7 @@ This is a regression test for #648.
 <!-- !test in repl evaluates coin -->
 ```
 cat <<EOF \
-  | quint -r ../examples/solidity/Coin/coin.qnt::coin 2>&1 \
+  | quint -r ../examples/tutorials/coin.qnt::coin 2>&1 \
   | tail -n +3
 init
 balances
@@ -541,7 +541,7 @@ The command `run` finds an overflow in Coin.
 <!-- !test in run finds overflow -->
 ```
 output=$(quint run --max-steps=5 --seed=0x1e352e160ffa12 --invariant=totalSupplyDoesNotOverflowInv \
-  ../examples/solidity/Coin/coin.qnt 2>&1)
+  ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
@@ -603,7 +603,7 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 output=$(quint run --max-steps=5 --seed=0x1786e678d45fe0 \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
-  ../examples/solidity/Coin/coin.qnt 2>&1)
+  ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
@@ -736,7 +736,7 @@ error: Invariant violated
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
-  ../examples/solidity/Coin/coin.qnt
+  ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -757,7 +757,7 @@ rm out-itf-example.itf.json
 ```
 quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv --mbt\
-  ../examples/solidity/Coin/coin.qnt
+  ../examples/tutorials/coin.qnt
 cat out-itf-mbt-example.itf.json | jq '.states[1]'
 rm out-itf-mbt-example.itf.json
 ```
@@ -845,7 +845,7 @@ rm out-itf-mbt-example.itf.json
 
 <!-- !test in sucessful run itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -864,7 +864,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 rm out-itf-example*.itf.json
 ```
@@ -878,7 +878,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in run with n-traces itf violation -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/solidity/Coin/coin.qnt \
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt \
    --invariant=totalSupplyDoesNotOverflowInv 
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.["#meta"].status'
@@ -900,7 +900,7 @@ TODO: output states after fix: https://github.com/informalsystems/quint/issues/2
 <!-- !test in test itf -->
 ```
 output=$(quint test --output='coin_{#}_{}.itf.json' \
-  ../examples/solidity/Coin/coin.qnt)
+  ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 cat coin_0_sendWithoutMintTest.itf.json | jq '.states'
@@ -988,9 +988,12 @@ The REPL tutorial is reproducible in REPL.
 
 <!-- !test check REPL tutorial -->
 ```
+cd ../examples/tutorials/repl/
+make
 quint -q -r \
-  ../tutorials/repl/kettle.qnt::kettle <../tutorials/repl/replTestIn.txt \
-    | diff - ../tutorials/repl/replTestOut.txt
+  kettle.qnt::kettle < replTestIn.txt \
+    | diff - replTestOut.txt
+cd - > /dev/null
 ```
 
 ### test --verbosity=3 outputs a trace
@@ -999,7 +1002,7 @@ quint -q -r \
 <!-- !test in verbose test -->
 ```
 output=$(quint test --seed=0x1cce8452305113 --match=mintTwiceThenSendError \
-  --verbosity=3 ../examples/solidity/Coin/coin.qnt)
+  --verbosity=3 ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
@@ -1068,7 +1071,7 @@ send(
 <!-- !test exit 1 -->
 <!-- !test in test invalid seed -->
 ```
-output=$(quint test --seed=NotANumber ../examples/solidity/Coin/coin.qnt)
+output=$(quint test --seed=NotANumber ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
@@ -1084,7 +1087,7 @@ error: --seed must be a big integer, found: NotANumber
 <!-- !test exit 1 -->
 <!-- !test in run invalid seed -->
 ```
-output=$(quint run --seed=NotANumber ../examples/solidity/Coin/coin.qnt)
+output=$(quint run --seed=NotANumber ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
