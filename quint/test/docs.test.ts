@@ -37,7 +37,9 @@ describe('toMarkdown', () => {
 
   it('produces markdown out of a documentation entry', () => {
     const expectedMarkdown = dedent(
-      `## \`val foo\`
+      `## foo
+      |
+      |Signature: \`val foo\`
       |
       |This is a docstring for foo`
     )
