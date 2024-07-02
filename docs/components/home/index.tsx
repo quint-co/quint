@@ -47,21 +47,21 @@ export function Home() {
             <h3 className="text-2xl font-bold leading-relaxed">Executable</h3>
             <ul className="list-inside indent-4">
               <li>English and Markdown: not checked, not executable</li>
-              <li>Quint: checked names and types, executable</li>
+              <li className="font-bold">Quint: checked names and types, <a className="underline decoration-2 decoration-quint-purple">executable</a></li>
             </ul>
             <br />
 
             <h3 className="text-2xl font-bold leading-relaxed">Specification language</h3>
             <ul className="list-inside indent-4">
               <li>Programming languages: define how things happen in detail</li>
-              <li>Specification languages: define only what you care about</li>
+              <li className="font-bold">Specification languages: define only what you <a className="underline decoration-2 decoration-quint-purple">care</a> about</li>
             </ul>
             <br />
 
             <h3 className="text-2xl font-bold leading-relaxed">Modern</h3>
             <ul className="list-inside indent-4">
               <li>Existing specification languages: Mathy syntax, old GUI tools</li>
-              <li>Quint: Familiar syntax, CLI-first, tools for VSCode, Vim and Emacs</li>
+              <li className="font-bold">Quint: <a className="underline decoration-2 decoration-quint-purple">Familiar</a> syntax, CLI-first, tools for VSCode, Vim and Emacs</li>
             </ul>
 
             <a href="/docs/getting-started" title="" className="inline-flex px-8 py-4 mt-8 text-lg font-bold transition-all duration-200 bg-quint-purple text-white rounded sm:mt-10 font-pj hover:bg-[#2d0075] hover:text-quint-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900" role="button">
