@@ -32,7 +32,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(iff(true, true))
   /// assert(iff(false, false))
   /// assert(not(iff(true, false)))
@@ -46,7 +46,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(true.implies(true))
   /// assert(false.implies(false))
   /// assert(not(true.implies(false)))
@@ -65,7 +65,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).exists(n => n == 2))
   /// assert(not(Set(1, 2, 3).exists(n => n == 4)))
   /// ```
@@ -77,7 +77,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).forall(n => n > 0))
   /// assert(not(Set(1, 2, 3).forall(n => n > 1)))
   /// ```
@@ -91,7 +91,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(1.in(Set(1, 2, 3)))
   /// assert(not(4.in(Set(1, 2, 3))))
   /// ```
@@ -105,7 +105,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).contains(1))
   /// assert(not(Set(1, 2, 3).contains(4)))
   /// ```
@@ -117,7 +117,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).union(Set(2, 3, 4)) == Set(1, 2, 3, 4))
   /// ```
   pure def union(s1, s2): (Set[a], Set[a]) => Set[a]
@@ -128,7 +128,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).intersect(Set(2, 3, 4)) == Set(2, 3))
   /// ```
   pure def intersect(s1, s2): (Set[a], Set[a]) => Set[a]
@@ -139,7 +139,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).exclude(Set(2, 3, 4)) == Set(1))
   /// ```
   pure def exclude(s1, s2): (Set[a], Set[a]) => Set[a]
@@ -148,7 +148,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).subseteq(Set(1, 2, 3, 4)))
   /// assert(not(Set(1, 2, 3).subseteq(Set(1, 2))))
   /// ```
@@ -158,7 +158,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).filter(n => n > 1) == Set(2, 3))
   /// ```
   pure def filter(s, p): (Set[a], (a) => bool) => Set[a]
@@ -169,7 +169,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).map(n => n > 1) == Set(false, true, true))
   /// ```
   pure def map(s, f): (Set[a], (a) => b) => Set[b]
@@ -183,7 +183,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// val sum = Set(1, 2, 3, 4).fold(0, (x, y) => x + y)
   /// assert(sum == 10)
   /// val mul = Set(1, 2, 3, 4).fold(1, (x, y) => x * y)
@@ -196,7 +196,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2).powerset() == Set(
   ///   Set(),
   ///   Set(1),
@@ -210,7 +210,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(Set(1, 2), Set(3, 4)).flatten() == Set(1, 2, 3, 4))
   /// ```
   pure def flatten(s): (Set[Set[a]]) => Set[a]
@@ -222,7 +222,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2).allLists().contains([]))
   /// assert(Set(1, 2).allLists().contains([1, 1, 1, 1, 2, 1]))
   /// ```
@@ -230,7 +230,7 @@ module builtin {
 
   /// `s.allListsUpTo(l)` is the set of all lists of elements in `s` with length <= `l`
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2).allListsUpTo(1) == Set([], [1], [2]))
   /// assert(Set(1).allListsUpTo(2) == Set([], [1], [1, 1]))
   /// ```
@@ -240,7 +240,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).chooseSome() == 1)
   /// assert(Set(1, 2, 3).filter(x => x > 2).chooseSome() == 3)
   /// ```
@@ -250,7 +250,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// nondet x = oneOf(Set(1, 2, 3))
   /// assert(x.in(Set(1, 2, 3)))
   /// ```
@@ -260,7 +260,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).isFinite())
   /// assert(!Nat.isFinite())
   /// ```
@@ -270,7 +270,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(Set(1, 2, 3).size() == 3)
   /// ```
   pure def size(s): (Set[a]) => int
@@ -281,7 +281,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Map(1 -> true, 2 -> false)
   /// assert(m.get(1) == true)
   /// ```
@@ -291,7 +291,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Map(1 -> true, 2 -> false)
   /// assert(m.keys() == Set(1, 2))
   /// ```
@@ -301,7 +301,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Set(1, 2, 3).mapBy(x => x * x)
   /// assert(m == Map(1 -> 1, 2 -> 4, 3 -> 9))
   /// ```
@@ -312,7 +312,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Set((1, true), (2, false)).setToMap()
   /// assert(m == Map(1 -> true, 2 -> false))
   /// ```
@@ -322,7 +322,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val s = Set(1, 2).setOfMaps(set(true, false))
   /// assert(s == Set(
   ///   Map(1 -> true, 2 -> true),
@@ -339,7 +339,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Map(1 -> true, 2 -> false)
   /// pure val m2 = m.set(2, true)
   /// assert(m == Map(1 -> true, 2 -> false))
@@ -353,7 +353,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Map(1 -> true, 2 -> false)
   /// pure val m2 = m.setBy(2, x => !x)
   /// assert(m == Map(1 -> true, 2 -> false))
@@ -365,7 +365,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = Map(1 -> true, 2 -> false)
   /// pure val m2 = m.put(2, true)
   /// pure val m3 = m.put(3, true)
@@ -379,7 +379,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).append(4) == List(1, 2, 3, 4))
   /// ```
   pure def append(l, e): (List[a], a) => List[a]
@@ -388,7 +388,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).append(List(4, 5, 6)) == List(1, 2, 3, 4, 5, 6))
   /// ```
   pure def concat(l1, l2): (List[a], List[a]) => List[a]
@@ -399,7 +399,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).head() == 1)
   /// ```
   pure def head(l): (List[a]) => a
@@ -410,7 +410,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).tail() == List(2, 3))
   /// ```
   pure def tail(l): (List[a]) => List[a]
@@ -419,7 +419,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).length() == 3)
   /// ```
   pure def length(l): (List[a]) => int
@@ -430,7 +430,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).nth(1) == 2)
   /// ```
   pure def nth(l, i): (List[a], int) => a
@@ -439,7 +439,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).indices() == Set(0, 1, 2))
   /// ```
   pure def indices(l): (List[a]) => Set[int]
@@ -450,7 +450,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).replaceAt(1, 4) == List(1, 4, 3))
   /// ```
   pure def replaceAt(l, i, e): (List[a], int, a) => List[a]
@@ -467,7 +467,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3, 4, 5).slice(1, 3) == List(2, 3))
   /// ```
   pure def slice(l, i, j): (List[a], int, int) => List[a]
@@ -480,7 +480,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(range(1, 3) == List(1, 2))
   /// ```
   pure def range(i, j): (int, int) => List[int]
@@ -491,7 +491,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
   /// ```
   pure def select(l, p): (List[a], (a) => bool) => List[a]
@@ -503,7 +503,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val sum = List(1, 2, 3, 4).foldl(0, (x, y) => x + y)
   /// assert(sum == 10)
   /// pure val l = List(1, 2, 3, 4).foldl(List(), (l, e) => l.append(e))
@@ -574,7 +574,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// assert(1.to(3) == Set(1, 2, 3))
   /// ```
   pure def to(i, j): (int, int) => Set[int]
@@ -583,7 +583,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = x' = x + 1
@@ -597,7 +597,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = x' = x + 1
@@ -609,7 +609,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = x' = x + 1
@@ -626,7 +626,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next =  x' = x + 1
@@ -643,7 +643,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = any {
@@ -662,7 +662,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Under10 = all {
@@ -679,7 +679,7 @@ module builtin {
   /// })
   /// ```
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action impossible = {
@@ -704,7 +704,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = any {
@@ -729,7 +729,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action cycleTo1 = all { x == 0, x' = 1 },
@@ -757,7 +757,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// // Next defines all transitions from a number to its successor.
@@ -773,12 +773,12 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// pure val m = if (1 == 2) 3 else 4
   /// assert(m == 4)
   /// ```
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action a = if (x == 0) x' = 3 else x' = 4
   /// run test = (x' = 0).then(a).then(assert(x == 3))
@@ -795,7 +795,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
   /// ```
@@ -812,7 +812,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var n: int
   /// run expectConditionOkTest = (n' = 0).then(n' = 3).expect(n == 3)
   /// run expectConditionFailsTest = (n' = 0).then(n' = 3).expect(n == 4)
@@ -834,11 +834,11 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// run test = (x' = 0).then(3.reps(i => x' = x + 1)).then(assert(x == 3))
   /// ```
-   action reps(n, A): (int, int => bool) => bool
+  action reps(n, A): (int, int => bool) => bool
 
   /// `a.fail()` evaluates to `true` if and only if action `a` evaluates to `false`.
   ///
@@ -851,12 +851,12 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// run test = (x' = 0).then(3.reps(x' = x + 1)).then(assert(x == 3))
-  /// ```
+  /// ```quint
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// action Init = x' = 0
   /// action Next = x' = x + 1
@@ -873,7 +873,7 @@ module builtin {
   ///
   /// ### Examples
   ///
-  /// ```
+  /// ```quint
   /// var x: int
   /// >>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
   /// > new x: 1
@@ -891,10 +891,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val l = List(1, 2, 3)
   // /// assert(l == [ 1, 2, 3 ])
-  // /// ```
+  // /// ```quint
   // pure def List(a*): (a*) => List[a]
 
   // /// `Set(e0, ..., en)` is a set of values `e0`, ..., `en`.
@@ -903,10 +903,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val s = Set(1, 2, 3)
   // /// assert(s.contains(2))
-  // /// ```
+  // /// ```quint
   // pure def Set(e*): (a*) => Set[a]
 
  // /// `Map(k0 -> v0, ..., kn -> vn)` is a map that maps `k0` to `v0`, ..., and `kn` to `vn`.
@@ -918,7 +918,7 @@ module builtin {
  // /// ```
  // /// pure val m = Map("a" -> 1, "b" -> 2)
   // /// assert(m.get("a") == 1)
-  // /// ```
+  // /// ```quint
   // pure def Map((k -> v)*): ((a, b)* => a -> b
 
   // /// `Rec((f0, v0), ..., (fn, vn))` is a record that has fields `f0`, ..., `fn` with values `v0`, ..., `vn`.
@@ -929,10 +929,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val r = { x: 1, y: 2 }
   // /// assert(r.x == 1)
-  // /// ```
+  // /// ```quint
   // pure def Rec((f0, v0), ..., (fn, vn)): ((str, a0), ..., (str, an)) => { f0:, a0, ..., fn:, an }
 
   // /// `r.field(f)` is the value of the field `f` in the record `r`.
@@ -943,21 +943,21 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val r = { x: 1, y: 2 }
   // /// assert(r.field("x") == 1)
   // /// assert(r.y == 1)
-  // /// ```
+  // /// ```quint
   // pure def field(r, f): ({ f: a | t }, str) => a
 
   // /// `r.fieldNames()` is the set of field names in the record `r`.
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val r = { x: 1, y: 2 }
   // /// assert(r.fieldNames() == Set("x", "y"))
-  // /// ```
+  // /// ```quint
   // pure def fieldNames(r): ({ f0: t0, ..., fn: tn }) => Set[str]
 
   // /// `r.with(f, v)` is a record that is the same as `r` except that the field `f` has value `v`.
@@ -966,10 +966,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val r = { x: 1, y: 2 }
   // /// assert(r.with("x", 3) == { x: 3, y: 2 })
-  // /// ```
+  // /// ```quint
   // pure def with(r, f, v): ({ f0: t0 | r }, str, t0) => { f0: t0 | r }
 
   // /// `Tup(e0, ..., en)` is a tuple of values `e0`, ..., `en`.
@@ -980,11 +980,11 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val t = Tup(1, 2, 3)
   // /// assert(t == (1, 2, 3))
   // /// assert(t._1 == 1)
-  // /// ```
+  // /// ```quint
   // pure def Tup(e0, ..., en): (a0, ..., an) => (a0, ..., an)
 
   // /// `t.item(i)` is the `i`th element of the tuple `t`.
@@ -995,11 +995,11 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val t = (1, 2, 3)
   // /// assert(t.item(1) == 1)
   // /// assert(t._2 == 2)
-  // /// ```
+  // /// ```quint
   // pure def item(t, i): ((a0, ..., an), int) => ai
 
   // /// `tuples(s0, ..., sn)` is the set of all tuples `(t0, ..., tn)` such that `ti` is in `si`.
@@ -1008,10 +1008,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// pure val s = tuples(Set(1, 2), Set(3, 4))
   // /// assert(s == Set((1, 3), (1, 4), (2, 3), (2, 4)))
-  // /// ```
+  // /// ```quint
   // pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
 
   // /// `variant("Label", expr)` is a value of type `T` when
@@ -1022,12 +1022,12 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// type T = A(int) | B | C(str)
   // /// assert(variant("A", 42) == A(42))
   // /// assert(variant("B", Rec()) == B)
   // /// assert(variant("C", "foo") == C("foo"))
-  // /// ```
+  // /// ```quint
   // ///
   // /// Note that this is an internal built-in and users should prefer the generated
   // /// data constructor matching the label of a variant. E.g., in our example above,
@@ -1047,12 +1047,12 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// type T = A(int) | B | C(str)
   // /// val result = matchVariant(A(42), "A", (x) => x, "B", (_) => 0, "C", (_) => 1)
   // /// assert(result == 42)
   // /// assert(result == match A(42) { A(x) => x | B => 0 | C(_) => 1 })
-  // /// ```
+  // /// ```quint
   // ///
   // /// Note that this is an internal built-in and users should prefer the
   // /// `match` syntax on the right hand side of the `==` above.
@@ -1066,10 +1066,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// assert(and(1 == 1, true))
   // /// assert(not(and(1 == 1, true, false)))
-  // /// ```
+  // /// ```quint
   // pure def and(a*): (bool*) => bool
 
   // /// `actionAll(a0, ..., an)` is true when all `ai` are true. `ai` can be actions.
@@ -1080,13 +1080,13 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// var x: int
   // /// var y: int
   // /// run test = (all { x' = 0, y' = 0 })
   // ///              .then(all { x' = 1, y' = 2 })
   // ///              .then(assert(x == 1 && y == 2))
-  // /// ```
+  // /// ```quint
   // pure def actionAll(a*): (bool*) => bool
 
   // /// `or(a0, ..., an)` is true when at least one `ai` is true.
@@ -1097,10 +1097,10 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// assert(or(1 == 1, false))
   // /// assert(not(or(1 == 2, false, false)))
-  // /// ```
+  // /// ```quint
   // pure def or(a*): (bool*) => bool
 
   // /// `actionAny(a0, ..., an)` is true when at least one `ai` is true. `ai` can be actions.
@@ -1111,9 +1111,9 @@ module builtin {
   // ///
   // /// ### Examples
   // ///
-  // /// ```
+  // /// ```quint
   // /// var x: int
   // /// run test = (x' = 0).then(any { x' = 1, x' = 2 }).then(assert(or { x == 1, x == 2 }))
-  // /// ```
+  // /// ```quint
   // pure def actionAny(a*): (bool*) => bool
 }

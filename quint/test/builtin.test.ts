@@ -13,7 +13,8 @@ describe('builtInDocs', () => {
     const result = builtinDocs(idGen)
 
     assert.deepEqual(result.get('Bool'), {
-      label: 'pure val Bool: Set[bool]',
+      name: 'Bool',
+      signature: 'pure val Bool: Set[bool]',
       documentation: dedent(
         `The set of all booleans
           |

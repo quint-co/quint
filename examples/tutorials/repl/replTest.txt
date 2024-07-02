@@ -1,0 +1,115 @@
+true
+
+>>> 1 + 3
+4
+>>> Set(1, 2, 3).map(i => i * 2)
+Set(2, 4, 6)
+>>> fahrenheit(freezingTemperature)
+32
+>>> fahrenheit(boilingTemperature)
+212
+>>> 0.to(100).exists(celsius => fahrenheit(celsius) == celsius)
+false
+>>> (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius)
+true
+>>> veryCold
+-40
+>>> veryHot
+104
+>>> temperature
+runtime error: error: [QNT502] Variable temperature is not set
+    var temperature: int
+    ^^^^^^^^^^^^^^^^^^^^
+
+<undefined value>
+>>> init
+true
+>>> temperature
+20
+>>> heatingOn
+false
+>>> kettleState
+{ beeping: false, heatingOn: false, temperature: 20 }
+>>> pressButton
+true
+>>> kettleState
+{ beeping: false, heatingOn: true, temperature: 20 }
+>>> pressButton
+false
+>>> failover
+false
+>>> temperature
+20
+>>> all { temperature' = 100, heatingOn' = true, beeping' = false }
+true
+>>> failover
+true
+>>> heatingOn
+false
+>>> temperature
+100
+>>> beeping
+true
+>>> init
+true
+>>> pressButton
+true
+>>> kettleState
+{ beeping: false, heatingOn: true, temperature: 20 }
+>>> heat
+true
+>>> temperature
+21
+>>> heat
+true
+>>> temperature
+22
+>>> heat
+true
+>>> temperature
+23
+>>> init
+true
+>>> pressButton
+true
+>>> heat
+true
+>>> depressButton
+true
+>>> kettleState
+{ beeping: false, heatingOn: false, temperature: 21 }
+>>> all { heatingOn' = true, temperature' = 100, beeping' = false }
+true
+>>> depressButton
+true
+>>> kettleState
+{ beeping: false, heatingOn: false, temperature: 100 }
+>>> all { heatingOn' = true, temperature' = 100, beeping' = false }
+true
+>>> failover
+true
+>>> kettleState
+{ beeping: true, heatingOn: false, temperature: 100 }
+>>> all { heatingOn' = true, temperature' = 100, beeping' = false }
+true
+>>> any {
+...   depressButton,
+...   failover,
+... }
+... 
+true
+>>> init
+true
+>>> step
+true
+>>> step
+true
+>>> step
+true
+>>> step
+true
+>>> initNondet
+true
+>>> .save kettle.qnt
+Session saved to: kettle.qnt
+

@@ -2,13 +2,7 @@
   "name": "@informalsystems/quint",
   "version": "0.21.0",
   "description": "Core tool for the Quint specification language",
-  "keywords": [
-    "temporal",
-    "logic",
-    "formal",
-    "specification",
-    "verification"
-  ],
+  "keywords": ["temporal", "logic", "formal", "specification", "verification"],
   "homepage": "https://github.com/informalsystems/quint",
   "bugs": "https://github.com/informalsystems/quint/issues",
   "license": "Apache 2.0",
@@ -35,11 +29,7 @@
   "bin": {
     "quint": "dist/src/cli.js"
   },
-  "files": [
-    "README.md",
-    "dist/**/*",
-    "test/**/*.ts"
-  ],
+  "files": ["README.md", "dist/**/*", "test/**/*.ts"],
   "engines": {
     "node": "18 - 20"
   },
@@ -81,7 +71,7 @@
     "apalache-dist": "txm apalache-dist-tests.md",
     "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
-    "api-docs": "quint docs ./src/builtin.qnt > ../doc/builtin.md",
+    "api-docs": "quint docs ./src/builtin.qnt > ../docs/pages/docs/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
     "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
     "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",

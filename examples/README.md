@@ -92,7 +92,6 @@ listed without any additional command line arguments.
 | [language-features/tuples.qnt](./language-features/tuples.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [puzzles/prisoners/prisoners.qnt](./puzzles/prisoners/prisoners.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [puzzles/river/river.qnt](./puzzles/river/river.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| [solidity/Coin/coin.qnt](./solidity/Coin/coin.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [solidity/ERC20/erc20.qnt](./solidity/ERC20/erc20.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [solidity/GradualPonzi/gradualPonzi.qnt](./solidity/GradualPonzi/gradualPonzi.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [solidity/icse23-fig7/lottery.qnt](./solidity/icse23-fig7/lottery.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/1285</sup> |
@@ -102,6 +101,12 @@ listed without any additional command line arguments.
 | [spells/BoundedUInt.qnt](./spells/BoundedUInt.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [spells/commonSpells.qnt](./spells/commonSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [spells/rareSpells.qnt](./spells/rareSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [tutorials/booleans.qnt](./tutorials/booleans.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [tutorials/coin.qnt](./tutorials/coin.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [tutorials/hello.qnt](./tutorials/hello.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [tutorials/integers.qnt](./tutorials/integers.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [tutorials/repl/kettle.qnt](./tutorials/repl/kettle.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [tutorials/sets.qnt](./tutorials/sets.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [verification/defaultOpNames.qnt](./verification/defaultOpNames.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 [^nostatemachine]: This specification does not define a state machine.

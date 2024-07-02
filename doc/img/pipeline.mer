@@ -1,4 +1,0 @@
-flowchart LR
-  p["1: Parser"] --> nr["2: NameResolver"] -->
-    tc["3: TypeChecker"] --> ca["4: CustomAnalyses"] --> tla["5: ToApalacheIR"]
-  nr --> p  

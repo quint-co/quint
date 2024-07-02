@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+dl {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+dt {
+  margin-top: 1rem;
+}
+dd {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+}
+
+footer {
+  max-height: 10%;
+}
+
+.nx-text-primary-600 {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
+}
+:is(html[class~="dark"] .dark\:nx-text-primary-600) {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
+}
+
+.text-lg code {
+  font-size: 1rem;
+}
+
+:root {
+  --shiki-color-text: #414141;
+  --shiki-color-background: transparent;
+  --shiki-token-constant: #1976d2;
+  --shiki-token-string: #9d6ce5;
+  --shiki-token-comment: #aaa;
+  --shiki-token-keyword: #9d6ce5;
+  --shiki-token-parameter: #ff9800;
+  --shiki-token-function: #6f42c1;
+  --shiki-token-string-expression: #1976d2;
+  --shiki-token-punctuation: #212121;
+  --shiki-token-link: #22863a;
+}
+
+.dark {
+  --shiki-color-text: #d1d1d1;
+  --shiki-token-constant: #79b8ff;
+  --shiki-token-string: #ffab70;
+  --shiki-token-comment: #6b737c;
+  --shiki-token-keyword: #ffab70;
+  --shiki-token-parameter: #ff9800;
+  --shiki-token-function: #b392f0;
+  --shiki-token-string-expression: #b392f0;
+  --shiki-token-punctuation: #bbb;
+  --shiki-token-link: #ffab70;
+}
+/* .violation-sample-container { */
+/*   max-height: 0; */
+/*   overflow: hidden; */
+/*   transition: max-height 0.5s ease-out, opacity 0.5s ease-out; */
+/*   opacity: 0; */
+/* } */
+
+/* .violation-sample-container.visible { */
+/*   max-height: 1000px; /\* Arbitrary large value to ensure full height *\/ */
+/*   opacity: 1; */
+/* } */
