@@ -1,5 +1,7 @@
 import { ComponentProps } from "react";
 import { twMerge } from "tailwind-merge";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { classNames } from "./classNames";
 
 interface ProsOrConsListProps extends ComponentProps<"div"> {
@@ -41,12 +43,7 @@ export function ProsOrConsList({ items, label, type }: ProsOrConsListProps) {
               classNames[`${pluralType}Icon`]
             )}
           >
-            <i className={twMerge(`
-                  fa
-                  fa-fw
-                  fas
-                `,
-                type === "pro" ? "fa-check" : "fa-xmark")}></i>
+            <FontAwesomeIcon icon={type === "pro" ? faCheck : faXmark} />
           </div>
           {item}
         </div>

@@ -3,6 +3,8 @@ import { Code, Pre } from "nextra/components"
 import React from "react";
 import { useState, useEffect } from 'react'
 import { useTheme } from 'nextra-theme-docs'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import CodeSample from './code_sample.mdx'
 import ViolationSample from './violation_sample.mdx'
 
@@ -14,7 +16,7 @@ import { ProsOrConsList } from "./ProsOrConsList";
 const benefits = [
   [
     "Executable",
-    ["Quint", ["checked names and types", "executuable"]],
+    ["Quint", ["checked names and types", "executable"]],
     ["English & Markdown", ["not checked", "not executuable"]],
   ],
   [
@@ -76,14 +78,7 @@ export function Home() {
                 <div className={classNames.benefitContainer}>
                   <h1 className={classNames.benefitTitle}>
                     <div className={classNames.benefitIcon}>
-                      <i
-                        className="
-                    fa
-                    fa-fw
-                    fas
-                    fa-check-circle
-                  "
-                      ></i>
+                      <FontAwesomeIcon icon={faCheckCircle} />
                     </div>
                     {label}
                   </h1>

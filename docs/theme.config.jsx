@@ -62,8 +62,6 @@ export default {
           type="image/png"
           media="(prefers-color-scheme: dark)"
         />
-        <script src="https://cdn.tailwindcss.com" />
-        <script src="https://kit.fontawesome.com/ddaf2d7713.js" crossorigin="anonymous" />
       </>
     )
   },
