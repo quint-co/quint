@@ -39,15 +39,11 @@ function informalSystemsLogo() {
     setTheme(resolvedTheme);
   }, [resolvedTheme]);
 
-  if (theme == "dark") {
-    return (
-      <Image src="/informal-systems-white.png" alt="Informal Systems" width={200} height={200} />
-    );
-    } else {
-      return (
-        <Image src="/informal-systems.png" alt="Informal Systems" width={200} height={200} />
-      );
-  }
+  return (
+    <a href="https://informal.systems">
+      <Image src={theme == "dark" ? "/informal-systems-white.png" : "/informal-systems.png"} alt="Informal Systems" width={200} height={200} />
+    </a>
+  )
 }
 
 const components = {
