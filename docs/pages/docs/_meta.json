@@ -1,0 +1,25 @@
+{
+  "index": "Introduction",
+  "getting-started": "Getting Started",
+  "lang": "Language Manual",
+  "quint": "CLI Manual",
+  "builtin": "Built-in Operators",
+  "previews": "Tool previews",
+  "faq": "FAQ",
+   "-- Learning": {
+    "type": "separator",
+    "title": "Learning"
+  },
+  "repl": "Using the REPL",
+  "lessons": "Lessons",
+  "blogposts": "Blog Posts",
+  "literate": "Literate Specifications",
+   "-- Development": {
+    "type": "separator",
+    "title": "Design & Development"
+  },
+  "design-principles": "",
+  "architecture-decision-records": "Architecture Decision Records (ADRs)",
+  "rfcs": "Requests for Comments (RFCs)",
+  "stories": "User Stories"
+}

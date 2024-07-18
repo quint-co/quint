@@ -176,7 +176,7 @@ function documentationHover(
     return []
   }
 
-  let hoverText = ['```quint', signature.label, '```', '']
+  let hoverText = ['```quint', signature.signature, '```', '']
   if (signature.documentation) {
     hoverText.push(signature.documentation)
   }

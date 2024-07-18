@@ -34,6 +34,9 @@ result () {
             "$file" =~ ^cryptography/ ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
+            "$file" == "tutorials/integers.qnt" ||
+            "$file" == "tutorials/sets.qnt" ||
+            "$file" == "tutorials/booleans.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ||
             "$file" == "cosmos/bank/bank.qnt" ) ]] ; then
       printf "N/A[^nostatemachine]"; return

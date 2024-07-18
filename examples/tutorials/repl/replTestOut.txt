@@ -1,0 +1,59 @@
+true
+
+4
+Set(2, 4, 6)
+32
+212
+false
+true
+-40
+104
+runtime error: error: [QNT502] Variable temperature is not set
+    var temperature: int
+    ^^^^^^^^^^^^^^^^^^^^
+
+<undefined value>
+true
+20
+false
+{ beeping: false, heatingOn: false, temperature: 20 }
+true
+{ beeping: false, heatingOn: true, temperature: 20 }
+false
+false
+20
+true
+true
+false
+100
+true
+true
+true
+{ beeping: false, heatingOn: true, temperature: 20 }
+true
+21
+true
+22
+true
+23
+true
+true
+true
+true
+{ beeping: false, heatingOn: false, temperature: 21 }
+true
+true
+{ beeping: false, heatingOn: false, temperature: 100 }
+true
+true
+{ beeping: true, heatingOn: false, temperature: 100 }
+true
+true
+true
+true
+true
+true
+true
+true
+Session saved to: kettle.qnt
+
