@@ -15,6 +15,8 @@
             pkgs.vsce
             pkgs.parallel
           ];
+
+          shellHook = "npm config set prefix ~/.npm";
         };
       });
 }
