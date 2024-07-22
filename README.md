@@ -89,7 +89,8 @@ module bank {
 }
 ```
 
-We can use Quint CLI to find a violation to the `no_negatives` property:
+This design lacks some important checks, and we can use the Quint CLI to find a
+violation to the `no_negatives` property, which ideally should hold:
 
 ```sh
 $ quint run bank.qnt --invariant=no_negatives
@@ -109,6 +110,9 @@ Use --seed=0x1112de300ce425 to reproduce.
 Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
+
+Check the [Getting Started](https://quint-lang.org/docs/getting-started) guide
+to see how we can fix this problem and formally verify the result.
 
 [Apalache]: https://github.com/informalsystems/apalache
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
