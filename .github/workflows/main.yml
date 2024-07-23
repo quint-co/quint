@@ -191,7 +191,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        operating-system: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - name: Cache nix store
