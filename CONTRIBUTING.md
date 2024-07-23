@@ -49,6 +49,35 @@ Currently, the project consists of two npm packages:
 For setting up the local build, you would have to install TypeScript and npm.
 This is usually done via your local package manager.
 
+### Nix for development dependencies
+
+We provide a nix shell in case you want to use nix to manage your development
+environment and dependencies.
+
+Make sure you have `nix` installed, then build and enter the clean development shell with:
+
+```sh
+$ nix develop
+```
+
+If you want to use direnv to setup your environment with nix (instead of using a
+shell), you will need to add `use flake;` to your `.envrc`, and then
+running `direnv allow`:
+
+```sh
+$ echo "use flake;" >> .envrc && direnv allow
+```
+
+You can also add a `direnv` extension/package to your IDE of choice to have
+those dependencies set up for the IDE to use.
+
+#### Updating nix dependencies
+
+To update one of the flake inputs you can run: `nix flake lock --update-input <input-name>`
+
+To update all of the inputes you can run: `nix flake update`, it is recommended
+to update dependencies one by one though.
+
 ### Formatting
 
 We use [eslint][] to enforce the good coding practices of JavaScript and
