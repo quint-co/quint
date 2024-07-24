@@ -16,7 +16,6 @@ import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { rv } from './impl/runtimeValue'
-import { take } from 'lodash'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
