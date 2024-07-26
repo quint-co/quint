@@ -56,10 +56,10 @@ Santa](https://en.wikipedia.org/wiki/Secret_Santa) game:
 module secret_santa {
   const participants: Set[str]
 
-  /// get(recipient_for_santa, S) is the recipient for secret santa S
+  /// get(recipient_for_santa, S) is the recipient for Secret Santa S
   var recipient_for_santa: str -> str
 
-  /// the bowl of participants, containing a paper piece for each participant name
+  /// The bowl of participants, containing a paper piece for each participant's name
   var bowl: Set[str]
 
   val santas = recipient_for_santa.keys()
@@ -67,14 +67,14 @@ module secret_santa {
 
   /// The initial state
   action init = all {
-    recipient_for_santa' = Map(), // No santas or recipients
+    recipient_for_santa' = Map(), // No Santas or recipients
     bowl' = participants,         // Every participant's name in the bowl
   }
 
-  action draw_recipient(santa: str): bool = {
+  action draw_recipient(Santa: str): bool = {
     nondet recipient = oneOf(bowl)
     all {
-      recipient_for_santa' = put(recipient_for_santa, santa, recipient),
+      recipient_for_santa' = put(recipient_for_santa, Santa, recipient),
       bowl' = bowl.exclude(Set(recipient)),
     }
   }
@@ -99,14 +99,14 @@ module quint_team_secret_santa {
 }
 ```
 
-We can use this specification to check whether certain properties needed for a
+We can use this specification to check whether certain properties are needed for a
 good game hold:
 
 <details>
 <summary>Checking if everyone gets a santa</summary>
 
 Quint (with the help of [Apalache][apalache]) can check to ensure that after the bowl is
-empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
+empty, every participant has a Santa! No kids crying when the gifts are exchanged :gift: .
 
 ``` bluespec
 echo '{ "checker": { "no-deadlocks": true } }' > config.json
@@ -120,9 +120,9 @@ You may increase --max-steps.
 <details>
 <summary>Checking if no one gets themself</summary>
 
-This specification has no safeguards against people being their own santa! Quint
+This specification has no safeguards against people being their own Santa! Quint
 (with the help of [Apalache][apalache]) can easily find a minimal example where
-this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
+this happens. Sorry kids, I hope you don't mind buying your present :cry:!
 
 ``` bluespec
 quint verify quint_team_secret_santa.qnt --invariant=no_person_is_self_santa
@@ -179,7 +179,7 @@ Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
 advanced developer tooling and static analysis (see our [design
-principles](./doc/design-principles.md) and [previews](./doc/previews.md) of the
+principles](./docs/pages/docs/design-principles.md) and [previews](./docs/pages/docs/previews.md) of the
 tooling).
 
 The syntax also aims to be familiar to engineers:
@@ -271,9 +271,9 @@ Cosmos in 2023.
 
 ## Documentation
 
-View the [Quint documentation](./doc#readme).
+View the [Quint documentation](./docs#readme).
 
-We aspire to having great, comprehensive documentation. At present, we have a
+We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share
 with us any needs we have not yet been able to meet.
 
