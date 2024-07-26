@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed an issue that caused high memory usage on exploration (#1465)
+
 ### Security
 
 ## v0.21.0 -- 2024-06-16
