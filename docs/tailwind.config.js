@@ -14,6 +14,7 @@ module.exports = {
     extend: {
       colors: {
         'quint-purple': '#9d6ce5',
+        'quint-orange': '#ffab70',
       },
     }
   },
