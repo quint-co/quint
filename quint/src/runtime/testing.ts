@@ -149,7 +149,7 @@ export function compileAndTest(
             recorder.onRunReturn(toMaybe(result), [])
           }
 
-          const bestTrace = recorder.getBestTraces(1)[0].frame
+          const bestTrace = recorder.bestTraces[0].frame
           // evaluate the result
           if (result.isLeft()) {
             // if the test failed, return immediately
@@ -210,7 +210,7 @@ export function compileAndTest(
         }
 
         // the test was run maxSamples times, and no errors were found
-        const bestTrace = recorder.getBestTraces(1)[0].frame
+        const bestTrace = recorder.bestTraces[0].frame
         saveTrace(bestTrace, index, name, 'passed')
         return {
           name,

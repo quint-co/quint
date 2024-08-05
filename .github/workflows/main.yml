@@ -191,22 +191,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        operating-system: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - name: Cache nix store
+        # Workaround for cache action not playing well with permissions
+        # See https://github.com/actions/cache/issues/324
+        uses: john-shaffer/cache@59429c0461095f341a8cf7388e5d3aef37b95edd
         with:
-          node-version: "18"
+          path: |
+            /nix/store
+            /nix/var/nix/profiles
+          key: ${{ runner.os }}-nix-${{ hashFiles('**.nix') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
+            ${{ runner.os }}-
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Build dev-shell
+        run: nix develop -c bash -c exit
       - name: Install quint deps
-        run: cd ./quint && npm install
-      - name: Install yalc
-        run: npm i yalc -g
+        run: cd ./quint && nix develop -c npm install
       - name: Compile quint vscode plugin
-        run: make local
+        run: nix develop -c make local
       - name: Run vscode unit tests
-        run: cd ./vscode/quint-vscode && npm test
+        run: cd ./vscode/quint-vscode && nix develop -c npm test
       - name: Check that we can create the vsix package
-        run: |
-          cd ./vscode/quint-vscode
-          npm install --global @vscode/vsce
-          vsce package
+        run: cd ./vscode/quint-vscode && nix develop -c vsce package

@@ -14,7 +14,7 @@ export default {
       );
     }
   },
-  docsRepositoryBase: 'https://github.com/informalsystems/quint',
+  docsRepositoryBase: 'https://github.com/informalsystems/quint/blob/main/docs',
   project: {
     link: 'https://github.com/informalsystems/quint'
   },

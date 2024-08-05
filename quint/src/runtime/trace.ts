@@ -16,7 +16,6 @@ import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { rv } from './impl/runtimeValue'
-import { take } from 'lodash'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -174,16 +173,14 @@ export interface TraceRecorder extends ExecutionListener {
   clear: () => void
 
   /**
-   * Get the best recorded traces.
-   * @param n the number of traces to get
-   * @returns the best recorded traces.
+   * The best recorded traces.
    */
-  getBestTraces(n: number): Trace[]
+  bestTraces: Trace[]
 }
 
 // a trace recording listener
-export const newTraceRecorder = (verbosityLevel: number, rng: Rng): TraceRecorder => {
-  return new TraceRecorderImpl(verbosityLevel, rng)
+export const newTraceRecorder = (verbosityLevel: number, rng: Rng, tracesToRecord: number = 1): TraceRecorder => {
+  return new TraceRecorderImpl(verbosityLevel, rng, tracesToRecord)
 }
 
 // a private implementation of a trace recorder
@@ -191,8 +188,10 @@ class TraceRecorderImpl implements TraceRecorder {
   verbosityLevel: number
   rng: Rng
   currentFrame: ExecutionFrame
-  // all trace are stored here with their respective seeds
-  private traces: Trace[]
+  // how many traces to store
+  private tracesToStore: number
+  // best traces are stored here with their respective seeds
+  bestTraces: Trace[]
   // whenever a run is entered, we store its seed here
   private runSeed: bigint
   // During simulation, a trace is built here.
@@ -202,25 +201,22 @@ class TraceRecorderImpl implements TraceRecorder {
   // a tree of calls.
   private frameStack: ExecutionFrame[]
 
-  constructor(verbosityLevel: number, rng: Rng) {
+  constructor(verbosityLevel: number, rng: Rng, tracesToStore: number) {
     this.verbosityLevel = verbosityLevel
     this.rng = rng
     const bottom = this.newBottomFrame()
-    this.traces = []
+    this.tracesToStore = tracesToStore
+    this.bestTraces = []
     this.runSeed = this.rng.getState()
     this.currentFrame = bottom
     this.frameStack = [bottom]
   }
 
   clear() {
-    this.traces = []
+    this.bestTraces = []
     const bottom = this.newBottomFrame()
     this.currentFrame = bottom
     this.frameStack = [bottom]
-  }
-
-  getBestTraces(n: number): Trace[] {
-    return take(this.tracesByQuality(), n)
   }
 
   onUserOperatorCall(app: QuintApp) {
@@ -331,10 +327,17 @@ class TraceRecorderImpl implements TraceRecorder {
     traceToSave.result = outcome
     traceToSave.args = trace
 
-    this.traces.push({ frame: traceToSave, seed: this.runSeed })
+    const traceWithSeed = { frame: traceToSave, seed: this.runSeed }
+
+    this.bestTraces.push(traceWithSeed)
+    this.sortTracesByQuality()
+    // Remove the worst trace (if there more traces than needed)
+    if (this.bestTraces.length > this.tracesToStore) {
+      this.bestTraces.pop()
+    }
   }
 
-  private tracesByQuality(): Trace[] {
+  private sortTracesByQuality() {
     const fromResult = (r: Maybe<EvalResult>) => {
       if (r.isNone()) {
         return true
@@ -344,7 +347,7 @@ class TraceRecorderImpl implements TraceRecorder {
       }
     }
 
-    return this.traces.sort((a, b) => {
+    this.bestTraces.sort((a, b) => {
       // Prefer short traces for error, and longer traces for non error.
       // Therefore, trace a is better than trace b iff
       //  - when a has an error: a is shorter or b has no error;
