@@ -52,6 +52,7 @@ development tooling.
 
 Here is a small specification for a bank:
 ``` bluespec
+
 module bank {
   /// A state variable to store the balance of each account
   var balances: str -> int
@@ -89,12 +90,14 @@ module bank {
 }
 ```
 
+
 This design lacks some important checks, and we can use the Quint CLI to find a
 violation to the `no_negatives` property, which ideally should hold:
 
 ```sh
 $ quint run bank.qnt --invariant=no_negatives
 ```
+
 
 And the result is a violation where address `"alice"` has balance `-79` in the second state.
 
@@ -147,7 +150,7 @@ Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
 advanced developer tooling and static analysis (see our [design
-principles](./doc/design-principles.md) and [previews](./doc/previews.md) of the
+principles](./docs/pages/docs/design-principles.md) and [previews](./docs/pages/docs/previews.md) of the
 tooling).
 
 The syntax also aims to be familiar to engineers:
@@ -222,9 +225,10 @@ Cosmos in 2023.
 
 ## Documentation
 
+
 View the [Quint documentation](https://quint-lang.org/docs).
 
-We aspire to having great, comprehensive documentation. At present, we have a
+We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share
 with us any needs we have not yet been able to meet.
 
