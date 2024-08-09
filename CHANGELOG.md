@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+ - Bumped GRPC message sizes to 1G (#1480)
+
 ### Security
 
 ## v0.21.1 -- 2024-07-29
