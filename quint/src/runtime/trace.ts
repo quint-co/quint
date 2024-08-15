@@ -329,9 +329,12 @@ class TraceRecorderImpl implements TraceRecorder {
 
     const traceWithSeed = { frame: traceToSave, seed: this.runSeed }
 
+    // Insert the trace into the list of best traces,
+    // keeping the list sorted by descending quality.
     this.insertTraceSortedByQuality(traceWithSeed)
 
-    // Remove the worst trace (if there more traces than needed)
+    // If there are more traces than needed, remove the worst trace,
+    // ie. the last one, since the traces are sorted by descending quality.
     if (this.bestTraces.length > this.tracesToStore) {
       this.bestTraces.pop()
     }
