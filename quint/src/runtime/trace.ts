@@ -348,7 +348,7 @@ class TraceRecorderImpl implements TraceRecorder {
     // using a binary search over the already sorted traces.
     const insertionIndex = (() => {
       var low = 0
-      var high = this.bestTraces.length - 1
+      var high = this.bestTraces.length
 
       while (low < high) {
         // The index of the middle element in the range that remains to be searched
