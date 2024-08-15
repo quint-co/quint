@@ -329,46 +329,48 @@ class TraceRecorderImpl implements TraceRecorder {
 
     const traceWithSeed = { frame: traceToSave, seed: this.runSeed }
 
-    this.bestTraces.push(traceWithSeed)
-    this.sortTracesByQuality()
+    this.insertTraceSortedByQuality(traceWithSeed)
+
     // Remove the worst trace (if there more traces than needed)
     if (this.bestTraces.length > this.tracesToStore) {
       this.bestTraces.pop()
     }
   }
 
-  private sortTracesByQuality() {
-    const fromResult = (r: Maybe<EvalResult>) => {
-      if (r.isNone()) {
-        return true
-      } else {
-        const rex = r.value.toQuintEx({ nextId: () => 0n })
-        return rex.kind === 'bool' && !rex.value
-      }
+  private insertTraceSortedByQuality(trace: Trace) {
+    if (this.bestTraces.length === 0) {
+      // This is the first trace, just add it
+      this.bestTraces.push(trace)
+      return
     }
 
-    this.bestTraces.sort((a, b) => {
-      // Prefer short traces for error, and longer traces for non error.
-      // Therefore, trace a is better than trace b iff
-      //  - when a has an error: a is shorter or b has no error;
-      //  - when a has no error: a is longer and b has no error.
-      const aNotOk = fromResult(a.frame.result)
-      const bNotOk = fromResult(b.frame.result)
-      if (aNotOk) {
-        if (bNotOk) {
-          return a.frame.args.length - b.frame.args.length
+    // Compute the index where the trace should be inserted,
+    // using a binary search over the already sorted traces.
+    const insertionIndex = (() => {
+      var low = 0
+      var high = this.bestTraces.length - 1
+
+      while (low < high) {
+        // The index of the middle element in the range that remains to be searched
+        const mid = (low + high) >>> 1 // Math.floor((low + high) / 2)
+
+        // Compare the trace to insert with the trace at the middle index
+        if (compareTracesByQuality(trace, this.bestTraces[mid]) < 0) {
+          // The trace to insert is better than the trace at the middle index,
+          // so we continue searching in the left half of the range
+          high = mid
         } else {
-          return -1
-        }
-      } else {
-        // a is ok
-        if (bNotOk) {
-          return 1
-        } else {
-          return b.frame.args.length - a.frame.args.length
+          // The trace to insert is worse than the trace at the middle index,
+          // so we continue searching in the right half of the range
+          low = mid + 1
         }
       }
-    })
+
+      return low
+    })()
+
+    // Insert the trace at the computed index
+    this.bestTraces.splice(insertionIndex, 0, trace)
   }
 
   // create a bottom frame, which encodes the whole trace
@@ -382,6 +384,40 @@ class TraceRecorderImpl implements TraceRecorder {
       result: just(rv.mkBool(true)),
       // and here we store the subframes for the top-level actions
       subframes: [],
+    }
+  }
+}
+
+// Compare two traces by quality.
+//
+// Prefer short traces for error, and longer traces for non error.
+// Therefore, trace a is better than trace b iff
+//  - when a has an error: a is shorter or b has no error;
+//  - when a has no error: a is longer and b has no error.
+function compareTracesByQuality(a: Trace, b: Trace): number {
+  const fromResult = (r: Maybe<EvalResult>) => {
+    if (r.isNone()) {
+      return true
+    } else {
+      const rex = r.value.toQuintEx({ nextId: () => 0n })
+      return rex.kind === 'bool' && !rex.value
+    }
+  }
+
+  const aNotOk = fromResult(a.frame.result)
+  const bNotOk = fromResult(b.frame.result)
+  if (aNotOk) {
+    if (bNotOk) {
+      return a.frame.args.length - b.frame.args.length
+    } else {
+      return -1
+    }
+  } else {
+    // a is ok
+    if (bNotOk) {
+      return 1
+    } else {
+      return b.frame.args.length - a.frame.args.length
     }
   }
 }
