@@ -16,6 +16,7 @@ import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { rv } from './impl/runtimeValue'
+import { insertSorted } from './../util'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -341,39 +342,7 @@ class TraceRecorderImpl implements TraceRecorder {
   }
 
   private insertTraceSortedByQuality(trace: Trace) {
-    if (this.bestTraces.length === 0) {
-      // This is the first trace, just add it
-      this.bestTraces.push(trace)
-      return
-    }
-
-    // Compute the index where the trace should be inserted,
-    // using a binary search over the already sorted traces.
-    const insertionIndex = (() => {
-      var low = 0
-      var high = this.bestTraces.length
-
-      while (low < high) {
-        // The index of the middle element in the range that remains to be searched
-        const mid = (low + high) >>> 1 // Math.floor((low + high) / 2)
-
-        // Compare the trace to insert with the trace at the middle index
-        if (compareTracesByQuality(trace, this.bestTraces[mid]) < 0) {
-          // The trace to insert is better than the trace at the middle index,
-          // so we continue searching in the left half of the range
-          high = mid
-        } else {
-          // The trace to insert is worse than the trace at the middle index,
-          // so we continue searching in the right half of the range
-          low = mid + 1
-        }
-      }
-
-      return low
-    })()
-
-    // Insert the trace at the computed index
-    this.bestTraces.splice(insertionIndex, 0, trace)
+    insertSorted(this.bestTraces, trace, compareTracesByQuality)
   }
 
   // create a bottom frame, which encodes the whole trace
