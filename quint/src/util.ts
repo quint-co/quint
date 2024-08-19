@@ -80,8 +80,7 @@ export function insertSorted<A>(array: A[], item: A, cmp: (a: A, b: A) => number
   array.splice(index, 0, item)
 }
 
-/** Find the `index` in `array` where the predicate `pred(array[index])` is true,
- * but `pred(array[index+1])` is false.
+/** Find the `index` in `array` where the predicate `pred(array[index])` is true.
  *
  * Important: The array must be sorted in ascending order.
  *
