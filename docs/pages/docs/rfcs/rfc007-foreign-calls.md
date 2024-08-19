@@ -219,7 +219,7 @@ space outlined by the four examples is quite large.
 [Cosmos Accounts]: https://docs.cosmos.network/v0.45/basics/accounts.html#signatures
 [ITF Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
 [Quint manual]: /docs/quint
-[Issue 2453]: https://github.com/informalsystems/apalache/issues/2453
+[Issue 2453]: https://github.com/apalache-mc/apalache/issues/2453
 [Issue 143]: https://github.com/informalsystems/quint/issues/143
 [eval]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval
 [NodeJS VM]: https://nodejs.org/api/vm.html

@@ -250,7 +250,7 @@ define properties common to all shapes like
 We have always planned to support co-products in quint: their utility is well
 known and widely appreciated by engineers with experience in modern programming
 languages. We introduced co-products to Apalache in
-[[https://github.com/informalsystems/apalache/milestone/60]] for the same reasons.
+[[https://github.com/apalache-mc/apalache/milestone/60]] for the same reasons.
 The design and implementation of the latter was worked out by [cite/t:@konnov]
 based on the paper [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/]["Extensible Records with Scoped Labels"]]. At the core of this
 design is a simple use of row-polymorphism that enables both extensible variants
