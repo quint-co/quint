@@ -69,7 +69,12 @@ export function findMap<X, Y>(xs: Iterable<X>, f: (x: X) => Maybe<Y>): Maybe<Y> 
   return none<Y>()
 }
 
-// Insert an item into an array sorted in ascending order by the given comparator.
+/** Insert an item into an array sorted in ascending order by the given comparator.
+ *
+ * Important: The array must be sorted in ascending order.
+ *
+ * Complexity: O(log n)
+ */
 export function insertSorted<A>(array: A[], item: A, cmp: (a: A, b: A) => number): void {
   if (array.length === 0) {
     array.push(item)
