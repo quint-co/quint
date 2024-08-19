@@ -97,7 +97,7 @@ type ApalacheError = {
 export type ApalacheResult<T> = Either<ApalacheError, T>
 
 // An object representing the Apalache configuration
-// See https://github.com/informalsystems/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
+// See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
 type ApalacheConfig = any
 
 // Interface to the apalache server
@@ -176,7 +176,7 @@ type AsyncCallBack<T> = (err: any, result: T) => void
 // we therefore record the structure we require from the grpc generation
 // in the following types.
 //
-// The types reflect https://github.com/informalsystems/apalache/blob/main/shai/src/main/protobuf/cmdExecutor.proto
+// The types reflect https://github.com/apalache-mc/apalache/blob/main/shai/src/main/protobuf/cmdExecutor.proto
 
 type RunRequest = { cmd: string; config: string }
 
@@ -336,7 +336,7 @@ async function tryConnect(serverEndpoint: ServerEndpoint, retry: boolean = false
 }
 
 function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
-  const url = `https://github.com/informalsystems/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
+  const url = `https://github.com/apalache-mc/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
   return fetch(url)
     .then(
       // unpack response body
@@ -373,7 +373,7 @@ async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<str
   // TODO: This logic makes the CLI tool extremely sensitive to environment.
   // See https://github.com/informalsystems/quint/issues/1124
   // Fetch Github releases
-  // return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
+  // return octokitRequest('GET /repos/apalache-mc/apalache/releases').then(
   //   async resp => {
   //     // Find latest that satisfies `APALACHE_VERSION_TAG`
   //     const versions = resp.data.map((element: any) => element.tag_name)

@@ -45,7 +45,7 @@ quint/_build:
 apalache: | $(BUILD_DIR)
 	# remove the previously downloaded archive in case it exists (required by gh)
 	rm -f $(BUILD_DIR)/apalache.tgz
-	gh release download --repo informalsystems/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
+	gh release download --repo apalache-mc/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
 	tar -xvzf $(BUILD_DIR)/apalache.tgz --directory $(BUILD_DIR) > /dev/null
 
 # Alias to update examples readme
