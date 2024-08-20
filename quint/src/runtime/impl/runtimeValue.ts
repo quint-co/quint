@@ -64,17 +64,16 @@ import { List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs } from
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
-import { IdGenerator } from '../../idGenerator'
+import { IdGenerator, zerog } from '../../idGenerator'
 import { expressionToString } from '../../ir/IRprinting'
 
 import { Callable, EvalResult } from '../runtime'
-import { QuintEx } from '../../ir/quintIr'
+import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { toMaybe } from './base'
-
-/** The default entry point of this module */
-export default rv
+import { evaluateExpr } from './evaluator'
+import { Context } from './Context'
 
 /**
  * A factory of runtime values that should be used to instantiate new values.
@@ -96,8 +95,8 @@ export const rv = {
    * @param value an integer value
    * @return a new runtime value that carries the integer value
    */
-  mkInt: (value: bigint): RuntimeValue => {
-    return new RuntimeValueInt(value)
+  mkInt: (value: bigint | number): RuntimeValue => {
+    return new RuntimeValueInt(BigInt(value))
   },
 
   /**
@@ -211,8 +210,8 @@ export const rv = {
    * @param last the maximal poitn of the interval (inclusive)
    * @return a new runtime value that the interval
    */
-  mkInterval: (first: bigint, last: bigint): RuntimeValue => {
-    return new RuntimeValueInterval(first, last)
+  mkInterval: (first: bigint | number, last: bigint | number): RuntimeValue => {
+    return new RuntimeValueInterval(BigInt(first), BigInt(last))
   },
 
   /**
@@ -249,14 +248,30 @@ export const rv = {
   /**
    * Make a runtime value that represents a lambda.
    *
-   * @param nparams the number of lambda parameters
-   * @param callable a callable that evaluates the lambda
+   * @param params the lambda parameters
+   * @param body the lambda body expression
    * @returns a runtime value of lambda
    */
-  mkLambda: (nparams: number, callable: Callable) => {
-    return new RuntimeValueLambda(nparams, callable)
+  mkLambda: (params: QuintLambdaParameter[], body: QuintEx) => {
+    return new RuntimeValueLambda(params, body)
+  },
+
+  fromQuintEx: (ex: QuintEx): RuntimeValue => {
+    const v = fromQuintEx(ex)
+    if (v.isJust()) {
+      return v.value
+    } else {
+      throw new Error(`Cannot convert ${expressionToString(ex)} to a runtime value`)
+    }
+  },
+
+  toQuintEx: (value: RuntimeValue): QuintEx => {
+    return value.toQuintEx(zerog)
   },
 }
+
+/** The default entry point of this module */
+export default rv
 
 /**
  * Get a ground expression, that is, an expression
@@ -315,10 +330,21 @@ export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
           return just(rv.mkRecord(pairs))
         }
 
+        case 'variant': {
+          const label = (ex.args[0] as QuintName).name
+          return fromQuintEx(ex.args[1]).map(v => rv.mkVariant(label, v))
+        }
+
         default:
           // no other case should be possible
           return none()
       }
+
+    case 'lambda':
+      if (ex.kind !== 'lambda') {
+        return none()
+      }
+      return just(rv.mkLambda(ex.params, ex.expr))
 
     default:
       // no other case should be possible
@@ -407,6 +433,27 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    * @return the stored string value.
    */
   toStr(): string
+
+  /**
+   * If the result is a 2-tuple, return it. Otherwise, throw an error.
+   *
+   * @return the stored 2-tuple value.
+   */
+  toTuple2(): [RuntimeValue, RuntimeValue]
+
+  /**
+   * If the result is a lambda, use the context to build an arrow function and return it. Otherwise, throw an error.
+   *
+   * @return the arrow function that represents the lambda.
+   */
+  toArrow(ctx: Context): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue>
+
+  /**
+   * If the result is a variant, return the label and the value.
+   *
+   * @return the label and the value of the variant.
+   */
+  toVariant(): [string, RuntimeValue]
 
   /**
    * If the result is set-like, does it contain contain a value?
@@ -515,7 +562,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueRecord) {
       return this.map
     } else {
-      throw new Error('Expected a record value')
+      throw new Error(`Expected a record value but got ${expressionToString(this.toQuintEx(zerog))}`)
     }
   }
 
@@ -548,6 +595,54 @@ abstract class RuntimeValueBase implements RuntimeValue {
       return (this as RuntimeValueStr).value
     } else {
       throw new Error('Expected a string value')
+    }
+  }
+
+  toTuple2(): [RuntimeValue, RuntimeValue] {
+    if (this instanceof RuntimeValueTupleOrList) {
+      const list = this.list
+
+      if (list.size === 2) {
+        return [list.get(0)!, list.get(1)!]
+      }
+    }
+    throw new Error('Expected a 2-tuple')
+  }
+
+  toArrow(ctx: Context): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+    if (!(this instanceof RuntimeValueLambda)) {
+      throw new Error('Expected a lambda value')
+    }
+
+    const lam = this as RuntimeValueLambda
+
+    return (args: RuntimeValue[]) => {
+      if (lam.params.length !== args.length) {
+        return left({
+          code: 'QNT506',
+          message: `Lambda expects ${lam.params.length} arguments, but got ${args.length}`,
+        })
+      }
+      const paramEntries: [bigint, RuntimeValue][] = lam.params.map((param, i) => {
+        // console.log('param', param.id, param.name, 'set to', valueToString(args[i]))
+        return [param.id, args[i]]
+      })
+
+      ctx.addParams(paramEntries)
+      ctx.disableMemo()
+      const result = evaluateExpr(ctx, lam.body)
+      ctx.removeParams(paramEntries)
+      ctx.enableMemo()
+
+      return result
+    }
+  }
+
+  toVariant(): [string, RuntimeValue] {
+    if (this instanceof RuntimeValueVariant) {
+      return [(this as RuntimeValueVariant).label, (this as RuntimeValueVariant).value]
+    } else {
+      throw new Error('Expected a variant value')
     }
   }
 
@@ -1547,18 +1642,20 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
  *
  * RuntimeValueLambda cannot be compared with other values.
  */
-export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
-  nparams: number
-  callable: Callable
+export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue {
+  params: QuintLambdaParameter[]
+  body: QuintEx
 
-  constructor(nparams: number, callable: Callable) {
+  constructor(params: QuintLambdaParameter[], body: QuintEx) {
     super(false)
-    this.nparams = nparams
-    this.callable = callable
+    this.params = params
+    this.body = body
   }
 
   eval(args?: any[]) {
-    return this.callable.eval(args)
+    return () => {
+      throw new Error('Not implemented')
+    }
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1568,15 +1665,9 @@ export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue
     return {
       id: gen.nextId(),
       kind: 'lambda',
-      params: Array.from(Array(this.nparams).keys()).map(i => {
-        return { id: gen.nextId(), name: `_a${i}` }
-      }),
+      params: this.params,
       qualifier: 'def',
-      expr: {
-        kind: 'str',
-        value: `lambda_${this.nparams}_params`,
-        id: gen.nextId(),
-      },
+      expr: this.body,
     }
   }
 }

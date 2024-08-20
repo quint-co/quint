@@ -13,9 +13,10 @@
  */
 
 import { cloneDeep, compact } from 'lodash'
-import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
+import { OpQualifier, QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
 import { QuintError } from '../quintError'
+import { NameResolver } from './resolver'
 
 /**
  * Possible kinds for definitions
@@ -84,6 +85,7 @@ export type NameResolutionResult = {
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
   errors: QuintError[]
+  resolver: NameResolver
 }
 
 export function getTopLevelDef(defs: DefinitionsByName, name: string): LookupDefinition | undefined {

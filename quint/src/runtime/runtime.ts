@@ -12,18 +12,14 @@
  * See LICENSE in the project root for license information.
  */
 
-import { Maybe } from '@sweet-monads/maybe'
-
 import { ValueObject } from 'immutable'
 
 import { QuintEx } from '../ir/quintIr'
 
 import { IdGenerator } from '../idGenerator'
 
-import { rv } from './impl/runtimeValue'
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, left } from '@sweet-monads/either'
 import { QuintError } from '../quintError'
-import { toMaybe } from './impl/base'
 
 /**
  * Evaluation result.
@@ -84,34 +80,26 @@ export interface Register extends Computable {
   // register kind
   kind: ComputableKind
   // register is a placeholder where iterators can put their values
-  registerValue: Maybe<any>
+  registerValue: Either<QuintError, any>
 }
 
 /**
  * Create an object that implements Register.
  */
-export function mkRegister(
-  kind: ComputableKind,
-  registerName: string,
-  initValue: Maybe<any>,
-  errorForMissing: QuintError
-): Register {
+export function mkRegister(kind: ComputableKind, registerName: string, initValue: Either<QuintError, any>): Register {
   const reg: Register = {
     name: registerName,
     kind,
     registerValue: initValue,
     // first, define a fruitless eval, as we cannot refer to registerValue yet
     eval: () => {
-      return left(errorForMissing)
+      return initValue
     },
   }
   // override `eval`, as we can use `reg` now
   reg.eval = () => {
     // computing a register just evaluates to the contents that it stores
-    if (reg.registerValue.isNone()) {
-      return left(errorForMissing)
-    }
-    return right(reg.registerValue.value)
+    return reg.registerValue
   }
 
   return reg
@@ -126,33 +114,6 @@ export interface Callable extends Computable {
    * The number of parameters expected by the callable value.
    */
   nparams: number
-}
-
-/**
- * Create an object that implements Callable.
- */
-export function mkCallable(registers: Register[], body: Computable): Callable {
-  const callable: Callable = {
-    nparams: registers.length,
-    eval: () => body.eval(),
-  }
-  callable.eval = args => {
-    if (registers.length === 0) {
-      // simply evaluate the body, no parameters are needed
-      return body.eval()
-    }
-    if (args && args.length >= registers.length) {
-      // All parameters are passed via `args`. Store them in the registers.
-      registers.forEach((r, i) => (r.registerValue = toMaybe(args[i])))
-      // Evaluate the body under for the registers set to `args`.
-      return body.eval()
-    } else {
-      // The lambda is evaluated without giving the arguments.
-      // All we can do is to return this lambda as a runtime value.
-      return right(rv.mkLambda(registers.length, callable))
-    }
-  }
-  return callable
 }
 
 /**

@@ -63,6 +63,11 @@ export class NameCollector implements IRVisitor {
 
   private currentModuleName: string = ''
 
+  switchToModule(moduleName: string): void {
+    this.currentModuleName = moduleName
+    this.definitionsByName = this.definitionsByModule.get(moduleName) ?? new Map()
+  }
+
   enterModule(module: QuintModule): void {
     this.currentModuleName = module.name
     this.definitionsByName = new Map()
@@ -144,7 +149,7 @@ export class NameCollector implements IRVisitor {
       }
 
       // Update the definition to point to the expression being overriden
-      constDef.id = ex.id
+      // constDef.id = ex.id
       constDef.hidden = false
     })
 

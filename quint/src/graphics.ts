@@ -28,7 +28,6 @@ import {
 
 import { QuintDeclaration, QuintEx, isAnnotatedDef } from './ir/quintIr'
 import { ExecutionFrame } from './runtime/trace'
-import { zerog } from './idGenerator'
 import { ConcreteRow, QuintType, Row, isUnitType } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
@@ -258,9 +257,9 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
   // convert the arguments and the result to strings
   const args = docJoin(
     [text(','), line()],
-    frame.args.map(a => prettyQuintEx(a.toQuintEx(zerog)))
+    frame.args.map(a => prettyQuintEx(a))
   )
-  const r = frame.result.isNone() ? text('none') : prettyQuintEx(frame.result.value.toQuintEx(zerog))
+  const r = frame.result.isLeft() ? text('none') : prettyQuintEx(frame.result.value)
   const depth = isLast.length
   // generate the tree ASCII graphics for this frame
   let treeArt = isLast

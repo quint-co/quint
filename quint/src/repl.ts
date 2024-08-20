@@ -12,37 +12,30 @@ import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
 import { Maybe, just, none } from '@sweet-monads/maybe'
-import { Either, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatModule, QuintDef, QuintEx } from './ir/quintIr'
-import {
-  CompilationContext,
-  CompilationState,
-  compileDecls,
-  compileExpr,
-  compileFromCode,
-  contextNameLookup,
-  inputDefName,
-  newCompilationState,
-} from './runtime/compile'
+import { FlatModule, QuintDef, QuintEx, QuintModule } from './ir/quintIr'
 import { createFinders, formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
+import { SourceMap, parse, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
-import { newIdGenerator } from './idGenerator'
-import { moduleToString } from './ir/IRprinting'
+import { IdGenerator, newIdGenerator } from './idGenerator'
+import { expressionToString, moduleToString } from './ir/IRprinting'
 import { mkErrorMessage } from './cliCommands'
-import { QuintError } from './quintError'
+import { QuintError, quintErrorToString } from './quintError'
 import { ErrorMessage } from './ErrorMessage'
-import { EvaluationState, newEvaluationState } from './runtime/impl/base'
+import { Evaluator } from './runtime/impl/evaluator'
+import { walkDeclaration, walkExpression } from './ir/IRVisitor'
+import { AnalysisOutput, analyzeModules } from './quintAnalyzer'
+import { NameResolver } from './names/resolver'
 
 // tunable settings
 export const settings = {
@@ -51,6 +44,39 @@ export const settings = {
 }
 
 type writer = (_text: string) => void
+
+/**
+ * A data structure that holds the state of the compilation process.
+ */
+export interface CompilationState {
+  // The ID generator used during compilation.
+  idGen: IdGenerator
+  // File content loaded for each source, used to report errors
+  sourceCode: Map<string, string>
+  // A list of modules in context
+  modules: QuintModule[]
+  // The name of the main module.
+  mainName?: string
+  // The source map for the compiled code.
+  sourceMap: SourceMap
+  // The output of the Quint analyzer.
+  analysisOutput: AnalysisOutput
+}
+
+/* An empty initial compilation state */
+export function newCompilationState(): CompilationState {
+  return {
+    idGen: newIdGenerator(),
+    sourceCode: new Map(),
+    modules: [],
+    sourceMap: new Map(),
+    analysisOutput: {
+      types: new Map(),
+      effects: new Map(),
+      modes: new Map(),
+    },
+  }
+}
 
 /**
  * The internal state of the REPL.
@@ -64,15 +90,19 @@ class ReplState {
   lastLoadedFileAndModule: [string?, string?]
   // The state of pre-compilation phases
   compilationState: CompilationState
-  // The state of the compiler visitor
-  evaluationState: EvaluationState
+  // The evaluator to be used
+  evaluator: Evaluator
+  // The name resolver to be used
+  nameResolver: NameResolver
 
   constructor(verbosityLevel: number, rng: Rng) {
+    const recorder = newTraceRecorder(verbosityLevel, rng)
     this.moduleHist = ''
     this.exprHist = []
     this.lastLoadedFileAndModule = [undefined, undefined]
     this.compilationState = newCompilationState()
-    this.evaluationState = newEvaluationState(newTraceRecorder(verbosityLevel, rng))
+    this.evaluator = new Evaluator(new Map(), recorder, rng)
+    this.nameResolver = new NameResolver()
   }
 
   clone() {
@@ -87,21 +117,24 @@ class ReplState {
   addReplModule() {
     const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
     this.compilationState.modules.push(replModule)
-    this.compilationState.originalModules.push(replModule)
     this.compilationState.mainName = '__repl__'
     this.moduleHist += moduleToString(replModule)
   }
 
   clear() {
+    const rng = newRng(this.rng.getState())
+    const recorder = newTraceRecorder(this.verbosity, rng)
+
     this.moduleHist = ''
     this.exprHist = []
     this.compilationState = newCompilationState()
-    this.evaluationState = newEvaluationState(newTraceRecorder(this.verbosity, this.rng))
+    this.evaluator = new Evaluator(new Map(), recorder, rng)
+    this.nameResolver = new NameResolver()
   }
 
   get recorder(): TraceRecorder {
     // ReplState always passes TraceRecorder in the evaluation state
-    return this.evaluationState.listener as TraceRecorder
+    return this.evaluator.recorder
   }
 
   get rng(): Rng {
@@ -268,7 +301,6 @@ export function quintRepl(
     state.moduleHist = newState.moduleHist
     state.exprHist = newState.exprHist
     state.compilationState = newState.compilationState
-    state.evaluationState = newState.evaluationState
   }
 
   // the read-eval-print loop
@@ -457,9 +489,9 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 
   const nonUpdated = vars.reduce((acc, varRegister) => {
     const nextVarRegister = nextvars.find(v => v.name === varRegister.name)
-    if (nextVarRegister && nextVarRegister.registerValue.isJust()) {
+    if (nextVarRegister && nextVarRegister.registerValue.isRight()) {
       varRegister.registerValue = nextVarRegister.registerValue
-      nextVarRegister.registerValue = none()
+      nextVarRegister.registerValue = left({ code: 'QNT501', message: 'var ${nextVarRegiter.name} not set' })
       isAction = true
     } else {
       // No nextvar for this variable, so it was not updated
@@ -499,35 +531,22 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
   const mainPath = fileSourceResolver(state.compilationState.sourceCode).lookupPath(cwd(), 'repl.ts')
   state.compilationState.sourceCode.set(mainPath.toSourceName(), modulesText)
 
-  const context = compileFromCode(
-    newIdGenerator(),
-    modulesText,
-    mainName,
-    mainPath,
-    state.evaluationState.listener,
-    state.rng.next,
-    false
-  )
-  if (
-    context.evaluationState?.context.size === 0 ||
-    context.compileErrors.length > 0 ||
-    context.syntaxErrors.length > 0
-  ) {
-    const tempState = state.clone()
-    // The compilation state has updated source code maps, to be used in error reporting
-    tempState.compilationState = context.compilationState
-    printErrors(out, tempState, context)
+  // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
+  const sourceCode: Map<string, string> = new Map()
+  const idGen = newIdGenerator()
+  const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, modulesText, sourceCode)
+  // On errors, we'll produce the computational context up to this point
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+
+  state.compilationState = { idGen, sourceCode, modules, sourceMap, analysisOutput }
+
+  if (errors.length > 0 || analysisErrors.length > 0) {
+    printErrorMessages(out, state, 'syntax error', modulesText, errors)
+    printErrorMessages(out, state, 'static analysis error', modulesText, analysisErrors)
     return false
   }
 
-  if (context.analysisErrors.length > 0) {
-    printErrors(out, state, context)
-    // provisionally, continue on type & effects errors
-  }
-
-  // Save compilation state
-  state.compilationState = context.compilationState
-  state.evaluationState = context.evaluationState
+  state.evaluator.updateTable(table)
 
   return true
 }
@@ -542,6 +561,8 @@ function tryEvalAndClearRecorder(out: writer, state: ReplState, newInput: string
 
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
+  const columns = terminalWidth()
+
   if (state.compilationState.modules.length === 0) {
     state.addReplModule()
     tryEvalModule(out, state, '__repl__')
@@ -564,64 +585,50 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   // evaluate the input, depending on its type
   if (parseResult.kind === 'expr') {
-    const context = compileExpr(state.compilationState, state.evaluationState, state.rng, false, parseResult.expr)
-
-    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(out, state, context, newInput)
-      if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
-        return false
-      } // else: provisionally, continue on type & effects errors
+    walkExpression(state.nameResolver, parseResult.expr)
+    if (state.nameResolver.errors.length > 0) {
+      printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
+      return false
     }
+    state.evaluator.updateTable(state.nameResolver.table)
 
-    state.exprHist.push(newInput.trim())
-    // Save the evaluation state only, as state vars changes should persist
-    state.evaluationState = context.evaluationState
-
-    return evalExpr(state, out)
-      .mapLeft(msg => {
-        // when #618 is implemented, we should remove this
-        printErrorMessages(out, state, 'runtime error', newInput, context.getRuntimeErrors())
-        // print the error message produced by the lookup
-        out(chalk.red(msg))
-        out('\n') // be nice to external programs
-      })
-      .isRight()
-  }
-  if (parseResult.kind === 'declaration') {
-    // compile the module and add it to history if everything worked
-    const context = compileDecls(state.compilationState, state.evaluationState, state.rng, false, parseResult.decls)
-
-    if (
-      context.evaluationState.context.size === 0 ||
-      context.compileErrors.length > 0 ||
-      context.syntaxErrors.length > 0
-    ) {
-      printErrors(out, state, context, newInput)
+    const newEval = state.evaluator.evaluate(parseResult.expr)
+    if (newEval.isLeft()) {
+      printErrorMessages(out, state, 'runtime error', newInput, [newEval.value])
       return false
     }
 
-    if (context.analysisErrors.length > 0) {
-      printErrors(out, state, context, newInput)
-      // provisionally, continue on type & effects errors
+    newEval.map(ex => {
+      out(format(columns, 0, prettyQuintEx(ex)))
+      out('\n')
+
+      if (ex.kind === 'bool' && ex.value) {
+        // A Boolean expression may be an action or a run.
+        // Save the state, if there were any updates to variables.
+        const missing = state.evaluator.shiftAndCheck()
+        if (missing.length > 0) {
+          out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
+        }
+      }
+      return ex
+    })
+
+    return true
+  }
+  if (parseResult.kind === 'declaration') {
+    parseResult.decls.forEach(decl => {
+      walkDeclaration(state.nameResolver.collector, decl)
+      walkDeclaration(state.nameResolver, decl)
+    })
+    if (state.nameResolver.errors.length > 0) {
+      printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
+      out('\n')
+      return false
     }
-
-    out('\n') // be nice to external programs
-    state.moduleHist = state.moduleHist.slice(0, state.moduleHist.length - 1) + newInput + '\n}' // update the history
-
-    // Save compilation state
-    state.compilationState = context.compilationState
-    state.evaluationState = context.evaluationState
+    out('\n')
   }
 
   return true
-}
-
-// output errors to the console in red
-function printErrors(out: writer, state: ReplState, context: CompilationContext, newInput: string = '') {
-  printErrorMessages(out, state, 'syntax error', newInput, context.syntaxErrors)
-  printErrorMessages(out, state, 'static analysis error', newInput, context.analysisErrors, chalk.yellow)
-  printErrorMessages(out, state, 'compile error', newInput, context.compileErrors)
-  out('\n') // be nice to external programs
 }
 
 // print error messages with proper colors
@@ -712,47 +719,6 @@ function countBraces(str: string): [number, number, number] {
   }
 
   return [nOpenBraces, nOpenParen, nOpenComments]
-}
-
-function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
-  const computable = contextNameLookup(state.evaluationState.context, inputDefName, 'callable')
-  const columns = terminalWidth()
-  const result = computable.chain(comp => {
-    return comp
-      .eval()
-      .chain(value => {
-        const ex = value.toQuintEx(state.compilationState.idGen)
-        out(format(columns, 0, prettyQuintEx(ex)))
-        out('\n')
-
-        if (ex.kind === 'bool' && ex.value) {
-          // A Boolean expression may be an action or a run.
-          // Save the state, if there were any updates to variables.
-          saveVars(state.evaluationState.vars, state.evaluationState.nextVars).map(missing => {
-            if (missing.length > 0) {
-              out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
-            }
-          })
-        }
-        return right(ex)
-      })
-      .mapLeft(e => state.evaluationState.errorTracker.addRuntimeError(e.reference, e))
-      .mapLeft(_ => '<undefined value>')
-  })
-
-  if (verbosity.hasUserOpTracking(state.verbosity)) {
-    const trace = state.recorder.currentFrame
-    if (trace.subframes.length > 0) {
-      out('\n')
-      trace.subframes.forEach((f, i) => {
-        out(`[Frame ${i}]\n`)
-        printExecutionFrameRec({ width: columns, out }, f, [])
-        out('\n')
-      })
-    }
-  }
-
-  return result
 }
 
 function getMainModuleAnnotation(moduleHist: string): string | undefined {
