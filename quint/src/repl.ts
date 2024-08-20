@@ -301,6 +301,8 @@ export function quintRepl(
     state.moduleHist = newState.moduleHist
     state.exprHist = newState.exprHist
     state.compilationState = newState.compilationState
+    state.evaluator = newState.evaluator
+    state.nameResolver = newState.nameResolver
   }
 
   // the read-eval-print loop
@@ -534,7 +536,13 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
   // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
   const sourceCode: Map<string, string> = new Map()
   const idGen = newIdGenerator()
-  const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, modulesText, sourceCode)
+  const { modules, table, resolver, sourceMap, errors } = parse(
+    idGen,
+    mainPath.toSourceName(),
+    mainPath,
+    modulesText,
+    sourceCode
+  )
   // On errors, we'll produce the computational context up to this point
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
 
@@ -545,6 +553,9 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     printErrorMessages(out, state, 'static analysis error', modulesText, analysisErrors)
     return false
   }
+
+  resolver.switchToModule(mainName)
+  state.nameResolver = resolver
 
   state.evaluator.updateTable(table)
 

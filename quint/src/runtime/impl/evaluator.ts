@@ -1,9 +1,9 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from '../../effects/base'
-import { QuintEx } from '../../ir/quintIr'
+import { QuintApp, QuintEx, QuintOpDef } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
-import { ExecutionListener, TraceRecorder } from '../trace'
+import { TraceRecorder } from '../trace'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { Trace } from './trace'
 import { RuntimeValue, rv } from './runtimeValue'
@@ -11,6 +11,7 @@ import { Context } from './Context'
 import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
+import { List, Map as ImmutableMap } from 'immutable'
 
 export class Evaluator {
   public ctx: Context
@@ -19,7 +20,7 @@ export class Evaluator {
   private rng: Rng
 
   constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng) {
-    this.ctx = new Context(table, rng.next)
+    this.ctx = new Context(table, recorder, rng.next)
     this.recorder = recorder
     this.rng = rng
   }
@@ -79,17 +80,20 @@ export class Evaluator {
       this.recorder.onRunCall()
       this.trace.reset()
       this.ctx.reset()
-      // this.execListener.onUserOperatorCall(init)
+      // Mocked def for the trace recorder
+      const initApp: QuintApp = { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
+      this.recorder.onUserOperatorCall(initApp)
 
       const initResult = evaluateExpr(this.ctx, init).mapLeft(error => (failure = error))
       if (!isTrue(initResult)) {
-        // this.execListener.onUserOperatorReturn(init, [], initResult)
+        this.recorder.onUserOperatorReturn(initApp, [], initResult.map(rv.toQuintEx))
         continue
       }
 
       this.shift()
 
       const invResult = evaluateExpr(this.ctx, inv).mapLeft(error => (failure = error))
+      this.recorder.onUserOperatorReturn(initApp, [], invResult.map(rv.toQuintEx))
       if (!isTrue(invResult)) {
         errorsFound++
       } else {
@@ -98,6 +102,14 @@ export class Evaluator {
         // FIXME: errorsFound < ntraces is not good, because we continue after invariant violation.
         // This is the same in the old version, so I'll fix later.
         for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
+          const stepApp: QuintApp = {
+            id: 0n,
+            kind: 'app',
+            opcode: 'q::stepAndInvariant',
+            args: [],
+          }
+          this.recorder.onUserOperatorCall(stepApp)
+
           const stepResult = evaluateExpr(this.ctx, step).mapLeft(error => (failure = error))
           if (!isTrue(stepResult)) {
             // The run cannot be extended. In some cases, this may indicate a deadlock.
@@ -107,7 +119,8 @@ export class Evaluator {
             // drop the run. Otherwise, we would have a lot of false
             // positives, which look like deadlocks but they are not.
 
-            // this.execListener.onRunReturn(right({ id: 0n, kind: 'bool', value: true }), this.trace.get())
+            this.recorder.onUserOperatorReturn(stepApp, [], stepResult.map(rv.toQuintEx))
+            this.recorder.onRunReturn(right({ id: 0n, kind: 'bool', value: true }), this.trace.get())
             break
           }
 
@@ -117,6 +130,7 @@ export class Evaluator {
           if (!isTrue(invResult)) {
             errorsFound++
           }
+          this.recorder.onUserOperatorReturn(stepApp, [], invResult.map(rv.toQuintEx))
         }
       }
 
@@ -287,23 +301,45 @@ export function evaluateUnderDefContext(
     return [id, evaluateExpr(ctx, expr)]
   })
 
-  ctx.addConstants(overrides)
-  ctx.addNamespaces(def.namespaces)
+  ctx.addConstants(ImmutableMap(overrides))
+  ctx.addNamespaces(List(def.namespaces))
   ctx.disableMemo() // We could have one memo per constant
 
   const result = evaluate()
 
-  ctx.removeConstants(overrides)
-  ctx.removeNamespaces(def.namespaces)
+  ctx.removeConstants()
+  ctx.removeNamespaces()
   ctx.enableMemo()
 
   return result
+}
+
+function evaluateNondet(ctx: Context, def: QuintOpDef): Either<QuintError, RuntimeValue> {
+  const previousPick = ctx.nondetPicks.get(def.id)
+  if (previousPick) {
+    return previousPick.value
+  }
+
+  const pick = evaluateExpr(ctx, def.expr)
+  ctx.nondetPicks = ctx.nondetPicks.set(def.id, { name: def.name, value: pick })
+  return pick
 }
 
 function evaluateDef(ctx: Context, def: LookupDefinition): Either<QuintError, RuntimeValue> {
   return evaluateUnderDefContext(ctx, def, () => {
     switch (def.kind) {
       case 'def':
+        if (def.qualifier === 'nondet') {
+          return evaluateNondet(ctx, def)
+        }
+
+        if (def.qualifier === 'action') {
+          const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
+          ctx.recorder.onUserOperatorCall(app)
+          const result = evaluateExpr(ctx, def.expr)
+          ctx.recorder.onUserOperatorReturn(app, [], result.map(rv.toQuintEx))
+        }
+
         return evaluateExpr(ctx, def.expr)
       case 'param': {
         const result = ctx.params.get(def.id)
@@ -340,9 +376,11 @@ function evaluateNewExpr(ctx: Context, expr: QuintEx): Either<QuintError, Runtim
     case 'int':
     case 'bool':
     case 'str':
-    case 'lambda':
       // These are already values, just return them
       return right(rv.fromQuintEx(expr))
+    case 'lambda':
+      // Lambda is also like a value, but we should construct it with the context
+      return right(rv.mkLambda(expr.params, expr.expr, ctx))
     case 'name':
       const def = ctx.table.get(expr.id)
       if (!def) {
@@ -355,7 +393,7 @@ function evaluateNewExpr(ctx: Context, expr: QuintEx): Either<QuintError, Runtim
         return lazyBuiltinLambda(ctx, expr.opcode)(expr.args)
       }
 
-      const op = lambdaForName(ctx, expr.id, expr.opcode)
+      const op = lambdaForApp(ctx, expr)
       const args = expr.args.map(arg => evaluateExpr(ctx, arg))
       if (args.some(arg => arg.isLeft())) {
         return args.find(arg => arg.isLeft())!
@@ -366,13 +404,11 @@ function evaluateNewExpr(ctx: Context, expr: QuintEx): Either<QuintError, Runtim
   }
 }
 
-function lambdaForName(
-  ctx: Context,
-  id: bigint,
-  name: string
-): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+function lambdaForApp(ctx: Context, app: QuintApp): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+  const { id, opcode } = app
+
   if (!ctx.table.has(id)) {
-    return builtinLambda(ctx, name)
+    return builtinLambda(ctx, opcode)
   }
 
   const def = ctx.table.get(id)!
@@ -380,7 +416,13 @@ function lambdaForName(
   if (value.isLeft()) {
     return _ => value
   }
-  return value.value.toArrow(ctx)
+  const arrow = value.value.toArrow()
+  return args => {
+    ctx.recorder.onUserOperatorCall(app)
+    const result = arrow(args)
+    ctx.recorder.onUserOperatorReturn(app, [], result.map(rv.toQuintEx))
+    return result
+  }
 }
 
 export function isTrue(value: Either<QuintError, RuntimeValue>): boolean {

@@ -60,7 +60,7 @@
  * See LICENSE in the project root for license information.
  */
 
-import { List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
+import { List, Map as ImmutableMap, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
@@ -158,7 +158,7 @@ export const rv = {
   mkMap: (elems: Iterable<[RuntimeValue, RuntimeValue]>): RuntimeValue => {
     // convert the keys to the normal form, as they are hashed
     const arr: [RuntimeValue, RuntimeValue][] = Array.from(elems).map(([k, v]) => [k.normalForm(), v])
-    return new RuntimeValueMap(Map(arr))
+    return new RuntimeValueMap(ImmutableMap(arr))
   },
 
   /**
@@ -167,7 +167,7 @@ export const rv = {
    * @param value an iterable collection of pairs of runtime values
    * @return a new runtime value that carries the map
    */
-  fromMap: (map: Map<RuntimeValue, RuntimeValue>): RuntimeValue => {
+  fromMap: (map: ImmutableMap<RuntimeValue, RuntimeValue>): RuntimeValue => {
     // convert the keys to the normal form, as they are hashed
     return new RuntimeValueMap(map)
   },
@@ -252,8 +252,8 @@ export const rv = {
    * @param body the lambda body expression
    * @returns a runtime value of lambda
    */
-  mkLambda: (params: QuintLambdaParameter[], body: QuintEx) => {
-    return new RuntimeValueLambda(params, body)
+  mkLambda: (params: QuintLambdaParameter[], body: QuintEx, ctx: Context) => {
+    return new RuntimeValueLambda(params, body, ctx)
   },
 
   fromQuintEx: (ex: QuintEx): RuntimeValue => {
@@ -341,10 +341,8 @@ export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
       }
 
     case 'lambda':
-      if (ex.kind !== 'lambda') {
-        return none()
-      }
-      return just(rv.mkLambda(ex.params, ex.expr))
+      // We don't have enough information to convert lambdas directly
+      return none()
 
     default:
       // no other case should be possible
@@ -403,7 +401,7 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    *
    * @return an immutable map of key-values
    */
-  toMap(): Map<RuntimeValue, RuntimeValue>
+  toMap(): ImmutableMap<RuntimeValue, RuntimeValue>
 
   /**
    * If the result is a record, transform it to a map of values.
@@ -446,7 +444,7 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    *
    * @return the arrow function that represents the lambda.
    */
-  toArrow(ctx: Context): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue>
+  toArrow(): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue>
 
   /**
    * If the result is a variant, return the label and the value.
@@ -566,7 +564,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toMap(): Map<RuntimeValue, RuntimeValue> {
+  toMap(): ImmutableMap<RuntimeValue, RuntimeValue> {
     if (this instanceof RuntimeValueMap) {
       return this.map
     } else {
@@ -586,7 +584,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueInt) {
       return (this as RuntimeValueInt).value
     } else {
-      throw new Error('Expected an integer value')
+      throw new Error(`Expected an integer value, got ${expressionToString(this.toQuintEx(zerog))}`)
     }
   }
 
@@ -609,7 +607,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     throw new Error('Expected a 2-tuple')
   }
 
-  toArrow(ctx: Context): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+  toArrow(): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
     if (!(this instanceof RuntimeValueLambda)) {
       throw new Error('Expected a lambda value')
     }
@@ -624,15 +622,18 @@ abstract class RuntimeValueBase implements RuntimeValue {
         })
       }
       const paramEntries: [bigint, RuntimeValue][] = lam.params.map((param, i) => {
-        // console.log('param', param.id, param.name, 'set to', valueToString(args[i]))
         return [param.id, args[i]]
       })
 
-      ctx.addParams(paramEntries)
-      ctx.disableMemo()
-      const result = evaluateExpr(ctx, lam.body)
-      ctx.removeParams(paramEntries)
-      ctx.enableMemo()
+      lam.ctx.addConstants(lam.consts)
+      lam.ctx.addNamespaces(lam.namespaces)
+      lam.ctx.addParams(paramEntries)
+      lam.ctx.disableMemo()
+      const result = evaluateExpr(lam.ctx, lam.body)
+      lam.ctx.removeConstants()
+      lam.ctx.removeNamespaces()
+      lam.ctx.removeParams()
+      lam.ctx.enableMemo()
 
       return result
     }
@@ -955,9 +956,9 @@ export class RuntimeValueVariant extends RuntimeValueBase implements RuntimeValu
  * This is an internal class.
  */
 class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
-  map: Map<RuntimeValue, RuntimeValue>
+  map: ImmutableMap<RuntimeValue, RuntimeValue>
 
-  constructor(keyValues: Map<RuntimeValue, RuntimeValue>) {
+  constructor(keyValues: ImmutableMap<RuntimeValue, RuntimeValue>) {
     super(true)
     this.map = keyValues
   }
@@ -1645,11 +1646,17 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
 export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue {
   params: QuintLambdaParameter[]
   body: QuintEx
+  ctx: Context
+  consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>
+  namespaces: List<string>
 
-  constructor(params: QuintLambdaParameter[], body: QuintEx) {
+  constructor(params: QuintLambdaParameter[], body: QuintEx, ctx: Context) {
     super(false)
     this.params = params
     this.body = body
+    this.ctx = ctx
+    this.consts = ctx.consts
+    this.namespaces = ctx.namespaces
   }
 
   eval(args?: any[]) {

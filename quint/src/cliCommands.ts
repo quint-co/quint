@@ -578,9 +578,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
 
-  const states = recorder.bestTraces[0].frame.args
-  const frames = recorder.bestTraces[0].frame.subframes
-  const seed = options.rng.getState()
+  const states = recorder.bestTraces[0]?.frame?.args
+  const frames = recorder.bestTraces[0]?.frame?.subframes
+  const seed = recorder.bestTraces[0]?.seed
   switch (outcome.status) {
     case 'error':
       return cliErr('Runtime error', {

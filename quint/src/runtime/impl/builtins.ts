@@ -157,7 +157,10 @@ export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) =
           }
 
           const [_caseLabel, caseElim] = caseForVariant
-          const elim = rv.fromQuintEx(caseElim).toArrow(ctx)
+          if (caseElim.kind !== 'lambda') {
+            return left({ code: 'QNT505', message: `Expected lambda in matchVariant` })
+          }
+          const elim = rv.mkLambda(caseElim.params, caseElim.expr, ctx).toArrow()
           return elim([value])
         })
       }
@@ -373,11 +376,11 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
     case 'to':
       return args => right(rv.mkInterval(args[0].toInt(), args[1].toInt()))
     case 'fold':
-      return args => applyFold('fwd', args[0].toSet(), args[1], args[2].toArrow(ctx))
+      return args => applyFold('fwd', args[0].toSet(), args[1], args[2].toArrow())
     case 'foldl':
-      return args => applyFold('fwd', args[0].toList(), args[1], args[2].toArrow(ctx))
+      return args => applyFold('fwd', args[0].toList(), args[1], args[2].toArrow())
     case 'foldr':
-      return args => applyFold('rev', args[0].toList(), args[1], args[2].toArrow(ctx))
+      return args => applyFold('rev', args[0].toList(), args[1], args[2].toArrow())
 
     case 'flatten':
       return args => {
@@ -432,7 +435,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
         }
 
         const value = map.get(key)!
-        const lam = args[2].toArrow(ctx)
+        const lam = args[2].toArrow()
         return lam([value]).map(v => rv.fromMap(map.set(key, v)))
       }
 
@@ -455,7 +458,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
     case 'filter':
       return args => {
         const set = args[0].toSet()
-        const lam = args[1].toArrow(ctx)
+        const lam = args[1].toArrow()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
           lam([arg]).map(condition => (condition.toBool() === true ? rv.mkSet(acc.toSet().add(arg.normalForm())) : acc))
 
@@ -465,7 +468,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
     case 'select':
       return args => {
         const list = args[0].toList()
-        const lam = args[1].toArrow(ctx)
+        const lam = args[1].toArrow()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
           lam([arg]).map(condition => (condition.toBool() === true ? rv.mkList(acc.toList().push(arg)) : acc))
 
@@ -474,7 +477,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
 
     case 'mapBy':
       return args => {
-        const lambda = args[1].toArrow(ctx)
+        const lambda = args[1].toArrow()
         const keys = args[0].toSet()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
           lambda([arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
@@ -507,7 +510,7 @@ export function applyLambdaToSet(
   lambda: RuntimeValue,
   set: RuntimeValue
 ): Either<QuintError, Set<RuntimeValue>> {
-  const f = lambda.toArrow(ctx)
+  const f = lambda.toArrow()
   const results = set.toSet().map(value => f([value]))
   const err = results.find(result => result.isLeft())
   if (err !== undefined && err.isLeft()) {
