@@ -1,6 +1,4 @@
 import { Either, left, right } from '@sweet-monads/either'
-import { isEqual, takeRight } from 'lodash'
-import { LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
 import { RuntimeValue } from './runtimeValue'
 import { TraceRecorder } from '../trace'
@@ -13,14 +11,13 @@ export interface NondetPick {
 }
 
 export class Context {
-  public memo: Map<bigint, Either<QuintError, RuntimeValue>> = new Map()
+  public memo: Map<bigint, (ctx: Context) => Either<QuintError, RuntimeValue>> = new Map()
   public memoEnabled: boolean = true
   public params: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
   public consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
   public namespaces: List<string> = List()
   public varStorage: VarStorage = new VarStorage()
   public rand: (n: bigint) => bigint
-  public table: LookupTable
   public pureKeys: Set<bigint> = new Set()
   public nondetPicks: ImmutableMap<bigint, NondetPick> = ImmutableMap()
   public recorder: TraceRecorder
@@ -31,8 +28,7 @@ export class Context {
   private paramHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
   private namespacesHistory: List<string>[] = []
 
-  constructor(table: LookupTable, recorder: TraceRecorder, rand: (n: bigint) => bigint) {
-    this.table = table
+  constructor(recorder: TraceRecorder, rand: (n: bigint) => bigint) {
     this.recorder = recorder
     this.rand = rand
   }

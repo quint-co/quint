@@ -1,7 +1,7 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Map, is, Set, Range, List } from 'immutable'
-import { evaluateExpr, evaluateUnderDefContext, isTrue } from './evaluator'
+import { EvalFunction, evaluateExpr, evaluateUnderDefContext, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
 import { chunk } from 'lodash'
@@ -36,25 +36,27 @@ export const lazyOps = [
   'then',
 ]
 
-export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) => Either<QuintError, RuntimeValue> {
+export function lazyBuiltinLambda(
+  op: string
+): (ctx: Context, args: EvalFunction[]) => Either<QuintError, RuntimeValue> {
   switch (op) {
     case 'and':
-      return args => {
-        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: QuintEx) => {
+      return (ctx, args) => {
+        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: EvalFunction) => {
           return acc.chain(accValue => {
             if (accValue.toBool() === true) {
-              return evaluateExpr(ctx, arg)
+              return arg(ctx)
             }
             return acc
           })
         }, right(rv.mkBool(true)))
       }
     case 'or':
-      return args => {
-        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: QuintEx) => {
+      return (ctx, args) => {
+        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: EvalFunction) => {
           return acc.chain(accValue => {
             if (accValue.toBool() === false) {
-              return evaluateExpr(ctx, arg)
+              return arg(ctx)
             }
             return acc
           })
@@ -62,34 +64,21 @@ export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) =
       }
 
     case 'implies':
-      return args => {
-        return evaluateExpr(ctx, args[0]).chain(l => {
+      return (ctx, args) => {
+        return args[0](ctx).chain(l => {
           if (!l.toBool()) {
             return right(rv.mkBool(true))
           }
 
-          return evaluateExpr(ctx, args[1])
+          return args[1](ctx)
         })
       }
 
-    case 'assign':
-      return args => {
-        const varDef = ctx.table.get(args[0].id)!
-        // Eval var just to make sure it is registered in the storage
-        evaluateExpr(ctx, args[0])
-
-        return evaluateUnderDefContext(ctx, varDef, () => {
-          return evaluateExpr(ctx, args[1]).map(value => {
-            ctx.setNextVar(varDef.id, value)
-            return rv.mkBool(true)
-          })
-        })
-      }
     case 'actionAny':
-      return args => {
+      return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.nextVarsSnapshot()
         const evaluationResults = args.map(arg => {
-          const result = evaluateExpr(ctx, arg).map(result => {
+          const result = arg(ctx).map(result => {
             // Save vars
             const successor = ctx.varStorage.nextVarsSnapshot()
 
@@ -121,10 +110,10 @@ export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) =
         })
       }
     case 'actionAll':
-      return args => {
+      return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.nextVarsSnapshot()
         for (const action of args) {
-          const result = evaluateExpr(ctx, action)
+          const result = action(ctx)
           if (!isTrue(result)) {
             ctx.varStorage.nextVars = nextVarsSnapshot
             return result.map(_ => rv.mkBool(false))
@@ -134,40 +123,37 @@ export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) =
         return right(rv.mkBool(true))
       }
     case 'ite':
-      return args => {
-        return evaluateExpr(ctx, args[0]).chain(condition => {
-          return condition.toBool() ? evaluateExpr(ctx, args[1]) : evaluateExpr(ctx, args[2])
+      return (ctx, args) => {
+        return args[0](ctx).chain(condition => {
+          return condition.toBool() ? args[1](ctx) : args[2](ctx)
         })
       }
 
     case 'matchVariant':
-      return args => {
+      return (ctx, args) => {
         const matchedEx = args[0]
-        return evaluateExpr(ctx, matchedEx).chain(expr => {
+        return matchedEx(ctx).chain(expr => {
           const [label, value] = expr.toVariant()
 
           const cases = args.slice(1)
 
-          const caseForVariant = chunk(cases, 2).find(
-            ([caseLabel, _caseElim]) =>
-              rv.fromQuintEx(caseLabel).toStr() === '_' || rv.fromQuintEx(caseLabel).toStr() === label
-          )
+          const caseForVariant = chunk(cases, 2).find(([caseLabel, _caseElim]) => {
+            const l = caseLabel(ctx).unwrap().toStr()
+            return l === '_' || l === label
+          })
+
           if (!caseForVariant) {
             return left({ code: 'QNT505', message: `No match for variant ${label}` })
           }
 
           const [_caseLabel, caseElim] = caseForVariant
-          if (caseElim.kind !== 'lambda') {
-            return left({ code: 'QNT505', message: `Expected lambda in matchVariant` })
-          }
-          const elim = rv.mkLambda(caseElim.params, caseElim.expr, ctx).toArrow()
-          return elim([value])
+          return caseElim(ctx).chain(elim => elim.toArrow()(ctx, [value]))
         })
       }
 
     case 'oneOf':
-      return args => {
-        return evaluateExpr(ctx, args[0]).chain(set => {
+      return (ctx, args) => {
+        return args[0](ctx).chain(set => {
           const bounds = set.bounds()
           const positions: Either<QuintError, bigint[]> = mergeInMany(
             bounds.map((b): Either<QuintError, bigint> => {
@@ -197,36 +183,36 @@ export function lazyBuiltinLambda(ctx: Context, op: string): (args: QuintEx[]) =
   }
 }
 
-export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
   switch (op) {
     case 'Set':
-      return args => right(rv.mkSet(args))
+      return (_, args) => right(rv.mkSet(args))
     case 'Rec':
-      return args => right(rv.mkRecord(Map(chunk(args, 2).map(([k, v]) => [k.toStr(), v]))))
+      return (_, args) => right(rv.mkRecord(Map(chunk(args, 2).map(([k, v]) => [k.toStr(), v]))))
     case 'List':
-      return args => right(rv.mkList(List(args)))
+      return (_, args) => right(rv.mkList(List(args)))
     case 'Tup':
-      return args => right(rv.mkTuple(List(args)))
+      return (_, args) => right(rv.mkTuple(List(args)))
     case 'Map':
-      return args => right(rv.mkMap(args.map(kv => kv.toTuple2())))
+      return (_, args) => right(rv.mkMap(args.map(kv => kv.toTuple2())))
     case 'variant':
-      return args => right(rv.mkVariant(args[0].toStr(), args[1]))
+      return (_, args) => right(rv.mkVariant(args[0].toStr(), args[1]))
     case 'not':
-      return args => right(rv.mkBool(!args[0].toBool()))
+      return (_, args) => right(rv.mkBool(!args[0].toBool()))
     case 'iff':
-      return args => right(rv.mkBool(args[0].toBool() === args[1].toBool()))
+      return (_, args) => right(rv.mkBool(args[0].toBool() === args[1].toBool()))
     case 'eq':
-      return args => right(rv.mkBool(args[0].equals(args[1])))
+      return (_, args) => right(rv.mkBool(args[0].equals(args[1])))
     case 'neq':
-      return args => right(rv.mkBool(!args[0].equals(args[1])))
+      return (_, args) => right(rv.mkBool(!args[0].equals(args[1])))
     case 'iadd':
-      return args => right(rv.mkInt(args[0].toInt() + args[1].toInt()))
+      return (_, args) => right(rv.mkInt(args[0].toInt() + args[1].toInt()))
     case 'isub':
-      return args => right(rv.mkInt(args[0].toInt() - args[1].toInt()))
+      return (_, args) => right(rv.mkInt(args[0].toInt() - args[1].toInt()))
     case 'imul':
-      return args => right(rv.mkInt(args[0].toInt() * args[1].toInt()))
+      return (_, args) => right(rv.mkInt(args[0].toInt() * args[1].toInt()))
     case 'idiv':
-      return args => {
+      return (_, args) => {
         const divisor = args[1].toInt()
         if (divisor === 0n) {
           return left({ code: 'QNT503', message: `Division by zero` })
@@ -234,9 +220,9 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
         return right(rv.mkInt(args[0].toInt() / divisor))
       }
     case 'imod':
-      return args => right(rv.mkInt(args[0].toInt() % args[1].toInt()))
+      return (_, args) => right(rv.mkInt(args[0].toInt() % args[1].toInt()))
     case 'ipow':
-      return args => {
+      return (_, args) => {
         const base = args[0].toInt()
         const exp = args[1].toInt()
         if (base === 0n && exp === 0n) {
@@ -249,36 +235,36 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
         return right(rv.mkInt(base ** exp))
       }
     case 'iuminus':
-      return args => right(rv.mkInt(-args[0].toInt()))
+      return (_, args) => right(rv.mkInt(-args[0].toInt()))
     case 'ilt':
-      return args => right(rv.mkBool(args[0].toInt() < args[1].toInt()))
+      return (_, args) => right(rv.mkBool(args[0].toInt() < args[1].toInt()))
     case 'ilte':
-      return args => right(rv.mkBool(args[0].toInt() <= args[1].toInt()))
+      return (_, args) => right(rv.mkBool(args[0].toInt() <= args[1].toInt()))
     case 'igt':
-      return args => right(rv.mkBool(args[0].toInt() > args[1].toInt()))
+      return (_, args) => right(rv.mkBool(args[0].toInt() > args[1].toInt()))
     case 'igte':
-      return args => right(rv.mkBool(args[0].toInt() >= args[1].toInt()))
+      return (_, args) => right(rv.mkBool(args[0].toInt() >= args[1].toInt()))
 
     case 'item':
-      return args => {
+      return (_, args) => {
         // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
         return getListElem(args[0].toList(), Number(args[1].toInt()) - 1)
       }
     case 'tuples':
-      return args => right(rv.mkCrossProd(args))
+      return (_, args) => right(rv.mkCrossProd(args))
 
     case 'range':
-      return args => {
+      return (_, args) => {
         const start = Number(args[0].toInt())
         const end = Number(args[1].toInt())
         return right(rv.mkList(List(Range(start, end).map(rv.mkInt))))
       }
 
     case 'nth':
-      return args => getListElem(args[0].toList(), Number(args[1].toInt()))
+      return (_, args) => getListElem(args[0].toList(), Number(args[1].toInt()))
 
     case 'replaceAt':
-      return args => {
+      return (_, args) => {
         const list = args[0].toList()
         const idx = Number(args[1].toInt())
         if (idx < 0 || idx >= list.size) {
@@ -289,7 +275,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'head':
-      return args => {
+      return (_, args) => {
         const list = args[0].toList()
         if (list.size === 0) {
           return left({ code: 'QNT505', message: `Called 'head' on an empty list` })
@@ -298,7 +284,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'tail':
-      return args => {
+      return (_, args) => {
         const list = args[0].toList()
         if (list.size === 0) {
           return left({ code: 'QNT505', message: `Called 'tail' on an empty list` })
@@ -307,7 +293,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'slice':
-      return args => {
+      return (_, args) => {
         const list = args[0].toList()
         const start = Number(args[1].toInt())
         const end = Number(args[2].toInt())
@@ -322,26 +308,26 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'length':
-      return args => right(rv.mkInt(args[0].toList().size))
+      return (_, args) => right(rv.mkInt(args[0].toList().size))
     case 'append':
-      return args => right(rv.mkList(args[0].toList().push(args[1])))
+      return (_, args) => right(rv.mkList(args[0].toList().push(args[1])))
     case 'concat':
-      return args => right(rv.mkList(args[0].toList().concat(args[1].toList())))
+      return (_, args) => right(rv.mkList(args[0].toList().concat(args[1].toList())))
     case 'indices':
-      return args => right(rv.mkInterval(0n, args[0].toList().size - 1))
+      return (_, args) => right(rv.mkInterval(0n, args[0].toList().size - 1))
 
     case 'field':
-      return args => {
+      return (_, args) => {
         const field = args[1].toStr()
         const result = args[0].toOrderedMap().get(field)
         return result ? right(result) : left({ code: 'QNT501', message: `Accessing a missing record field ${field}` })
       }
 
     case 'fieldNames':
-      return args => right(rv.mkSet(args[0].toOrderedMap().keySeq().map(rv.mkStr)))
+      return (_, args) => right(rv.mkSet(args[0].toOrderedMap().keySeq().map(rv.mkStr)))
 
     case 'with':
-      return args => {
+      return (_, args) => {
         const record = args[0].toOrderedMap()
         const field = args[1].toStr()
         const value = args[2]
@@ -354,42 +340,42 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'powerset':
-      return args => right(rv.mkPowerset(args[0]))
+      return (_, args) => right(rv.mkPowerset(args[0]))
     case 'contains':
-      return args => right(rv.mkBool(args[0].contains(args[1])))
+      return (_, args) => right(rv.mkBool(args[0].contains(args[1])))
     case 'in':
-      return args => right(rv.mkBool(args[1].contains(args[0])))
+      return (_, args) => right(rv.mkBool(args[1].contains(args[0])))
     case 'subseteq':
-      return args => right(rv.mkBool(args[0].isSubset(args[1])))
+      return (_, args) => right(rv.mkBool(args[0].isSubset(args[1])))
     case 'exclude':
-      return args => right(rv.mkSet(args[0].toSet().subtract(args[1].toSet())))
+      return (_, args) => right(rv.mkSet(args[0].toSet().subtract(args[1].toSet())))
     case 'union':
-      return args => right(rv.mkSet(args[0].toSet().union(args[1].toSet())))
+      return (_, args) => right(rv.mkSet(args[0].toSet().union(args[1].toSet())))
     case 'intersect':
-      return args => right(rv.mkSet(args[0].toSet().intersect(args[1].toSet())))
+      return (_, args) => right(rv.mkSet(args[0].toSet().intersect(args[1].toSet())))
     case 'size':
-      return args => args[0].cardinality().map(rv.mkInt)
+      return (_, args) => args[0].cardinality().map(rv.mkInt)
     case 'isFinite':
       // at the moment, we support only finite sets, so just return true
       return _args => right(rv.mkBool(true))
 
     case 'to':
-      return args => right(rv.mkInterval(args[0].toInt(), args[1].toInt()))
+      return (_, args) => right(rv.mkInterval(args[0].toInt(), args[1].toInt()))
     case 'fold':
-      return args => applyFold('fwd', args[0].toSet(), args[1], args[2].toArrow())
+      return (ctx, args) => applyFold('fwd', args[0].toSet(), args[1], arg => args[2].toArrow()(ctx, arg))
     case 'foldl':
-      return args => applyFold('fwd', args[0].toList(), args[1], args[2].toArrow())
+      return (ctx, args) => applyFold('fwd', args[0].toList(), args[1], arg => args[2].toArrow()(ctx, arg))
     case 'foldr':
-      return args => applyFold('rev', args[0].toList(), args[1], args[2].toArrow())
+      return (ctx, args) => applyFold('rev', args[0].toList(), args[1], arg => args[2].toArrow()(ctx, arg))
 
     case 'flatten':
-      return args => {
+      return (_, args) => {
         const s = args[0].toSet().map(s => s.toSet())
         return right(rv.mkSet(s.flatten(1) as Set<RuntimeValue>))
       }
 
     case 'get':
-      return args => {
+      return (_, args) => {
         const map = args[0].toMap()
         const key = args[1].normalForm()
         const value = map.get(key)
@@ -408,7 +394,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'set':
-      return args => {
+      return (_, args) => {
         const map = args[0].toMap()
         const key = args[1].normalForm()
         if (!map.has(key)) {
@@ -419,7 +405,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'put':
-      return args => {
+      return (_, args) => {
         const map = args[0].toMap()
         const key = args[1].normalForm()
         const value = args[2]
@@ -427,7 +413,7 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
       }
 
     case 'setBy':
-      return args => {
+      return (ctx, args) => {
         const map = args[0].toMap()
         const key = args[1].normalForm()
         if (!map.has(key)) {
@@ -436,68 +422,70 @@ export function builtinLambda(ctx: Context, op: string): (args: RuntimeValue[]) 
 
         const value = map.get(key)!
         const lam = args[2].toArrow()
-        return lam([value]).map(v => rv.fromMap(map.set(key, v)))
+        return lam(ctx, [value]).map(v => rv.fromMap(map.set(key, v)))
       }
 
     case 'keys':
-      return args => right(rv.mkSet(args[0].toMap().keys()))
+      return (_, args) => right(rv.mkSet(args[0].toMap().keys()))
 
     case 'exists':
-      return args =>
+      return (ctx, args) =>
         applyLambdaToSet(ctx, args[1], args[0]).map(values => rv.mkBool(values.some(v => v.toBool()) === true))
 
     case 'forall':
-      return args =>
+      return (ctx, args) =>
         applyLambdaToSet(ctx, args[1], args[0]).map(values => rv.mkBool(values.every(v => v.toBool()) === true))
 
     case 'map':
-      return args => {
+      return (ctx, args) => {
         return applyLambdaToSet(ctx, args[1], args[0]).map(values => rv.mkSet(values))
       }
 
     case 'filter':
-      return args => {
+      return (ctx, args) => {
         const set = args[0].toSet()
         const lam = args[1].toArrow()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lam([arg]).map(condition => (condition.toBool() === true ? rv.mkSet(acc.toSet().add(arg.normalForm())) : acc))
+          lam(ctx, [arg]).map(condition =>
+            condition.toBool() === true ? rv.mkSet(acc.toSet().add(arg.normalForm())) : acc
+          )
 
         return applyFold('fwd', set, rv.mkSet([]), reducer)
       }
 
     case 'select':
-      return args => {
+      return (ctx, args) => {
         const list = args[0].toList()
         const lam = args[1].toArrow()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lam([arg]).map(condition => (condition.toBool() === true ? rv.mkList(acc.toList().push(arg)) : acc))
+          lam(ctx, [arg]).map(condition => (condition.toBool() === true ? rv.mkList(acc.toList().push(arg)) : acc))
 
         return applyFold('fwd', list, rv.mkList([]), reducer)
       }
 
     case 'mapBy':
-      return args => {
+      return (ctx, args) => {
         const lambda = args[1].toArrow()
         const keys = args[0].toSet()
         const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lambda([arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
+          lambda(ctx, [arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
 
         return applyFold('fwd', keys, rv.mkMap([]), reducer)
       }
 
     case 'setToMap':
-      return args => {
+      return (_, args) => {
         const set = args[0].toSet()
         return right(rv.mkMap(Map(set.map(s => s.toTuple2()))))
       }
 
     case 'setOfMaps':
-      return args => right(rv.mkMapSet(args[0], args[1]))
+      return (_, args) => right(rv.mkMapSet(args[0], args[1]))
 
     case 'fail':
-      return args => right(rv.mkBool(!args[0].toBool()))
+      return (_, args) => right(rv.mkBool(!args[0].toBool()))
     case 'assert':
-      return args => (args[0].toBool() ? right(args[0]) : left({ code: 'QNT502', message: `Assertion failed` }))
+      return (_, args) => (args[0].toBool() ? right(args[0]) : left({ code: 'QNT502', message: `Assertion failed` }))
     case 'expect':
     case 'reps':
 
@@ -511,7 +499,7 @@ export function applyLambdaToSet(
   set: RuntimeValue
 ): Either<QuintError, Set<RuntimeValue>> {
   const f = lambda.toArrow()
-  const results = set.toSet().map(value => f([value]))
+  const results = set.toSet().map(value => f(ctx, [value]))
   const err = results.find(result => result.isLeft())
   if (err !== undefined && err.isLeft()) {
     return left(err.value)

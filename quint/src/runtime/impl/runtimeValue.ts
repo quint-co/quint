@@ -72,7 +72,7 @@ import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { toMaybe } from './base'
-import { evaluateExpr } from './evaluator'
+import { EvalFunction, evaluateExpr } from './evaluator'
 import { Context } from './Context'
 
 /**
@@ -252,8 +252,8 @@ export const rv = {
    * @param body the lambda body expression
    * @returns a runtime value of lambda
    */
-  mkLambda: (params: QuintLambdaParameter[], body: QuintEx, ctx: Context) => {
-    return new RuntimeValueLambda(params, body, ctx)
+  mkLambda: (params: QuintLambdaParameter[], body: EvalFunction) => {
+    return new RuntimeValueLambda(params, body)
   },
 
   fromQuintEx: (ex: QuintEx): RuntimeValue => {
@@ -444,7 +444,7 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    *
    * @return the arrow function that represents the lambda.
    */
-  toArrow(): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue>
+  toArrow(): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue>
 
   /**
    * If the result is a variant, return the label and the value.
@@ -607,14 +607,15 @@ abstract class RuntimeValueBase implements RuntimeValue {
     throw new Error('Expected a 2-tuple')
   }
 
-  toArrow(): (args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
+  toArrow(): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
     if (!(this instanceof RuntimeValueLambda)) {
       throw new Error('Expected a lambda value')
     }
 
     const lam = this as RuntimeValueLambda
+    const bodyEval = this.body
 
-    return (args: RuntimeValue[]) => {
+    return (ctx: Context, args: RuntimeValue[]) => {
       if (lam.params.length !== args.length) {
         return left({
           code: 'QNT506',
@@ -625,14 +626,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
         return [param.id, args[i]]
       })
 
-      lam.ctx.addConstants(lam.consts)
-      lam.ctx.addNamespaces(lam.namespaces)
-      lam.ctx.addParams(paramEntries)
+      // ctx.addConstants(lam.consts)
+      // ctx.addNamespaces(lam.namespaces)
+      ctx.addParams(paramEntries)
       // lam.ctx.disableMemo()
-      const result = evaluateExpr(lam.ctx, lam.body)
-      lam.ctx.removeConstants()
-      lam.ctx.removeNamespaces()
-      lam.ctx.removeParams()
+      const result = bodyEval(ctx)
+      // ctx.removeConstants()
+      // ctx.removeNamespaces()
+      ctx.removeParams()
       // lam.ctx.enableMemo()
 
       return result
@@ -1645,18 +1646,18 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
  */
 export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue {
   params: QuintLambdaParameter[]
-  body: QuintEx
-  ctx: Context
-  consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>
-  namespaces: List<string>
+  body: EvalFunction
+  // ctx: Context
+  // consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>
+  // namespaces: List<string>
 
-  constructor(params: QuintLambdaParameter[], body: QuintEx, ctx: Context) {
+  constructor(params: QuintLambdaParameter[], body: EvalFunction) {
     super(false)
     this.params = params
     this.body = body
-    this.ctx = ctx
-    this.consts = ctx.consts
-    this.namespaces = ctx.namespaces
+    // this.ctx = ctx
+    // this.consts = ctx.consts
+    // this.namespaces = ctx.namespaces
   }
 
   eval(args?: any[]) {
@@ -1674,7 +1675,7 @@ export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue
       kind: 'lambda',
       params: this.params,
       qualifier: 'def',
-      expr: this.body,
+      expr: { id: gen.nextId(), kind: 'name', name: 'lambda' },
     }
   }
 }
