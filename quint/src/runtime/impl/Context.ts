@@ -4,7 +4,7 @@ import { LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
 import { RuntimeValue } from './runtimeValue'
 import { TraceRecorder } from '../trace'
-import { Map, List, is } from 'immutable'
+import { Map as ImmutableMap, List, is } from 'immutable'
 import { VarStorage } from './VarStorage'
 
 export interface NondetPick {
@@ -13,20 +13,20 @@ export interface NondetPick {
 }
 
 export class Context {
-  public memo: Map<bigint, Either<QuintError, RuntimeValue>> = Map()
+  public memo: Map<bigint, Either<QuintError, RuntimeValue>> = new Map()
   public memoEnabled: boolean = true
-  public params: Map<bigint, Either<QuintError, RuntimeValue>> = Map()
-  public consts: Map<bigint, Either<QuintError, RuntimeValue>> = Map()
+  public params: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
+  public consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
   public namespaces: List<string> = List()
   public varStorage: VarStorage = new VarStorage()
   public rand: (n: bigint) => bigint
   public table: LookupTable
   public pureKeys: Set<bigint> = new Set()
-  public nondetPicks: Map<bigint, NondetPick> = Map()
+  public nondetPicks: ImmutableMap<bigint, NondetPick> = ImmutableMap()
   public recorder: TraceRecorder
 
-  private constHistory: Map<bigint, Either<QuintError, RuntimeValue>>[] = []
-  private paramHistory: Map<bigint, Either<QuintError, RuntimeValue>>[] = []
+  private constHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
+  private paramHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
   private namespacesHistory: List<string>[] = []
 
   constructor(table: LookupTable, recorder: TraceRecorder, rand: (n: bigint) => bigint) {
@@ -36,8 +36,8 @@ export class Context {
   }
 
   reset() {
-    this.memo = Map()
-    this.params = Map()
+    this.memo = new Map()
+    this.params = ImmutableMap()
     this.varStorage = new VarStorage()
   }
 
@@ -79,7 +79,7 @@ export class Context {
   }
 
   clearMemo() {
-    this.memo = Map()
+    this.memo = new Map()
   }
 
   disableMemo() {
@@ -98,7 +98,7 @@ export class Context {
     return result
   }
 
-  addConstants(consts: Map<bigint, Either<QuintError, RuntimeValue>>) {
+  addConstants(consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>) {
     this.constHistory.push(this.consts)
     this.consts = this.consts.merge(consts)
   }
