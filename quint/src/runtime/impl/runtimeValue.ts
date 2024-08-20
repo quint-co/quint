@@ -628,12 +628,12 @@ abstract class RuntimeValueBase implements RuntimeValue {
       lam.ctx.addConstants(lam.consts)
       lam.ctx.addNamespaces(lam.namespaces)
       lam.ctx.addParams(paramEntries)
-      lam.ctx.disableMemo()
+      // lam.ctx.disableMemo()
       const result = evaluateExpr(lam.ctx, lam.body)
       lam.ctx.removeConstants()
       lam.ctx.removeNamespaces()
       lam.ctx.removeParams()
-      lam.ctx.enableMemo()
+      // lam.ctx.enableMemo()
 
       return result
     }

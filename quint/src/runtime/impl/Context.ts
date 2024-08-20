@@ -25,6 +25,8 @@ export class Context {
   public nondetPicks: ImmutableMap<bigint, NondetPick> = ImmutableMap()
   public recorder: TraceRecorder
 
+  public constsByInstance: Map<bigint, ImmutableMap<bigint, Either<QuintError, RuntimeValue>>> = new Map()
+
   private constHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
   private paramHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
   private namespacesHistory: List<string>[] = []
@@ -88,14 +90,6 @@ export class Context {
 
   enableMemo() {
     this.memoEnabled = true
-  }
-
-  withMemo(f: () => Either<QuintError, RuntimeValue>) {
-    const memoStateBefore = this.memoEnabled
-    this.memoEnabled = true
-    const result = f()
-    this.memoEnabled = memoStateBefore
-    return result
   }
 
   addConstants(consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>) {

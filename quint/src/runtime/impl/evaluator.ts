@@ -12,6 +12,7 @@ import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List, Map as ImmutableMap } from 'immutable'
+import { expressionToString } from '../../ir/IRprinting'
 
 export class Evaluator {
   public ctx: Context
@@ -35,7 +36,9 @@ export class Evaluator {
     }
     this.ctx.varStorage.shiftVars()
     this.trace.extend(this.ctx.varStorage.asRecord())
-    this.ctx.clearMemo() // FIXME: clear only non-pure
+    // TODO: save on trace
+    this.ctx.nondetPicks = ImmutableMap()
+    // this.ctx.clearMemo() // FIXME: clear only non-pure
   }
 
   shiftAndCheck(): string[] {
@@ -260,21 +263,25 @@ export class Evaluator {
 
 export function evaluateExpr(ctx: Context, expr: QuintEx): Either<QuintError, RuntimeValue> {
   const id = expr.id
-  if (id === 0n || !ctx.memoEnabled) {
+  if (id === 0n) {
     return evaluateNewExpr(ctx, expr).mapLeft(err => (err.reference === undefined ? { ...err, reference: id } : err))
   }
 
-  if (ctx.memo.has(id)) {
-    // if (ctx.pureKeys.has(id)) {
-    //   console.log('pure key', id, expressionToString(expr))
-    // }
-    return ctx.memo.get(id)!
-  }
+  // console.log('[get] expression', expressionToString(expr), 'memo enabled:', ctx.memoEnabled)
+  // if (ctx.memo.has(id)) {
+  //   // if (ctx.pureKeys.has(id)) {
+  //   //   console.log('pure key', id, expressionToString(expr))
+  //   // }
+  //   return ctx.memo.get(id)!
+  // }
 
   const result = evaluateNewExpr(ctx, expr).mapLeft(err =>
     err.reference === undefined ? { ...err, reference: id } : err
   )
-  ctx.memo.set(id, result)
+  // console.log('[set] expression', expressionToString(expr), 'memo enabled:', ctx.memoEnabled)
+  if (ctx.memoEnabled) {
+    ctx.memo.set(id, result)
+  }
   return result
 }
 
@@ -283,33 +290,43 @@ export function evaluateUnderDefContext(
   def: LookupDefinition,
   evaluate: () => Either<QuintError, RuntimeValue>
 ): Either<QuintError, RuntimeValue> {
-  if (def.kind === 'def' && def.qualifier === 'nondet' && ctx.memoEnabled) {
-    ctx.disableMemo()
-    const r = evaluateUnderDefContext(ctx, def, evaluate)
-    ctx.enableMemo()
-    return r
-  }
+  // if (def.kind === 'def' && def.qualifier === 'nondet' && ctx.memoEnabled) {
+  //   ctx.disableMemo()
+  //   const r = evaluateUnderDefContext(ctx, def, evaluate)
+  //   ctx.enableMemo()
+  //   return r
+  // }
 
   if (!def.importedFrom || def.importedFrom.kind !== 'instance') {
     return evaluate()
   }
-
   const instance = def.importedFrom
-  const overrides: [bigint, Either<QuintError, RuntimeValue>][] = instance.overrides.map(([param, expr]) => {
-    const id = ctx.table.get(param.id)!.id
 
-    return [id, evaluateExpr(ctx, expr)]
-  })
+  const constsBefore = ctx.consts
+  const namespacesBefore = ctx.namespaces
 
-  ctx.addConstants(ImmutableMap(overrides))
-  ctx.addNamespaces(List(def.namespaces))
-  ctx.disableMemo() // We could have one memo per constant
+  let consts = ctx.constsByInstance.get(def.importedFrom.id)
+  if (!consts) {
+    const overrides: [bigint, Either<QuintError, RuntimeValue>][] = instance.overrides.map(([param, expr]) => {
+      const id = ctx.table.get(param.id)!.id
+
+      return [id, evaluateExpr(ctx, expr)]
+    })
+    consts = ImmutableMap(overrides)
+    ctx.constsByInstance.set(def.importedFrom.id, consts)
+  }
+
+  ctx.consts = consts
+  ctx.namespaces = List(def.namespaces)
+  // ctx.addNamespaces(List(def.namespaces))
+  // ctx.disableMemo() // We could have one memo per constant
 
   const result = evaluate()
 
-  ctx.removeConstants()
-  ctx.removeNamespaces()
-  ctx.enableMemo()
+  ctx.consts = constsBefore
+  ctx.namespaces = namespacesBefore
+  // ctx.removeNamespaces()
+  // ctx.enableMemo()
 
   return result
 }
@@ -320,7 +337,7 @@ function evaluateNondet(ctx: Context, def: QuintOpDef): Either<QuintError, Runti
     return previousPick.value
   }
 
-  const pick = evaluateExpr(ctx, def.expr)
+  const pick = evaluateNewExpr(ctx, def.expr)
   ctx.nondetPicks = ctx.nondetPicks.set(def.id, { name: def.name, value: pick })
   return pick
 }
@@ -330,8 +347,11 @@ function evaluateDef(ctx: Context, def: LookupDefinition): Either<QuintError, Ru
     switch (def.kind) {
       case 'def':
         if (def.qualifier === 'nondet') {
+          ctx.disableMemo()
           return evaluateNondet(ctx, def)
         }
+
+        const memoStateBefore = ctx.memoEnabled
 
         if (def.qualifier === 'action') {
           const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
@@ -340,8 +360,11 @@ function evaluateDef(ctx: Context, def: LookupDefinition): Either<QuintError, Ru
           ctx.recorder.onUserOperatorReturn(app, [], result.map(rv.toQuintEx))
         }
 
-        return evaluateExpr(ctx, def.expr)
+        const result = evaluateExpr(ctx, def.expr)
+        ctx.memoEnabled = memoStateBefore
+        return result
       case 'param': {
+        ctx.disableMemo()
         const result = ctx.params.get(def.id)
 
         if (!result) {
@@ -350,6 +373,7 @@ function evaluateDef(ctx: Context, def: LookupDefinition): Either<QuintError, Ru
         return result
       }
       case 'var': {
+        ctx.disableMemo()
         ctx.discoverVar(def.id, def.name)
         const result = ctx.getVar(def.id)
 
@@ -359,6 +383,7 @@ function evaluateDef(ctx: Context, def: LookupDefinition): Either<QuintError, Ru
         return result
       }
       case 'const':
+        ctx.disableMemo()
         const constValue = ctx.consts.get(def.id)
         if (!constValue) {
           return left({ code: 'QNT503', message: `Constant ${def.name}(id: ${def.id}) not set` })
