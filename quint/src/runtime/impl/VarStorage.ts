@@ -30,6 +30,6 @@ export class VarStorage {
   }
 
   nextVarsSnapshot(): Map<string, Either<QuintError, RuntimeValue>> {
-    return this.nextVars
+    return new Map([...this.nextVars.entries()])
   }
 }

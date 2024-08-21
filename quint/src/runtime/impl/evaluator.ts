@@ -17,6 +17,7 @@ export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
 export type Builder = {
   table: LookupTable
   paramRegistry: Map<bigint, Register>
+  constRegistry: Map<bigint, Register>
 }
 
 export class Evaluator {
@@ -30,7 +31,7 @@ export class Evaluator {
     this.ctx = new Context(recorder, rng.next)
     this.recorder = recorder
     this.rng = rng
-    this.builder = { table, paramRegistry: new Map() }
+    this.builder = { table, paramRegistry: new Map(), constRegistry: new Map() }
   }
 
   get table(): LookupTable {
@@ -283,24 +284,27 @@ export function evaluateUnderDefContext(
   }
   const instance = def.importedFrom
 
-  const overrides: [bigint, (ctx: Context) => Either<QuintError, RuntimeValue>][] = instance.overrides.map(
+  const overrides: [Register, (ctx: Context) => Either<QuintError, RuntimeValue>][] = instance.overrides.map(
     ([param, expr]) => {
       const id = builder.table.get(param.id)!.id
+      let register = builder.constRegistry.get(id)
+      if (!register) {
+        register = { value: left({ code: 'QNT504', message: `Constant ${param.name} not set` }) }
+        builder.constRegistry.set(id, register)
+      }
 
-      return [id, evaluateExpr(builder, expr)]
+      return [register, evaluateExpr(builder, expr)]
     }
   )
 
   return ctx => {
-    const constsBefore = ctx.consts
     const namespacesBefore = ctx.namespaces
 
-    ctx.consts = ImmutableMap(overrides.map(([id, evaluate]) => [id, evaluate(ctx)]))
+    overrides.forEach(([register, evaluate]) => (register.value = evaluate(ctx)))
     ctx.namespaces = List(def.namespaces)
 
     const result = evaluate(ctx)
 
-    ctx.consts = constsBefore
     ctx.namespaces = namespacesBefore
     return result
   }
@@ -364,14 +368,13 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
       }
     }
     case 'const':
-      return (ctx: Context) => {
-        const constValue = ctx.consts.get(def.id)
-        if (!constValue) {
-          return left({ code: 'QNT503', message: `Constant ${def.name}(id: ${def.id}) not set` })
-        }
-        return constValue
+      const register = builder.constRegistry.get(def.id)
+      if (!register) {
+        const reg: Register = { value: left({ code: 'QNT501', message: `Constant ${def.name} not set` }) }
+        builder.constRegistry.set(def.id, reg)
+        return _ => reg.value
       }
-
+      return _ => register.value
     default:
       return _ => left({ code: 'QNT000', message: `Not implemented for def kind ${def.kind}` })
   }
