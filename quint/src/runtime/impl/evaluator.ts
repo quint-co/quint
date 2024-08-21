@@ -1,5 +1,4 @@
 import { Either, left, right } from '@sweet-monads/either'
-import { EffectScheme } from '../../effects/base'
 import { QuintApp, QuintEx, QuintOpDef } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
@@ -7,36 +6,40 @@ import { TraceRecorder } from '../trace'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { Trace } from './trace'
 import { RuntimeValue, rv } from './runtimeValue'
-import { Context } from './Context'
+import { Context, Register } from './Context'
 import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List, Map as ImmutableMap } from 'immutable'
-import { expressionToString } from '../../ir/IRprinting'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
+
+export type Builder = {
+  table: LookupTable
+  paramRegistry: Map<bigint, Register>
+}
 
 export class Evaluator {
   public ctx: Context
   public recorder: TraceRecorder
   private trace: Trace = new Trace()
   private rng: Rng
-  private lookupTable: LookupTable
+  private builder: Builder
 
   constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng) {
     this.ctx = new Context(recorder, rng.next)
     this.recorder = recorder
     this.rng = rng
-    this.lookupTable = table
+    this.builder = { table, paramRegistry: new Map() }
   }
 
   get table(): LookupTable {
     console.log('getting table')
-    return this.lookupTable
+    return this.builder.table
   }
 
   updateTable(table: LookupTable) {
-    this.lookupTable = table
+    this.builder.table = table
   }
 
   shift() {
@@ -47,7 +50,6 @@ export class Evaluator {
     this.trace.extend(this.ctx.varStorage.asRecord())
     // TODO: save on trace
     this.ctx.nondetPicks = ImmutableMap()
-    // this.ctx.clearMemo() // FIXME: clear only non-pure
   }
 
   shiftAndCheck(): string[] {
@@ -63,7 +65,7 @@ export class Evaluator {
   }
 
   evaluate(expr: QuintEx): Either<QuintError, QuintEx> {
-    const value = evaluateExpr(this.table, expr)(this.ctx)
+    const value = evaluateExpr(this.builder, expr)(this.ctx)
     return value.map(rv.toQuintEx)
   }
 
@@ -73,24 +75,14 @@ export class Evaluator {
     inv: QuintEx,
     nruns: number,
     nsteps: number,
-    ntraces: number,
-    effects: Map<bigint, EffectScheme>
+    ntraces: number
   ): Either<QuintError, QuintEx> {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
-    // effects.forEach((scheme, id) => {
-    //   const [mode] = modeForEffect(scheme)
-    //   if (mode === 'pureval' || mode === 'puredef') {
-    //     console.log('pure key', id)
-    //     this.ctx.pureKeys = this.ctx.pureKeys.add(id)
-    //   }
-    // })
-    //
-
-    const initEval = evaluateExpr(this.table, init)
-    const stepEval = evaluateExpr(this.table, step)
-    const invEval = evaluateExpr(this.table, inv)
+    const initEval = evaluateExpr(this.builder, init)
+    const stepEval = evaluateExpr(this.builder, step)
+    const invEval = evaluateExpr(this.builder, inv)
 
     // TODO: room for improvement here
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
@@ -155,7 +147,6 @@ export class Evaluator {
         ? left(failure)
         : right({ id: 0n, kind: 'bool', value: errorsFound == 0 })
       this.recorder.onRunReturn(outcome, this.trace.get())
-      // this.nextVars = new Map([...nextVarsSnapshot.entries()])
     }
 
     const outcome: Either<QuintError, QuintEx> = failure
@@ -170,7 +161,7 @@ export class Evaluator {
     // save the initial seed
     let seed = this.rng.getState()
 
-    const testEval = evaluateExpr(this.table, test)
+    const testEval = evaluateExpr(this.builder, test)
 
     let nsamples = 1
     // run up to maxSamples, stop on the first failure
@@ -277,46 +268,13 @@ export class Evaluator {
   }
 }
 
-export function evaluateExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  console.log('building expr', expr.id)
-  const exprEval = evaluateNewExpr(table, expr)
+export function evaluateExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
+  const exprEval = evaluateNewExpr(builder, expr)
   return ctx => exprEval(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: expr.id } : err))
-  // return ctx => {
-  //   const id = expr.id
-  //   if (id === 0n) {
-  //     return evaluateNewExpr(
-  //       ctx,
-  //       expr
-  //     )(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: id } : err))
-  //   }
-  //   const memoValue = ctx.memo.get(id)
-  //   if (memoValue === undefined) {
-  //     const result = evaluateNewExpr(ctx, expr)
-  //     ctx.memo.set(id, result)
-  //     return result(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: id } : err))
-  //   }
-
-  //   return memoValue!(ctx)
-  // }
-
-  // console.log('[get] expression', expressionToString(expr), 'memo enabled:', ctx.memoEnabled)
-  // if (ctx.memo.has(id)) {
-  //   // if (ctx.pureKeys.has(id)) {
-  //   //   console.log('pure key', id, expressionToString(expr))
-  //   // }
-  //   return ctx.memo.get(id)!
-  // }
-
-  // return ctx =>
-  //   evaluateNewExpr(ctx, expr)(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: id } : err))
-  // console.log('[set] expression', expressionToString(expr), 'memo enabled:', ctx.memoEnabled)
-  // if (ctx.memoEnabled) {
-  //   ctx.memo.set(id, result)
-  // }
 }
 
 export function evaluateUnderDefContext(
-  table: LookupTable,
+  builder: Builder,
   def: LookupDefinition,
   evaluate: (ctx: Context) => Either<QuintError, RuntimeValue>
 ): (ctx: Context) => Either<QuintError, RuntimeValue> {
@@ -327,9 +285,9 @@ export function evaluateUnderDefContext(
 
   const overrides: [bigint, (ctx: Context) => Either<QuintError, RuntimeValue>][] = instance.overrides.map(
     ([param, expr]) => {
-      const id = table.get(param.id)!.id
+      const id = builder.table.get(param.id)!.id
 
-      return [id, evaluateExpr(table, expr)]
+      return [id, evaluateExpr(builder, expr)]
     }
   )
 
@@ -339,15 +297,11 @@ export function evaluateUnderDefContext(
 
     ctx.consts = ImmutableMap(overrides.map(([id, evaluate]) => [id, evaluate(ctx)]))
     ctx.namespaces = List(def.namespaces)
-    // ctx.addNamespaces(List(def.namespaces))
-    // ctx.disableMemo() // We could have one memo per constant
 
     const result = evaluate(ctx)
 
     ctx.consts = constsBefore
     ctx.namespaces = namespacesBefore
-    // ctx.removeNamespaces()
-    // ctx.enableMemo()
     return result
   }
 }
@@ -367,23 +321,19 @@ function evaluateNondet(
   return pick
 }
 
-function evaluateDefCore(
-  table: LookupTable,
-  def: LookupDefinition
-): (ctx: Context) => Either<QuintError, RuntimeValue> {
+function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
   switch (def.kind) {
     case 'def':
       if (def.qualifier === 'nondet') {
-        const body = evaluateExpr(table, def.expr)
+        const body = evaluateExpr(builder, def.expr)
         return (ctx: Context) => {
-          ctx.disableMemo()
           return evaluateNondet(ctx, def, body)
         }
       }
 
       if (def.qualifier === 'action') {
         const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
-        const body = evaluateExpr(table, def.expr)
+        const body = evaluateExpr(builder, def.expr)
         return (ctx: Context) => {
           ctx.recorder.onUserOperatorCall(app)
           const result = body(ctx)
@@ -392,21 +342,19 @@ function evaluateDefCore(
         }
       }
 
-      return evaluateExpr(table, def.expr)
+      return evaluateExpr(builder, def.expr)
     case 'param': {
-      return (ctx: Context) => {
-        ctx.disableMemo()
-        const result = ctx.params.get(def.id)
-
-        if (!result) {
-          return left({ code: 'QNT501', message: `Parameter ${def.name} not set in context` })
-        }
-        return result
+      const register = builder.paramRegistry.get(def.id)
+      if (!register) {
+        const reg: Register = { value: left({ code: 'QNT501', message: `Parameter ${def.name} not set` }) }
+        builder.paramRegistry.set(def.id, reg)
+        return _ => reg.value
       }
+      return _ => register.value
     }
+
     case 'var': {
       return (ctx: Context) => {
-        ctx.disableMemo()
         const result = ctx.getVar(def.id)
 
         if (!result) {
@@ -417,7 +365,6 @@ function evaluateDefCore(
     }
     case 'const':
       return (ctx: Context) => {
-        ctx.disableMemo()
         const constValue = ctx.consts.get(def.id)
         if (!constValue) {
           return left({ code: 'QNT503', message: `Constant ${def.name}(id: ${def.id}) not set` })
@@ -430,11 +377,11 @@ function evaluateDefCore(
   }
 }
 
-function evaluateDef(table: LookupTable, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  return evaluateUnderDefContext(table, def, evaluateDefCore(table, def))
+function evaluateDef(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
+  return evaluateUnderDefContext(builder, def, evaluateDefCore(builder, def))
 }
 
-function evaluateNewExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
+function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
   switch (expr.kind) {
     case 'int':
     case 'bool':
@@ -443,24 +390,23 @@ function evaluateNewExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => E
       return _ => right(rv.fromQuintEx(expr))
     case 'lambda':
       // Lambda is also like a value, but we should construct it with the context
-      const body = evaluateExpr(table, expr.expr)
-      const lambda = rv.mkLambda(expr.params, body)
+      const body = evaluateExpr(builder, expr.expr)
+      const lambda = rv.mkLambda(expr.params, body, builder.paramRegistry)
       return _ => right(lambda)
     case 'name':
-      const def = table.get(expr.id)
+      const def = builder.table.get(expr.id)
       if (!def) {
         // TODO: Do we also need to return builtin ops for higher order usage?
         const lambda = builtinValue(expr.name)
         return _ => lambda
       }
-      return evaluateDef(table, def)
+      return evaluateDef(builder, def)
     case 'app':
       if (expr.opcode === 'assign') {
-        const varDef = table.get(expr.args[0].id)!
-        const exprEval = evaluateExpr(table, expr.args[1])
-        // make sure it is registered in the storage
+        const varDef = builder.table.get(expr.args[0].id)!
+        const exprEval = evaluateExpr(builder, expr.args[1])
 
-        return evaluateUnderDefContext(table, varDef, ctx => {
+        return evaluateUnderDefContext(builder, varDef, ctx => {
           ctx.discoverVar(varDef.id, varDef.name)
           return exprEval(ctx).map(value => {
             ctx.setNextVar(varDef.id, value)
@@ -469,7 +415,7 @@ function evaluateNewExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => E
         })
       }
 
-      const args = expr.args.map(arg => evaluateExpr(table, arg))
+      const args = expr.args.map(arg => evaluateExpr(builder, arg))
 
       // In these special ops, we don't want to evaluate the arguments before evaluating application
       if (lazyOps.includes(expr.opcode)) {
@@ -477,7 +423,7 @@ function evaluateNewExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => E
         return ctx => op(ctx, args)
       }
 
-      const op = lambdaForApp(table, expr)
+      const op = lambdaForApp(builder, expr)
       return ctx => {
         const argValues = args.map(arg => arg(ctx))
         if (argValues.some(arg => arg.isLeft())) {
@@ -490,22 +436,22 @@ function evaluateNewExpr(table: LookupTable, expr: QuintEx): (ctx: Context) => E
         )
       }
     case 'let':
-      return evaluateExpr(table, expr.expr)
+      return evaluateExpr(builder, expr.expr)
   }
 }
 
 function lambdaForApp(
-  table: LookupTable,
+  builder: Builder,
   app: QuintApp
 ): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
   const { id, opcode } = app
 
-  const def = table.get(id)!
+  const def = builder.table.get(id)!
   if (!def) {
     return builtinLambda(opcode)
   }
 
-  const value = evaluateDef(table, def)
+  const value = evaluateDef(builder, def)
   return (ctx, args) => {
     const lambdaResult = value(ctx)
     if (lambdaResult.isLeft()) {

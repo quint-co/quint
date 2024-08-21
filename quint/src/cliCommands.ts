@@ -568,8 +568,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     invariant,
     prev.args.maxSamples,
     prev.args.maxSteps,
-    prev.args.nTraces ?? 1,
-    prev.effects
+    prev.args.nTraces ?? 1
   )
 
   const elapsedMs = Date.now() - startMs

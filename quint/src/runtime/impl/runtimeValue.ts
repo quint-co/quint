@@ -73,7 +73,7 @@ import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { toMaybe } from './base'
 import { EvalFunction, evaluateExpr } from './evaluator'
-import { Context } from './Context'
+import { Context, Register } from './Context'
 
 /**
  * A factory of runtime values that should be used to instantiate new values.
@@ -252,8 +252,19 @@ export const rv = {
    * @param body the lambda body expression
    * @returns a runtime value of lambda
    */
-  mkLambda: (params: QuintLambdaParameter[], body: EvalFunction) => {
-    return new RuntimeValueLambda(params, body)
+  mkLambda: (params: QuintLambdaParameter[], body: EvalFunction, paramRegistry: Map<bigint, Register>) => {
+    const registers = params.map(param => {
+      const register = paramRegistry.get(param.id)!
+      if (!register) {
+        const reg: Register = { value: left({ code: 'QNT501', message: `Parameter ${param.name} not set` }) }
+        paramRegistry.set(param.id, reg)
+        return reg
+      }
+
+      return register
+    })
+
+    return new RuntimeValueLambda(body, registers)
   },
 
   fromQuintEx: (ex: QuintEx): RuntimeValue => {
@@ -613,30 +624,20 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
 
     const lam = this as RuntimeValueLambda
-    const bodyEval = this.body
 
     return (ctx: Context, args: RuntimeValue[]) => {
-      if (lam.params.length !== args.length) {
+      if (lam.registers.length !== args.length) {
         return left({
           code: 'QNT506',
-          message: `Lambda expects ${lam.params.length} arguments, but got ${args.length}`,
+          message: `Lambda expects ${lam.registers.length} arguments, but got ${args.length}`,
         })
       }
-      const paramEntries: [bigint, RuntimeValue][] = lam.params.map((param, i) => {
-        return [param.id, args[i]]
+
+      lam.registers.forEach((reg, i) => {
+        reg.value = right(args[i])
       })
 
-      // ctx.addConstants(lam.consts)
-      // ctx.addNamespaces(lam.namespaces)
-      ctx.addParams(paramEntries)
-      // lam.ctx.disableMemo()
-      const result = bodyEval(ctx)
-      // ctx.removeConstants()
-      // ctx.removeNamespaces()
-      ctx.removeParams()
-      // lam.ctx.enableMemo()
-
-      return result
+      return lam.body(ctx)
     }
   }
 
@@ -1645,19 +1646,13 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
  * RuntimeValueLambda cannot be compared with other values.
  */
 export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue {
-  params: QuintLambdaParameter[]
   body: EvalFunction
-  // ctx: Context
-  // consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>
-  // namespaces: List<string>
+  registers: Register[]
 
-  constructor(params: QuintLambdaParameter[], body: EvalFunction) {
+  constructor(body: EvalFunction, registers: Register[]) {
     super(false)
-    this.params = params
     this.body = body
-    // this.ctx = ctx
-    // this.consts = ctx.consts
-    // this.namespaces = ctx.namespaces
+    this.registers = registers
   }
 
   eval(args?: any[]) {
@@ -1673,9 +1668,15 @@ export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue
     return {
       id: gen.nextId(),
       kind: 'lambda',
-      params: this.params,
+      params: Array.from(this.registers.keys()).map(i => {
+        return { id: gen.nextId(), name: `_a${i}` }
+      }),
       qualifier: 'def',
-      expr: { id: gen.nextId(), kind: 'name', name: 'lambda' },
+      expr: {
+        kind: 'str',
+        value: `lambda_${this.registers.length}_params`,
+        id: gen.nextId(),
+      },
     }
   }
 }

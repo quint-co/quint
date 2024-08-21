@@ -10,10 +10,11 @@ export interface NondetPick {
   value: Either<QuintError, RuntimeValue>
 }
 
+export interface Register {
+  value: Either<QuintError, RuntimeValue>
+}
+
 export class Context {
-  public memo: Map<bigint, (ctx: Context) => Either<QuintError, RuntimeValue>> = new Map()
-  public memoEnabled: boolean = true
-  public params: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
   public consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>> = ImmutableMap()
   public namespaces: List<string> = List()
   public varStorage: VarStorage = new VarStorage()
@@ -25,7 +26,6 @@ export class Context {
   public constsByInstance: Map<bigint, ImmutableMap<bigint, Either<QuintError, RuntimeValue>>> = new Map()
 
   private constHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
-  private paramHistory: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>[] = []
   private namespacesHistory: List<string>[] = []
 
   constructor(recorder: TraceRecorder, rand: (n: bigint) => bigint) {
@@ -34,8 +34,6 @@ export class Context {
   }
 
   reset() {
-    this.memo = new Map()
-    this.params = ImmutableMap()
     this.varStorage = new VarStorage()
   }
 
@@ -47,7 +45,6 @@ export class Context {
     const varName = this.varWithNamespaces(id)
     const key = [id, varName].join('#')
     const result = this.varStorage.vars.get(key)
-    // console.log('getting', id, varName, result)
     if (!result) {
       return left({ code: 'QNT502', message: `Variable ${varName} not set` })
     }
@@ -65,27 +62,6 @@ export class Context {
   private varWithNamespaces(id: bigint): string {
     const revertedNamespaces = this.namespaces.slice().reverse()
     return revertedNamespaces.concat([this.varStorage.varNames.get(id)!] || []).join('::')
-  }
-
-  addParams(params: [bigint, RuntimeValue][]) {
-    this.paramHistory.push(this.params)
-    this.params = this.params.merge(params.map(([id, param]) => [id, right(param)]))
-  }
-
-  removeParams() {
-    this.params = this.paramHistory.pop()!
-  }
-
-  clearMemo() {
-    this.memo = new Map()
-  }
-
-  disableMemo() {
-    this.memoEnabled = false
-  }
-
-  enableMemo() {
-    this.memoEnabled = true
   }
 
   addConstants(consts: ImmutableMap<bigint, Either<QuintError, RuntimeValue>>) {
