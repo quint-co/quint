@@ -181,8 +181,7 @@ const testCmd = {
         type: 'string',
       })
       .option('output', {
-        desc: `write a trace for every test, e.g., out{#}{}.itf.json
-{} is the name of a test, {#} is the test sequence number`,
+        desc: 'write a trace for every test, e.g., out{#}{}.itf.json where {} is the name of a test, {#} is the test sequence number',
         type: 'string',
       })
       .option('max-samples', {
@@ -225,7 +224,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file, e.g., out{#}.itf.json where {#} is the trace sequence number (suppresses all console output)',
         type: 'string',
       })
       .option('max-samples', {

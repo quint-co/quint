@@ -327,7 +327,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     rng,
     verbosity: verbosityLevel,
     onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
-      if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
+      if (outputTemplate) {
         const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
         const trace = toItf(vars, states)
         if (trace.isRight()) {
@@ -551,7 +551,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
       const itfFile: string | undefined = prev.args.outItf
       if (itfFile) {
-        const filename = prev.args.nTraces > 1 ? itfFile.replaceAll('.itf.json', `${index}.itf.json`) : itfFile
+        const filename = itfFile.replaceAll('{#}', `${index}`)
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -727,6 +727,17 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
   const verbosityLevel = deriveVerbosity(args)
+
+  const itfFile: string | undefined = prev.args.outItf
+  if (itfFile) {
+    if (itfFile.includes('{}') || itfFile.includes('{#}')) {
+      console.log(
+        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey('{}')} or ${chalk.grey(
+          '{#}'
+        )}, but this has no effect since at most a single trace will be produced.`
+      )
+    }
+  }
 
   let loadedConfig: any = {}
   try {
