@@ -57,7 +57,7 @@ const compileOpts = (yargs: any) =>
       default: 'step',
     })
     .option('invariant', {
-      desc: 'the invariants to check, separated by commas (e.g.)',
+      desc: 'the invariants to check, separated by commas',
       type: 'string',
     })
     .option('temporal', {
