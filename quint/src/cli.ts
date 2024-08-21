@@ -351,9 +351,6 @@ const docsCmd = {
 const validate = (argv: any) => {
   if (argv.output && typeof argv.output === 'string') {
     const output = argv.output
-    if (!output.endsWith('.itf.json')) {
-      throw new Error(`Unexpected format in --output: ${output}`)
-    }
     if (!output.includes('{}') && !output.includes('{#}')) {
       throw new Error(`The output should contain at least one of variables: {}, {#}`)
     }
