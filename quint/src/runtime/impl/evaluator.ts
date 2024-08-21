@@ -23,7 +23,6 @@ export type Builder = {
 export class Evaluator {
   public ctx: Context
   public recorder: TraceRecorder
-  private trace: Trace = new Trace()
   private rng: Rng
   private builder: Builder
 
@@ -39,18 +38,16 @@ export class Evaluator {
     return this.builder.table
   }
 
+  get trace(): Trace {
+    return this.ctx.trace
+  }
+
   updateTable(table: LookupTable) {
     this.builder.table = table
   }
 
-  shift() {
-    if (this.ctx.varStorage.nextVars.size === 0) {
-      return
-    }
-    this.ctx.varStorage.shiftVars()
-    this.trace.extend(this.ctx.varStorage.asRecord())
-    // TODO: save on trace
-    this.ctx.nondetPicks = ImmutableMap()
+  shift(): void {
+    this.ctx.shift()
   }
 
   shiftAndCheck(): string[] {
@@ -66,8 +63,15 @@ export class Evaluator {
   }
 
   evaluate(expr: QuintEx): Either<QuintError, QuintEx> {
+    if (expr.kind === 'app') {
+      this.recorder.onUserOperatorCall(expr)
+    }
     const value = evaluateExpr(this.builder, expr)(this.ctx)
-    return value.map(rv.toQuintEx)
+    const result = value.map(rv.toQuintEx)
+    if (expr.kind === 'app') {
+      this.recorder.onUserOperatorReturn(expr, expr.args, result)
+    }
+    return result
   }
 
   simulate(

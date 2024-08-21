@@ -7,7 +7,7 @@ import { RuntimeValue, rv } from './runtimeValue'
 import { chunk } from 'lodash'
 import { expressionToString } from '../../ir/IRprinting'
 import { zerog } from '../../idGenerator'
-import { QuintEx } from '../../ir/quintIr'
+import { QuintApp, QuintEx } from '../../ir/quintIr'
 
 export function builtinValue(name: string): Either<QuintError, RuntimeValue> {
   switch (name) {
@@ -75,15 +75,18 @@ export function lazyBuiltinLambda(
       }
 
     case 'actionAny':
+      const app: QuintApp = { id: 0n, kind: 'app', opcode: 'actionAny', args: [] }
       return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.nextVarsSnapshot()
-        const evaluationResults = args.map(arg => {
+        const evaluationResults = args.map((arg, i) => {
+          ctx.recorder.onAnyOptionCall(app, i)
           const result = arg(ctx).map(result => {
             // Save vars
             const successor = ctx.varStorage.nextVarsSnapshot()
 
             return result.toBool() ? [successor] : []
           })
+          ctx.recorder.onAnyOptionReturn(app, i)
 
           // Recover snapshot (regardless of success or failure)
           ctx.varStorage.nextVars = nextVarsSnapshot
@@ -96,6 +99,8 @@ export function lazyBuiltinLambda(
           .mapLeft(errors => errors[0])
 
         return processedResults.map(potentialSuccessors => {
+          ctx.recorder.onAnyReturn(args.length, -1)
+
           switch (potentialSuccessors.length) {
             case 0:
               return rv.mkBool(false)
@@ -178,6 +183,24 @@ export function lazyBuiltinLambda(
         })
       }
     case 'then':
+      return (ctx, args) => {
+        const oldState = ctx.varStorage.asRecord()
+        return args[0](ctx).chain(firstResult => {
+          if (!firstResult.toBool()) {
+            return left({
+              code: 'QNT513',
+              message: `Cannot continue in A.then(B), A evaluates to 'false'`,
+            })
+          }
+
+          ctx.shift()
+          const newState = ctx.varStorage.asRecord()
+          ctx.recorder.onNextState(oldState, newState)
+
+          return args[1](ctx)
+        })
+      }
+
     default:
       return () => left({ code: 'QNT000', message: 'Unknown stateful op' })
   }

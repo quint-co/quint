@@ -4,6 +4,7 @@ import { RuntimeValue } from './runtimeValue'
 import { TraceRecorder } from '../trace'
 import { Map as ImmutableMap, List, is } from 'immutable'
 import { VarStorage } from './VarStorage'
+import { Trace } from './trace'
 
 export interface NondetPick {
   name: string
@@ -20,6 +21,7 @@ export class Context {
   public rand: (n: bigint) => bigint
   public nondetPicks: ImmutableMap<bigint, NondetPick> = ImmutableMap()
   public recorder: TraceRecorder
+  public trace: Trace = new Trace()
 
   constructor(recorder: TraceRecorder, rand: (n: bigint) => bigint) {
     this.recorder = recorder
@@ -28,6 +30,16 @@ export class Context {
 
   reset() {
     this.varStorage = new VarStorage()
+  }
+
+  shift() {
+    if (this.varStorage.nextVars.size === 0) {
+      return
+    }
+    this.varStorage.shiftVars()
+    this.trace.extend(this.varStorage.asRecord())
+    // TODO: save on trace
+    this.nondetPicks = ImmutableMap()
   }
 
   discoverVar(id: bigint, name: string) {
