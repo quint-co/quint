@@ -864,7 +864,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf='out-itf-example{#}.itf.json' --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 rm out-itf-example*.itf.json
 ```
@@ -878,7 +878,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in run with n-traces itf violation -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt \
+quint run --out-itf='out-itf-example{#}.itf.json' --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt \
    --invariant=totalSupplyDoesNotOverflowInv 
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.["#meta"].status'
