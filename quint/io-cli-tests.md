@@ -843,14 +843,14 @@ rm out-itf-mbt-example.itf.json
 
 ### Run without violation outputs ITF
 
-<!-- !test in sucessful run itf -->
+<!-- !test in successful run itf -->
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
-<!-- !test out sucessful run itf -->
+<!-- !test out successful run itf -->
 ```
 [
   "alice",
