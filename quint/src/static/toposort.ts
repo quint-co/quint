@@ -6,7 +6,7 @@
  * This code is a port of the Scala code from Apalache:
  *
  * ${@link
- * https://github.com/informalsystems/apalache/blob/dd5fff8dbfe707fb450afd2319cf50ebeb568e18/tlair/src/main/scala/at/forsyte/apalache/tla/lir/transformations/impl/StableTopologicalSort.scala
+ * https://github.com/apalache-mc/apalache/blob/dd5fff8dbfe707fb450afd2319cf50ebeb568e18/tlair/src/main/scala/at/forsyte/apalache/tla/lir/transformations/impl/StableTopologicalSort.scala
  * }
  *
  * @author Igor Konnov, Informal Systems, 2023

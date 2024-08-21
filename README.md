@@ -117,7 +117,7 @@ error: Invariant violated
 Check the [Getting Started](https://quint-lang.org/docs/getting-started) guide
 to see how we can fix this problem and formally verify the result.
 
-[Apalache]: https://github.com/informalsystems/apalache
+[Apalache]: https://github.com/apalache-mc/apalache
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 
 ### Features
@@ -141,7 +141,7 @@ to see how we can fix this problem and formally verify the result.
   <dd>enabling tests, trace generation, and exploration of your system</dd>
 
   <dt><strong>A symbolic model checker</strong></dt>
-  <dd>to verify your specifications via <a href="https://github.com/informalsystems/apalache">Apalache</a></dd>
+  <dd>to verify your specifications via <a href="https://github.com/apalache-mc/apalache">Apalache</a></dd>
 </dl>
 
 ### Motivation

@@ -294,8 +294,8 @@ Between installing the plugin from different sources, you may end up with multip
 3. `rm $HOME/.vscode/extensions/.init-default-profile-extensions`.
 4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
 
-[Apalache]: https://github.com/informalsystems/apalache
-[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/main/CONTRIBUTING.md
+[Apalache]: https://github.com/apalache-mc/apalache
+[Contributing to Apalache]: https://github.com/apalache-mc/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./docs/pages/docs/architecture-decision-records/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install

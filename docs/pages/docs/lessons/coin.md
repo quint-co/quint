@@ -966,7 +966,7 @@ known that there is always a probability of missing a bug with random search.
 
 If you are looking for better guarantees of correctness, Quint will be soon
 integrated with the
-[Apalache model checker](https://github.com/informalsystems/apalache).
+[Apalache model checker](https://github.com/apalache-mc/apalache).
 The model checker looks for counterexamples more exhaustively, by solving
 equations. In some cases, it may even give you a guarantee that there is no bug,
 if it has not found any.
