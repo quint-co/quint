@@ -25,7 +25,6 @@ export class VarStorage {
   }
 
   asRecord(): QuintEx {
-    // console.log('vars', [...this.vars.keySeq()])
     return {
       id: 0n,
       kind: 'app',

@@ -20,6 +20,7 @@ export class Builder {
   table: LookupTable
   paramRegistry: Map<bigint, Register> = new Map()
   constRegistry: Map<bigint, Register> = new Map()
+  scopedCachedValues: Map<bigint, { value: Either<QuintError, RuntimeValue> | undefined }> = new Map()
   public namespaces: List<string> = List()
   public varStorage: VarStorage = new VarStorage()
 
@@ -94,15 +95,18 @@ export class Evaluator {
   }
 
   shiftAndCheck(): string[] {
-    const missing = [...this.ctx.varStorage.vars.keys()].filter(name => !this.ctx.varStorage.nextVars.has(name))
+    const missing = this.ctx.varStorage.nextVars.filter(reg => reg.value.isLeft())
 
-    if (missing.length === this.ctx.varStorage.vars.size) {
+    if (missing.size === this.ctx.varStorage.vars.size) {
       // Nothing was changed, don't shift
       return []
     }
 
     this.shift()
-    return missing.map(name => name.split('#')[1])
+    return missing
+      .valueSeq()
+      .map(reg => reg.name)
+      .toArray()
   }
 
   evaluate(expr: QuintEx): Either<QuintError, QuintEx> {
@@ -222,7 +226,7 @@ export class Evaluator {
       seed = this.rng.getState()
       this.recorder.onRunCall()
       // reset the trace
-      this.trace.reset()
+      this.reset()
       // run the test
       const result = testEval(this.ctx).map(e => e.toQuintEx(zerog))
 
@@ -360,30 +364,15 @@ export function buildUnderDefContext(
   }
 }
 
-function evaluateNondet(
-  ctx: Context,
-  def: QuintOpDef,
-  bodyEval: (ctx: Context) => Either<QuintError, RuntimeValue>
-): Either<QuintError, RuntimeValue> {
-  const previousPick = ctx.nondetPicks.get(def.id)
-  if (previousPick) {
-    return previousPick.value
-  }
-
-  const pick = bodyEval(ctx)
-  ctx.nondetPicks = ctx.nondetPicks.set(def.id, { name: def.name, value: pick })
-  return pick
-}
-
 function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
   switch (def.kind) {
     case 'def':
-      if (def.qualifier === 'nondet') {
-        const body = evaluateExpr(builder, def.expr)
-        return (ctx: Context) => {
-          return evaluateNondet(ctx, def, body)
-        }
-      }
+      // if (def.qualifier === 'nondet') {
+      //   const body = evaluateExpr(builder, def.expr)
+      //   return (ctx: Context) => {
+      //     return evaluateNondet(ctx, def, body)
+      //   }
+      // }
 
       if (def.qualifier === 'action') {
         const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
@@ -396,7 +385,24 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
         }
       }
 
-      return evaluateExpr(builder, def.expr)
+      if (def.expr.kind === 'lambda') {
+        return evaluateExpr(builder, def.expr)
+      }
+
+      if (def.depth === undefined || def.depth === 0) {
+        return evaluateExpr(builder, def.expr)
+      }
+
+      const cachedValue = builder.scopedCachedValues.get(def.id)!
+      const bodyEval = evaluateExpr(builder, def.expr)
+
+      return ctx => {
+        if (cachedValue.value === undefined) {
+          cachedValue.value = bodyEval(ctx)
+          return cachedValue.value
+        }
+        return cachedValue.value
+      }
     case 'param': {
       const register = builder.paramRegistry.get(def.id)
       if (!register) {
@@ -436,7 +442,8 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
     case 'bool':
     case 'str':
       // These are already values, just return them
-      return _ => right(rv.fromQuintEx(expr))
+      const value = right(rv.fromQuintEx(expr))
+      return _ => value
     case 'lambda':
       // Lambda is also like a value, but we should construct it with the context
       const body = evaluateExpr(builder, expr.expr)
@@ -478,18 +485,30 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
 
       const op = lambdaForApp(builder, expr)
       return ctx => {
-        const argValues = args.map(arg => arg(ctx))
-        if (argValues.some(arg => arg.isLeft())) {
-          return argValues.find(arg => arg.isLeft())!
+        const argValues = []
+        for (const arg of args) {
+          const argValue = arg(ctx)
+          if (argValue.isLeft()) {
+            return argValue
+          }
+          argValues.push(argValue.unwrap())
         }
 
-        return op(
-          ctx,
-          argValues.map(a => a.unwrap())
-        )
+        return op(ctx, argValues)
       }
+
     case 'let':
-      return evaluateExpr(builder, expr.expr)
+      let cachedValue = builder.scopedCachedValues.get(expr.opdef.id)
+      if (!cachedValue) {
+        cachedValue = { value: undefined }
+        builder.scopedCachedValues.set(expr.opdef.id, cachedValue)
+      }
+      const bodyEval = evaluateExpr(builder, expr.expr)
+      return ctx => {
+        const result = bodyEval(ctx)
+        cachedValue!.value = undefined
+        return result
+      }
   }
 }
 
@@ -521,4 +540,8 @@ function lambdaForApp(
 
 export function isTrue(value: Either<QuintError, RuntimeValue>): boolean {
   return value.isRight() && value.value.toBool() === true
+}
+
+export function isFalse(value: Either<QuintError, RuntimeValue>): boolean {
+  return value.isRight() && value.value.toBool() === false
 }

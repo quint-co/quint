@@ -1,7 +1,7 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Map, is, Set, Range, List } from 'immutable'
-import { EvalFunction, isTrue } from './evaluator'
+import { EvalFunction, isFalse, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
 import { chunk } from 'lodash'
@@ -42,27 +42,24 @@ export function lazyBuiltinLambda(
   switch (op) {
     case 'and':
       return (ctx, args) => {
-        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: EvalFunction) => {
-          return acc.chain(accValue => {
-            if (accValue.toBool() === true) {
-              return arg(ctx)
-            }
-            return acc
-          })
-        }, right(rv.mkBool(true)))
+        for (const arg of args) {
+          const result = arg(ctx)
+          if (!isTrue(result)) {
+            return result
+          }
+        }
+        return right(rv.mkBool(true))
       }
     case 'or':
       return (ctx, args) => {
-        return args.reduce((acc: Either<QuintError, RuntimeValue>, arg: EvalFunction) => {
-          return acc.chain(accValue => {
-            if (accValue.toBool() === false) {
-              return arg(ctx)
-            }
-            return acc
-          })
-        }, right(rv.mkBool(false)))
+        for (const arg of args) {
+          const result = arg(ctx)
+          if (!isFalse(result)) {
+            return result
+          }
+        }
+        return right(rv.mkBool(false))
       }
-
     case 'implies':
       return (ctx, args) => {
         return args[0](ctx).chain(l => {
