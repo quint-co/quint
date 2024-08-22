@@ -4,10 +4,12 @@ import { Map, is, Set, Range, List } from 'immutable'
 import { EvalFunction, isFalse, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
-import { chunk } from 'lodash'
+import { chunk, times } from 'lodash'
 import { expressionToString } from '../../ir/IRprinting'
 import { zerog } from '../../idGenerator'
 import { QuintApp, QuintEx } from '../../ir/quintIr'
+import { prettyQuintEx, terminalWidth } from '../../graphics'
+import { format } from '../../prettierimp'
 
 export function builtinValue(name: string): Either<QuintError, RuntimeValue> {
   switch (name) {
@@ -34,6 +36,7 @@ export const lazyOps = [
   'next',
   'implies',
   'then',
+  'reps',
 ]
 
 export function lazyBuiltinLambda(
@@ -195,6 +198,20 @@ export function lazyBuiltinLambda(
           // ctx.recorder.onNextState(oldState, newState)
 
           return args[1](ctx)
+        })
+      }
+    case 'reps':
+      return (ctx, args) => {
+        return args[0](ctx).chain(n => {
+          let result: Either<QuintError, RuntimeValue> = right(rv.mkBool(true))
+          for (let i = 0; i < Number(n.toInt()); i++) {
+            result = args[1](ctx).chain(value => value.toArrow()(ctx, [rv.mkInt(i)]))
+            if (result.isLeft()) {
+              return result
+            }
+            ctx.shift()
+          }
+          return result
         })
       }
 
@@ -505,9 +522,15 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
     case 'fail':
       return (_, args) => right(rv.mkBool(!args[0].toBool()))
     case 'assert':
-      return (_, args) => (args[0].toBool() ? right(args[0]) : left({ code: 'QNT502', message: `Assertion failed` }))
+      return (_, args) => (args[0].toBool() ? right(args[0]) : left({ code: 'QNT508', message: `Assertion failed` }))
+    case 'q::debug':
+      return (_, args) => {
+        let columns = terminalWidth()
+        let valuePretty = format(columns, 0, prettyQuintEx(args[1].toQuintEx(zerog)))
+        console.log('>', args[0].toStr(), valuePretty.toString())
+        return right(args[1])
+      }
     case 'expect':
-    case 'reps':
 
     default:
       return () => left({ code: 'QNT000', message: `Unknown builtin ${op}` })

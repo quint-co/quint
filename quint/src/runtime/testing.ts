@@ -22,7 +22,7 @@ export interface TestOptions {
   maxSamples: number
   rng: Rng
   verbosity: number
-  onTrace(index: number, name: string, status: string, vars: string[], states: QuintEx[]): void
+  onTrace: (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => void
 }
 
 /**

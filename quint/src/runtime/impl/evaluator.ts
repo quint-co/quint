@@ -16,6 +16,11 @@ import { expressionToString } from '../../ir/IRprinting'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
 
+function nameWithNamespaces(name: string, namespaces: List<string>): string {
+  const revertedNamespaces = namespaces.reverse()
+  return revertedNamespaces.push(name).join('::')
+}
+
 export class Builder {
   table: LookupTable
   paramRegistry: Map<bigint, Register> = new Map()
@@ -30,13 +35,11 @@ export class Builder {
 
   discoverVar(id: bigint, name: string) {
     const key = [id, ...this.namespaces].join('#')
-    console.log('discovering var', id, name, key)
     if (this.varStorage.vars.has(key)) {
       return
     }
 
-    const revertedNamespaces = this.namespaces.reverse()
-    const varName = revertedNamespaces.push(name).join('::')
+    const varName = nameWithNamespaces(name, this.namespaces)
     const register: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
     const nextRegister: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
     this.varStorage.vars = this.varStorage.vars.set(key, register)
@@ -62,6 +65,17 @@ export class Builder {
 
     return result
   }
+
+  registerForConst(id: bigint, name: string): Register {
+    let register = this.constRegistry.get(id)
+    if (!register) {
+      const message = `Uninitialized const ${name}. Use: import <moduleName>(${name}=<value>).*`
+      register = { value: left({ code: 'QNT500', message }) }
+      this.constRegistry.set(id, register)
+      return register
+    }
+    return register
+  }
 }
 
 export class Evaluator {
@@ -75,11 +89,6 @@ export class Evaluator {
     this.rng = rng
     this.builder = new Builder(table)
     this.ctx = new Context(recorder, rng.next, this.builder.varStorage)
-  }
-
-  get table(): LookupTable {
-    console.log('getting table')
-    return this.builder.table
   }
 
   get trace(): Trace {
@@ -209,12 +218,20 @@ export class Evaluator {
     return outcome
   }
 
-  test(name: string, test: QuintEx, maxSamples: number): TestResult {
+  test(
+    testDef: LookupDefinition,
+    maxSamples: number,
+    onTrace: (name: string, status: string, vars: string[], states: QuintEx[]) => void
+  ): TestResult {
+    const name = nameWithNamespaces(testDef.name, List(testDef.namespaces))
+
     this.trace.reset()
+    this.recorder.clear()
+
     // save the initial seed
     let seed = this.rng.getState()
 
-    const testEval = evaluateExpr(this.builder, test)
+    const testEval = evaluateDef(this.builder, testDef)
 
     let nsamples = 1
     // run up to maxSamples, stop on the first failure
@@ -229,26 +246,24 @@ export class Evaluator {
 
       // extract the trace
       const trace = this.trace.get()
-
       if (trace.length > 0) {
         this.recorder.onRunReturn(result, trace)
       } else {
-        // Report a non-critical error
-        console.error('Missing a trace')
         this.recorder.onRunReturn(result, [])
       }
 
-      const bestTrace = this.recorder.bestTraces[0].frame
+      const states = this.recorder.bestTraces[0]?.frame?.args?.map(rv.toQuintEx)
+      const frames = this.recorder.bestTraces[0]?.frame?.subframes ?? []
       // evaluate the result
       if (result.isLeft()) {
-        // if the test failed, return immediately
+        // if there was an error, return immediately
         return {
           name,
           status: 'failed',
           errors: [result.value],
           seed,
-          frames: bestTrace.subframes,
-          nsamples: nsamples,
+          frames,
+          nsamples,
         }
       }
 
@@ -259,9 +274,9 @@ export class Evaluator {
           name,
           status: 'ignored',
           errors: [],
-          seed: seed,
-          frames: bestTrace.subframes,
-          nsamples: nsamples,
+          seed,
+          frames,
+          nsamples,
         }
       }
 
@@ -270,54 +285,59 @@ export class Evaluator {
         const error: QuintError = {
           code: 'QNT511',
           message: `Test ${name} returned false`,
-          reference: test.id,
+          reference: testDef.id,
         }
-        //         options.onTrace(
-        //   index,
-        //   name,
-        //   status,
-        //   ctx.evaluationState.vars.map(v => v.name),
-        //   states
-        // )
+        onTrace(name, 'failed', this.varNames(), states)
 
         // saveTrace(bestTrace, index, name, 'failed')
         return {
           name,
           status: 'failed',
           errors: [error],
-          seed: seed,
-          frames: bestTrace.subframes,
-          nsamples: nsamples,
+          seed,
+          frames,
+          nsamples,
         }
       } else {
         if (this.rng.getState() === seed) {
           // This successful test did not use non-determinism.
           // Running it one time is sufficient.
 
-          // saveTrace(bestTrace, index, name, 'passed')
+          onTrace(name, 'passed', this.varNames(), states)
+
           return {
             name,
             status: 'passed',
             errors: [],
             seed: seed,
-            frames: bestTrace.subframes,
-            nsamples: nsamples,
+            frames,
+            nsamples,
           }
         }
       }
     }
 
     // the test was run maxSamples times, and no errors were found
-    const bestTrace = this.recorder.bestTraces[0].frame
-    // saveTrace(bestTrace, index, name, 'passed')
+    const states = this.recorder.bestTraces[0]?.frame?.args?.map(rv.toQuintEx)
+    const frames = this.recorder.bestTraces[0]?.frame?.subframes ?? []
+
+    onTrace(name, 'passed', this.varNames(), states)
+
     return {
       name,
       status: 'passed',
       errors: [],
       seed: seed,
-      frames: bestTrace.subframes,
+      frames,
       nsamples: nsamples - 1,
     }
+  }
+
+  varNames() {
+    return this.ctx.varStorage.vars
+      .valueSeq()
+      .toArray()
+      .map(v => v.name)
   }
 }
 
@@ -339,11 +359,7 @@ export function buildUnderDefContext(
   const overrides: [Register, (ctx: Context) => Either<QuintError, RuntimeValue>][] = instance.overrides.map(
     ([param, expr]) => {
       const id = builder.table.get(param.id)!.id
-      let register = builder.constRegistry.get(id)
-      if (!register) {
-        register = { value: left({ code: 'QNT504', message: `Constant ${param.name} not set` }) }
-        builder.constRegistry.set(id, register)
-      }
+      const register = builder.registerForConst(id, param.name)
 
       return [register, evaluateExpr(builder, expr)]
     }
@@ -390,7 +406,8 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
         return evaluateExpr(builder, def.expr)
       }
 
-      const cachedValue = builder.scopedCachedValues.get(def.id)!
+      let cachedValue = builder.scopedCachedValues.get(def.id)!
+
       const bodyEval = evaluateExpr(builder, def.expr)
 
       return ctx => {
@@ -417,12 +434,7 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
       }
     }
     case 'const':
-      const register = builder.constRegistry.get(def.id)
-      if (!register) {
-        const reg: Register = { value: left({ code: 'QNT501', message: `Constant ${def.name} not set` }) }
-        builder.constRegistry.set(def.id, reg)
-        return _ => reg.value
-      }
+      const register = builder.registerForConst(def.id, def.name)
       return _ => register.value
     default:
       return _ => left({ code: 'QNT000', message: `Not implemented for def kind ${def.kind}` })
@@ -458,7 +470,6 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
       if (expr.opcode === 'assign') {
         const varDef = builder.table.get(expr.args[0].id)!
         return buildUnderDefContext(builder, varDef, () => {
-          console.log(expressionToString(expr))
           builder.discoverVar(varDef.id, varDef.name)
           const register = builder.getNextVar(varDef.id)
           const exprEval = evaluateExpr(builder, expr.args[1])
@@ -481,6 +492,18 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
       }
 
       const op = lambdaForApp(builder, expr)
+      //     return ctx => {
+      //   const argValues = args.map(arg => arg(ctx))
+      //   if (argValues.some(arg => arg.isLeft())) {
+      //     return argValues.find(arg => arg.isLeft())!
+      //   }
+
+      //   return op(
+      //     ctx,
+      //     argValues.map(a => a.unwrap())
+      //   )
+      // }
+
       return ctx => {
         const argValues = []
         for (const arg of args) {

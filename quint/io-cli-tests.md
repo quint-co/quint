@@ -895,15 +895,13 @@ rm out-itf-example*.itf.json
 
 ### Test outputs ITF
 
-TODO: output states after fix: https://github.com/informalsystems/quint/issues/288
-
 <!-- !test in test itf -->
 ```
 output=$(quint test --output='coin_{#}_{}.itf.json' \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
-cat coin_0_sendWithoutMintTest.itf.json | jq '.states'
+cat coin_0_sendWithoutMintTest.itf.json | jq '.states[0]."balances"."#map"'
 rm coin_0_sendWithoutMintTest.itf.json
 cat coin_1_mintSendTest.itf.json | jq '.states[0]."balances"."#map"'
 rm coin_1_mintSendTest.itf.json
@@ -918,7 +916,38 @@ exit $exit_code
     ok mintSendTest passed 10000 test(s)
 
   2 passing (duration)
-[]
+[
+  [
+    "alice",
+    {
+      "#bigint": "0"
+    }
+  ],
+  [
+    "bob",
+    {
+      "#bigint": "0"
+    }
+  ],
+  [
+    "charlie",
+    {
+      "#bigint": "0"
+    }
+  ],
+  [
+    "eve",
+    {
+      "#bigint": "0"
+    }
+  ],
+  [
+    "null",
+    {
+      "#bigint": "0"
+    }
+  ]
+]
 [
   [
     "alice",
@@ -1129,7 +1158,7 @@ echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.
 
 <!-- !test in test compile error -->
 ```
-output=$(quint test testFixture/_1040compileError.qnt 2>&1)
+output=$(quint test testFixture/_1040compileError.qnt --seed=1 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's#^.*_1040compileError.qnt#      HOME/_1040compileError.qnt#g'
 exit $exit_code
@@ -1140,15 +1169,18 @@ exit $exit_code
 ```
 
   _1040compileError
-      HOME/_1040compileError.qnt:2:3 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
-2:   const n: int
-     ^^^^^^^^^^^^
+    1) myTest failed after 1 test(s)
 
-      HOME/_1040compileError.qnt:5:12 - error: [QNT502] Name n not found
-5:     assert(n > 0)
-              ^
+  1 failed
 
-error: Tests could not be run due to an error during compilation
+  1) myTest:
+      HOME/_1040compileError.qnt:5:12 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
+      5:     assert(n > 0)
+    Use --seed=0x1 --match=myTest to repeat.
+
+
+  Use --verbosity=3 to show executions.
+  Further debug with: quint --verbosity=3 testFixture/_1040compileError.qnt
 ```
 
 ### Fail on run with uninitialized constants
@@ -1165,11 +1197,7 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
-HOME/_1041compileConst.qnt:2:3 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
-2:   const N: int
-     ^^^^^^^^^^^^
-
-HOME/_1041compileConst.qnt:5:24 - error: [QNT502] Name N not found
+HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 5:   action init = { x' = N }
                           ^
 
@@ -1245,7 +1273,8 @@ quint run --main=invalid ./testFixture/_1050diffName.qnt
 
 <!-- !test err run invalid module -->
 ```
-error: Main module invalid not found
+error: [QNT405] Main module invalid not found
+error: Argument error
 ```
 
 ### test fails on invalid module
@@ -1259,7 +1288,7 @@ quint test --main=invalid ./testFixture/_1050diffName.qnt
 <!-- !test err test invalid module -->
 ```
 error: [QNT405] Main module invalid not found
-error: Tests could not be run due to an error during compilation
+error: Argument error
 ```
 
 ### Multiple tests output different json

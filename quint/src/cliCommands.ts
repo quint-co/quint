@@ -26,21 +26,11 @@ import {
 import { ErrorMessage } from './ErrorMessage'
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { fail } from 'assert'
+import assert, { fail } from 'assert'
 import { EffectScheme } from './effects/base'
-import { LookupTable, NameResolutionResult, UnusedDefinitions } from './names/base'
+import { LookupTable } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import {
-  FlatModule,
-  OpQualifier,
-  QuintApp,
-  QuintBool,
-  QuintEx,
-  QuintModule,
-  QuintOpDef,
-  isDef,
-  qualifier,
-} from './ir/quintIr'
+import { FlatModule, OpQualifier, QuintBool, QuintEx, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
@@ -79,8 +69,7 @@ interface OutputStage {
   stage: stage
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[]
-  names?: NameResolutionResult
-  unusedDefinitions?: UnusedDefinitions
+  table?: LookupTable
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>
   effects?: Map<bigint, EffectScheme>
@@ -105,8 +94,7 @@ const pickOutputStage = ({
   stage,
   warnings,
   modules,
-  names,
-  unusedDefinitions,
+  table,
   types,
   effects,
   errors,
@@ -121,8 +109,7 @@ const pickOutputStage = ({
     stage,
     warnings,
     modules,
-    names,
-    unusedDefinitions,
+    table,
     types,
     effects,
     errors,
@@ -150,7 +137,6 @@ interface ParsedStage extends LoadedStage {
   defaultModuleName: Maybe<string>
   sourceMap: SourceMap
   table: LookupTable
-  unusedDefinitions: UnusedDefinitions
   resolver: NameResolver
   idGen: IdGenerator
 }
@@ -328,6 +314,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const testing = { ...prev, stage: 'testing' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
+  const main = prev.modules.find(m => m.name === mainName)
+  if (!main) {
+    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
+    return cliErr('Argument error', { ...testing, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+  }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -342,7 +333,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     maxSamples: testing.args.maxSamples,
     rng,
     verbosity: verbosityLevel,
-    onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
+    onTrace: (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => {
       if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
         const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
         const trace = toItf(vars, states)
@@ -367,21 +358,14 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     out(`\n  ${mainName}`)
   }
 
-  const main = prev.modules.find(m => m.name === mainName)!
-  const testDefs = main.declarations.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
+    .flat()
+    .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   const evaluator = new Evaluator(testing.table, newTraceRecorder(verbosityLevel, rng, 1), rng)
-  const results = testDefs.map(def => {
-    return evaluator.test(def.name, def.expr, maxSamples)
+  const results = testDefs.map((def, index) => {
+    return evaluator.test(def, maxSamples, options.onTrace(index))
   })
-
-  // We have a compilation failure, so early exit without reporting test results
-  // if (testResult.isLeft()) {
-  //   return cliErr('Tests could not be run due to an error during compilation', {
-  //     ...testing,
-  //     errors: testResult.value.map(mkErrorMessage(testing.sourceMap)),
-  //   })
-  // }
 
   // We're finished running the tests
   const elapsedMs = Date.now() - startMs
@@ -503,6 +487,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const startMs = Date.now()
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
+  const main = prev.modules.find(m => m.name === mainName)
+  if (!main) {
+    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
+    return cliErr('Argument error', { ...prev, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+  }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -576,6 +565,23 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const outcome: Outcome = evalResult.isRight()
     ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
+
+  recorder.bestTraces.forEach((trace, index) => {
+    const maybeEvalResult = trace.frame.result
+    if (maybeEvalResult.isLeft()) {
+      return cliErr('Runtime error', {
+        ...simulator,
+        errors: [mkErrorMessage(simulator.sourceMap)(maybeEvalResult.value)],
+      })
+    }
+    const quintExResult = maybeEvalResult.value.toQuintEx(prev.idGen)
+    assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
+    const simulationSucceeded = quintExResult.value
+    const status = simulationSucceeded ? 'ok' : 'violation'
+    const states = trace.frame.args.map(e => e.toQuintEx(prev.idGen))
+
+    options.onTrace(index, status, evaluator.varNames(), states)
+  })
 
   const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
   const frames = recorder.bestTraces[0]?.frame?.subframes ?? []
@@ -695,7 +701,9 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const args = compiled.args
   const verbosityLevel = deriveVerbosity(args)
 
-  const parsedSpecJson = jsonStringOfOutputStage(pickOutputStage({ ...compiled, modules: [compiled.mainModule] }))
+  const parsedSpecJson = jsonStringOfOutputStage(
+    pickOutputStage({ ...compiled, modules: [compiled.mainModule], table: compiled.resolver.table })
+  )
   switch ((compiled.args.target as string).toLowerCase()) {
     case 'json':
       process.stdout.write(parsedSpecJson)
