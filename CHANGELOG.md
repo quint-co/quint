@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Performance of incrementally checking types (i.e. in REPL) was improved (#1483).
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+ - Bumped GRPC message sizes to 1G (#1480)
+
 ### Security
 
 ## v0.21.1 -- 2024-07-29
