@@ -49,6 +49,35 @@ Currently, the project consists of two npm packages:
 For setting up the local build, you would have to install TypeScript and npm.
 This is usually done via your local package manager.
 
+### Nix for development dependencies
+
+We provide a nix shell in case you want to use nix to manage your development
+environment and dependencies.
+
+Make sure you have `nix` installed, then build and enter the clean development shell with:
+
+```sh
+$ nix develop
+```
+
+If you want to use direnv to setup your environment with nix (instead of using a
+shell), you will need to add `use flake;` to your `.envrc`, and then
+running `direnv allow`:
+
+```sh
+$ echo "use flake;" >> .envrc && direnv allow
+```
+
+You can also add a `direnv` extension/package to your IDE of choice to have
+those dependencies set up for the IDE to use.
+
+#### Updating nix dependencies
+
+To update one of the flake inputs you can run: `nix flake lock --update-input <input-name>`
+
+To update all of the inputes you can run: `nix flake update`, it is recommended
+to update dependencies one by one though.
+
 ### Formatting
 
 We use [eslint][] to enforce the good coding practices of JavaScript and
@@ -265,8 +294,8 @@ Between installing the plugin from different sources, you may end up with multip
 3. `rm $HOME/.vscode/extensions/.init-default-profile-extensions`.
 4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
 
-[Apalache]: https://github.com/informalsystems/apalache
-[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/main/CONTRIBUTING.md
+[Apalache]: https://github.com/apalache-mc/apalache
+[Contributing to Apalache]: https://github.com/apalache-mc/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./docs/pages/docs/architecture-decision-records/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install

@@ -44,7 +44,7 @@ completely implementing every pass.
 
 <!-- TODO rm unused links -->
 [Design Principles]: ./design-principles.md
-[Apalache]: https://github.com/informalsystems/apalache
+[Apalache]: https://github.com/apalache-mc/apalache
 [Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
 [Imports]: ./lang.md#imports-1
 [Module definitions]: ./lang.md#module-definition

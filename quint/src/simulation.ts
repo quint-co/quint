@@ -108,7 +108,7 @@ export function compileAndRun(
   const newMainModuleCode = code.slice(mainStart, mainEnd - 1) + '\n' + extraDefs.join('\n')
   const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
-  const recorder = newTraceRecorder(options.verbosity, options.rng)
+  const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
   const ctx = compileFromCode(
     idGen,
     codeWithExtraDefs,
@@ -134,7 +134,7 @@ export function compileAndRun(
     res.value.eval()
   }
 
-  const topTraces: Trace[] = recorder.getBestTraces(options.numberOfTraces)
+  const topTraces: Trace[] = recorder.bestTraces
   const vars = evaluationState.vars.map(v => v.name)
 
   topTraces.forEach((trace, index) => {

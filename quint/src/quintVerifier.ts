@@ -24,7 +24,7 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  *   a server endpoint
  *
  * @param config
- *   an apalache configuration. See https://github.com/informalsystems/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
+ *   an apalache configuration. See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
  *
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */

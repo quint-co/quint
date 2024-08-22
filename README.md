@@ -8,7 +8,8 @@
 
 <!-- Menu -->
 <p>
-    <a href="#installation">Installation</a> •
+    <a href="https://quint-lang.org/">Website</a> •
+    <a href="https://quint-lang.org/docs/getting-started">Getting Started</a> •
     <a href="#documentation">Documentation</a> •
     <a href="#community">Community</a>
 </p>
@@ -47,106 +48,76 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art type checking and
 development tooling.
 
-### Example code in Quint :mrs_claus: :gift: :santa:
+### Example code in Quint
 
-Here is a small, partial, holiday special specification of the [Secret
-Santa](https://en.wikipedia.org/wiki/Secret_Santa) game:
-
+Here is a small specification for a bank:
 ``` bluespec
-module secret_santa {
-  const participants: Set[str]
 
-  /// get(recipient_for_santa, S) is the recipient for secret santa S
-  var recipient_for_santa: str -> str
+module bank {
+  /// A state variable to store the balance of each account
+  var balances: str -> int
 
-  /// the bowl of participants, containing a paper piece for each participant name
-  var bowl: Set[str]
+  pure val ADDRESSES = Set("alice", "bob", "charlie")
 
-  val santas = recipient_for_santa.keys()
-  val recipients = participants.map(p => get(recipient_for_santa, p))
-
-  /// The initial state
-  action init = all {
-    recipient_for_santa' = Map(), // No santas or recipients
-    bowl' = participants,         // Every participant's name in the bowl
+  action deposit(account, amount) = {
+    // Increment balance of account by amount
+    balances' = balances.setBy(account, curr => curr + amount)
   }
 
-  action draw_recipient(santa: str): bool = {
-    nondet recipient = oneOf(bowl)
-    all {
-      recipient_for_santa' = put(recipient_for_santa, santa, recipient),
-      bowl' = bowl.exclude(Set(recipient)),
+  action withdraw(account, amount) = {
+    // Decrement balance of account by amount
+    balances' = balances.setBy(account, curr => curr - amount)
+  }
+
+  action init = {
+    // At the initial state, all balances are zero
+    balances' = ADDRESSES.mapBy(_ => 0)
+  }
+
+  action step = {
+    // Non-deterministically pick an address and an amount
+    nondet account = ADDRESSES.oneOf()
+    nondet amount = 1.to(100).oneOf()
+    // Non-deterministically choose to either deposit or withdraw
+    any {
+      deposit(account, amount),
+      withdraw(account, amount),
     }
   }
 
-  action step = all {
-    bowl.size() > 0,
-    nondet next_santa = oneOf(participants.exclude(santas))
-    draw_recipient(next_santa)
-  }
-
-  val everyone_gets_a_santa = (bowl.size() == 0).implies(participants == recipients)
-
-  val no_person_is_self_santa = santas.forall(person =>
-    get(recipient_for_santa, person) != person
-  )
-
-  val invariant = everyone_gets_a_santa and no_person_is_self_santa
-}
-
-module quint_team_secret_santa {
-  import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
+  /// An invariant stating that all accounts should have a non-negative balance
+  val no_negatives = ADDRESSES.forall(addr => balances.get(addr) >= 0)
 }
 ```
 
-We can use this specification to check whether certain properties needed for a
-good game hold:
 
-<details>
-<summary>Checking if everyone gets a santa</summary>
+This design lacks some important checks, and we can use the Quint CLI to find a
+violation to the `no_negatives` property, which ideally should hold:
 
-Quint (with the help of [Apalache][apalache]) can check to ensure that after the bowl is
-empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
-
-``` bluespec
-echo '{ "checker": { "no-deadlocks": true } }' > config.json
-quint verify quint_team_secret_santa.qnt --invariant=everyone_gets_a_santa --apalache-config=config.json
-[ok] No violation found (2119ms).
-You may increase --max-steps.
+```sh
+$ quint run bank.qnt --invariant=no_negatives
 ```
 
-</details>
 
-<details>
-<summary>Checking if no one gets themself</summary>
-
-This specification has no safeguards against people being their own santa! Quint
-(with the help of [Apalache][apalache]) can easily find a minimal example where
-this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
+And the result is a violation where address `"alice"` has balance `-79` in the second state.
 
 ``` bluespec
-quint verify quint_team_secret_santa.qnt --invariant=no_person_is_self_santa
 An example execution:
 
-[State 0]
-{
-  quint_team_secret_santa::secret_santa::bowl: Set("Gabriela", "Igor", "Jure", "Shon", "Thomas"),
-  quint_team_secret_santa::secret_santa::recipient_for_santa: Map()
-}
+[State 0] { balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0) }
 
-[State 1]
-{
-  quint_team_secret_santa::secret_santa::bowl: Set("Igor", "Jure", "Shon", "Thomas"),
-  quint_team_secret_santa::secret_santa::recipient_for_santa: Map("Gabriela" -> "Gabriela")
-}
+[State 1] { balances: Map("alice" -> -79, "bob" -> 0, "charlie" -> 0) }
 
-[violation] Found an issue (2047ms).
-error: found a counterexample
+[violation] Found an issue (45ms).
+Use --seed=0x1112de300ce425 to reproduce.
+Use --verbosity=3 to show executions.
+error: Invariant violated
 ```
 
-</details>
+Check the [Getting Started](https://quint-lang.org/docs/getting-started) guide
+to see how we can fix this problem and formally verify the result.
 
-[Apalache]: https://github.com/informalsystems/apalache
+[Apalache]: https://github.com/apalache-mc/apalache
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 
 ### Features
@@ -170,7 +141,7 @@ error: found a counterexample
   <dd>enabling tests, trace generation, and exploration of your system</dd>
 
   <dt><strong>A symbolic model checker</strong></dt>
-  <dd>to verify your specifications via <a href="https://github.com/informalsystems/apalache">Apalache</a></dd>
+  <dd>to verify your specifications via <a href="https://github.com/apalache-mc/apalache">Apalache</a></dd>
 </dl>
 
 ### Motivation
@@ -179,7 +150,7 @@ Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
 advanced developer tooling and static analysis (see our [design
-principles](./doc/design-principles.md) and [previews](./doc/previews.md) of the
+principles](./docs/pages/docs/design-principles.md) and [previews](./docs/pages/docs/previews.md) of the
 tooling).
 
 The syntax also aims to be familiar to engineers:
@@ -241,23 +212,6 @@ Cosmos in 2023.
 
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html
 
-## Installation
-
-1. Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
-
-    ``` sh
-    npm i @informalsystems/quint -g
-    ```
-
-2. Install IDE support for your editor:
-
-    - [VSCode](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
-    - [Emacs](./editor-plugins/emacs/README.md)
-    - [Vim](./editor-plugins/vim/README.md)
-
-3. _Optionally_, you may also install the [VSCode plugin for visualizing
-   traces](https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer).
-
 ## Community
 
 - Join the chat in the [Telegram group](https://t.me/quint_lang) or in the [Zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
@@ -271,9 +225,10 @@ Cosmos in 2023.
 
 ## Documentation
 
-View the [Quint documentation](./doc#readme).
 
-We aspire to having great, comprehensive documentation. At present, we have a
+View the [Quint documentation](https://quint-lang.org/docs).
+
+We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share
 with us any needs we have not yet been able to meet.
 
