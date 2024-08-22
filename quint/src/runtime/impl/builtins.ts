@@ -1,7 +1,7 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Map, is, Set, Range, List } from 'immutable'
-import { EvalFunction, evaluateExpr, evaluateUnderDefContext, isTrue } from './evaluator'
+import { EvalFunction, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
 import { chunk } from 'lodash'
@@ -89,7 +89,7 @@ export function lazyBuiltinLambda(
           ctx.recorder.onAnyOptionReturn(app, i)
 
           // Recover snapshot (regardless of success or failure)
-          ctx.varStorage.nextVars = nextVarsSnapshot
+          ctx.varStorage.recoverNextVars(nextVarsSnapshot)
 
           return result
         })
@@ -105,11 +105,11 @@ export function lazyBuiltinLambda(
             case 0:
               return rv.mkBool(false)
             case 1:
-              ctx.varStorage.nextVars = potentialSuccessors[0]
+              ctx.varStorage.recoverNextVars(potentialSuccessors[0])
               return rv.mkBool(true)
             default:
               const choice = Number(ctx.rand(BigInt(potentialSuccessors.length)))
-              ctx.varStorage.nextVars = potentialSuccessors[choice]
+              ctx.varStorage.recoverNextVars(potentialSuccessors[choice])
               return rv.mkBool(true)
           }
         })
@@ -120,7 +120,7 @@ export function lazyBuiltinLambda(
         for (const action of args) {
           const result = action(ctx)
           if (!isTrue(result)) {
-            ctx.varStorage.nextVars = nextVarsSnapshot
+            ctx.varStorage.recoverNextVars(nextVarsSnapshot)
             return result.map(_ => rv.mkBool(false))
           }
         }
@@ -184,7 +184,7 @@ export function lazyBuiltinLambda(
       }
     case 'then':
       return (ctx, args) => {
-        const oldState = ctx.varStorage.asRecord()
+        // const oldState = ctx.varStorage.asRecord()
         return args[0](ctx).chain(firstResult => {
           if (!firstResult.toBool()) {
             return left({
@@ -194,8 +194,8 @@ export function lazyBuiltinLambda(
           }
 
           ctx.shift()
-          const newState = ctx.varStorage.asRecord()
-          ctx.recorder.onNextState(oldState, newState)
+          // const newState = ctx.varStorage.asRecord()
+          // ctx.recorder.onNextState(oldState, newState)
 
           return args[1](ctx)
         })

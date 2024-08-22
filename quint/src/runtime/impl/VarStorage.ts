@@ -1,35 +1,59 @@
-import { Either } from '@sweet-monads/either'
+import { Either, left } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { QuintEx, QuintStr } from '../../ir/quintIr'
 import { Map as ImmutableMap } from 'immutable'
+import { Register } from './Context'
+
+export interface VarRegister extends Register {
+  name: string
+}
+
+const initialRegisterValue: Either<QuintError, RuntimeValue> = left({ code: 'QNT502', message: 'Variable not set' })
 
 export class VarStorage {
-  public vars: ImmutableMap<string, Either<QuintError, RuntimeValue>> = ImmutableMap()
-  public nextVars: Map<string, Either<QuintError, RuntimeValue>> = new Map()
-  public varNames: Map<bigint, string> = new Map()
+  public vars: ImmutableMap<string, VarRegister> = ImmutableMap()
+  public nextVars: ImmutableMap<string, VarRegister> = ImmutableMap()
 
   shiftVars() {
-    this.vars = ImmutableMap(this.nextVars)
-    this.nextVars = new Map()
+    // TODO: change this so registers are kept
+    this.vars.forEach((reg, key) => {
+      reg.value = this.nextVars.get(key)?.value ?? initialRegisterValue
+    })
+
+    this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
   }
 
   asRecord(): QuintEx {
+    // console.log('vars', [...this.vars.keySeq()])
     return {
       id: 0n,
       kind: 'app',
       opcode: 'Rec',
       args: [...this.vars.entries()]
-        .map(([key, value]) => {
-          const [id, varName] = key.split('#')
-          const nameEx: QuintStr = { id: BigInt(id), kind: 'str', value: varName }
-          return [nameEx, rv.toQuintEx(value.unwrap())]
+        .map(([_key, reg]) => {
+          const nameEx: QuintStr = { id: 0n, kind: 'str', value: reg.name }
+          return [nameEx, rv.toQuintEx(reg.value.unwrap())]
         })
         .flat(),
     }
   }
 
-  nextVarsSnapshot(): Map<string, Either<QuintError, RuntimeValue>> {
-    return new Map([...this.nextVars.entries()])
+  reset() {
+    this.vars.forEach(reg => (reg.value = initialRegisterValue))
+    this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
+  }
+
+  nextVarsSnapshot(): ImmutableMap<string, VarRegister> {
+    return this.nextVars.map(reg => ({ ...reg }))
+  }
+
+  recoverNextVars(snapshot: ImmutableMap<string, VarRegister>) {
+    this.nextVars.forEach((reg, key) => {
+      const snapshotReg = snapshot.get(key)
+      if (snapshotReg) {
+        reg.value = snapshotReg.value
+      }
+    })
   }
 }

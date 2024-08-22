@@ -11,13 +11,56 @@ import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List, Map as ImmutableMap } from 'immutable'
+import { VarRegister, VarStorage } from './VarStorage'
+import { expressionToString } from '../../ir/IRprinting'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
 
-export type Builder = {
+export class Builder {
   table: LookupTable
-  paramRegistry: Map<bigint, Register>
-  constRegistry: Map<bigint, Register>
+  paramRegistry: Map<bigint, Register> = new Map()
+  constRegistry: Map<bigint, Register> = new Map()
+  public namespaces: List<string> = List()
+  public varStorage: VarStorage = new VarStorage()
+
+  constructor(table: LookupTable) {
+    this.table = table
+  }
+
+  discoverVar(id: bigint, name: string) {
+    const key = [id, ...this.namespaces].join('#')
+    console.log('discovering var', id, name, key)
+    if (this.varStorage.vars.has(key)) {
+      return
+    }
+
+    const revertedNamespaces = this.namespaces.reverse()
+    const varName = revertedNamespaces.push(name).join('::')
+    const register: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
+    const nextRegister: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
+    this.varStorage.vars = this.varStorage.vars.set(key, register)
+    this.varStorage.nextVars = this.varStorage.nextVars.set(key, nextRegister)
+  }
+
+  getVar(id: bigint): VarRegister {
+    const key = [id, ...this.namespaces].join('#')
+    const result = this.varStorage.vars.get(key)
+    if (!result) {
+      throw new Error(`Variable not found: ${key}`)
+    }
+
+    return result
+  }
+
+  getNextVar(id: bigint): VarRegister {
+    const key = [id, ...this.namespaces].join('#')
+    const result = this.varStorage.nextVars.get(key)
+    if (!result) {
+      throw new Error(`Variable not found: ${key}`)
+    }
+
+    return result
+  }
 }
 
 export class Evaluator {
@@ -27,10 +70,10 @@ export class Evaluator {
   private builder: Builder
 
   constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng) {
-    this.ctx = new Context(recorder, rng.next)
     this.recorder = recorder
     this.rng = rng
-    this.builder = { table, paramRegistry: new Map(), constRegistry: new Map() }
+    this.builder = new Builder(table)
+    this.ctx = new Context(recorder, rng.next, this.builder.varStorage)
   }
 
   get table(): LookupTable {
@@ -53,7 +96,7 @@ export class Evaluator {
   shiftAndCheck(): string[] {
     const missing = [...this.ctx.varStorage.vars.keys()].filter(name => !this.ctx.varStorage.nextVars.has(name))
 
-    if (missing.length === this.ctx.varStorage.varNames.size) {
+    if (missing.length === this.ctx.varStorage.vars.size) {
       // Nothing was changed, don't shift
       return []
     }
@@ -74,6 +117,11 @@ export class Evaluator {
     return result
   }
 
+  reset() {
+    this.trace.reset()
+    this.builder.varStorage.reset()
+  }
+
   simulate(
     init: QuintEx,
     step: QuintEx,
@@ -92,8 +140,7 @@ export class Evaluator {
     // TODO: room for improvement here
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       this.recorder.onRunCall()
-      this.trace.reset()
-      this.ctx.reset()
+      this.reset()
       // Mocked def for the trace recorder
       const initApp: QuintApp = { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
       this.recorder.onUserOperatorCall(initApp)
@@ -278,13 +325,13 @@ export function evaluateExpr(builder: Builder, expr: QuintEx): (ctx: Context) =>
   return ctx => exprEval(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: expr.id } : err))
 }
 
-export function evaluateUnderDefContext(
+export function buildUnderDefContext(
   builder: Builder,
   def: LookupDefinition,
-  evaluate: (ctx: Context) => Either<QuintError, RuntimeValue>
+  buildFunction: () => (ctx: Context) => Either<QuintError, RuntimeValue>
 ): (ctx: Context) => Either<QuintError, RuntimeValue> {
   if (!def.importedFrom || def.importedFrom.kind !== 'instance') {
-    return evaluate
+    return buildFunction()
   }
   const instance = def.importedFrom
 
@@ -301,16 +348,15 @@ export function evaluateUnderDefContext(
     }
   )
 
+  const namespacesBefore = builder.namespaces
+  builder.namespaces = List(def.namespaces)
+
+  const result = buildFunction()
+  builder.namespaces = namespacesBefore
+
   return ctx => {
-    const namespacesBefore = ctx.namespaces
-
     overrides.forEach(([register, evaluate]) => (register.value = evaluate(ctx)))
-    ctx.namespaces = List(def.namespaces)
-
-    const result = evaluate(ctx)
-
-    ctx.namespaces = namespacesBefore
-    return result
+    return result(ctx)
   }
 }
 
@@ -362,13 +408,9 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
     }
 
     case 'var': {
-      return (ctx: Context) => {
-        const result = ctx.getVar(def.id)
-
-        if (!result) {
-          return left({ code: 'QNT502', message: `Variable ${def.name} not set` })
-        }
-        return result
+      const register = builder.getVar(def.id)
+      return _ => {
+        return register.value
       }
     }
     case 'const':
@@ -385,7 +427,7 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
 }
 
 function evaluateDef(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  return evaluateUnderDefContext(builder, def, evaluateDefCore(builder, def))
+  return buildUnderDefContext(builder, def, () => evaluateDefCore(builder, def))
 }
 
 function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
@@ -411,14 +453,18 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
     case 'app':
       if (expr.opcode === 'assign') {
         const varDef = builder.table.get(expr.args[0].id)!
-        const exprEval = evaluateExpr(builder, expr.args[1])
+        return buildUnderDefContext(builder, varDef, () => {
+          console.log(expressionToString(expr))
+          builder.discoverVar(varDef.id, varDef.name)
+          const register = builder.getNextVar(varDef.id)
+          const exprEval = evaluateExpr(builder, expr.args[1])
 
-        return evaluateUnderDefContext(builder, varDef, ctx => {
-          ctx.discoverVar(varDef.id, varDef.name)
-          return exprEval(ctx).map(value => {
-            ctx.setNextVar(varDef.id, value)
-            return rv.mkBool(true)
-          })
+          return ctx => {
+            return exprEval(ctx).map(value => {
+              register.value = right(value)
+              return rv.mkBool(true)
+            })
+          }
         })
       }
 
