@@ -24,18 +24,21 @@ export class VarStorage {
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
   }
 
-  asRecord(): QuintEx {
-    return {
-      id: 0n,
-      kind: 'app',
-      opcode: 'Rec',
-      args: [...this.vars.entries()]
-        .map(([_key, reg]) => {
-          const nameEx: QuintStr = { id: 0n, kind: 'str', value: reg.name }
-          return [nameEx, rv.toQuintEx(reg.value.unwrap())]
-        })
-        .flat(),
-    }
+  asRecord(): RuntimeValue {
+    const map: [string, RuntimeValue][] = this.vars
+      .valueSeq()
+      .toArray()
+      .filter(r => r.value.isRight())
+      .map(r => [r.name, r.value.unwrap()])
+
+    // if (this.storeMetadata) {
+    //   if (this.actionTaken.isJust()) {
+    //     map.push(['action_taken', this.actionTaken.value!])
+    //     map.push(['nondet_picks', this.nondetPicks])
+    //   }
+    // }
+
+    return rv.mkRecord(map)
   }
 
   reset() {

@@ -114,11 +114,10 @@ export class Evaluator {
       this.recorder.onUserOperatorCall(expr)
     }
     const value = evaluateExpr(this.builder, expr)(this.ctx)
-    const result = value.map(rv.toQuintEx)
     if (expr.kind === 'app') {
-      this.recorder.onUserOperatorReturn(expr, expr.args, result)
+      this.recorder.onUserOperatorReturn(expr, [], value)
     }
-    return result
+    return value.map(rv.toQuintEx)
   }
 
   reset() {
@@ -151,14 +150,14 @@ export class Evaluator {
 
       const initResult = initEval(this.ctx).mapLeft(error => (failure = error))
       if (!isTrue(initResult)) {
-        this.recorder.onUserOperatorReturn(initApp, [], initResult.map(rv.toQuintEx))
+        this.recorder.onUserOperatorReturn(initApp, [], initResult)
         continue
       }
 
       this.shift()
 
       const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
-      this.recorder.onUserOperatorReturn(initApp, [], invResult.map(rv.toQuintEx))
+      this.recorder.onUserOperatorReturn(initApp, [], invResult)
       if (!isTrue(invResult)) {
         errorsFound++
       } else {
@@ -184,8 +183,8 @@ export class Evaluator {
             // drop the run. Otherwise, we would have a lot of false
             // positives, which look like deadlocks but they are not.
 
-            this.recorder.onUserOperatorReturn(stepApp, [], stepResult.map(rv.toQuintEx))
-            this.recorder.onRunReturn(right({ id: 0n, kind: 'bool', value: true }), this.trace.get())
+            this.recorder.onUserOperatorReturn(stepApp, [], stepResult)
+            this.recorder.onRunReturn(right(rv.mkBool(true)), this.trace.get())
             break
           }
 
@@ -195,13 +194,11 @@ export class Evaluator {
           if (!isTrue(invResult)) {
             errorsFound++
           }
-          this.recorder.onUserOperatorReturn(stepApp, [], invResult.map(rv.toQuintEx))
+          this.recorder.onUserOperatorReturn(stepApp, [], invResult)
         }
       }
 
-      const outcome: Either<QuintError, QuintEx> = failure
-        ? left(failure)
-        : right({ id: 0n, kind: 'bool', value: errorsFound == 0 })
+      const outcome = failure ? left(failure) : right(rv.mkBool(errorsFound == 0))
       this.recorder.onRunReturn(outcome, this.trace.get())
     }
 
@@ -228,7 +225,7 @@ export class Evaluator {
       // reset the trace
       this.reset()
       // run the test
-      const result = testEval(this.ctx).map(e => e.toQuintEx(zerog))
+      const result = testEval(this.ctx)
 
       // extract the trace
       const trace = this.trace.get()
@@ -255,7 +252,7 @@ export class Evaluator {
         }
       }
 
-      const ex = result.value
+      const ex = result.value.toQuintEx(zerog)
       if (ex.kind !== 'bool') {
         // if the test returned a malformed result, return immediately
         return {
@@ -380,7 +377,7 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
         return (ctx: Context) => {
           ctx.recorder.onUserOperatorCall(app)
           const result = body(ctx)
-          ctx.recorder.onUserOperatorReturn(app, [], result.map(rv.toQuintEx))
+          ctx.recorder.onUserOperatorReturn(app, [], result)
           return result
         }
       }
@@ -533,7 +530,7 @@ function lambdaForApp(
 
     ctx.recorder.onUserOperatorCall(app)
     const result = arrow(ctx, args)
-    ctx.recorder.onUserOperatorReturn(app, [], result.map(rv.toQuintEx))
+    ctx.recorder.onUserOperatorReturn(app, [], result)
     return result
   }
 }
@@ -544,4 +541,12 @@ export function isTrue(value: Either<QuintError, RuntimeValue>): boolean {
 
 export function isFalse(value: Either<QuintError, RuntimeValue>): boolean {
   return value.isRight() && value.value.toBool() === false
+}
+
+export function profile<T>(name: string, f: () => T): T {
+  // const start = Date.now()
+  const r = f()
+  // const end = Date.now()
+  // console.log(`${name} took ${end - start}ms`)
+  return r
 }

@@ -46,7 +46,7 @@ import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
-import { IdGenerator, newIdGenerator } from './idGenerator'
+import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
 import { Outcome, SimulatorOptions } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
@@ -577,8 +577,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
 
-  const states = recorder.bestTraces[0]?.frame?.args
-  const frames = recorder.bestTraces[0]?.frame?.subframes
+  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
+  const frames = recorder.bestTraces[0]?.frame?.subframes ?? []
   const seed = recorder.bestTraces[0]?.seed
   switch (outcome.status) {
     case 'error':

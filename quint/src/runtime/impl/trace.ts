@@ -13,20 +13,20 @@
  */
 
 import { List } from 'immutable'
-import { QuintEx } from '../../ir/quintIr'
+import { RuntimeValue } from './runtimeValue'
 
 export class Trace {
-  private states: List<QuintEx> = List<QuintEx>()
+  private states: List<RuntimeValue> = List<RuntimeValue>()
 
-  get(): QuintEx[] {
+  get(): RuntimeValue[] {
     return this.states.toArray()
   }
 
-  reset(values: QuintEx[] = []) {
+  reset(values: RuntimeValue[] = []) {
     this.states = List(values)
   }
 
-  extend(state: QuintEx) {
+  extend(state: RuntimeValue) {
     this.states = this.states.push(state)
   }
 }

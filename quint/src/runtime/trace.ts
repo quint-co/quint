@@ -10,11 +10,12 @@
 
 import { strict as assert } from 'assert'
 
-import { QuintApp, QuintEx } from '../ir/quintIr'
+import { QuintApp } from '../ir/quintIr'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../quintError'
+import { RuntimeValue, rv } from './impl/runtimeValue'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -38,11 +39,11 @@ export interface ExecutionFrame {
   /**
    * The actual runtime values that were used in the call.
    */
-  args: QuintEx[]
+  args: RuntimeValue[]
   /**
    * An optional result of the execution.
    */
-  result: Either<QuintError, QuintEx>
+  result: Either<QuintError, RuntimeValue>
   /**
    * The frames of the operators that were called by this operator.
    */
@@ -77,7 +78,7 @@ export interface ExecutionListener {
    * @param args the actual arguments obtained in evaluation
    * @param result optional result of the evaluation
    */
-  onUserOperatorReturn(app: QuintApp, args: QuintEx[], result: Either<QuintError, QuintEx>): void
+  onUserOperatorReturn(app: QuintApp, args: RuntimeValue[], result: Either<QuintError, RuntimeValue>): void
 
   /**
    * This callback is called *before* one of the arguments of `any {...}`
@@ -116,7 +117,7 @@ export interface ExecutionListener {
    * @param oldState the old state that is about to be discarded
    * @param newState the new state, from which the execution continues
    */
-  onNextState(oldState: QuintEx, newState: QuintEx): void
+  onNextState(oldState: RuntimeValue, newState: RuntimeValue): void
 
   /**
    * This callback is called when a new run is executed,
@@ -133,7 +134,7 @@ export interface ExecutionListener {
    *        - finished after finding a violation, `just(mkBool(false))`
    * @param trace the array of produced states (each state is a record)
    */
-  onRunReturn(outcome: Either<QuintError, QuintEx>, trace: QuintEx[]): void
+  onRunReturn(outcome: Either<QuintError, RuntimeValue>, trace: RuntimeValue[]): void
 }
 
 /**
@@ -141,13 +142,13 @@ export interface ExecutionListener {
  */
 export const noExecutionListener: ExecutionListener = {
   onUserOperatorCall: (_app: QuintApp) => {},
-  onUserOperatorReturn: (_app: QuintApp, _args: QuintEx[], _result: Either<QuintError, QuintEx>) => {},
+  onUserOperatorReturn: (_app: QuintApp, _args: RuntimeValue[], _result: Either<QuintError, RuntimeValue>) => {},
   onAnyOptionCall: (_anyExpr: QuintApp, _position: number) => {},
   onAnyOptionReturn: (_anyExpr: QuintApp, _position: number) => {},
   onAnyReturn: (_noptions: number, _choice: number) => {},
-  onNextState: (_oldState: QuintEx, _newState: QuintEx) => {},
+  onNextState: (_oldState: RuntimeValue, _newState: RuntimeValue) => {},
   onRunCall: () => {},
-  onRunReturn: (_outcome: Either<QuintError, QuintEx>, _trace: QuintEx[]) => {},
+  onRunReturn: (_outcome: Either<QuintError, RuntimeValue>, _trace: RuntimeValue[]) => {},
 }
 
 /**
@@ -251,7 +252,7 @@ class TraceRecorderImpl implements TraceRecorder {
     }
   }
 
-  onUserOperatorReturn(_app: QuintApp, args: QuintEx[], result: Either<QuintError, QuintEx>) {
+  onUserOperatorReturn(_app: QuintApp, args: RuntimeValue[], result: Either<QuintError, RuntimeValue>) {
     if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
       const top = this.frameStack.pop()
       if (top) {
@@ -309,7 +310,7 @@ class TraceRecorderImpl implements TraceRecorder {
     }
   }
 
-  onNextState(_oldState: QuintEx, _newState: QuintEx) {
+  onNextState(_oldState: RuntimeValue, _newState: RuntimeValue) {
     // introduce a new frame that is labelled with a dummy operator
     if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
       const dummy: QuintApp = { id: 0n, kind: 'app', opcode: '_', args: [] }
@@ -327,7 +328,7 @@ class TraceRecorderImpl implements TraceRecorder {
     this.runSeed = this.rng.getState()
   }
 
-  onRunReturn(outcome: Either<QuintError, QuintEx>, trace: QuintEx[]) {
+  onRunReturn(outcome: Either<QuintError, RuntimeValue>, trace: RuntimeValue[]) {
     assert(this.frameStack.length > 0)
     const traceToSave = this.frameStack[0]
     traceToSave.result = outcome
@@ -344,11 +345,11 @@ class TraceRecorderImpl implements TraceRecorder {
   }
 
   private sortTracesByQuality() {
-    const fromResult = (r: Either<QuintError, QuintEx>) => {
+    const fromResult = (r: Either<QuintError, RuntimeValue>) => {
       if (r.isLeft()) {
         return true
       } else {
-        const rex = r.value
+        const rex = r.value.toQuintEx({ nextId: () => 0n })
         return rex.kind === 'bool' && !rex.value
       }
     }
@@ -385,7 +386,7 @@ class TraceRecorderImpl implements TraceRecorder {
       // we will store the sequence of states here
       args: [],
       // the result of the trace evaluation
-      result: right({ id: 0n, kind: 'bool', value: true }),
+      result: right(rv.mkBool(true)),
       // and here we store the subframes for the top-level actions
       subframes: [],
     }
