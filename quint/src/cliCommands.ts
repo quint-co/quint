@@ -550,7 +550,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
   const [init, step, invariant] = argsParsingResult.value
 
-  const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng)
+  const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
   const evalResult = evaluator.simulate(
     init,
     step,

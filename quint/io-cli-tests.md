@@ -811,24 +811,6 @@ rm out-itf-mbt-example.itf.json
         "#bigint": "49617995555028370892926474303042238797407019137772330780016167115018841762373"
       }
     },
-    "eveToBob": {
-      "tag": "None",
-      "value": {
-        "#tup": []
-      }
-    },
-    "mintBob": {
-      "tag": "None",
-      "value": {
-        "#tup": []
-      }
-    },
-    "mintEve": {
-      "tag": "None",
-      "value": {
-        "#tup": []
-      }
-    },
     "receiver": {
       "tag": "Some",
       "value": "charlie"

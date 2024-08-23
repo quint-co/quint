@@ -6,12 +6,12 @@ import { TraceRecorder } from '../trace'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { Trace } from './trace'
 import { RuntimeValue, rv } from './runtimeValue'
-import { Context, Register } from './Context'
+import { CachedValue, Context, Register } from './Context'
 import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List, Map as ImmutableMap } from 'immutable'
-import { VarRegister, VarStorage } from './VarStorage'
+import { NamedRegister, VarStorage } from './VarStorage'
 import { expressionToString } from '../../ir/IRprinting'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
@@ -25,12 +25,14 @@ export class Builder {
   table: LookupTable
   paramRegistry: Map<bigint, Register> = new Map()
   constRegistry: Map<bigint, Register> = new Map()
-  scopedCachedValues: Map<bigint, { value: Either<QuintError, RuntimeValue> | undefined }> = new Map()
+  scopedCachedValues: Map<bigint, CachedValue> = new Map()
+  nondetPicks: Map<string, RuntimeValue | undefined> = new Map()
   public namespaces: List<string> = List()
-  public varStorage: VarStorage = new VarStorage()
+  public varStorage: VarStorage
 
-  constructor(table: LookupTable) {
+  constructor(table: LookupTable, storeMetadata: boolean) {
     this.table = table
+    this.varStorage = new VarStorage(storeMetadata, this.nondetPicks)
   }
 
   discoverVar(id: bigint, name: string) {
@@ -40,13 +42,13 @@ export class Builder {
     }
 
     const varName = nameWithNamespaces(name, this.namespaces)
-    const register: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
-    const nextRegister: VarRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
+    const register: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
+    const nextRegister: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
     this.varStorage.vars = this.varStorage.vars.set(key, register)
     this.varStorage.nextVars = this.varStorage.nextVars.set(key, nextRegister)
   }
 
-  getVar(id: bigint): VarRegister {
+  getVar(id: bigint): NamedRegister {
     const key = [id, ...this.namespaces].join('#')
     const result = this.varStorage.vars.get(key)
     if (!result) {
@@ -56,7 +58,7 @@ export class Builder {
     return result
   }
 
-  getNextVar(id: bigint): VarRegister {
+  getNextVar(id: bigint): NamedRegister {
     const key = [id, ...this.namespaces].join('#')
     const result = this.varStorage.nextVars.get(key)
     if (!result) {
@@ -84,10 +86,10 @@ export class Evaluator {
   private rng: Rng
   private builder: Builder
 
-  constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng) {
+  constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng, storeMetadata: boolean = false) {
     this.recorder = recorder
     this.rng = rng
-    this.builder = new Builder(table)
+    this.builder = new Builder(table, storeMetadata)
     this.ctx = new Context(recorder, rng.next, this.builder.varStorage)
   }
 
@@ -380,13 +382,6 @@ export function buildUnderDefContext(
 function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
   switch (def.kind) {
     case 'def':
-      // if (def.qualifier === 'nondet') {
-      //   const body = evaluateExpr(builder, def.expr)
-      //   return (ctx: Context) => {
-      //     return evaluateNondet(ctx, def, body)
-      //   }
-      // }
-
       if (def.qualifier === 'action') {
         const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
         const body = evaluateExpr(builder, def.expr)
@@ -409,11 +404,22 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
       let cachedValue = builder.scopedCachedValues.get(def.id)!
 
       const bodyEval = evaluateExpr(builder, def.expr)
+      if (def.qualifier === 'nondet') {
+        builder.nondetPicks.set(def.name, undefined)
+      }
 
       return ctx => {
         if (cachedValue.value === undefined) {
           cachedValue.value = bodyEval(ctx)
-          return cachedValue.value
+          if (def.qualifier === 'nondet') {
+            cachedValue.value
+              .map(value => {
+                builder.nondetPicks.set(def.name, value)
+              })
+              .mapLeft(_ => {
+                builder.nondetPicks.set(def.name, undefined)
+              })
+          }
         }
         return cachedValue.value
       }
