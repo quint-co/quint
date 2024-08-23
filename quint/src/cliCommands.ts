@@ -413,7 +413,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     passed: passed.map(r => r.name),
     failed: failed.map(r => r.name),
     ignored: ignored.map(r => r.name),
-    errors: namedErrors.map(([_, e]) => e),
+    errors: [],
   }
 
   // Nothing failed, so we are OK, and can exit early
@@ -584,7 +584,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   })
 
   const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
-  const frames = recorder.bestTraces[0]?.frame?.subframes ?? []
+  const frames = recorder.bestTraces[0]?.frame?.subframes
   const seed = recorder.bestTraces[0]?.seed
   switch (outcome.status) {
     case 'error':

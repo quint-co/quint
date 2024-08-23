@@ -616,8 +616,7 @@ An example execution:
 
 [Frame 0]
 q::initAndInvariant => true
-├─ q::init => true
-│  └─ init => true
+├─ init => true
 └─ isUInt(0) => true
 
 [State 0]
@@ -629,18 +628,17 @@ q::initAndInvariant => true
 
 [Frame 1]
 q::stepAndInvariant => true
-├─ q::step => true
-│  └─ step => true
-│     └─ mint(
-│          "alice",
-│          "eve",
-│          33944027745092921485394061592130395256199599638916782090017603421409072478812
-│        ) => true
-│        ├─ require(true) => true
-│        └─ require(true) => true
-│           └─ isUInt(
-│                33944027745092921485394061592130395256199599638916782090017603421409072478812
-│              ) => true
+├─ step => true
+│  └─ mint(
+│       "alice",
+│       "eve",
+│       33944027745092921485394061592130395256199599638916782090017603421409072478812
+│     ) => true
+│     ├─ require(true) => true
+│     └─ require(true) => true
+│        └─ isUInt(
+│             33944027745092921485394061592130395256199599638916782090017603421409072478812
+│           ) => true
 └─ isUInt(
      33944027745092921485394061592130395256199599638916782090017603421409072478812
    ) => true
@@ -661,18 +659,17 @@ q::stepAndInvariant => true
 
 [Frame 2]
 q::stepAndInvariant => true
-├─ q::step => true
-│  └─ step => true
-│     └─ mint(
-│          "alice",
-│          "eve",
-│          37478542505835205046968520025158070945751003972871720238447843997511300995974
-│        ) => true
-│        ├─ require(true) => true
-│        └─ require(true) => true
-│           └─ isUInt(
-│                71422570250928126532362581617288466201950603611788502328465447418920373474786
-│              ) => true
+├─ step => true
+│  └─ mint(
+│       "alice",
+│       "eve",
+│       37478542505835205046968520025158070945751003972871720238447843997511300995974
+│     ) => true
+│     ├─ require(true) => true
+│     └─ require(true) => true
+│        └─ isUInt(
+│             71422570250928126532362581617288466201950603611788502328465447418920373474786
+│           ) => true
 └─ isUInt(
      71422570250928126532362581617288466201950603611788502328465447418920373474786
    ) => true
@@ -692,19 +689,18 @@ q::stepAndInvariant => true
 }
 
 [Frame 3]
-q::stepAndInvariant => true
-├─ q::step => true
-│  └─ step => true
-│     └─ mint(
-│          "alice",
-│          "null",
-│          109067983118832076063755963802104322727953985633488183463930115464609414175363
-│        ) => true
-│        ├─ require(true) => true
-│        └─ require(true) => true
-│           └─ isUInt(
-│                109067983118832076063755963802104322727953985633488183463930115464609414175363
-│              ) => true
+q::stepAndInvariant => false
+├─ step => true
+│  └─ mint(
+│       "alice",
+│       "null",
+│       109067983118832076063755963802104322727953985633488183463930115464609414175363
+│     ) => true
+│     ├─ require(true) => true
+│     └─ require(true) => true
+│        └─ isUInt(
+│             109067983118832076063755963802104322727953985633488183463930115464609414175363
+│           ) => true
 └─ isUInt(
      180490553369760202596118545419392788929904589245276685792395562883529787650149
    ) => false
@@ -1012,7 +1008,7 @@ cd - > /dev/null
 <!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
-output=$(quint test --seed=0x1cce8452305113 --match=mintTwiceThenSendError \
+output=$(quint test --seed=0x1286bf2e1dacb3 --match=mintTwiceThenSendError \
   --verbosity=3 ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -1023,7 +1019,7 @@ exit $exit_code
 ```
 
   coin
-    1) mintTwiceThenSendError failed after 2 test(s)
+    1) mintTwiceThenSendError failed after 1 test(s)
 
   1 failed
 
@@ -1036,45 +1032,45 @@ init => true
 
 [Frame 1]
 mint(
-  "alice",
+  "bob",
   "eve",
-  62471107147077426559451191183102889181018012614560866566772535482230624081662
+  74252675173190743514494160784973331842148624838292266741626378055869698233769
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        62471107147077426559451191183102889181018012614560866566772535482230624081662
+        74252675173190743514494160784973331842148624838292266741626378055869698233769
       ) => true
 
 [Frame 2]
 mint(
-  "alice",
   "bob",
-  108068598360285515924422306643202051157703255799754639660642704769543958308579
+  "bob",
+  97700478479458321253548605902971263977055085704583752584562220159652816914987
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        108068598360285515924422306643202051157703255799754639660642704769543958308579
+        97700478479458321253548605902971263977055085704583752584562220159652816914987
       ) => true
 
 [Frame 3]
 send(
   "eve",
   "bob",
-  17111225533527540742175456584955554462321462289172248790585577326828420782641
+  47769583726968424739901588588333904197787985995488944788698867328177315688645
 ) => false
 ├─ require(true) => true
 ├─ require(true) => true
 │  └─ isUInt(
-│       45359881613549885817275734598147334718696550325388617776186958155402203299021
+│       26483091446222318774592572196639427644360638842803321952927510727692382545124
 │     ) => true
 └─ require(false) => false
    └─ isUInt(
-        125179823893813056666597763228157605620024718088926888451228282096372379091220
+        145470062206426745993450194491305168174843071700072697373261087487830132603632
       ) => false
 
-    Use --seed=0x1cce845230512f --match=mintTwiceThenSendError to repeat.
+    Use --seed=0x1286bf2e1dacb3 --match=mintTwiceThenSendError to repeat.
 ```
 
 ### test fails on invalid seed
@@ -1142,7 +1138,7 @@ echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.
 ```
 output=$(quint test testFixture/_1040compileError.qnt --seed=1 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's#^.*_1040compileError.qnt#      HOME/_1040compileError.qnt#g'
+echo "$output" | sed -E 's#(/[^ ]*/)_1040compileError.qnt#HOME/_1040compileError.qnt#g'
 exit $exit_code
 ```
 
@@ -1163,6 +1159,7 @@ exit $exit_code
 
   Use --verbosity=3 to show executions.
   Further debug with: quint --verbosity=3 testFixture/_1040compileError.qnt
+error: Tests failed
 ```
 
 ### Fail on run with uninitialized constants

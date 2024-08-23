@@ -162,50 +162,49 @@ export class Evaluator {
       const initResult = initEval(this.ctx).mapLeft(error => (failure = error))
       if (!isTrue(initResult)) {
         this.recorder.onUserOperatorReturn(initApp, [], initResult)
-        continue
-      }
-
-      this.shift()
-
-      const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
-      this.recorder.onUserOperatorReturn(initApp, [], invResult)
-      if (!isTrue(invResult)) {
-        errorsFound++
       } else {
-        // check all { step, shift(), inv } in a loop
+        this.shift()
 
-        // FIXME: errorsFound < ntraces is not good, because we continue after invariant violation.
-        // This is the same in the old version, so I'll fix later.
-        for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
-          const stepApp: QuintApp = {
-            id: 0n,
-            kind: 'app',
-            opcode: 'q::stepAndInvariant',
-            args: [],
+        const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
+        this.recorder.onUserOperatorReturn(initApp, [], invResult)
+        if (!isTrue(invResult)) {
+          errorsFound++
+        } else {
+          // check all { step, shift(), inv } in a loop
+
+          // FIXME: errorsFound < ntraces is not good, because we continue after invariant violation.
+          // This is the same in the old version, so I'll fix later.
+          for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
+            const stepApp: QuintApp = {
+              id: 0n,
+              kind: 'app',
+              opcode: 'q::stepAndInvariant',
+              args: [],
+            }
+            this.recorder.onUserOperatorCall(stepApp)
+
+            const stepResult = stepEval(this.ctx).mapLeft(error => (failure = error))
+            if (!isTrue(stepResult)) {
+              // The run cannot be extended. In some cases, this may indicate a deadlock.
+              // Since we are doing random simulation, it is very likely
+              // that we have not generated good values for extending
+              // the run. Hence, do not report an error here, but simply
+              // drop the run. Otherwise, we would have a lot of false
+              // positives, which look like deadlocks but they are not.
+
+              this.recorder.onUserOperatorReturn(stepApp, [], stepResult)
+              this.recorder.onRunReturn(right(rv.mkBool(true)), this.trace.get())
+              break
+            }
+
+            this.shift()
+
+            const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
+            if (!isTrue(invResult)) {
+              errorsFound++
+            }
+            this.recorder.onUserOperatorReturn(stepApp, [], invResult)
           }
-          this.recorder.onUserOperatorCall(stepApp)
-
-          const stepResult = stepEval(this.ctx).mapLeft(error => (failure = error))
-          if (!isTrue(stepResult)) {
-            // The run cannot be extended. In some cases, this may indicate a deadlock.
-            // Since we are doing random simulation, it is very likely
-            // that we have not generated good values for extending
-            // the run. Hence, do not report an error here, but simply
-            // drop the run. Otherwise, we would have a lot of false
-            // positives, which look like deadlocks but they are not.
-
-            this.recorder.onUserOperatorReturn(stepApp, [], stepResult)
-            this.recorder.onRunReturn(right(rv.mkBool(true)), this.trace.get())
-            break
-          }
-
-          this.shift()
-
-          const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
-          if (!isTrue(invResult)) {
-            errorsFound++
-          }
-          this.recorder.onUserOperatorReturn(stepApp, [], invResult)
         }
       }
 
@@ -386,14 +385,19 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
         const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
         const body = evaluateExpr(builder, def.expr)
         return (ctx: Context) => {
-          ctx.recorder.onUserOperatorCall(app)
-          const result = body(ctx)
+          if (def.expr.kind !== 'lambda') {
+            ctx.recorder.onUserOperatorCall(app)
+          }
 
           if (ctx.varStorage.actionTaken === undefined) {
             ctx.varStorage.actionTaken = def.name
           }
 
-          ctx.recorder.onUserOperatorReturn(app, [], result)
+          const result = body(ctx)
+
+          if (def.expr.kind !== 'lambda') {
+            ctx.recorder.onUserOperatorReturn(app, [], result)
+          }
           return result
         }
       }
@@ -473,6 +477,7 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
       const def = builder.table.get(expr.id)
       if (!def) {
         // TODO: Do we also need to return builtin ops for higher order usage?
+        // Answer: yes, see #1332
         const lambda = builtinValue(expr.name)
         return _ => lambda
       }
@@ -502,20 +507,14 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
         return ctx => op(ctx, args)
       }
 
-      const op = lambdaForApp(builder, expr)
-      //     return ctx => {
-      //   const argValues = args.map(arg => arg(ctx))
-      //   if (argValues.some(arg => arg.isLeft())) {
-      //     return argValues.find(arg => arg.isLeft())!
-      //   }
+      const userDefined = builder.table.has(expr.id)
 
-      //   return op(
-      //     ctx,
-      //     argValues.map(a => a.unwrap())
-      //   )
-      // }
+      const op = lambdaForApp(builder, expr)
 
       return ctx => {
+        if (userDefined) {
+          ctx.recorder.onUserOperatorCall(expr)
+        }
         const argValues = []
         for (const arg of args) {
           const argValue = arg(ctx)
@@ -525,7 +524,11 @@ function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Eit
           argValues.push(argValue.unwrap())
         }
 
-        return op(ctx, argValues)
+        const result = op(ctx, argValues)
+        if (userDefined) {
+          ctx.recorder.onUserOperatorReturn(expr, argValues, result)
+        }
+        return result
       }
 
     case 'let':
@@ -562,10 +565,7 @@ function lambdaForApp(
     }
     const arrow = lambdaResult.value.toArrow()
 
-    ctx.recorder.onUserOperatorCall(app)
-    const result = arrow(ctx, args)
-    ctx.recorder.onUserOperatorReturn(app, [], result)
-    return result
+    return arrow(ctx, args)
   }
 }
 

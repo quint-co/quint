@@ -92,7 +92,7 @@ export function lazyBuiltinLambda(
             // Save vars
             const successor = ctx.varStorage.snapshot()
 
-            return result.toBool() ? [successor] : []
+            return result.toBool() ? [{ snapshot: successor, index: i }] : []
           })
           ctx.recorder.onAnyOptionReturn(app, i)
 
@@ -107,17 +107,18 @@ export function lazyBuiltinLambda(
           .mapLeft(errors => errors[0])
 
         return processedResults.map(potentialSuccessors => {
-          ctx.recorder.onAnyReturn(args.length, -1)
-
           switch (potentialSuccessors.length) {
             case 0:
+              ctx.recorder.onAnyReturn(args.length, -1)
               return rv.mkBool(false)
             case 1:
-              ctx.varStorage.recoverSnapshot(potentialSuccessors[0])
+              ctx.recorder.onAnyReturn(args.length, potentialSuccessors[0].index)
+              ctx.varStorage.recoverSnapshot(potentialSuccessors[0].snapshot)
               return rv.mkBool(true)
             default:
               const choice = Number(ctx.rand(BigInt(potentialSuccessors.length)))
-              ctx.varStorage.recoverSnapshot(potentialSuccessors[choice])
+              ctx.recorder.onAnyReturn(args.length, potentialSuccessors[choice].index)
+              ctx.varStorage.recoverSnapshot(potentialSuccessors[choice].snapshot)
               return rv.mkBool(true)
           }
         })
@@ -192,7 +193,7 @@ export function lazyBuiltinLambda(
       }
     case 'then':
       return (ctx, args) => {
-        // const oldState = ctx.varStorage.asRecord()
+        const oldState = ctx.varStorage.asRecord()
         return args[0](ctx).chain(firstResult => {
           if (!firstResult.toBool()) {
             return left({
@@ -202,8 +203,8 @@ export function lazyBuiltinLambda(
           }
 
           ctx.shift()
-          // const newState = ctx.varStorage.asRecord()
-          // ctx.recorder.onNextState(oldState, newState)
+          const newState = ctx.varStorage.asRecord()
+          ctx.recorder.onNextState(oldState, newState)
 
           return args[1](ctx)
         })
@@ -217,7 +218,11 @@ export function lazyBuiltinLambda(
             if (result.isLeft()) {
               return result
             }
-            ctx.shift()
+
+            // Don't shift after the last one
+            if (i < Number(n.toInt()) - 1) {
+              ctx.shift()
+            }
           }
           return result
         })
