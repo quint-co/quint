@@ -1,13 +1,13 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { QuintError, quintErrorToString } from '../../quintError'
-import { Map, is, Set, Range, List } from 'immutable'
+import { List, Map, OrderedMap, Range, Set } from 'immutable'
 import { EvalFunction, isFalse, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
-import { chunk, times } from 'lodash'
+import { chunk } from 'lodash'
 import { expressionToString } from '../../ir/IRprinting'
 import { zerog } from '../../idGenerator'
-import { QuintApp, QuintEx } from '../../ir/quintIr'
+import { QuintApp } from '../../ir/quintIr'
 import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
 
@@ -238,7 +238,15 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
     case 'Set':
       return (_, args) => right(rv.mkSet(args))
     case 'Rec':
-      return (_, args) => right(rv.mkRecord(Map(chunk(args, 2).map(([k, v]) => [k.toStr(), v]))))
+      return (_, args) => {
+        const keys = args.filter((e, i) => i % 2 === 0).map(k => k.toStr())
+        const map: OrderedMap<string, RuntimeValue> = keys.reduce((map, key, i) => {
+          const v = args[2 * i + 1]
+          return v ? map.set(key, v) : map
+        }, OrderedMap<string, RuntimeValue>())
+        return right(rv.mkRecord(map))
+      }
+    // right(rv.mkRecord(Map(chunk(args, 2).map(([k, v]) => [k.toStr(), v]))))
     case 'List':
       return (_, args) => right(rv.mkList(List(args)))
     case 'Tup':
@@ -517,10 +525,22 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
       return (ctx, args) => {
         const lambda = args[1].toArrow()
         const keys = args[0].toSet()
-        const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lambda(ctx, [arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
+        const results: [RuntimeValue, RuntimeValue][] = []
 
-        return applyFold('fwd', keys, rv.mkMap([]), reducer)
+        for (const key of keys) {
+          const value = lambda(ctx, [key])
+          if (value.isLeft()) {
+            return value
+          }
+          results.push([key, value.value])
+        }
+
+        return right(rv.mkMap(Map(results)))
+
+        // const reducer = ([acc, arg]: RuntimeValue[]) =>
+        //   lambda(ctx, [arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
+
+        // return applyFold('fwd', keys, rv.mkMap([]), reducer)
       }
 
     case 'setToMap':

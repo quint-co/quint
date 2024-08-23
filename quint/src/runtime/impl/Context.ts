@@ -1,4 +1,4 @@
-import { Either, left, right } from '@sweet-monads/either'
+import { Either } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue } from './runtimeValue'
 import { TraceRecorder } from '../trace'
@@ -28,6 +28,5 @@ export class Context {
   shift() {
     this.varStorage.shiftVars()
     this.trace.extend(this.varStorage.asRecord())
-    // TODO: save on trace
   }
 }

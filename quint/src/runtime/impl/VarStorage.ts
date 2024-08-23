@@ -29,7 +29,6 @@ export class VarStorage {
   }
 
   shiftVars() {
-    // TODO: change this so registers are kept
     this.vars.forEach((reg, key) => {
       reg.value = this.nextVars.get(key)?.value ?? initialRegisterValue
     })
@@ -73,7 +72,6 @@ export class VarStorage {
 
   recoverSnapshot(snapshot: Snapshot) {
     this.nextVars.forEach((reg, key) => {
-      // TODO can we make this more efficient?
       const snapshotReg = snapshot.nextVars.get(key)
       if (snapshotReg) {
         reg.value = snapshotReg.value

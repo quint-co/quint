@@ -60,19 +60,19 @@
  * See LICENSE in the project root for license information.
  */
 
-import { List, Map as ImmutableMap, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
+import { Map as ImmutableMap, List, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
 import { IdGenerator, zerog } from '../../idGenerator'
 import { expressionToString } from '../../ir/IRprinting'
 
-import { Callable, EvalResult } from '../runtime'
+import { EvalResult } from '../runtime'
 import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { toMaybe } from './base'
-import { EvalFunction, evaluateExpr } from './evaluator'
+import { EvalFunction } from './evaluator'
 import { Context, Register } from './Context'
 
 /**

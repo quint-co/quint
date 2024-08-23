@@ -8,8 +8,8 @@
  * See LICENSE in the project root for license information.
  */
 
-import { QuintBool, QuintEx } from './ir/quintIr'
-import { ExecutionFrame, Trace, newTraceRecorder } from './runtime/trace'
+import { QuintEx } from './ir/quintIr'
+import { ExecutionFrame } from './runtime/trace'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
 

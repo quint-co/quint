@@ -1,84 +1,18 @@
 import { Either, left, right } from '@sweet-monads/either'
-import { QuintApp, QuintEx, QuintOpDef } from '../../ir/quintIr'
+import { QuintApp, QuintEx } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
 import { TraceRecorder } from '../trace'
-import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { Trace } from './trace'
 import { RuntimeValue, rv } from './runtimeValue'
-import { CachedValue, Context, Register } from './Context'
+import { Context } from './Context'
 import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
-import { List, Map as ImmutableMap } from 'immutable'
-import { NamedRegister, VarStorage } from './VarStorage'
-import { expressionToString } from '../../ir/IRprinting'
+import { List } from 'immutable'
+import { Builder, buildDef, buildExpr, nameWithNamespaces } from './compiler'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
-
-function nameWithNamespaces(name: string, namespaces: List<string>): string {
-  const revertedNamespaces = namespaces.reverse()
-  return revertedNamespaces.push(name).join('::')
-}
-
-export class Builder {
-  table: LookupTable
-  paramRegistry: Map<bigint, Register> = new Map()
-  constRegistry: Map<bigint, Register> = new Map()
-  scopedCachedValues: Map<bigint, CachedValue> = new Map()
-  initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
-  public namespaces: List<string> = List()
-  public varStorage: VarStorage
-
-  constructor(table: LookupTable, storeMetadata: boolean) {
-    this.table = table
-    this.varStorage = new VarStorage(storeMetadata, this.initialNondetPicks)
-  }
-
-  discoverVar(id: bigint, name: string) {
-    const key = [id, ...this.namespaces].join('#')
-    if (this.varStorage.vars.has(key)) {
-      return
-    }
-
-    const varName = nameWithNamespaces(name, this.namespaces)
-    const register: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
-    const nextRegister: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
-    this.varStorage.vars = this.varStorage.vars.set(key, register)
-    this.varStorage.nextVars = this.varStorage.nextVars.set(key, nextRegister)
-  }
-
-  getVar(id: bigint): NamedRegister {
-    const key = [id, ...this.namespaces].join('#')
-    const result = this.varStorage.vars.get(key)
-    if (!result) {
-      throw new Error(`Variable not found: ${key}`)
-    }
-
-    return result
-  }
-
-  getNextVar(id: bigint): NamedRegister {
-    const key = [id, ...this.namespaces].join('#')
-    const result = this.varStorage.nextVars.get(key)
-    if (!result) {
-      throw new Error(`Variable not found: ${key}`)
-    }
-
-    return result
-  }
-
-  registerForConst(id: bigint, name: string): Register {
-    let register = this.constRegistry.get(id)
-    if (!register) {
-      const message = `Uninitialized const ${name}. Use: import <moduleName>(${name}=<value>).*`
-      register = { value: left({ code: 'QNT500', message }) }
-      this.constRegistry.set(id, register)
-      return register
-    }
-    return register
-  }
-}
 
 export class Evaluator {
   public ctx: Context
@@ -124,7 +58,7 @@ export class Evaluator {
     if (expr.kind === 'app') {
       this.recorder.onUserOperatorCall(expr)
     }
-    const value = evaluateExpr(this.builder, expr)(this.ctx)
+    const value = buildExpr(this.builder, expr)(this.ctx)
     if (expr.kind === 'app') {
       this.recorder.onUserOperatorReturn(expr, [], value)
     }
@@ -147,9 +81,9 @@ export class Evaluator {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
-    const initEval = evaluateExpr(this.builder, init)
-    const stepEval = evaluateExpr(this.builder, step)
-    const invEval = evaluateExpr(this.builder, inv)
+    const initEval = buildExpr(this.builder, init)
+    const stepEval = buildExpr(this.builder, step)
+    const invEval = buildExpr(this.builder, inv)
 
     // TODO: room for improvement here
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
@@ -232,7 +166,7 @@ export class Evaluator {
     // save the initial seed
     let seed = this.rng.getState()
 
-    const testEval = evaluateDef(this.builder, testDef)
+    const testEval = buildDef(this.builder, testDef)
 
     let nsamples = 1
     // run up to maxSamples, stop on the first failure
@@ -342,245 +276,10 @@ export class Evaluator {
   }
 }
 
-export function evaluateExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  const exprEval = evaluateNewExpr(builder, expr)
-  return ctx => exprEval(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: expr.id } : err))
-}
-
-export function buildUnderDefContext(
-  builder: Builder,
-  def: LookupDefinition,
-  buildFunction: () => (ctx: Context) => Either<QuintError, RuntimeValue>
-): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  if (!def.importedFrom || def.importedFrom.kind !== 'instance') {
-    return buildFunction()
-  }
-  const instance = def.importedFrom
-
-  const overrides: [Register, (ctx: Context) => Either<QuintError, RuntimeValue>][] = instance.overrides.map(
-    ([param, expr]) => {
-      const id = builder.table.get(param.id)!.id
-      const register = builder.registerForConst(id, param.name)
-
-      return [register, evaluateExpr(builder, expr)]
-    }
-  )
-
-  const namespacesBefore = builder.namespaces
-  builder.namespaces = List(def.namespaces)
-
-  const result = buildFunction()
-  builder.namespaces = namespacesBefore
-
-  return ctx => {
-    overrides.forEach(([register, evaluate]) => (register.value = evaluate(ctx)))
-    return result(ctx)
-  }
-}
-
-function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  switch (def.kind) {
-    case 'def':
-      if (def.qualifier === 'action') {
-        const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
-        const body = evaluateExpr(builder, def.expr)
-        return (ctx: Context) => {
-          if (def.expr.kind !== 'lambda') {
-            ctx.recorder.onUserOperatorCall(app)
-          }
-
-          if (ctx.varStorage.actionTaken === undefined) {
-            ctx.varStorage.actionTaken = def.name
-          }
-
-          const result = body(ctx)
-
-          if (def.expr.kind !== 'lambda') {
-            ctx.recorder.onUserOperatorReturn(app, [], result)
-          }
-          return result
-        }
-      }
-
-      if (def.expr.kind === 'lambda') {
-        return evaluateExpr(builder, def.expr)
-      }
-
-      if (def.depth === undefined || def.depth === 0) {
-        return evaluateExpr(builder, def.expr)
-      }
-
-      let cachedValue = builder.scopedCachedValues.get(def.id)!
-
-      const bodyEval = evaluateExpr(builder, def.expr)
-      if (def.qualifier === 'nondet') {
-        builder.initialNondetPicks.set(def.name, undefined)
-      }
-
-      return ctx => {
-        if (cachedValue.value === undefined) {
-          cachedValue.value = bodyEval(ctx)
-          if (def.qualifier === 'nondet') {
-            cachedValue.value
-              .map(value => {
-                ctx.varStorage.nondetPicks.set(def.name, value)
-              })
-              .mapLeft(_ => {
-                ctx.varStorage.nondetPicks.set(def.name, undefined)
-              })
-          }
-        }
-        return cachedValue.value
-      }
-    case 'param': {
-      const register = builder.paramRegistry.get(def.id)
-      if (!register) {
-        const reg: Register = { value: left({ code: 'QNT501', message: `Parameter ${def.name} not set` }) }
-        builder.paramRegistry.set(def.id, reg)
-        return _ => reg.value
-      }
-      return _ => register.value
-    }
-
-    case 'var': {
-      const register = builder.getVar(def.id)
-      return _ => {
-        return register.value
-      }
-    }
-    case 'const':
-      const register = builder.registerForConst(def.id, def.name)
-      return _ => register.value
-    default:
-      return _ => left({ code: 'QNT000', message: `Not implemented for def kind ${def.kind}` })
-  }
-}
-
-function evaluateDef(builder: Builder, def: LookupDefinition): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  return buildUnderDefContext(builder, def, () => evaluateDefCore(builder, def))
-}
-
-function evaluateNewExpr(builder: Builder, expr: QuintEx): (ctx: Context) => Either<QuintError, RuntimeValue> {
-  switch (expr.kind) {
-    case 'int':
-    case 'bool':
-    case 'str':
-      // These are already values, just return them
-      const value = right(rv.fromQuintEx(expr))
-      return _ => value
-    case 'lambda':
-      // Lambda is also like a value, but we should construct it with the context
-      const body = evaluateExpr(builder, expr.expr)
-      const lambda = rv.mkLambda(expr.params, body, builder.paramRegistry)
-      return _ => right(lambda)
-    case 'name':
-      const def = builder.table.get(expr.id)
-      if (!def) {
-        // TODO: Do we also need to return builtin ops for higher order usage?
-        // Answer: yes, see #1332
-        const lambda = builtinValue(expr.name)
-        return _ => lambda
-      }
-      return evaluateDef(builder, def)
-    case 'app':
-      if (expr.opcode === 'assign') {
-        const varDef = builder.table.get(expr.args[0].id)!
-        return buildUnderDefContext(builder, varDef, () => {
-          builder.discoverVar(varDef.id, varDef.name)
-          const register = builder.getNextVar(varDef.id)
-          const exprEval = evaluateExpr(builder, expr.args[1])
-
-          return ctx => {
-            return exprEval(ctx).map(value => {
-              register.value = right(value)
-              return rv.mkBool(true)
-            })
-          }
-        })
-      }
-
-      const args = expr.args.map(arg => evaluateExpr(builder, arg))
-
-      // In these special ops, we don't want to evaluate the arguments before evaluating application
-      if (lazyOps.includes(expr.opcode)) {
-        const op = lazyBuiltinLambda(expr.opcode)
-        return ctx => op(ctx, args)
-      }
-
-      const userDefined = builder.table.has(expr.id)
-
-      const op = lambdaForApp(builder, expr)
-
-      return ctx => {
-        if (userDefined) {
-          ctx.recorder.onUserOperatorCall(expr)
-        }
-        const argValues = []
-        for (const arg of args) {
-          const argValue = arg(ctx)
-          if (argValue.isLeft()) {
-            return argValue
-          }
-          argValues.push(argValue.unwrap())
-        }
-
-        const result = op(ctx, argValues)
-        if (userDefined) {
-          ctx.recorder.onUserOperatorReturn(expr, argValues, result)
-        }
-        return result
-      }
-
-    case 'let':
-      let cachedValue = builder.scopedCachedValues.get(expr.opdef.id)
-      if (!cachedValue) {
-        cachedValue = { value: undefined }
-        builder.scopedCachedValues.set(expr.opdef.id, cachedValue)
-      }
-      const bodyEval = evaluateExpr(builder, expr.expr)
-      return ctx => {
-        const result = bodyEval(ctx)
-        cachedValue!.value = undefined
-        return result
-      }
-  }
-}
-
-function lambdaForApp(
-  builder: Builder,
-  app: QuintApp
-): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
-  const { id, opcode } = app
-
-  const def = builder.table.get(id)!
-  if (!def) {
-    return builtinLambda(opcode)
-  }
-
-  const value = evaluateDef(builder, def)
-  return (ctx, args) => {
-    const lambdaResult = value(ctx)
-    if (lambdaResult.isLeft()) {
-      return lambdaResult
-    }
-    const arrow = lambdaResult.value.toArrow()
-
-    return arrow(ctx, args)
-  }
-}
-
 export function isTrue(value: Either<QuintError, RuntimeValue>): boolean {
   return value.isRight() && value.value.toBool() === true
 }
 
 export function isFalse(value: Either<QuintError, RuntimeValue>): boolean {
   return value.isRight() && value.value.toBool() === false
-}
-
-export function profile<T>(name: string, f: () => T): T {
-  // const start = Date.now()
-  const r = f()
-  // const end = Date.now()
-  // console.log(`${name} took ${end - start}ms`)
-  return r
 }

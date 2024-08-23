@@ -13,7 +13,7 @@
  */
 
 import { cloneDeep, compact } from 'lodash'
-import { OpQualifier, QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
+import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
 import { QuintError } from '../quintError'
 import { NameResolver } from './resolver'
