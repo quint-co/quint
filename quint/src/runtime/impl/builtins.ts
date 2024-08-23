@@ -77,19 +77,27 @@ export function lazyBuiltinLambda(
     case 'actionAny':
       const app: QuintApp = { id: 0n, kind: 'app', opcode: 'actionAny', args: [] }
       return (ctx, args) => {
-        const nextVarsSnapshot = ctx.varStorage.nextVarsSnapshot()
+        // on `any`, we reset the action taken as the goal is to save the last
+        // action picked in an `any` call
+        ctx.varStorage.actionTaken = undefined
+        ctx.varStorage.nondetPicks.forEach((_, key) => {
+          ctx.varStorage.nondetPicks.set(key, undefined)
+        })
+
+        const nextVarsSnapshot = ctx.varStorage.snapshot()
+
         const evaluationResults = args.map((arg, i) => {
           ctx.recorder.onAnyOptionCall(app, i)
           const result = arg(ctx).map(result => {
             // Save vars
-            const successor = ctx.varStorage.nextVarsSnapshot()
+            const successor = ctx.varStorage.snapshot()
 
             return result.toBool() ? [successor] : []
           })
           ctx.recorder.onAnyOptionReturn(app, i)
 
           // Recover snapshot (regardless of success or failure)
-          ctx.varStorage.recoverNextVars(nextVarsSnapshot)
+          ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
 
           return result
         })
@@ -105,22 +113,22 @@ export function lazyBuiltinLambda(
             case 0:
               return rv.mkBool(false)
             case 1:
-              ctx.varStorage.recoverNextVars(potentialSuccessors[0])
+              ctx.varStorage.recoverSnapshot(potentialSuccessors[0])
               return rv.mkBool(true)
             default:
               const choice = Number(ctx.rand(BigInt(potentialSuccessors.length)))
-              ctx.varStorage.recoverNextVars(potentialSuccessors[choice])
+              ctx.varStorage.recoverSnapshot(potentialSuccessors[choice])
               return rv.mkBool(true)
           }
         })
       }
     case 'actionAll':
       return (ctx, args) => {
-        const nextVarsSnapshot = ctx.varStorage.nextVarsSnapshot()
+        const nextVarsSnapshot = ctx.varStorage.snapshot()
         for (const action of args) {
           const result = action(ctx)
           if (!isTrue(result)) {
-            ctx.varStorage.recoverNextVars(nextVarsSnapshot)
+            ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
             return result.map(_ => rv.mkBool(false))
           }
         }

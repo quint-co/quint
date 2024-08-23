@@ -26,13 +26,13 @@ export class Builder {
   paramRegistry: Map<bigint, Register> = new Map()
   constRegistry: Map<bigint, Register> = new Map()
   scopedCachedValues: Map<bigint, CachedValue> = new Map()
-  nondetPicks: Map<string, RuntimeValue | undefined> = new Map()
+  initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
   public namespaces: List<string> = List()
   public varStorage: VarStorage
 
   constructor(table: LookupTable, storeMetadata: boolean) {
     this.table = table
-    this.varStorage = new VarStorage(storeMetadata, this.nondetPicks)
+    this.varStorage = new VarStorage(storeMetadata, this.initialNondetPicks)
   }
 
   discoverVar(id: bigint, name: string) {
@@ -388,6 +388,11 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
         return (ctx: Context) => {
           ctx.recorder.onUserOperatorCall(app)
           const result = body(ctx)
+
+          if (ctx.varStorage.actionTaken === undefined) {
+            ctx.varStorage.actionTaken = def.name
+          }
+
           ctx.recorder.onUserOperatorReturn(app, [], result)
           return result
         }
@@ -405,7 +410,7 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
 
       const bodyEval = evaluateExpr(builder, def.expr)
       if (def.qualifier === 'nondet') {
-        builder.nondetPicks.set(def.name, undefined)
+        builder.initialNondetPicks.set(def.name, undefined)
       }
 
       return ctx => {
@@ -414,10 +419,10 @@ function evaluateDefCore(builder: Builder, def: LookupDefinition): (ctx: Context
           if (def.qualifier === 'nondet') {
             cachedValue.value
               .map(value => {
-                builder.nondetPicks.set(def.name, value)
+                ctx.varStorage.nondetPicks.set(def.name, value)
               })
               .mapLeft(_ => {
-                builder.nondetPicks.set(def.name, undefined)
+                ctx.varStorage.nondetPicks.set(def.name, undefined)
               })
           }
         }

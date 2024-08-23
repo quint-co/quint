@@ -8,13 +8,20 @@ export interface NamedRegister extends Register {
   name: string
 }
 
+interface Snapshot {
+  nextVars: ImmutableMap<string, NamedRegister>
+  nondetPicks: Map<string, RuntimeValue | undefined>
+  actionTaken: string | undefined
+}
+
 const initialRegisterValue: Either<QuintError, RuntimeValue> = left({ code: 'QNT502', message: 'Variable not set' })
 
 export class VarStorage {
   public vars: ImmutableMap<string, NamedRegister> = ImmutableMap()
   public nextVars: ImmutableMap<string, NamedRegister> = ImmutableMap()
+  public nondetPicks: Map<string, RuntimeValue | undefined> = new Map()
+  public actionTaken: string | undefined
   private storeMetadata: boolean
-  private nondetPicks: Map<string, RuntimeValue | undefined> = new Map()
 
   constructor(storeMetadata: boolean, nondetPicks: Map<string, RuntimeValue | undefined>) {
     this.storeMetadata = storeMetadata
@@ -45,10 +52,7 @@ export class VarStorage {
         })
       )
       map.push(['nondet_picks', nondetPicksRecord])
-
-      //   if (this.actionTaken.isJust()) {
-      //     map.push(['action_taken', this.actionTaken.value!])
-      //   }
+      map.push(['action_taken', rv.mkStr(this.actionTaken ?? '')])
     }
 
     return rv.mkRecord(map)
@@ -59,16 +63,23 @@ export class VarStorage {
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
   }
 
-  nextVarsSnapshot(): ImmutableMap<string, NamedRegister> {
-    return this.nextVars.map(reg => ({ ...reg }))
+  snapshot(): Snapshot {
+    return {
+      nextVars: this.nextVars.map(reg => ({ ...reg })),
+      nondetPicks: new Map(this.nondetPicks),
+      actionTaken: this.actionTaken,
+    }
   }
 
-  recoverNextVars(snapshot: ImmutableMap<string, NamedRegister>) {
+  recoverSnapshot(snapshot: Snapshot) {
     this.nextVars.forEach((reg, key) => {
-      const snapshotReg = snapshot.get(key)
+      // TODO can we make this more efficient?
+      const snapshotReg = snapshot.nextVars.get(key)
       if (snapshotReg) {
         reg.value = snapshotReg.value
       }
     })
+    this.nondetPicks = snapshot.nondetPicks
+    this.actionTaken = snapshot.actionTaken
   }
 }

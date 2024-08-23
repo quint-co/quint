@@ -466,7 +466,7 @@ exit $exit_code
 ```
 An example execution:
 
-[State 0] { action_taken: "q::init", n: 1, nondet_picks: {  } }
+[State 0] { action_taken: "init", n: 1, nondet_picks: {  } }
 
 [State 1] { action_taken: "OnPositive", n: 2, nondet_picks: {  } }
 
