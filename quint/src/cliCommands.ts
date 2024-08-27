@@ -328,7 +328,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     verbosity: verbosityLevel,
     onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
       if (outputTemplate) {
-        const filename = expandNamedOutputTemplate(outputTemplate, name, index)
+        const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: prev.args.nTraces > 1 })
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -984,15 +984,22 @@ const Placeholders = {
  * - {test} is replaced with the name of the test
  * - {seq} is replaced with the index of the trace
  *
- * If {seq} is not present, the index is appended to the filename, before the extension.
+ * If {seq} is not present and `options.autoAppend` is true,
+ * the index is appended to the filename, before the extension.
  *
  * @param template the output template
  * @param name the name of the test
  * @param index the index of the trace
+ * @param options An object of the form `{ autoAppend: boolean }`
  * @returns the expanded output template
  */
-function expandNamedOutputTemplate(template: string, name: string, index: number): string {
-  return expandOutputTemplate(template.replaceAll(Placeholders.test, name), index, { autoAppend: true })
+function expandNamedOutputTemplate(
+  template: string,
+  name: string,
+  index: number,
+  options: { autoAppend: boolean }
+): string {
+  return expandOutputTemplate(template.replaceAll(Placeholders.test, name), index, options)
 }
 
 /**
@@ -1011,7 +1018,7 @@ function expandNamedOutputTemplate(template: string, name: string, index: number
 function expandOutputTemplate(template: string, index: number, options: { autoAppend: boolean }): string {
   if (template.includes(Placeholders.seq)) {
     return template.replaceAll(Placeholders.seq, index.toString())
-  } else if (template.endsWith('.itf.json')) {
+  } else if (options.autoAppend && template.endsWith('.itf.json')) {
     // Special case for the recommended extension, to avoid adding the index in between `itf` and `json`
     return template.replace('.itf.json', `${index}.itf.json`)
   } else if (options.autoAppend) {
