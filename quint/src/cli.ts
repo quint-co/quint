@@ -235,7 +235,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file, e.g., out{#}.itf.json where {#} is the trace sequence number (suppresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file, e.g., out_{seq}.itf.json where {seq} is the trace sequence number (suppresses all console output)',
         type: 'string',
       })
       .option('max-samples', {
@@ -300,7 +300,7 @@ const verifyCmd = {
   builder: (yargs: any) =>
     compileOpts(yargs)
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file, e.g., out.itf.json (suppresses all console output)',
         type: 'string',
       })
       .option('max-steps', {
@@ -359,14 +359,7 @@ const docsCmd = {
   handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
 
-const validate = (argv: any) => {
-  if (argv.output && typeof argv.output === 'string') {
-    const output = argv.output
-    if (!output.includes('{}') && !output.includes('{#}')) {
-      throw new Error(`The output should contain at least one of variables: {}, {#}`)
-    }
-  }
-
+const validate = (_argv: any) => {
   return true
 }
 

@@ -328,7 +328,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     verbosity: verbosityLevel,
     onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
       if (outputTemplate) {
-        const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
+        const filename = expandNamedOutputTemplate(outputTemplate, name, index)
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -352,7 +352,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   }
 
   // TODO: This block is a workaround for the fact that flattening removes any defs
-  // not refernced in the main module. We'd instead like way to just instruct it
+  // not referenced in the main module. We'd instead like way to just instruct it
   // to keep some defs.
   //
   // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
@@ -551,7 +551,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
       const itfFile: string | undefined = prev.args.outItf
       if (itfFile) {
-        const filename = itfFile.replaceAll('{#}', `${index}`)
+        const filename = expandOutputTemplate(itfFile, index, { autoAppend: prev.args.nTraces > 1 })
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -730,10 +730,10 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   const itfFile: string | undefined = prev.args.outItf
   if (itfFile) {
-    if (itfFile.includes('{}') || itfFile.includes('{#}')) {
+    if (itfFile.includes(Placeholders.test) || itfFile.includes(Placeholders.seq)) {
       console.log(
-        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey('{}')} or ${chalk.grey(
-          '{#}'
+        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(Placeholders.test)} or ${chalk.grey(
+          Placeholders.seq
         )}, but this has no effect since at most a single trace will be produced.`
       )
     }
@@ -970,4 +970,56 @@ function isMatchingTest(match: string | undefined, name: string) {
 // Derive the verbosity for simulation and verification routines
 function deriveVerbosity(args: { out: string | undefined; outItf: string | undefined; verbosity: number }): number {
   return !args.out && !args.outItf ? args.verbosity : 0
+}
+
+const Placeholders = {
+  test: '{test}',
+  seq: '{seq}',
+}
+
+/**
+ * Expand the output template with the name of the test and the index of the trace.
+ *
+ * Possible placeholders:
+ * - {test} is replaced with the name of the test
+ * - {seq} is replaced with the index of the trace
+ *
+ * If {seq} is not present, the index is appended to the filename, before the extension.
+ *
+ * @param template the output template
+ * @param name the name of the test
+ * @param index the index of the trace
+ * @returns the expanded output template
+ */
+function expandNamedOutputTemplate(template: string, name: string, index: number): string {
+  return expandOutputTemplate(template.replaceAll(Placeholders.test, name), index, { autoAppend: true })
+}
+
+/**
+ * Expand the output template with the index of the trace.
+ *
+ * The {seq} placeholder is replaced with the index of the trace.
+ *
+ * If {seq} is not present and `options.autoAppend` is true,
+ * the index is appended to the filename, before the extension.
+ *
+ * @param template the output template
+ * @param index the index of the trace
+ * @param options An object of the form `{ autoAppend: boolean }`
+ * @returns the expanded output template
+ */
+function expandOutputTemplate(template: string, index: number, options: { autoAppend: boolean }): string {
+  if (template.includes(Placeholders.seq)) {
+    return template.replaceAll(Placeholders.seq, index.toString())
+  } else if (template.endsWith('.itf.json')) {
+    // Special case for the recommended extension, to avoid adding the index in between `itf` and `json`
+    return template.replace('.itf.json', `${index}.itf.json`)
+  } else if (options.autoAppend) {
+    // Append the index to the filename, before the extension
+    const parts = template.split('.')
+    const ext = parts.pop()
+    return `${parts.join('.')}${index}.${ext}`
+  } else {
+    return template
+  }
 }
