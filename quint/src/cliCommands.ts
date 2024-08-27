@@ -342,7 +342,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
   const out = console.log
 
-  const outputTemplate = testing.args.output
+  const outputTemplate = testing.args.outItf
 
   // Start the Timer and being running the tests
   const startMs = Date.now()

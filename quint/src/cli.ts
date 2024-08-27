@@ -180,10 +180,15 @@ const testCmd = {
         desc: 'name of the main module (by default, computed from filename)',
         type: 'string',
       })
-      .option('output', {
-        desc: 'write a trace for every test, e.g., out{#}{}.itf.json where {} is the name of a test, {#} is the test sequence number',
+      .option('out-itf', {
+        desc: 'write a trace for every test, e.g., out_{test}_{seq}.itf.json where {test} is the name of a test, and {seq} is the test sequence number',
         type: 'string',
       })
+      // Hidden alias for `--out-itf`
+      .option('output', {
+        type: 'string',
+      })
+      .hide('output')
       .option('max-samples', {
         desc: 'the maximum number of successful runs to try for every randomized test',
         type: 'number',
@@ -209,8 +214,14 @@ const testCmd = {
         desc: 'a string or regex that selects names to use as tests',
         type: 'string',
       }),
-  handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult),
+  handler: (args: any) => {
+    if (args.output != null) {
+      args.outItf = args['out-itf'] = args.output
+      delete args.output
+    }
+
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult)
+  },
 }
 
 // construct run commands with yargs
