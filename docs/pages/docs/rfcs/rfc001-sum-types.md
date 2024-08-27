@@ -261,7 +261,7 @@ define properties common to all shapes like
 We have always planned to support co-products in quint: their utility is
 well known and widely appreciated by engineers with experience in modern
 programming languages. We introduced co-products to Apalache in
-<https://github.com/informalsystems/apalache/milestone/60> for the same
+<https://github.com/apalache-mc/apalache/milestone/60> for the same
 reasons. The design and implementation of the latter was worked out by
 based on the paper ["Extensible Records with Scoped
 Labels"](https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/).

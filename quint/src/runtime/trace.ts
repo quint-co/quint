@@ -16,6 +16,7 @@ import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
 import { rv } from './impl/runtimeValue'
+import { insertSorted } from './../util'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -329,46 +330,19 @@ class TraceRecorderImpl implements TraceRecorder {
 
     const traceWithSeed = { frame: traceToSave, seed: this.runSeed }
 
-    this.bestTraces.push(traceWithSeed)
-    this.sortTracesByQuality()
-    // Remove the worst trace (if there more traces than needed)
+    // Insert the trace into the list of best traces,
+    // keeping the list sorted by descending quality.
+    this.insertTraceSortedByQuality(traceWithSeed)
+
+    // If there are more traces than needed, remove the worst trace,
+    // ie. the last one, since the traces are sorted by descending quality.
     if (this.bestTraces.length > this.tracesToStore) {
       this.bestTraces.pop()
     }
   }
 
-  private sortTracesByQuality() {
-    const fromResult = (r: Maybe<EvalResult>) => {
-      if (r.isNone()) {
-        return true
-      } else {
-        const rex = r.value.toQuintEx({ nextId: () => 0n })
-        return rex.kind === 'bool' && !rex.value
-      }
-    }
-
-    this.bestTraces.sort((a, b) => {
-      // Prefer short traces for error, and longer traces for non error.
-      // Therefore, trace a is better than trace b iff
-      //  - when a has an error: a is shorter or b has no error;
-      //  - when a has no error: a is longer and b has no error.
-      const aNotOk = fromResult(a.frame.result)
-      const bNotOk = fromResult(b.frame.result)
-      if (aNotOk) {
-        if (bNotOk) {
-          return a.frame.args.length - b.frame.args.length
-        } else {
-          return -1
-        }
-      } else {
-        // a is ok
-        if (bNotOk) {
-          return 1
-        } else {
-          return b.frame.args.length - a.frame.args.length
-        }
-      }
-    })
+  private insertTraceSortedByQuality(trace: Trace) {
+    insertSorted(this.bestTraces, trace, compareTracesByQuality)
   }
 
   // create a bottom frame, which encodes the whole trace
@@ -382,6 +356,40 @@ class TraceRecorderImpl implements TraceRecorder {
       result: just(rv.mkBool(true)),
       // and here we store the subframes for the top-level actions
       subframes: [],
+    }
+  }
+}
+
+// Compare two traces by quality.
+//
+// Prefer short traces for error, and longer traces for non error.
+// Therefore, trace a is better than trace b iff
+//  - when a has an error: a is shorter or b has no error;
+//  - when a has no error: a is longer and b has no error.
+function compareTracesByQuality(a: Trace, b: Trace): number {
+  const fromResult = (r: Maybe<EvalResult>) => {
+    if (r.isNone()) {
+      return true
+    } else {
+      const rex = r.value.toQuintEx({ nextId: () => 0n })
+      return rex.kind === 'bool' && !rex.value
+    }
+  }
+
+  const aNotOk = fromResult(a.frame.result)
+  const bNotOk = fromResult(b.frame.result)
+  if (aNotOk) {
+    if (bNotOk) {
+      return a.frame.args.length - b.frame.args.length
+    } else {
+      return -1
+    }
+  } else {
+    // a is ok
+    if (bNotOk) {
+      return 1
+    } else {
+      return b.frame.args.length - a.frame.args.length
     }
   }
 }
