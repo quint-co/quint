@@ -74,6 +74,7 @@ listed without any additional command line arguments.
 | [cosmwasm/zero-to-hero/vote.qnt](./cosmwasm/zero-to-hero/vote.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [cryptography/hashes.qnt](./cryptography/hashes.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
 | [cryptography/hashesTest.qnt](./cryptography/hashesTest.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [games/mafia_werewolf/play_mafia.qnt](./games/mafia_werewolf/play_mafia.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/rock_paper_scissors/play_rock_paper_scissors.qnt](./games/rock_paper_scissors/play_rock_paper_scissors.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/secret-santa/secret_santa.qnt](./games/secret-santa/secret_santa.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/tictactoe/tictactoe.qnt](./games/tictactoe/tictactoe.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
