@@ -12,8 +12,6 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './compiler'
 
-export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
-
 export class Evaluator {
   public ctx: Context
   public recorder: TraceRecorder

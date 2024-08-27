@@ -1,7 +1,7 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { QuintError, quintErrorToString } from '../../quintError'
+import { QuintError } from '../../quintError'
 import { List, Map, OrderedMap, Range, Set } from 'immutable'
-import { EvalFunction, isFalse, isTrue } from './evaluator'
+import { isFalse, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
 import { chunk } from 'lodash'
@@ -10,6 +10,7 @@ import { zerog } from '../../idGenerator'
 import { QuintApp } from '../../ir/quintIr'
 import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
+import { EvalFunction } from './compiler'
 
 export function builtinValue(name: string): Either<QuintError, RuntimeValue> {
   switch (name) {
@@ -37,6 +38,7 @@ export const lazyOps = [
   'implies',
   'then',
   'reps',
+  'expect',
 ]
 
 export function lazyBuiltinLambda(
@@ -96,9 +98,6 @@ export function lazyBuiltinLambda(
           })
           ctx.recorder.onAnyOptionReturn(app, i)
 
-          // Recover snapshot (regardless of success or failure)
-          ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
-
           return result
         })
 
@@ -110,6 +109,7 @@ export function lazyBuiltinLambda(
           switch (potentialSuccessors.length) {
             case 0:
               ctx.recorder.onAnyReturn(args.length, -1)
+              ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
               return rv.mkBool(false)
             case 1:
               ctx.recorder.onAnyReturn(args.length, potentialSuccessors[0].index)
@@ -226,6 +226,35 @@ export function lazyBuiltinLambda(
           }
           return result
         })
+      }
+    case 'expect':
+      // Translate A.expect(P):
+      //  - Evaluate A.
+      //  - When A's result is 'false', emit a runtime error.
+      //  - When A's result is 'true':
+      //    - Commit the variable updates: Shift the primed variables to unprimed.
+      //    - Evaluate `P`.
+      //    - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
+      //    - If `P` evaluates to `true`, rollback to the previous state and return `true`.
+      return (ctx, args) => {
+        const result: Either<QuintError, RuntimeValue> = args[0](ctx).chain(action => {
+          if (!action.toBool()) {
+            return left({ code: 'QNT508', message: 'Cannot continue to "expect"' })
+          }
+
+          const nextVarsSnapshot = ctx.varStorage.snapshot()
+          ctx.shift()
+          return args[1](ctx).chain(expectation => {
+            ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
+
+            if (!expectation.toBool()) {
+              return left({ code: 'QNT508', message: 'Expect condition does not hold true' })
+            }
+
+            return right(rv.mkBool(true))
+          })
+        })
+        return result
       }
 
     default:
@@ -532,10 +561,10 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
           if (value.isLeft()) {
             return value
           }
-          results.push([key, value.value])
+          results.push([key.normalForm(), value.value])
         }
 
-        return right(rv.mkMap(Map(results)))
+        return right(rv.fromMap(Map(results)))
 
         // const reducer = ([acc, arg]: RuntimeValue[]) =>
         //   lambda(ctx, [arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
@@ -563,7 +592,7 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
         console.log('>', args[0].toStr(), valuePretty.toString())
         return right(args[1])
       }
-    case 'expect':
+    // TODO: add missing operators
 
     default:
       return () => left({ code: 'QNT000', message: `Unknown builtin ${op}` })
@@ -575,21 +604,32 @@ export function applyLambdaToSet(
   set: RuntimeValue
 ): Either<QuintError, Set<RuntimeValue>> {
   const f = lambda.toArrow()
-  const results = set.toSet().map(value => f(ctx, [value]))
-  const err = results.find(result => result.isLeft())
-  if (err !== undefined && err.isLeft()) {
-    return left(err.value)
+  const elements = set.toSet()
+  const results = []
+  for (const element of elements) {
+    const result = f(ctx, [element])
+    if (result.isLeft()) {
+      return left(result.value)
+    }
+    results.push(result.value)
   }
+  return right(Set(results))
 
-  return right(
-    results.map(result => {
-      if (result.isLeft()) {
-        throw new Error(`Impossible, result is left: ${quintErrorToString(result.value)}`)
-      }
+  //   map(value => f(ctx, [value]))
+  // const err = results.find(result => result.isLeft())
+  // if (err !== undefined && err.isLeft()) {
+  //   return left(err.value)
+  // }
 
-      return result.value
-    })
-  )
+  // return right(
+  //   results.map(result => {
+  //     if (result.isLeft()) {
+  //       throw new Error(`Impossible, result is left: ${quintErrorToString(result.value)}`)
+  //     }
+
+  //     return result.value
+  //   })
+  // )
 }
 
 function applyFold(

@@ -14,6 +14,7 @@ interface Snapshot {
   actionTaken: string | undefined
 }
 
+// TODO: Add name to error message
 const initialRegisterValue: Either<QuintError, RuntimeValue> = left({ code: 'QNT502', message: 'Variable not set' })
 
 export class VarStorage {

@@ -72,7 +72,7 @@ import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { toMaybe } from './base'
-import { EvalFunction } from './evaluator'
+import { EvalFunction } from './compiler'
 import { Context, Register } from './Context'
 
 /**
@@ -1653,12 +1653,6 @@ export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue
     super(false)
     this.body = body
     this.registers = registers
-  }
-
-  eval(args?: any[]) {
-    return () => {
-      throw new Error('Not implemented')
-    }
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
