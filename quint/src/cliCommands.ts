@@ -529,7 +529,8 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
-  const verbosityLevel = deriveVerbosity(prev.args)
+  // Force disable output if `--out-itf` is set
+  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
 
   const rngOrError = mkRng(prev.args.seed)
@@ -968,8 +969,8 @@ function isMatchingTest(match: string | undefined, name: string) {
 }
 
 // Derive the verbosity for simulation and verification routines
-function deriveVerbosity(args: { out: string | undefined; outItf: string | undefined; verbosity: number }): number {
-  return !args.out && !args.outItf ? args.verbosity : 0
+function deriveVerbosity(args: { out: string | undefined; verbosity: number }): number {
+  return args.out ? 0 : args.verbosity
 }
 
 const Placeholders = {
