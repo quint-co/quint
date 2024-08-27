@@ -79,16 +79,16 @@ export function lazyBuiltinLambda(
     case 'actionAny':
       const app: QuintApp = { id: 0n, kind: 'app', opcode: 'actionAny', args: [] }
       return (ctx, args) => {
-        // on `any`, we reset the action taken as the goal is to save the last
-        // action picked in an `any` call
-        ctx.varStorage.actionTaken = undefined
-        ctx.varStorage.nondetPicks.forEach((_, key) => {
-          ctx.varStorage.nondetPicks.set(key, undefined)
-        })
-
         const nextVarsSnapshot = ctx.varStorage.snapshot()
 
         const evaluationResults = args.map((arg, i) => {
+          // on `any`, we reset the action taken as the goal is to save the last
+          // action picked in an `any` call
+          ctx.varStorage.actionTaken = undefined
+          ctx.varStorage.nondetPicks.forEach((_, key) => {
+            ctx.varStorage.nondetPicks.set(key, undefined)
+          })
+
           ctx.recorder.onAnyOptionCall(app, i)
           const result = arg(ctx).map(result => {
             // Save vars

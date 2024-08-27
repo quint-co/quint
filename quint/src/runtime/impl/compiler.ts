@@ -103,7 +103,8 @@ export function buildUnderDefContext(
     const id = builder.table.get(param.id)!.id
     const register = builder.registerForConst(id, param.name)
 
-    return [register, buildExpr(builder, expr)]
+    // Build the expr as a pure val def so it gets properly cached
+    return [register, buildDef(builder, { kind: 'def', qualifier: 'pureval', expr, name: param.name, id: param.id })]
   })
 
   const namespacesBefore = builder.namespaces
@@ -204,7 +205,13 @@ function buildDefWithMemo(builder: Builder, def: LookupDefinition): EvalFunction
 
   const defEval = buildDefCore(builder, def)
 
-  if (!(def.kind === 'def' && (def.qualifier === 'pureval' || def.qualifier === 'val') && def.depth === 0)) {
+  if (
+    !(
+      def.kind === 'def' &&
+      (def.qualifier === 'pureval' || def.qualifier === 'val') &&
+      (def.depth === undefined || def.depth === 0)
+    )
+  ) {
     builder.memo.set(def.id, defEval)
     return defEval
   }
@@ -212,10 +219,10 @@ function buildDefWithMemo(builder: Builder, def: LookupDefinition): EvalFunction
   // Since we cache things separately per instance, we can cache the value here
   const cachedValue: CachedValue = { value: undefined }
   if (def.qualifier === 'val') {
-    console.log('temp cache', def.name)
+    // console.log('temp cache', def.name)
     builder.varStorage.cachesToClear.push(cachedValue)
   } else {
-    console.log('perm cache', def.name)
+    // console.log('perm cache', def.name)
   }
   const wrappedEval: EvalFunction = ctx => {
     if (cachedValue.value === undefined) {
