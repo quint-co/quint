@@ -2,7 +2,7 @@ import { Either, left } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { Map as ImmutableMap } from 'immutable'
-import { Register } from './Context'
+import { CachedValue, Register } from './Context'
 
 export interface NamedRegister extends Register {
   name: string
@@ -22,6 +22,8 @@ export class VarStorage {
   public nextVars: ImmutableMap<string, NamedRegister> = ImmutableMap()
   public nondetPicks: Map<string, RuntimeValue | undefined> = new Map()
   public actionTaken: string | undefined
+  public cachesToClear: CachedValue[] = []
+
   private storeMetadata: boolean
 
   constructor(storeMetadata: boolean, nondetPicks: Map<string, RuntimeValue | undefined>) {
@@ -35,6 +37,7 @@ export class VarStorage {
     })
 
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
+    this.clearCaches()
   }
 
   asRecord(): RuntimeValue {
@@ -80,5 +83,11 @@ export class VarStorage {
     })
     this.nondetPicks = snapshot.nondetPicks
     this.actionTaken = snapshot.actionTaken
+  }
+
+  private clearCaches() {
+    this.cachesToClear.forEach(cachedValue => {
+      cachedValue.value = undefined
+    })
   }
 }

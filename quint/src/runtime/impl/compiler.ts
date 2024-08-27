@@ -203,8 +203,28 @@ function buildDefWithMemo(builder: Builder, def: LookupDefinition): EvalFunction
   }
 
   const defEval = buildDefCore(builder, def)
-  builder.memo.set(def.id, defEval)
-  return defEval
+
+  if (!(def.kind === 'def' && (def.qualifier === 'pureval' || def.qualifier === 'val') && def.depth === 0)) {
+    builder.memo.set(def.id, defEval)
+    return defEval
+  }
+
+  // Since we cache things separately per instance, we can cache the value here
+  const cachedValue: CachedValue = { value: undefined }
+  if (def.qualifier === 'val') {
+    console.log('temp cache', def.name)
+    builder.varStorage.cachesToClear.push(cachedValue)
+  } else {
+    console.log('perm cache', def.name)
+  }
+  const wrappedEval: EvalFunction = ctx => {
+    if (cachedValue.value === undefined) {
+      cachedValue.value = defEval(ctx)
+    }
+    return cachedValue.value
+  }
+  builder.memo.set(def.id, wrappedEval)
+  return wrappedEval
 }
 
 export function buildDef(builder: Builder, def: LookupDefinition): EvalFunction {
