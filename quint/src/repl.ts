@@ -599,6 +599,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     walkExpression(state.nameResolver, parseResult.expr)
     if (state.nameResolver.errors.length > 0) {
       printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
+      state.nameResolver.errors = []
       return false
     }
     state.evaluator.updateTable(state.nameResolver.table)

@@ -1221,6 +1221,25 @@ echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +
 >>> 
 ```
 
+### REPL continues to work after static analysis errors
+
+<!-- !test in repl works after error -->
+
+```
+echo -e 'inexisting_name\n1 + 1' | quint
+```
+
+<!-- !test out repl works after error -->
+```
+Quint REPL 0.21.1
+Type ".exit" to exit, or ".help" for more information
+>>> static analysis error: error: [QNT404] Name 'inexisting_name' not found
+inexisting_name
+^^^^^^^^^^^^^^^
+
+>>> 2
+>>> 
+```
 
 ### Errors are reported in the right file
 
