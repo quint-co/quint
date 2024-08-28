@@ -727,7 +727,8 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  const verbosityLevel = deriveVerbosity(args)
+  // Force disable output if `--out-itf` is set
+  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
 
   const itfFile: string | undefined = prev.args.outItf
   if (itfFile) {
