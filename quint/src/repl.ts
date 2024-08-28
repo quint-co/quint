@@ -16,7 +16,7 @@ import { left } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatModule, QuintDef, QuintModule } from './ir/quintIr'
+import { FlatModule, QuintDef, QuintModule, isDef } from './ir/quintIr'
 import { createFinders, formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
@@ -34,7 +34,7 @@ import { QuintError } from './quintError'
 import { ErrorMessage } from './ErrorMessage'
 import { Evaluator } from './runtime/impl/evaluator'
 import { walkDeclaration, walkExpression } from './ir/IRVisitor'
-import { AnalysisOutput, analyzeModules } from './quintAnalyzer'
+import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { NameResolver } from './names/resolver'
 
 // tunable settings
@@ -604,6 +604,25 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     }
     state.evaluator.updateTable(state.nameResolver.table)
 
+    const [analysisErrors, _analysisOutput] = analyzeInc(
+      state.compilationState.analysisOutput,
+      state.nameResolver.table,
+      [
+        {
+          kind: 'def',
+          qualifier: 'action',
+          name: 'q::input',
+          expr: parseResult.expr,
+          id: state.compilationState.idGen.nextId(),
+        },
+      ]
+    )
+
+    if (analysisErrors.length > 0) {
+      printErrorMessages(out, state, 'static analysis error', newInput, analysisErrors)
+      return false
+    }
+
     const newEval = state.evaluator.evaluate(parseResult.expr)
     if (newEval.isLeft()) {
       printErrorMessages(out, state, 'runtime error', newInput, [newEval.value])
@@ -635,8 +654,35 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     if (state.nameResolver.errors.length > 0) {
       printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
       out('\n')
+      parseResult.decls.forEach(decl => {
+        if (isDef(decl)) {
+          state.nameResolver.collector.deleteDefinition(decl.name)
+        }
+      })
+
+      state.nameResolver.errors = []
       return false
     }
+
+    const [analysisErrors, analysisOutput] = analyzeInc(
+      state.compilationState.analysisOutput,
+      state.nameResolver.table,
+      parseResult.decls
+    )
+
+    if (analysisErrors.length > 0) {
+      printErrorMessages(out, state, 'static analysis error', newInput, analysisErrors)
+      parseResult.decls.forEach(decl => {
+        if (isDef(decl)) {
+          state.nameResolver.collector.deleteDefinition(decl.name)
+        }
+      })
+
+      return false
+    }
+
+    state.compilationState.analysisOutput = analysisOutput
+
     out('\n')
   }
 

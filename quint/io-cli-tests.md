@@ -1221,15 +1221,15 @@ echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +
 >>> 
 ```
 
-### REPL continues to work after static analysis errors
+### REPL continues to work after missing name errors
 
-<!-- !test in repl works after error -->
+<!-- !test in repl works after name error -->
 
 ```
 echo -e 'inexisting_name\n1 + 1' | quint
 ```
 
-<!-- !test out repl works after error -->
+<!-- !test out repl works after name error -->
 ```
 Quint REPL 0.21.1
 Type ".exit" to exit, or ".help" for more information
@@ -1240,6 +1240,68 @@ inexisting_name
 >>> 2
 >>> 
 ```
+
+### REPL continues to work after conflicting definitions
+
+Regression for https://github.com/informalsystems/quint/issues/434
+
+<!-- !test in repl works after conflict -->
+```
+echo -e 'def farenheit(celsius) = celsius * 9 / 5 + 32\ndef farenheit(celsius) = celsius * 9 / 5 + 32\nfarenheit(1)' | quint
+```
+
+<!-- !test out repl works after conflict -->
+```
+Quint REPL 0.21.1
+Type ".exit" to exit, or ".help" for more information
+>>> 
+>>> static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
+def farenheit(celsius) = celsius * 9 / 5 + 32
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
+def farenheit(celsius) = celsius * 9 / 5 + 32
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+>>> 33
+>>> 
+```
+
+### REPL continues to work after type errors
+
+<!-- !test in repl works after type errors -->
+```
+echo -e 'def foo = 1 + "a"\nfoo\n1 + "a"\n1 + 1' | quint
+```
+
+<!-- !test out repl works after type errors -->
+```
+Quint REPL 0.21.1
+Type ".exit" to exit, or ".help" for more information
+>>> static analysis error: error: [QNT000] Couldn't unify int and str
+Trying to unify int and str
+Trying to unify (int, int) => int and (int, str) => _t0
+
+def foo = 1 + "a"
+          ^^^^^^^
+
+>>> static analysis error: error: [QNT404] Name 'foo' not found
+foo
+^^^
+
+>>> static analysis error: error: [QNT000] Couldn't unify int and str
+Trying to unify int and str
+Trying to unify (int, int) => int and (int, str) => _t0
+
+1 + "a"
+^^^^^^^
+
+>>> 2
+>>> 
+```
+
+
 
 ### Errors are reported in the right file
 
