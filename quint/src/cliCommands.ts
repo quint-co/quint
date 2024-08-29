@@ -1020,15 +1020,13 @@ function expandNamedOutputTemplate(
 function expandOutputTemplate(template: string, index: number, options: { autoAppend: boolean }): string {
   if (template.includes(PLACEHOLDERS.seq)) {
     return template.replaceAll(PLACEHOLDERS.seq, index.toString())
-  } else if (options.autoAppend && template.endsWith('.itf.json')) {
-    // Special case for the recommended extension, to avoid adding the index in between `itf` and `json`
-    return template.replace('.itf.json', `${index}.itf.json`)
-  } else if (options.autoAppend) {
-    // Append the index to the filename, before the extension
-    const parts = template.split('.')
-    const ext = parts.pop()
-    return `${parts.join('.')}${index}.${ext}`
-  } else {
-    return template
   }
+
+  if (options.autoAppend) {
+    const parts = template.split('.')
+    parts[0] += `${index}`
+    return parts.join('.')
+  }
+
+  return template
 }
