@@ -10,7 +10,7 @@ import { zerog } from '../../idGenerator'
 import { QuintApp } from '../../ir/quintIr'
 import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
-import { EvalFunction } from './compiler'
+import { EvalFunction } from './builder'
 
 export function builtinValue(name: string): Either<QuintError, RuntimeValue> {
   switch (name) {
@@ -76,7 +76,7 @@ export function lazyBuiltinLambda(
         })
       }
 
-    case 'actionAny':
+    case 'actionAny': {
       const app: QuintApp = { id: 0n, kind: 'app', opcode: 'actionAny', args: [] }
       return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.snapshot()
@@ -115,14 +115,16 @@ export function lazyBuiltinLambda(
               ctx.recorder.onAnyReturn(args.length, potentialSuccessors[0].index)
               ctx.varStorage.recoverSnapshot(potentialSuccessors[0].snapshot)
               return rv.mkBool(true)
-            default:
+            default: {
               const choice = Number(ctx.rand(BigInt(potentialSuccessors.length)))
               ctx.recorder.onAnyReturn(args.length, potentialSuccessors[choice].index)
               ctx.varStorage.recoverSnapshot(potentialSuccessors[choice].snapshot)
               return rv.mkBool(true)
+            }
           }
         })
       }
+    }
     case 'actionAll':
       return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.snapshot()

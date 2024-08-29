@@ -66,13 +66,10 @@ import { strict as assert } from 'assert'
 
 import { IdGenerator, zerog } from '../../idGenerator'
 import { expressionToString } from '../../ir/IRprinting'
-
-import { EvalResult } from '../runtime'
 import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { toMaybe } from './base'
-import { EvalFunction } from './compiler'
+import { EvalFunction } from './builder'
 import { Context, Register } from './Context'
 
 /**
@@ -371,7 +368,7 @@ export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
  * non-iterable ones. Of course, this may lead to ill-typed operations. Type
  * correctness of the input must be checked by the type checker.
  */
-export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeValue> {
+export interface RuntimeValue extends ValueObject, Iterable<RuntimeValue> {
   /**
    * Can the runtime value behave like a set? Effectively, this means that the
    * value returns a sequence of elements, when it is iterated over.
@@ -514,6 +511,19 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
    */
 
   cardinality(): Either<QuintError, bigint>
+
+  /**
+   * Convert a runtime value to a Quint expression.
+   *
+   * This function always returns sets in the normalized representation,
+   * that is, in `set(elements)`, the elements are ordered according to their
+   * string representation. As sorting via strings may be slow, we do not
+   * recommend using `toQuintEx` in computation-intensive code.
+   *
+   * @param gen a generator that produces unique ids
+   * @return this evaluation result converted to Quint expression.
+   */
+  toQuintEx(gen: IdGenerator): QuintEx
 }
 
 /**
@@ -1672,5 +1682,13 @@ export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue
         id: gen.nextId(),
       },
     }
+  }
+}
+
+function toMaybe<T>(r: Either<QuintError, T>): Maybe<T> {
+  if (r.isRight()) {
+    return just(r.value)
+  } else {
+    return none()
   }
 }

@@ -9,7 +9,7 @@ import { stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { QuintEx, parseExpressionOrDeclaration, quintErrorToString, walkExpression } from '../../src'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { Evaluator } from '../../src/runtime/impl/evaluator'
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, left } from '@sweet-monads/either'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()

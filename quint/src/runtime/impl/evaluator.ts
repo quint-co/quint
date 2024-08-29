@@ -10,7 +10,7 @@ import { TestResult } from '../testing'
 import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
-import { Builder, buildDef, buildExpr, nameWithNamespaces } from './compiler'
+import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 
 export class Evaluator {
   public ctx: Context

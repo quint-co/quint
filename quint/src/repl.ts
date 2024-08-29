@@ -11,16 +11,14 @@
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
-import { Maybe, just, none } from '@sweet-monads/maybe'
-import { left } from '@sweet-monads/either'
+import { none } from '@sweet-monads/maybe'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatModule, QuintDef, QuintModule, isDef } from './ir/quintIr'
+import { FlatModule, QuintModule, isDef } from './ir/quintIr'
 import { createFinders, formatError } from './errorReporter'
-import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { SourceMap, parse, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
+import { SourceMap, parse, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -115,7 +113,7 @@ class ReplState {
   }
 
   addReplModule() {
-    const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
+    const replModule: FlatModule = { name: '__repl__', declarations: [], id: 0n }
     this.compilationState.modules.push(replModule)
     this.compilationState.mainName = '__repl__'
     this.moduleHist += moduleToString(replModule)
@@ -477,55 +475,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string): ReplStat
     out('\n')
     return
   }
-}
-
-/**
- * Moves the nextvars register values into the vars, and clears the nextvars.
- * Returns an array of variable names that were not updated.
- * @param vars An array of Register objects representing the current state of the variables.
- * @param nextvars An array of Register objects representing the next state of the variables.
- * @returns An array of variable names that were not updated, or none if all variables were updated.
- */
-function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
-  let isAction = false
-
-  const nonUpdated = vars.reduce((acc, varRegister) => {
-    const nextVarRegister = nextvars.find(v => v.name === varRegister.name)
-    if (nextVarRegister && nextVarRegister.registerValue.isRight()) {
-      varRegister.registerValue = nextVarRegister.registerValue
-      nextVarRegister.registerValue = left({ code: 'QNT501', message: 'var ${nextVarRegiter.name} not set' })
-      isAction = true
-    } else {
-      // No nextvar for this variable, so it was not updated
-      acc.push(varRegister.name)
-    }
-
-    return acc
-  }, [] as string[])
-
-  if (isAction) {
-    // return the names of the variables that have not been updated
-    return just(nonUpdated)
-  } else {
-    return none()
-  }
-}
-
-// Declarations that are overloaded by the simulator.
-// In the future, we will declare them in a separate module.
-function simulatorBuiltins(st: CompilationState): QuintDef[] {
-  return [
-    parseDefOrThrow(
-      `def q::test = (q::nruns, q::nsteps, q::ntraces, q::init, q::next, q::inv) => false`,
-      st.idGen,
-      st.sourceMap
-    ),
-    parseDefOrThrow(
-      `def q::testOnce = (q::nsteps, q::ntraces, q::init, q::next, q::inv) => false`,
-      st.idGen,
-      st.sourceMap
-    ),
-  ]
 }
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
