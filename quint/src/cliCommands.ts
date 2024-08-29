@@ -327,8 +327,8 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     rng,
     verbosity: verbosityLevel,
     onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
-      if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
-        const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
+      if (outputTemplate) {
+        const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: prev.args.nTraces > 1 })
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -342,7 +342,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
   const out = console.log
 
-  const outputTemplate = testing.args.output
+  const outputTemplate = testing.args.outItf
 
   // Start the Timer and being running the tests
   const startMs = Date.now()
@@ -352,7 +352,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   }
 
   // TODO: This block is a workaround for the fact that flattening removes any defs
-  // not refernced in the main module. We'd instead like way to just instruct it
+  // not referenced in the main module. We'd instead like way to just instruct it
   // to keep some defs.
   //
   // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
@@ -529,7 +529,8 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
-  const verbosityLevel = deriveVerbosity(prev.args)
+  // Force disable output if `--out-itf` is set
+  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
 
   const rngOrError = mkRng(prev.args.seed)
@@ -551,7 +552,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
       const itfFile: string | undefined = prev.args.outItf
       if (itfFile) {
-        const filename = prev.args.nTraces > 1 ? itfFile.replaceAll('.itf.json', `${index}.itf.json`) : itfFile
+        const filename = expandOutputTemplate(itfFile, index, { autoAppend: prev.args.nTraces > 1 })
         const trace = toItf(vars, states)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
@@ -726,7 +727,19 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  const verbosityLevel = deriveVerbosity(args)
+  // Force disable output if `--out-itf` is set
+  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
+
+  const itfFile: string | undefined = prev.args.outItf
+  if (itfFile) {
+    if (itfFile.includes(PLACEHOLDERS.test) || itfFile.includes(PLACEHOLDERS.seq)) {
+      console.log(
+        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(PLACEHOLDERS.test)} or ${chalk.grey(
+          PLACEHOLDERS.seq
+        )}, but this has no effect since at most a single trace will be produced.`
+      )
+    }
+  }
 
   let loadedConfig: any = {}
   try {
@@ -957,6 +970,63 @@ function isMatchingTest(match: string | undefined, name: string) {
 }
 
 // Derive the verbosity for simulation and verification routines
-function deriveVerbosity(args: { out: string | undefined; outItf: string | undefined; verbosity: number }): number {
-  return !args.out && !args.outItf ? args.verbosity : 0
+function deriveVerbosity(args: { out: string | undefined; verbosity: number }): number {
+  return args.out ? 0 : args.verbosity
+}
+
+const PLACEHOLDERS = {
+  test: '{test}',
+  seq: '{seq}',
+}
+
+/**
+ * Expand the output template with the name of the test and the index of the trace.
+ *
+ * Possible placeholders:
+ * - {test} is replaced with the name of the test
+ * - {seq} is replaced with the index of the trace
+ *
+ * If {seq} is not present and `options.autoAppend` is true,
+ * the index is appended to the filename, before the extension.
+ *
+ * @param template the output template
+ * @param name the name of the test
+ * @param index the index of the trace
+ * @param options An object of the form `{ autoAppend: boolean }`
+ * @returns the expanded output template
+ */
+function expandNamedOutputTemplate(
+  template: string,
+  name: string,
+  index: number,
+  options: { autoAppend: boolean }
+): string {
+  return expandOutputTemplate(template.replaceAll(PLACEHOLDERS.test, name), index, options)
+}
+
+/**
+ * Expand the output template with the index of the trace.
+ *
+ * The {seq} placeholder is replaced with the index of the trace.
+ *
+ * If {seq} is not present and `options.autoAppend` is true,
+ * the index is appended to the filename, before the extension.
+ *
+ * @param template the output template
+ * @param index the index of the trace
+ * @param options An object of the form `{ autoAppend: boolean }`
+ * @returns the expanded output template
+ */
+function expandOutputTemplate(template: string, index: number, options: { autoAppend: boolean }): string {
+  if (template.includes(PLACEHOLDERS.seq)) {
+    return template.replaceAll(PLACEHOLDERS.seq, index.toString())
+  }
+
+  if (options.autoAppend) {
+    const parts = template.split('.')
+    parts[0] += `${index}`
+    return parts.join('.')
+  }
+
+  return template
 }
