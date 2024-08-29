@@ -5,7 +5,7 @@ import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './built
 import { CachedValue, Context, Register } from './Context'
 import { QuintApp, QuintEx } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
-import { NamedRegister, VarStorage } from './VarStorage'
+import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
 
 export type EvalFunction = (ctx: Context) => Either<QuintError, RuntimeValue>
@@ -33,8 +33,8 @@ export class Builder {
     }
 
     const varName = nameWithNamespaces(name, this.namespaces)
-    const register: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
-    const nextRegister: NamedRegister = { name: varName, value: left({ code: 'QNT502', message: 'Variable not set' }) }
+    const register: NamedRegister = { name: varName, value: initialRegisterValue(varName) }
+    const nextRegister: NamedRegister = { name: varName, value: initialRegisterValue(varName) }
     this.varStorage.vars = this.varStorage.vars.set(key, register)
     this.varStorage.nextVars = this.varStorage.nextVars.set(key, nextRegister)
   }
@@ -76,8 +76,14 @@ export function buildExpr(builder: Builder, expr: QuintEx): EvalFunction {
     return builder.memo.get(expr.id)!
   }
   const exprEval = buildExprCore(builder, expr)
-  const wrappedEval: EvalFunction = ctx =>
-    exprEval(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: expr.id } : err))
+  const wrappedEval: EvalFunction = ctx => {
+    try {
+      return exprEval(ctx).mapLeft(err => (err.reference === undefined ? { ...err, reference: expr.id } : err))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error'
+      return left({ code: 'QNT501', message: message, reference: expr.id })
+    }
+  }
   builder.memo.set(expr.id, wrappedEval)
   return wrappedEval
 }
@@ -122,7 +128,7 @@ export function buildUnderDefContext(
 
 function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
   switch (def.kind) {
-    case 'def':
+    case 'def': {
       if (def.qualifier === 'action') {
         const app: QuintApp = { id: def.id, kind: 'app', opcode: def.name, args: [] }
         const body = buildExpr(builder, def.expr)
@@ -174,6 +180,7 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
         }
         return cachedValue.value
       }
+    }
     case 'param': {
       const register = builder.paramRegistry.get(def.id)
       if (!register) {
@@ -190,9 +197,10 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
         return register.value
       }
     }
-    case 'const':
+    case 'const': {
       const register = builder.registerForConst(def.id, def.name)
       return _ => register.value
+    }
     default:
       return _ => left({ code: 'QNT000', message: `Not implemented for def kind ${def.kind}` })
   }
@@ -246,25 +254,27 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
   switch (expr.kind) {
     case 'int':
     case 'bool':
-    case 'str':
+    case 'str': {
       // These are already values, just return them
       const value = right(rv.fromQuintEx(expr))
       return _ => value
-    case 'lambda':
+    }
+    case 'lambda': {
       // Lambda is also like a value, but we should construct it with the context
       const body = buildExpr(builder, expr.expr)
       const lambda = rv.mkLambda(expr.params, body, builder.paramRegistry)
       return _ => right(lambda)
-    case 'name':
+    }
+    case 'name': {
       const def = builder.table.get(expr.id)
       if (!def) {
         // TODO: Do we also need to return builtin ops for higher order usage?
         // Answer: yes, see #1332
-        const lambda = builtinValue(expr.name)
-        return _ => lambda
+        return builtinValue(expr.name)
       }
       return buildDef(builder, def)
-    case 'app':
+    }
+    case 'app': {
       if (expr.opcode === 'assign') {
         const varDef = builder.table.get(expr.args[0].id)!
         return buildUnderDefContext(builder, varDef, () => {
@@ -312,8 +322,8 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
         }
         return result
       }
-
-    case 'let':
+    }
+    case 'let': {
       let cachedValue = builder.scopedCachedValues.get(expr.opdef.id)
       if (!cachedValue) {
         cachedValue = { value: undefined }
@@ -325,6 +335,7 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
         cachedValue!.value = undefined
         return result
       }
+    }
   }
 }
 

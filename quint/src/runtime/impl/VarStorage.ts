@@ -15,7 +15,9 @@ interface Snapshot {
 }
 
 // TODO: Add name to error message
-const initialRegisterValue: Either<QuintError, RuntimeValue> = left({ code: 'QNT502', message: 'Variable not set' })
+export function initialRegisterValue(name: string): Either<QuintError, RuntimeValue> {
+  return left({ code: 'QNT502', message: `Variable ${name} not set` })
+}
 
 export class VarStorage {
   public vars: ImmutableMap<string, NamedRegister> = ImmutableMap()
@@ -33,10 +35,10 @@ export class VarStorage {
 
   shiftVars() {
     this.vars.forEach((reg, key) => {
-      reg.value = this.nextVars.get(key)?.value ?? initialRegisterValue
+      reg.value = this.nextVars.get(key)?.value ?? initialRegisterValue(reg.name)
     })
 
-    this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
+    this.nextVars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
     this.clearCaches()
   }
 
@@ -62,8 +64,8 @@ export class VarStorage {
   }
 
   reset() {
-    this.vars.forEach(reg => (reg.value = initialRegisterValue))
-    this.nextVars.forEach(reg => (reg.value = initialRegisterValue))
+    this.vars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
+    this.nextVars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
   }
 
   snapshot(): Snapshot {

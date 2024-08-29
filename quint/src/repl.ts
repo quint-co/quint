@@ -19,7 +19,7 @@ import { FlatModule, QuintModule, isDef } from './ir/quintIr'
 import { createFinders, formatError } from './errorReporter'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
 import { SourceMap, parse, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
-import { prettyQuintEx, terminalWidth } from './graphics'
+import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { version } from './version'
@@ -572,13 +572,9 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       return false
     }
 
-    const newEval = state.evaluator.evaluate(parseResult.expr)
-    if (newEval.isLeft()) {
-      printErrorMessages(out, state, 'runtime error', newInput, [newEval.value])
-      return false
-    }
+    const evalResult = state.evaluator.evaluate(parseResult.expr)
 
-    newEval.map(ex => {
+    evalResult.map(ex => {
       out(format(columns, 0, prettyQuintEx(ex)))
       out('\n')
 
@@ -592,6 +588,23 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       }
       return ex
     })
+
+    if (verbosity.hasUserOpTracking(state.verbosity)) {
+      const trace = state.recorder.currentFrame
+      if (trace.subframes.length > 0) {
+        out('\n')
+        trace.subframes.forEach((f, i) => {
+          out(`[Frame ${i}]\n`)
+          printExecutionFrameRec({ width: columns, out }, f, [])
+          out('\n')
+        })
+      }
+    }
+
+    if (evalResult.isLeft()) {
+      printErrorMessages(out, state, 'runtime error', newInput, [evalResult.value])
+      return false
+    }
 
     return true
   }

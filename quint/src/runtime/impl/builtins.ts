@@ -4,7 +4,7 @@ import { List, Map, OrderedMap, Range, Set } from 'immutable'
 import { isFalse, isTrue } from './evaluator'
 import { Context } from './Context'
 import { RuntimeValue, rv } from './runtimeValue'
-import { chunk } from 'lodash'
+import { chunk, times } from 'lodash'
 import { expressionToString } from '../../ir/IRprinting'
 import { zerog } from '../../idGenerator'
 import { QuintApp } from '../../ir/quintIr'
@@ -12,16 +12,18 @@ import { prettyQuintEx, terminalWidth } from '../../graphics'
 import { format } from '../../prettierimp'
 import { EvalFunction } from './builder'
 
-export function builtinValue(name: string): Either<QuintError, RuntimeValue> {
+export function builtinValue(name: string): EvalFunction {
   switch (name) {
     case 'Bool':
-      return right(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
+      return _ => right(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
     case 'Int':
-      return right(rv.mkInfSet('Int'))
+      return _ => right(rv.mkInfSet('Int'))
     case 'Nat':
-      return right(rv.mkInfSet('Nat'))
+      return _ => right(rv.mkInfSet('Nat'))
+    case 'q::lastTrace':
+      return ctx => right(rv.mkList(ctx.trace.get()))
     default:
-      return left({ code: 'QNT404', message: `Unknown builtin ${name}` })
+      return _ => left({ code: 'QNT404', message: `Unknown builtin ${name}` })
   }
 }
 
@@ -130,12 +132,16 @@ export function lazyBuiltinLambda(
         const nextVarsSnapshot = ctx.varStorage.snapshot()
         for (const action of args) {
           const result = action(ctx)
-          if (!isTrue(result)) {
+
+          if (result.isLeft()) {
+            return result
+          }
+
+          if (isFalse(result)) {
             ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
-            return result.map(_ => rv.mkBool(false))
+            return right(rv.mkBool(false))
           }
         }
-
         return right(rv.mkBool(true))
       }
     case 'ite':
@@ -219,6 +225,13 @@ export function lazyBuiltinLambda(
             result = args[1](ctx).chain(value => value.toArrow()(ctx, [rv.mkInt(i)]))
             if (result.isLeft()) {
               return result
+            }
+
+            if (isFalse(result)) {
+              return left({
+                code: 'QNT513',
+                message: `Reps loop could not continue after iteration #${i + 1} evaluated to false`,
+              })
             }
 
             // Don't shift after the last one
@@ -534,22 +547,38 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
       return (ctx, args) => {
         const set = args[0].toSet()
         const lam = args[1].toArrow()
-        const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lam(ctx, [arg]).map(condition =>
-            condition.toBool() === true ? rv.mkSet(acc.toSet().add(arg.normalForm())) : acc
-          )
 
-        return applyFold('fwd', set, rv.mkSet([]), reducer)
+        const result = []
+        for (const element of set) {
+          const value = lam(ctx, [element])
+          if (value.isLeft()) {
+            return value
+          }
+          if (value.value.toBool()) {
+            result.push(element)
+          }
+        }
+
+        return right(rv.mkSet(result))
       }
 
     case 'select':
       return (ctx, args) => {
         const list = args[0].toList()
         const lam = args[1].toArrow()
-        const reducer = ([acc, arg]: RuntimeValue[]) =>
-          lam(ctx, [arg]).map(condition => (condition.toBool() === true ? rv.mkList(acc.toList().push(arg)) : acc))
 
-        return applyFold('fwd', list, rv.mkList([]), reducer)
+        const result = []
+        for (const element of list) {
+          const value = lam(ctx, [element])
+          if (value.isLeft()) {
+            return value
+          }
+          if (value.value.toBool()) {
+            result.push(element)
+          }
+        }
+
+        return right(rv.mkList(result))
       }
 
     case 'mapBy':
@@ -567,11 +596,6 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
         }
 
         return right(rv.fromMap(Map(results)))
-
-        // const reducer = ([acc, arg]: RuntimeValue[]) =>
-        //   lambda(ctx, [arg]).map(value => rv.fromMap(acc.toMap().set(arg.normalForm(), value)))
-
-        // return applyFold('fwd', keys, rv.mkMap([]), reducer)
       }
 
     case 'setToMap':
@@ -587,6 +611,26 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
       return (_, args) => right(rv.mkBool(!args[0].toBool()))
     case 'assert':
       return (_, args) => (args[0].toBool() ? right(args[0]) : left({ code: 'QNT508', message: `Assertion failed` }))
+
+    case 'allListsUpTo':
+      return (_, args) => {
+        const set = args[0].toSet()
+        let lists: Set<RuntimeValue[]> = Set([[]])
+        let last_lists: Set<RuntimeValue[]> = Set([[]])
+        times(Number(args[1].toInt())).forEach(_length => {
+          // Generate all lists of length `length` from the set
+          const new_lists: Set<RuntimeValue[]> = set.toSet().flatMap(value => {
+            // for each value in the set, append it to all lists of length `length - 1`
+            return last_lists.map(list => list.concat(value))
+          })
+
+          lists = lists.merge(new_lists)
+          last_lists = new_lists
+        })
+
+        return right(rv.mkSet(lists.map(list => rv.mkList(list)).toOrderedSet()))
+      }
+
     case 'q::debug':
       return (_, args) => {
         let columns = terminalWidth()
@@ -594,12 +638,27 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
         console.log('>', args[0].toStr(), valuePretty.toString())
         return right(args[1])
       }
-    // TODO: add missing operators
+
+    // standard unary operators that are not handled by REPL
+    case 'allLists':
+    case 'chooseSome':
+    case 'always':
+    case 'eventually':
+    case 'enabled':
+      return _ => left({ code: 'QNT501', message: `Runtime does not support the built-in operator '${op}'` })
+
+    // builtin operators that are not handled by REPL
+    case 'orKeep':
+    case 'mustChange':
+    case 'weakFair':
+    case 'strongFair':
+      return _ => left({ code: 'QNT501', message: `Runtime does not support the built-in operator '${op}'` })
 
     default:
       return () => left({ code: 'QNT000', message: `Unknown builtin ${op}` })
   }
 }
+
 export function applyLambdaToSet(
   ctx: Context,
   lambda: RuntimeValue,
@@ -608,6 +667,8 @@ export function applyLambdaToSet(
   const f = lambda.toArrow()
   const elements = set.toSet()
   const results = []
+
+  // Apply using a for so we exit early if we get a left
   for (const element of elements) {
     const result = f(ctx, [element])
     if (result.isLeft()) {
@@ -615,23 +676,8 @@ export function applyLambdaToSet(
     }
     results.push(result.value)
   }
+
   return right(Set(results))
-
-  //   map(value => f(ctx, [value]))
-  // const err = results.find(result => result.isLeft())
-  // if (err !== undefined && err.isLeft()) {
-  //   return left(err.value)
-  // }
-
-  // return right(
-  //   results.map(result => {
-  //     if (result.isLeft()) {
-  //       throw new Error(`Impossible, result is left: ${quintErrorToString(result.value)}`)
-  //     }
-
-  //     return result.value
-  //   })
-  // )
 }
 
 function applyFold(

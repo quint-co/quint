@@ -1,4 +1,4 @@
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, left, mergeInOne, right } from '@sweet-monads/either'
 import { QuintApp, QuintEx } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
@@ -53,14 +53,23 @@ export class Evaluator {
   }
 
   evaluate(expr: QuintEx): Either<QuintError, QuintEx> {
-    if (expr.kind === 'app') {
-      this.recorder.onUserOperatorCall(expr)
+    if (expr.kind === 'app' && (expr.opcode == 'q::test' || expr.opcode === 'q::testOnce')) {
+      return this.evaluateTest(expr)
     }
+
     const value = buildExpr(this.builder, expr)(this.ctx)
-    if (expr.kind === 'app') {
-      this.recorder.onUserOperatorReturn(expr, [], value)
-    }
+
     return value.map(rv.toQuintEx)
+  }
+
+  evaluateTest(expr: QuintApp): Either<QuintError, QuintEx> {
+    if (expr.opcode === 'q::testOnce') {
+      const [nsteps, ntraces, init, step, inv] = expr.args
+      return this.simulate(init, step, inv, 1, toNumber(nsteps), toNumber(ntraces))
+    } else {
+      const [nruns, nsteps, ntraces, init, step, inv] = expr.args
+      return this.simulate(init, step, inv, toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
+    }
   }
 
   reset() {
@@ -280,4 +289,11 @@ export function isTrue(value: Either<QuintError, RuntimeValue>): boolean {
 
 export function isFalse(value: Either<QuintError, RuntimeValue>): boolean {
   return value.isRight() && value.value.toBool() === false
+}
+
+function toNumber(value: QuintEx): number {
+  if (value.kind !== 'int') {
+    throw new Error('Expected an integer')
+  }
+  return Number(value.value)
 }

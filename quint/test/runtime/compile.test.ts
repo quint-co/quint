@@ -47,10 +47,16 @@ function prepareEvaluator(input: string, evalContext: string): [Evaluator, Quint
 }
 
 // Compile a variable definition and check that the compiled value is defined.
-function assertVarExists(name: string, input: string) {
-  const [evaluator, _] = prepareEvaluator(input, '')
+function assertVarExists(name: string, context: string, input: string) {
+  const [evaluator, expr] = prepareEvaluator(input, context)
+  // Eval the name so we lookup and evaluate the var definition
+  evaluator.evaluate(expr)
 
-  assert.includeDeepMembers([...evaluator.ctx.varStorage.vars.keys()], [name], `Input: ${input}`)
+  assert.includeDeepMembers(
+    [...evaluator.ctx.varStorage.vars.values()].map(r => r.name),
+    [name],
+    `Input: ${input}`
+  )
 }
 
 // Scan the context for a callable. If found, evaluate it and return the value of the given var.
@@ -295,8 +301,9 @@ describe('compiling specs to runtime values', () => {
 
   describe('compile variables', () => {
     it('variable definitions', () => {
-      const input = 'var x: int'
-      assertVarExists('x', input)
+      const context = 'var x: int'
+      const input = "x' = 1"
+      assertVarExists('x', context, input)
     })
   })
 
@@ -954,7 +961,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
+        .mapLeft(m => assert.equal(m, '[QNT513] Reps loop could not continue after iteration #6 evaluated to false'))
     })
 
     it('fail', () => {

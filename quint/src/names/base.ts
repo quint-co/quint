@@ -252,4 +252,6 @@ export const builtinNames = [
   'variant',
   'q::debug',
   'q::lastTrace',
+  'q::test',
+  'q::testOnce',
 ]

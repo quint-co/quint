@@ -225,7 +225,18 @@ const otherOperators = [
   { name: 'fail', effect: propagateComponents(['read', 'update'])(1) },
   { name: 'assert', effect: propagateComponents(['read'])(1) },
   { name: 'q::debug', effect: propagateComponents(['read'])(2) },
-  { name: 'q::lastTrace', effect: parseAndQuantify('Pure') }, // FIXME: Should be in run mode
+  // FIXME: The following should produce run mode
+  { name: 'q::lastTrace', effect: parseAndQuantify('Pure') },
+  {
+    name: 'q::test',
+    effect: parseAndQuantify(
+      '(Pure, Pure, Pure, Update[u1], Read[r2] & Update[u2], Read[r3]) => Read[r2, r3] & Update[u2]'
+    ),
+  },
+  {
+    name: 'q::testOnce',
+    effect: parseAndQuantify('(Pure, Pure, Update[u1], Read[r2] & Update[u2], Read[r3]) => Read[r2, r3] & Update[u2]'),
+  },
   {
     name: 'ite',
     effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),
