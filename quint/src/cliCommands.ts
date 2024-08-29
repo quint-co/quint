@@ -732,10 +732,10 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   const itfFile: string | undefined = prev.args.outItf
   if (itfFile) {
-    if (itfFile.includes(Placeholders.test) || itfFile.includes(Placeholders.seq)) {
+    if (itfFile.includes(PLACEHOLDERS.test) || itfFile.includes(PLACEHOLDERS.seq)) {
       console.log(
-        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(Placeholders.test)} or ${chalk.grey(
-          Placeholders.seq
+        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(PLACEHOLDERS.test)} or ${chalk.grey(
+          PLACEHOLDERS.seq
         )}, but this has no effect since at most a single trace will be produced.`
       )
     }
@@ -974,7 +974,7 @@ function deriveVerbosity(args: { out: string | undefined; verbosity: number }): 
   return args.out ? 0 : args.verbosity
 }
 
-const Placeholders = {
+const PLACEHOLDERS = {
   test: '{test}',
   seq: '{seq}',
 }
@@ -1001,7 +1001,7 @@ function expandNamedOutputTemplate(
   index: number,
   options: { autoAppend: boolean }
 ): string {
-  return expandOutputTemplate(template.replaceAll(Placeholders.test, name), index, options)
+  return expandOutputTemplate(template.replaceAll(PLACEHOLDERS.test, name), index, options)
 }
 
 /**
@@ -1018,8 +1018,8 @@ function expandNamedOutputTemplate(
  * @returns the expanded output template
  */
 function expandOutputTemplate(template: string, index: number, options: { autoAppend: boolean }): string {
-  if (template.includes(Placeholders.seq)) {
-    return template.replaceAll(Placeholders.seq, index.toString())
+  if (template.includes(PLACEHOLDERS.seq)) {
+    return template.replaceAll(PLACEHOLDERS.seq, index.toString())
   } else if (options.autoAppend && template.endsWith('.itf.json')) {
     // Special case for the recommended extension, to avoid adding the index in between `itf` and `json`
     return template.replace('.itf.json', `${index}.itf.json`)
