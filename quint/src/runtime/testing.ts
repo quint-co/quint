@@ -9,6 +9,7 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Presets, SingleBar } from 'cli-progress'
 
 import { QuintEx, QuintOpDef } from '../ir/quintIr'
 
@@ -128,9 +129,22 @@ export function compileAndTest(
         // save the initial seed
         let seed = options.rng.getState()
 
+        const bar = new SingleBar(
+          {
+            clearOnComplete: true,
+            forceRedraw: true,
+            format: '     {test} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+          },
+          Presets.rect
+        )
+
+        bar.start(options.maxSamples, 0, { test: name })
+
         let nsamples = 1
         // run up to maxSamples, stop on the first failure
         for (; nsamples <= options.maxSamples; nsamples++) {
+          bar.update(nsamples, { test: name })
+
           // record the seed value
           seed = options.rng.getState()
           recorder.onRunCall()
@@ -144,8 +158,6 @@ export function compileAndTest(
           if (trace.length > 0) {
             recorder.onRunReturn(toMaybe(result), trace)
           } else {
-            // Report a non-critical error
-            console.error('Missing a trace')
             recorder.onRunReturn(toMaybe(result), [])
           }
 
@@ -153,6 +165,7 @@ export function compileAndTest(
           // evaluate the result
           if (result.isLeft()) {
             // if the test failed, return immediately
+            bar.stop()
             return {
               name,
               status: 'failed',
@@ -166,6 +179,7 @@ export function compileAndTest(
           const ex = result.value.toQuintEx(zerog)
           if (ex.kind !== 'bool') {
             // if the test returned a malformed result, return immediately
+            bar.stop()
             return {
               name,
               status: 'ignored',
@@ -184,6 +198,7 @@ export function compileAndTest(
               reference: def.id,
             }
             saveTrace(bestTrace, index, name, 'failed')
+            bar.stop()
             return {
               name,
               status: 'failed',
@@ -197,6 +212,7 @@ export function compileAndTest(
               // This successful test did not use non-determinism.
               // Running it one time is sufficient.
               saveTrace(bestTrace, index, name, 'passed')
+              bar.stop()
               return {
                 name,
                 status: 'passed',
@@ -212,6 +228,7 @@ export function compileAndTest(
         // the test was run maxSamples times, and no errors were found
         const bestTrace = recorder.bestTraces[0].frame
         saveTrace(bestTrace, index, name, 'passed')
+        bar.stop()
         return {
           name,
           status: 'passed',
