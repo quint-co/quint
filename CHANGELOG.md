@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - In the `verify` command, add warning if `--out-itf` option contains `{test}` or `{seq}` as those have no effect since Apalache only produces a single trace (#1485)
+- The `run` and `test` commands now display a progress bar (#1457)
 
 ### Changed
 
