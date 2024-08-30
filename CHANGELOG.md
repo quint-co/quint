@@ -28,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
- - Bumped GRPC message sizes to 1G (#1480)
+- Bumped GRPC message sizes to 1G (#1480)
+- Fix format of ITF trace emitted by `verify` command (#1448)
 
 ### Security
 
