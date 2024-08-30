@@ -70,8 +70,22 @@ module counters {
   }
 
   // this test should not fail
-  run passingTest = {
+  run passing1Test = {
     init.then(10.reps(_ => all {
+        assert(n > 0),
+        step,
+    }))
+  }
+
+  run passing2Test = {
+    init.then(5.reps(_ => all {
+        assert(n > 0),
+        step,
+    }))
+  }
+
+  run passing3Test = {
+    init.then(15.reps(_ => all {
         assert(n > 0),
         step,
     }))
