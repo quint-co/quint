@@ -21,6 +21,7 @@ import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
 import { simplify } from './simplification'
+import { difference } from 'lodash'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
@@ -39,11 +40,20 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
    *          ids to the corresponding error for any problematic expressions.
    */
   inferTypes(declarations: QuintDeclaration[]): TypeInferenceResult {
+    const typeIdsBefore = Array.from(this.types.keys())
+
     // Resolve all type applications used in expressions in the lookup table
     declarations.forEach(decl => {
       walkDeclaration(this, decl)
     })
-    const simplifiedTypes = new Map([...this.types.entries()].map(([id, t]) => [id, simplify(t)]))
-    return [this.errors, simplifiedTypes]
+
+    const typeIdsAfter = Array.from(this.types.keys())
+    const newTypeIds = difference(typeIdsAfter, typeIdsBefore)
+    // Simplify all new types
+    newTypeIds.forEach(id => {
+      this.types.set(id, simplify(this.types.get(id)!))
+    })
+
+    return [this.errors, this.types]
   }
 }

@@ -343,7 +343,7 @@ still providing a non-managed option:
         third-party package manager binary.
       - Hardcoding the Apalache version is a tradeoff wrt the Github API rate limiting (see §3.2.4) – in principle, we would prefer to pin a minor release (§3.3.4) and use [Github's REST API endpoint][] and/or [`octokit/request.js`][] to determine the appropriate version.
    2. Apalache's JRE dependency is taken care of by adding a check for a `java`
-      executable in `$PATH` to [the `apalache-mc` runner script](https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/src/universal/bin/apalache-mc#L53).
+      executable in `$PATH` to [the `apalache-mc` runner script](https://github.com/apalache-mc/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/src/universal/bin/apalache-mc#L53).
       - This shall print instructions for obtaining a JRE, if none is detected.
 3. Quint launches an on-demand instance of this local installation by spawning
    `apalache-mc server` in a separate process[^1].
@@ -355,9 +355,9 @@ still providing a non-managed option:
        stateful approach of interacting with Shai (e.g., via the [transition
        explorer API][]).
 
-[Apalache]: https://github.com/informalsystems/apalache
-[Shai]: https://github.com/informalsystems/apalache/tree/main/shai
-[transition explorer API]: https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/docs/src/adr/010rfc-transition-explorer.md
+[Apalache]: https://github.com/apalache-mc/apalache
+[Shai]: https://github.com/apalache-mc/apalache/tree/main/shai
+[transition explorer API]: https://github.com/apalache-mc/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/docs/src/adr/010rfc-transition-explorer.md
 [Github's REST API endpoint]: https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release
 [`octokit/request.js`]: https://github.com/octokit/request.js
 [semantic versioning]: https://semver.org/

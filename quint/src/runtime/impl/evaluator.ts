@@ -27,6 +27,7 @@ import { Rng } from '../../rng'
 import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
+import { Presets, SingleBar } from 'cli-progress'
 
 /**
  * An evaluator for Quint in Node TS runtime.
@@ -147,11 +148,23 @@ export class Evaluator {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
+    const progressBar = new SingleBar(
+      {
+        clearOnComplete: true,
+        forceRedraw: true,
+        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+      },
+      Presets.rect
+    )
+    progressBar.start(Number(nruns), 0)
+
     const initEval = buildExpr(this.builder, init)
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
 
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
+      progressBar.update(runNo)
+
       this.recorder.onRunCall()
       this.reset()
       // Mocked def for the trace recorder
@@ -210,6 +223,7 @@ export class Evaluator {
       const outcome = failure ? left(failure) : right(rv.mkBool(errorsFound == 0))
       this.recorder.onRunReturn(outcome, this.trace.get())
     }
+    progressBar.stop()
 
     const outcome: Either<QuintError, QuintEx> = failure
       ? left(failure)
@@ -233,6 +247,16 @@ export class Evaluator {
     onTrace: (name: string, status: string, vars: string[], states: QuintEx[]) => void
   ): TestResult {
     const name = nameWithNamespaces(testDef.name, List(testDef.namespaces))
+    const progressBar = new SingleBar(
+      {
+        clearOnComplete: true,
+        forceRedraw: true,
+        format: '     {test} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+      },
+      Presets.rect
+    )
+
+    progressBar.start(maxSamples, 0, { test: name })
 
     this.trace.reset()
     this.recorder.clear()
@@ -266,6 +290,7 @@ export class Evaluator {
       // evaluate the result
       if (result.isLeft()) {
         // if there was an error, return immediately
+        progressBar.stop()
         return {
           name,
           status: 'failed',
@@ -279,6 +304,7 @@ export class Evaluator {
       const ex = result.value.toQuintEx(zerog)
       if (ex.kind !== 'bool') {
         // if the test returned a malformed result, return immediately
+        progressBar.stop()
         return {
           name,
           status: 'ignored',
@@ -297,8 +323,7 @@ export class Evaluator {
           reference: testDef.id,
         }
         onTrace(name, 'failed', this.varNames(), states)
-
-        // saveTrace(bestTrace, index, name, 'failed')
+        progressBar.stop()
         return {
           name,
           status: 'failed',
@@ -313,7 +338,7 @@ export class Evaluator {
           // Running it one time is sufficient.
 
           onTrace(name, 'passed', this.varNames(), states)
-
+          progressBar.stop()
           return {
             name,
             status: 'passed',
@@ -332,6 +357,7 @@ export class Evaluator {
 
     onTrace(name, 'passed', this.varNames(), states)
 
+    progressBar.stop()
     return {
       name,
       status: 'passed',
