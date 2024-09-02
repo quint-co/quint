@@ -12,6 +12,7 @@
 import { strict as assert } from 'assert'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { OrderedMap, Set } from 'immutable'
+import { Presets, SingleBar } from 'cli-progress'
 
 import { LookupTable } from '../../names/base'
 import { IRVisitor } from '../../ir/IRVisitor'
@@ -1479,7 +1480,21 @@ export class CompilerVisitor implements IRVisitor {
           // do multiple runs, stop at the first failing run
           const nruns = (nrunsRes as RuntimeValue).toInt()
           const ntraces = (nTracesRes as RuntimeValue).toInt()
+
+          const bar = new SingleBar(
+            {
+              clearOnComplete: true,
+              forceRedraw: true,
+              format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+            },
+            Presets.rect
+          )
+
+          bar.start(Number(nruns), 0)
+
           for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
+            bar.update(runNo)
+
             this.execListener.onRunCall()
             this.trace.reset()
             // check Init()
@@ -1539,6 +1554,8 @@ export class CompilerVisitor implements IRVisitor {
             this.recoverVars(vars)
             this.recoverNextVars(nextVars)
           } // end of a single random run
+
+          bar.stop()
 
           // finally, return true, if no error was found
           return !failure ? right(rv.mkBool(errorsFound == 0)) : left({ code: 'QNT501', message: 'Simulation failure' })
