@@ -148,8 +148,6 @@ export class NameCollector implements IRVisitor {
         return
       }
 
-      // Update the definition to point to the expression being overriden
-      // constDef.id = ex.id
       constDef.hidden = false
     })
 
