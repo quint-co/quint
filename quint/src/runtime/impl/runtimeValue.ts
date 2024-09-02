@@ -53,9 +53,9 @@
  * whole new layer of abstraction. However, it is deeply rooted in the
  * semantics of Quint, which, similar to TLA+, heavily utilizes set operators.
  *
- * Igor Konnov, 2022
+ * Igor Konnov, Gabriela Moreira 2022-2024
  *
- * Copyright 2022 Informal Systems
+ * Copyright 2022-2024 Informal Systems
  * Licensed under the Apache License, Version 2.0.
  * See LICENSE in the project root for license information.
  */
@@ -264,6 +264,11 @@ export const rv = {
     return new RuntimeValueLambda(body, registers)
   },
 
+  /**
+   * Make a runtime value from a quint expression.
+   * @param ex - the Quint expression
+   * @returns a runtime value for the expression
+   */
   fromQuintEx: (ex: QuintEx): RuntimeValue => {
     const v = fromQuintEx(ex)
     if (v.isJust()) {
@@ -273,6 +278,11 @@ export const rv = {
     }
   },
 
+  /**
+   * Convert a runtime value to a Quint expression.
+   * @param value - the runtime value to convert
+   * @returns a Quint expression for the runtime value
+   */
   toQuintEx: (value: RuntimeValue): QuintEx => {
     return value.toQuintEx(zerog)
   },
@@ -618,6 +628,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
   }
 
   toTuple2(): [RuntimeValue, RuntimeValue] {
+    // This is specific for tuples of size 2, as they are expected in many builtins.
     if (this instanceof RuntimeValueTupleOrList) {
       const list = this.list
 

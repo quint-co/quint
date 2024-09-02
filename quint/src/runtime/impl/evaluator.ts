@@ -1,4 +1,20 @@
-import { Either, left, mergeInOne, right } from '@sweet-monads/either'
+/* ----------------------------------------------------------------------------------
+ * Copyright 2022-2024 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * An evaluator for Quint in Node TS runtime.
+ *
+ * Testing and simulation are heavily based on the original `compilerImpl.ts` file written by Igor Konnov.
+ *
+ * @author Igor Konnov, Gabriela Moreira
+ *
+ * @module
+ */
+
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintApp, QuintEx } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { QuintError } from '../../quintError'
@@ -12,12 +28,23 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 
+/**
+ * An evaluator for Quint in Node TS runtime.
+ */
 export class Evaluator {
   public ctx: Context
   public recorder: TraceRecorder
   private rng: Rng
   private builder: Builder
 
+  /**
+   * Constructs an Evaluator that can be re-used across evaluations.
+   *
+   * @param table - The lookup table for definitions.
+   * @param recorder - The trace recorder to log evaluation traces.
+   * @param rng - The random number generator to use for evaluation.
+   * @param storeMetadata - Optional, whether to store `actionTaken` and `nondetPicks`. Default is false.
+   */
   constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng, storeMetadata: boolean = false) {
     this.recorder = recorder
     this.rng = rng
@@ -25,18 +52,36 @@ export class Evaluator {
     this.ctx = new Context(recorder, rng.next, this.builder.varStorage)
   }
 
+  /**
+   * Get the current trace from the context
+   */
   get trace(): Trace {
     return this.ctx.trace
   }
 
+  /**
+   * Update the lookup table, if the same table is used for multiple evaluations but there are new definitions.
+   *
+   * @param table
+   */
   updateTable(table: LookupTable) {
     this.builder.table = table
   }
 
+  /**
+   * Shift the context to the next state. That is, updated variables in the next state are moved to the current state,
+   * and the trace is extended.
+   */
   shift(): void {
     this.ctx.shift()
   }
 
+  /**
+   * Shift the context to the next state. That is, updated variables in the next state are moved to the current state,
+   * and the trace is extended.
+   *
+   * @returns names of the variables that don't have values in the new state.
+   */
   shiftAndCheck(): string[] {
     const missing = this.ctx.varStorage.nextVars.filter(reg => reg.value.isLeft())
 
@@ -52,9 +97,15 @@ export class Evaluator {
       .toArray()
   }
 
+  /**
+   * Evaluate a Quint expression.
+   *
+   * @param expr
+   * @returns the result of the evaluation, if successful, or an error if the evaluation failed.
+   */
   evaluate(expr: QuintEx): Either<QuintError, QuintEx> {
     if (expr.kind === 'app' && (expr.opcode == 'q::test' || expr.opcode === 'q::testOnce')) {
-      return this.evaluateTest(expr)
+      return this.evaluateSimulation(expr)
     }
 
     const value = buildExpr(this.builder, expr)(this.ctx)
@@ -62,21 +113,29 @@ export class Evaluator {
     return value.map(rv.toQuintEx)
   }
 
-  evaluateTest(expr: QuintApp): Either<QuintError, QuintEx> {
-    if (expr.opcode === 'q::testOnce') {
-      const [nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, 1, toNumber(nsteps), toNumber(ntraces))
-    } else {
-      const [nruns, nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
-    }
-  }
-
+  /**
+   * Reset the evaluator to its initial state (in terms of trace and variables)
+   */
   reset() {
     this.trace.reset()
     this.builder.varStorage.reset()
   }
 
+  /**
+   * Simulates the execution of an initial expression followed by a series of step expressions,
+   * while checking an invariant expression at each step. The simulation is run multiple times,
+   * up to a specified number of runs, and each run is executed for a specified number of steps.
+   * The simulation stops if a specified number of traces with errors are found.
+   *
+   * @param init - The initial expression to evaluate.
+   * @param step - The step expression to evaluate repeatedly.
+   * @param inv - The invariant expression to check after each step.
+   * @param nruns - The number of simulation runs to perform.
+   * @param nsteps - The number of steps to perform in each simulation run.
+   * @param ntraces - The number of error traces to collect before stopping the simulation.
+   * @returns a boolean expression indicating whether all simulations passed without errors,
+              or an error if the simulation cannot be completed.
+   */
   simulate(
     init: QuintEx,
     step: QuintEx,
@@ -92,7 +151,6 @@ export class Evaluator {
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
 
-    // TODO: room for improvement here
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       this.recorder.onRunCall()
       this.reset()
@@ -160,6 +218,15 @@ export class Evaluator {
     return outcome
   }
 
+  /**
+   * Run a specified test definition a given number of times, and report the result.
+   *
+   * @param testDef - The definition of the test to be run.
+   * @param maxSamples - The maximum number of times to run the test.
+   * @param onTrace - A callback function to be called with trace information for each test run.
+   * @returns The result of the test, including its name, status, any errors, the seed used, frames,
+              and the number of samples run.
+   */
   test(
     testDef: LookupDefinition,
     maxSamples: number,
@@ -275,11 +342,31 @@ export class Evaluator {
     }
   }
 
+  /**
+   * Variable names in context
+   * @returns the names of all variables in the current context.
+   */
   varNames() {
     return this.ctx.varStorage.vars
       .valueSeq()
       .toArray()
       .map(v => v.name)
+  }
+
+  /**
+   * Special case of `evaluate` where the expression is a call to a simulation.
+   *
+   * @param expr
+   * @returns the result of the simulation, or an error if the simulation cannot be completed.
+   */
+  private evaluateSimulation(expr: QuintApp): Either<QuintError, QuintEx> {
+    if (expr.opcode === 'q::testOnce') {
+      const [nsteps, ntraces, init, step, inv] = expr.args
+      return this.simulate(init, step, inv, 1, toNumber(nsteps), toNumber(ntraces))
+    } else {
+      const [nruns, nsteps, ntraces, init, step, inv] = expr.args
+      return this.simulate(init, step, inv, toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
+    }
   }
 }
 
