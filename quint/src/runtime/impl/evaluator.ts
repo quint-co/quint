@@ -269,6 +269,7 @@ export class Evaluator {
     let nsamples = 1
     // run up to maxSamples, stop on the first failure
     for (; nsamples <= maxSamples; nsamples++) {
+      progressBar.update(nsamples, { test: name })
       // record the seed value
       seed = this.rng.getState()
       this.recorder.onRunCall()
