@@ -703,7 +703,7 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const verbosityLevel = deriveVerbosity(args)
 
   const parsedSpecJson = jsonStringOfOutputStage(
-    pickOutputStage({ ...compiled, modules: [compiled.mainModule], table: compiled.resolver.table })
+    pickOutputStage({ ...compiled, modules: [compiled.mainModule], table: compiled.table })
   )
   switch ((compiled.args.target as string).toLowerCase()) {
     case 'json':
