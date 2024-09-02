@@ -805,8 +805,8 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
             console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
           }
 
-          if (prev.args.outItf) {
-            writeToJson(prev.args.outItf, err.traces)
+          if (prev.args.outItf && err.traces) {
+            writeToJson(prev.args.outItf, err.traces[0])
           }
         }
         return {
