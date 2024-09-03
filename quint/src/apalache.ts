@@ -357,7 +357,8 @@ function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
  *    - a `left<ApalacheError>` indicating an error.
  */
 async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<string>> {
-  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', 'apalache-mc')
+  const filename = process.platform === "win32" ? 'apalache-mc.bat' : 'apalache-mc'
+  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', filename)
   if (fs.existsSync(apalacheBinary)) {
     // Use existing download
     debugLog(verbosityLevel, `Using existing Apalache distribution in ${apalacheBinary}`)
