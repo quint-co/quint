@@ -29,6 +29,9 @@ module withConsts {
   const MyRecord: { i: int, b: bool, s: str }
   const MyRecordWithComma: { i: int, b: bool, s: str, }
 
+  // A type prefixed with a namespace
+  type some::namespace::MyType = int
+
   // a disjoint union is a common pattern in TLA+
   type MyUnionType =
       | Circle(int)
