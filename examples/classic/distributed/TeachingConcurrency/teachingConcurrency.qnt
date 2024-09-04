@@ -38,14 +38,11 @@ module teachingConcurrencyN {
     // Stepping action: randomly pick a pending process (if
     // any) and execute it. Otherwise stutter forever, as
     // every process has stopped.
-    action step = any {
-        all {
-            not(termination),
-            processUpdate,
-        },
-        all {
-            termination,
-            allStopped,
+    action step = {
+        if (termination) {
+            allStopped
+        } else {    
+            processUpdate
         }
     }
 
