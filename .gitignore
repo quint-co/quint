@@ -7,3 +7,4 @@ client/server
 *.vsix
 _build
 .DS_Store
+_apalache-out/

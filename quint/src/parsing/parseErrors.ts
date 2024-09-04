@@ -1,19 +1,21 @@
 import { QuintError } from '../quintError'
 
-export function lowercaseTypeError(id: bigint, name: string): QuintError {
+export function lowercaseTypeError(id: bigint, name: string, prefix: string[]): QuintError {
+  const original = [...prefix, name].join('::')
+  const newName = name[0].toUpperCase() + name.slice(1)
+  const replacement = [...prefix, newName].join('::')
+
   return {
     code: 'QNT007',
     message: 'type names must start with an uppercase letter',
     reference: id,
-    data: name[0].match('[a-z]')
-      ? {
-          fix: {
-            kind: 'replace',
-            original: `type ${name[0]}`,
-            replacement: `type ${name[0].toUpperCase()}`,
-          },
-        }
-      : {},
+    data: {
+      fix: {
+        kind: 'replace',
+        original: `type ${original}`,
+        replacement: `type ${replacement}`,
+      },
+    },
   }
 }
 

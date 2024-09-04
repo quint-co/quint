@@ -843,14 +843,14 @@ rm out-itf-mbt-example.itf.json
 
 ### Run without violation outputs ITF
 
-<!-- !test in sucessful run itf -->
+<!-- !test in successful run itf -->
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
-<!-- !test out sucessful run itf -->
+<!-- !test out successful run itf -->
 ```
 [
   "alice",
@@ -899,7 +899,7 @@ TODO: output states after fix: https://github.com/informalsystems/quint/issues/2
 
 <!-- !test in test itf -->
 ```
-output=$(quint test --output='coin_{#}_{}.itf.json' \
+output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -961,7 +961,7 @@ FIXME: fix the traces found by the simulator once #1133 is resolved.
 
 <!-- !test in test1133 -->
 ```
-output=$(quint test --match='(t1|t2)' --output='out_{#}_{}.itf.json' \
+output=$(quint test --match='(t1|t2)' --out-itf='out_{seq}_{test}.itf.json' \
   ./testFixture/simulator/lastActionInRun.qnt)
 exit_code=$?
 echo "BEGIN"
@@ -1268,7 +1268,7 @@ See [#1264](https://github.com/informalsystems/quint/pull/1264).
 
 <!-- !test in multiple jsons -->
 ```
-quint test --output {}.itf.json ./testFixture/_1051manyTests.qnt >/dev/null
+quint test --out-itf {test}.itf.json ./testFixture/_1051manyTests.qnt >/dev/null
 cat firstTest.itf.json secondTest.itf.json | jq -c .states
 rm firstTest.itf.json secondTest.itf.json
 ```
@@ -1285,7 +1285,7 @@ See [#1281](https://github.com/informalsystems/quint/issues/1281)
 
 <!-- !test in variants in itf -->
 ```
-quint test --output {}.itf.json ./testFixture/_1054sumTypesInItf.qnt >/dev/null
+quint test --out-itf {test}.itf.json ./testFixture/_1054sumTypesInItf.qnt >/dev/null
 cat xTest.itf.json | jq -c .states
 rm xTest.itf.json
 ```

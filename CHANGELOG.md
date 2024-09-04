@@ -10,16 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add the operator `generate` to mirror `Apalache!Gen` (see #1455).
+- In the `verify` command, add warning if `--out-itf` option contains `{test}` or `{seq}` as those have no effect since Apalache only produces a single trace (#1485)
+- The `run` and `test` commands now display a progress bar (#1457)
 
 ### Changed
 
 - Performance of incrementally checking types (i.e. in REPL) was improved (#1483).
+- In the `run` and `test` commands, change placeholders from `{}` to `{test}` and from `{#}` to `{seq}` (#1485)
+- In the `run` command, auto-append trace sequence number to filename if more than one trace is present and `{seq}` is not specified (#1485)
+- In the `test` command, rename `--output` to `--out-itf`
 
 ### Deprecated
+
+- In the `test` command, deprecate `--output` option in favour of `--out-itf`, add hidden alias for the former (#1485)
+
 ### Removed
+
+- In the `test` command, stop enforcing `.itf.json` extension (#1485)
+
 ### Fixed
 
- - Bumped GRPC message sizes to 1G (#1480)
+- Bumped GRPC message sizes to 1G (#1480)
+- Fix format of ITF trace emitted by `verify` command (#1448)
+- Relax uppercase check for types qualified with a namespace (#1494)
 
 ### Security
 
@@ -137,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The latest supported node version is now bounded at <= 20, which covers the
   latest LTS. (#1380)
-- Shadowing names are now supported, which means that the same name can be redefined 
+- Shadowing names are now supported, which means that the same name can be redefined
   in nested scopes. (#1394)
 - The canonical unit type is now the empty tuple, `()`, rather than the empty
   record, `{}`. This should only affect invisible things to do with sum type
