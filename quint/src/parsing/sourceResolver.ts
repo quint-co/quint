@@ -111,34 +111,3 @@ export function fileSourceResolver(
     },
   }
 }
-
-/**
- * Read the source code from a map of strings. This resolver is especially
- * useful for tests.
- * @param sources a map of paths mapped to text
- * @returns a static resolver that uses the map to read the contents.
- */
-export const stringSourceResolver = (sources: Map<string, string>): SourceResolver => {
-  return {
-    lookupPath: (stempath: string, importPath: string) => {
-      return {
-        normalizedPath: normalize(join(stempath, importPath)),
-        toSourceName: () => {
-          return posix.join(stempath, importPath)
-        },
-      }
-    },
-
-    load: (lookupPath: SourceLookupPath): Either<string, string> => {
-      // We are using nodejs path.join here.
-      // If we have to decouple this resolver from nodejs in the future,
-      // we would have to write our own version of join.
-      const contents = sources.get(lookupPath.normalizedPath)
-      return contents ? right(contents) : left(`Source not found: '${lookupPath.normalizedPath}'`)
-    },
-
-    stempath: (lookupPath: SourceLookupPath): string => {
-      return dirname(lookupPath.normalizedPath)
-    },
-  }
-}

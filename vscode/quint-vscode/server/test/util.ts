@@ -20,7 +20,7 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-  stringSourceResolver,
+  fileSourceResolver,
 } from '@informalsystems/quint'
 
 /**
@@ -37,7 +37,7 @@ export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Lo
   const idgen = newIdGenerator()
   const phase1Data = parsePhase1fromText(idgen, moduleText, 'mocked_path')
 
-  const resolver = stringSourceResolver(new Map())
+  const resolver = fileSourceResolver(new Map())
   const mainPath = resolver.lookupPath('mocked_path', './main')
   const phase2Data = parsePhase2sourceResolution(idgen, resolver, mainPath, phase1Data)
 

@@ -18,7 +18,7 @@ import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
-import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
+import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
 import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/base'
@@ -34,7 +34,7 @@ const idGen = newIdGenerator()
 //        before the input is evaluated. If not supplied, the context is empty.
 function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
   const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
-  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
+  const mockLookupPath = fileSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(
     idGen,
     moduleText,
@@ -71,7 +71,7 @@ function assertComputableAsString(computable: Computable, expected: string | und
 // Compile an input and evaluate a callback in the context
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
-  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
+  const mockLookupPath = fileSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(
     idGen,
     moduleText,
