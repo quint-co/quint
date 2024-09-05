@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bumped GRPC message sizes to 1G (#1480)
 - Fix format of ITF trace emitted by `verify` command (#1448)
+- Relax uppercase check for types qualified with a namespace (#1494)
 
 ### Security
 
@@ -148,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The latest supported node version is now bounded at <= 20, which covers the
   latest LTS. (#1380)
-- Shadowing names are now supported, which means that the same name can be redefined 
+- Shadowing names are now supported, which means that the same name can be redefined
   in nested scopes. (#1394)
 - The canonical unit type is now the empty tuple, `()`, rather than the empty
   record, `{}`. This should only affect invisible things to do with sum type
