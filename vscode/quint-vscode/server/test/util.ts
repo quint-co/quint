@@ -16,11 +16,11 @@ import {
   Loc,
   LookupTable,
   QuintModule,
+  fileSourceResolver,
   newIdGenerator,
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-  fileSourceResolver,
 } from '@informalsystems/quint'
 
 /**
