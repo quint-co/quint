@@ -23,7 +23,7 @@ import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { CachedValue, Context, Register } from './Context'
-import { QuintApp, QuintEx } from '../../ir/quintIr'
+import { QuintApp, QuintEx, QuintVar } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
@@ -85,15 +85,16 @@ export class Builder {
   /**
    * Gets the register for a variable by its id and the namespaces in scope (tracked by this builder).
    *
-   * @param id
+   * @param def - The variable to get the register for.
    *
    * @returns the register for the variable
    */
-  getVar(id: bigint): NamedRegister {
-    const key = [id, ...this.namespaces].join('#')
+  getVar(def: QuintVar): NamedRegister {
+    const key = [def.id, ...this.namespaces].join('#')
     const result = this.varStorage.vars.get(key)
     if (!result) {
-      throw new Error(`Variable not found: ${key}`)
+      this.discoverVar(def.id, def.name)
+      return this.varStorage.vars.get(key)!
     }
 
     return result
@@ -341,7 +342,7 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
     case 'var': {
       // Every variable has a single register, and we just change this register's value at each state
       // So, a reference to a variable simply evaluates to the value of the register.
-      const register = builder.getVar(def.id)
+      const register = builder.getVar(def)
       return _ => {
         return register.value
       }

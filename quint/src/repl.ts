@@ -272,26 +272,28 @@ export function quintRepl(
 
     const newState = loadFromFile(out, state, filename)
     if (!newState) {
-      return state
+      return
     }
 
     state.lastLoadedFileAndModule[0] = filename
 
-    const moduleNameToLoad = moduleName ?? getMainModuleAnnotation(newState.moduleHist) ?? '__repl__'
-    if (moduleNameToLoad === '__repl__') {
+    const moduleNameToLoad = moduleName ?? getMainModuleAnnotation(newState.moduleHist)
+    if (!moduleNameToLoad) {
       // No module to load, introduce the __repl__ module
       newState.addReplModule()
     }
 
-    if (tryEvalModule(out, newState, moduleNameToLoad)) {
+    if (tryEvalModule(out, newState, moduleNameToLoad ?? '__repl__')) {
       state.lastLoadedFileAndModule[1] = moduleNameToLoad
     } else {
       out(chalk.yellow('Pick the right module name and import it (the file has been loaded)\n'))
-      return newState
+      return
     }
 
     if (newState.exprHist) {
-      newState.exprHist.forEach(expr => {
+      const expressionsToEvaluate = newState.exprHist
+      newState.exprHist = []
+      expressionsToEvaluate.forEach(expr => {
         tryEvalAndClearRecorder(out, newState, expr)
       })
     }
@@ -441,13 +443,14 @@ export function quintRepl(
 
 function saveToFile(out: writer, state: ReplState, filename: string) {
   // 1. Write the previously loaded modules.
-  // 2. Write the definitions in the special module called __repl__.
+  // 2. Write the definitions in the loaded module (or in __repl__ if no module was loaded).
   // 3. Wrap expressions into special comments.
   try {
-    const text =
-      `// @mainModule ${state.lastLoadedFileAndModule[1]}\n` +
-      `${state.moduleHist}` +
-      state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
+    const mainModuleAnnotation = state.moduleHist.startsWith('// @mainModule')
+      ? ''
+      : `// @mainModule ${state.lastLoadedFileAndModule[1] ?? '__repl__'}\n`
+
+    const text = mainModuleAnnotation + `${state.moduleHist}` + state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
 
     writeFileSync(filename, text)
     out(`Session saved to: ${filename}\n`)
@@ -572,6 +575,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       return false
     }
 
+    state.exprHist.push(newInput.trim())
     const evalResult = state.evaluator.evaluate(parseResult.expr)
 
     evalResult.map(ex => {
@@ -616,6 +620,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     if (state.nameResolver.errors.length > 0) {
       printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
       out('\n')
+
       parseResult.decls.forEach(decl => {
         if (isDef(decl)) {
           state.nameResolver.collector.deleteDefinition(decl.name)
@@ -644,6 +649,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     }
 
     state.compilationState.analysisOutput = analysisOutput
+    state.moduleHist = state.moduleHist.slice(0, state.moduleHist.length - 1) + newInput + '\n}' // update the history
 
     out('\n')
   }
