@@ -136,6 +136,8 @@ get_verify_args () {
     args="--init=Init --step=Next"
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/teachingConcurrency.qnt" ]] ; then
+    args="--temporal correct"
   fi
   echo "${args}"
 }
