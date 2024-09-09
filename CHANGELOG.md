@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.22.0 -- 2024-09-09
+
+### Added
 
 - Calling `q::test`, `q::testOnce` and `q::lastTrace` on the REPL now works properly (#1495)
 
