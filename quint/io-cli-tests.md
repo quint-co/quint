@@ -1158,7 +1158,7 @@ exit $exit_code
 
 
   Use --verbosity=3 to show executions.
-  Further debug with: quint --verbosity=3 testFixture/_1040compileError.qnt
+  Further debug with: quint test --verbosity=3 testFixture/_1040compileError.qnt
 error: Tests failed
 ```
 

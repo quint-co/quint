@@ -459,7 +459,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
   if (verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
     out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
-    out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
+    out(chalk.gray(`  Further debug with: quint test --verbosity=3 ${prev.args.input}`))
   }
 
   return cliErr('Tests failed', stage)
