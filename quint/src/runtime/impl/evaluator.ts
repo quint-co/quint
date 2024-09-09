@@ -183,9 +183,6 @@ export class Evaluator {
           errorsFound++
         } else {
           // check all { step, shift(), inv } in a loop
-
-          // FIXME: errorsFound < ntraces is not good, because we continue after invariant violation.
-          // This is the same in the old version, so I'll fix later.
           for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
             const stepApp: QuintApp = {
               id: 0n,

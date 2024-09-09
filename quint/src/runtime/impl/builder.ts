@@ -241,7 +241,8 @@ function buildUnderDefContext(
     const register = builder.registerForConst(id, param.name)
 
     // Build the expr as a pure val def so it gets properly cached
-    return [register, buildDef(builder, { kind: 'def', qualifier: 'pureval', expr, name: param.name, id: param.id })]
+    const purevalEval = buildDef(builder, { kind: 'def', qualifier: 'pureval', expr, name: param.name, id: param.id })
+    return [register, purevalEval]
   })
 
   // Here, we have the right context to build the function. That is, all constants are pointing to the right registers,
@@ -530,18 +531,16 @@ function buildApp(
 ): (ctx: Context, args: RuntimeValue[]) => Either<QuintError, RuntimeValue> {
   const def = builder.table.get(app.id)!
   if (!def) {
+    // If it is not in the lookup table, it must be a builtin operator
     return builtinLambda(app.opcode)
   }
 
-  const value = buildDef(builder, def)
+  const defEval = buildDef(builder, def)
   return (ctx, args) => {
-    const lambdaResult = value(ctx)
-    if (lambdaResult.isLeft()) {
-      return lambdaResult
-    }
-    const arrow = lambdaResult.value.toArrow()
-
-    return arrow(ctx, args)
+    return defEval(ctx).chain(lambda => {
+      const arrow = lambda.toArrow()
+      return arrow(ctx, args)
+    })
   }
 }
 
