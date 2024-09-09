@@ -143,7 +143,7 @@ describe('flattenModule', () => {
 
     const thirdModuleDecls = ['import B.*', 'val a = f(1)']
 
-    const expectedDecls = ['import A(N = 1) as A1', 'def f = ((x) => iadd(x, 1))']
+    const expectedDecls = ['import A(N = 1) as A1', 'def f = ((x) => iadd(x, 1))', 'const N: int']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
     assert.deepEqual(flattenedDecls, expectedDecls)

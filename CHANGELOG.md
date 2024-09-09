@@ -8,10 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Calling `q::test`, `q::testOnce` and `q::lastTrace` on the REPL now works properly (#1495)
+
 ### Changed
+
+- Performance of the REPL was drastically improved (#1495)
+- Error reporting was improved for many runtime errors (#1495)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Sending SIGINT (hitting Ctrl+C) to the run and test commands now actually stops the execution (#1495)
+
 ### Security
 
 ## v0.21.2 -- 2024-09-09
