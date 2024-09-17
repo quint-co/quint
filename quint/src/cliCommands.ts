@@ -17,6 +17,7 @@ import {
   SourceMap,
   compactSourceMap,
   parseDefOrThrow,
+  parseExpressionOrDeclaration,
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
@@ -24,19 +25,19 @@ import {
 } from './parsing/quintParserFrontend'
 import { ErrorMessage } from './ErrorMessage'
 
-import { Either, left, right } from '@sweet-monads/either'
-import { fail } from 'assert'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import assert, { fail } from 'assert'
 import { EffectScheme } from './effects/base'
-import { LookupTable, UnusedDefinitions } from './names/base'
+import { LookupTable } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { FlatModule, OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
+import { FlatModule, OpQualifier, QuintBool, QuintEx, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
-import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
-import { IdGenerator, newIdGenerator } from './idGenerator'
-import { SimulatorOptions, compileAndRun } from './simulation'
+import { TestOptions, TestResult } from './runtime/testing'
+import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
+import { Outcome, SimulatorOptions } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -45,10 +46,13 @@ import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
-import { ExecutionFrame } from './runtime/trace'
+import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { flow, isEqual, uniqWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { compileToTlaplus } from './compileToTlaplus'
+import { Evaluator } from './runtime/impl/evaluator'
+import { NameResolver } from './names/resolver'
+import { walkExpression } from './ir/IRVisitor'
 
 export type stage =
   | 'loading'
@@ -66,7 +70,6 @@ interface OutputStage {
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[]
   table?: LookupTable
-  unusedDefinitions?: UnusedDefinitions
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>
   effects?: Map<bigint, EffectScheme>
@@ -92,7 +95,6 @@ const pickOutputStage = ({
   warnings,
   modules,
   table,
-  unusedDefinitions,
   types,
   effects,
   errors,
@@ -108,7 +110,6 @@ const pickOutputStage = ({
     warnings,
     modules,
     table,
-    unusedDefinitions,
     types,
     effects,
     errors,
@@ -136,7 +137,7 @@ interface ParsedStage extends LoadedStage {
   defaultModuleName: Maybe<string>
   sourceMap: SourceMap
   table: LookupTable
-  unusedDefinitions: UnusedDefinitions
+  resolver: NameResolver
   idGen: IdGenerator
 }
 
@@ -313,6 +314,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const testing = { ...prev, stage: 'testing' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
+  const main = prev.modules.find(m => m.name === mainName)
+  if (!main) {
+    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
+    return cliErr('Argument error', { ...testing, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+  }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -321,12 +327,13 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const rng = rngOrError.unwrap()
 
   const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
+  const maxSamples = testing.args.maxSamples
   const options: TestOptions = {
     testMatch: matchFun,
     maxSamples: testing.args.maxSamples,
     rng,
     verbosity: verbosityLevel,
-    onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
+    onTrace: (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => {
       if (outputTemplate) {
         const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: prev.args.nTraces > 1 })
         const trace = toItf(vars, states)
@@ -351,69 +358,17 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     out(`\n  ${mainName}`)
   }
 
-  // TODO: This block is a workaround for the fact that flattening removes any defs
-  // not referenced in the main module. We'd instead like way to just instruct it
-  // to keep some defs.
-  //
-  // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
-  // doesn't drop the definitions.
-  const unusedTests = [...testing.unusedDefinitions(mainName)].filter(
-    d => d.kind === 'def' && options.testMatch(d.name)
-  )
-  // Define name expressions referencing each test that is not referenced elsewhere, adding the references to the lookup
-  // table
-  const args: QuintEx[] = unusedTests.map(defToAdd => {
-    const id = testing.idGen.nextId()
-    testing.table.set(id, defToAdd)
-    const namespace = defToAdd.importedFrom ? qualifier(defToAdd.importedFrom) : undefined
-    const name = namespace ? [namespace, defToAdd.name].join('::') : defToAdd.name
+  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
+    .flat()
+    .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
-    return { kind: 'name', id, name }
+  const evaluator = new Evaluator(testing.table, newTraceRecorder(verbosityLevel, rng, 1), rng)
+  const results = testDefs.map((def, index) => {
+    return evaluator.test(def, maxSamples, options.onTrace(index))
   })
-  // Wrap all expressions in a single declaration
-  const testDeclaration: QuintOpDef = {
-    id: testing.idGen.nextId(),
-    name: 'q::unitTests',
-    kind: 'def',
-    qualifier: 'run',
-    expr: { kind: 'app', opcode: 'actionAll', args, id: testing.idGen.nextId() },
-  }
-  // Add the declaration to the main module
-  const main = testing.modules.find(m => m.name === mainName)
-  main?.declarations.push(testDeclaration)
-
-  // TODO The following block should all be moved into compileAndTest
-  const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
-  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-    testing.modules,
-    testing.table,
-    testing.idGen,
-    testing.sourceMap,
-    analysisOutput
-  )
-  const compilationState = {
-    originalModules: testing.modules,
-    modules: flattenedModules,
-    sourceMap: testing.sourceMap,
-    analysisOutput: flattenedAnalysis,
-    idGen: testing.idGen,
-    sourceCode: testing.sourceCode,
-  }
-
-  const testResult = compileAndTest(compilationState, mainName, flattenedTable, options)
-
-  // We have a compilation failure, so early exit without reporting test results
-  if (testResult.isLeft()) {
-    return cliErr('Tests could not be run due to an error during compilation', {
-      ...testing,
-      errors: testResult.value.map(mkErrorMessage(testing.sourceMap)),
-    })
-  }
 
   // We're finished running the tests
   const elapsedMs = Date.now() - startMs
-  // So we can analyze the results now
-  const results = testResult.value
 
   // output the status for every test
   let nFailures = 1
@@ -458,7 +413,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     passed: passed.map(r => r.name),
     failed: failed.map(r => r.name),
     ignored: ignored.map(r => r.name),
-    errors: namedErrors.map(([_, e]) => e),
+    errors: [],
   }
 
   // Nothing failed, so we are OK, and can exit early
@@ -504,7 +459,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 
   if (verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
     out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
-    out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
+    out(chalk.gray(`  Further debug with: quint test --verbosity=3 ${prev.args.input}`))
   }
 
   return cliErr('Tests failed', stage)
@@ -529,9 +484,15 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
+  const startMs = Date.now()
   // Force disable output if `--out-itf` is set
   const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
+  const main = prev.modules.find(m => m.name === mainName)
+  if (!main) {
+    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
+    return cliErr('Argument error', { ...prev, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+  }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -564,35 +525,82 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     },
   }
 
-  const startMs = Date.now()
+  const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-  const mainText = prev.sourceCode.get(prev.path)!
-  const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const mainModule = prev.modules.find(m => m.name === mainName)
-  if (mainModule === undefined) {
-    return cliErr(`Main module ${mainName} not found`, { ...simulator, errors: [] })
+  function toExpr(input: string): Either<QuintError, QuintEx> {
+    const parseResult = parseExpressionOrDeclaration(input, '<input>', prev.idGen, prev.sourceMap)
+    if (parseResult.kind !== 'expr') {
+      return left({ code: 'QNT501', message: `Expected ${input} to be a valid expression` })
+    }
+
+    prev.resolver.switchToModule(mainName)
+    walkExpression(prev.resolver, parseResult.expr)
+    if (prev.resolver.errors.length > 0) {
+      return left(prev.resolver.errors[0])
+    }
+
+    return right(parseResult.expr)
   }
-  const mainId = mainModule.id
-  const mainStart = prev.sourceMap.get(mainId)!.start.index
-  const mainEnd = prev.sourceMap.get(mainId)!.end!.index
-  const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
+
+  const argsParsingResult = mergeInMany([prev.args.init, prev.args.step, prev.args.invariant].map(toExpr))
+  if (argsParsingResult.isLeft()) {
+    return cliErr('Argument error', {
+      ...simulator,
+      errors: argsParsingResult.value.map(mkErrorMessage(new Map())),
+    })
+  }
+  const [init, step, invariant] = argsParsingResult.value
+
+  const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
+  const evalResult = evaluator.simulate(
+    init,
+    step,
+    invariant,
+    prev.args.maxSamples,
+    prev.args.maxSteps,
+    prev.args.nTraces ?? 1
+  )
 
   const elapsedMs = Date.now() - startMs
 
-  switch (result.outcome.status) {
+  const outcome: Outcome = evalResult.isRight()
+    ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
+    : { status: 'error', errors: [evalResult.value] }
+
+  recorder.bestTraces.forEach((trace, index) => {
+    const maybeEvalResult = trace.frame.result
+    if (maybeEvalResult.isLeft()) {
+      return cliErr('Runtime error', {
+        ...simulator,
+        errors: [mkErrorMessage(simulator.sourceMap)(maybeEvalResult.value)],
+      })
+    }
+    const quintExResult = maybeEvalResult.value.toQuintEx(prev.idGen)
+    assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
+    const simulationSucceeded = quintExResult.value
+    const status = simulationSucceeded ? 'ok' : 'violation'
+    const states = trace.frame.args.map(e => e.toQuintEx(prev.idGen))
+
+    options.onTrace(index, status, evaluator.varNames(), states)
+  })
+
+  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
+  const frames = recorder.bestTraces[0]?.frame?.subframes
+  const seed = recorder.bestTraces[0]?.seed
+  switch (outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
         ...simulator,
-        status: result.outcome.status,
-        trace: result.states,
-        errors: result.outcome.errors.map(mkErrorMessage(prev.sourceMap)),
+        status: outcome.status,
+        trace: states,
+        errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
     case 'ok':
-      maybePrintCounterExample(verbosityLevel, result.states, result.frames)
+      maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
+        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
@@ -601,15 +609,15 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
       return right({
         ...simulator,
-        status: result.outcome.status,
-        trace: result.states,
+        status: outcome.status,
+        trace: states,
       })
 
     case 'violation':
-      maybePrintCounterExample(verbosityLevel, result.states, result.frames)
+      maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
+        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
 
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
@@ -618,8 +626,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
       return cliErr('Invariant violated', {
         ...simulator,
-        status: result.outcome.status,
-        trace: result.states,
+        status: outcome.status,
+        trace: states,
         errors: [],
       })
   }
@@ -694,7 +702,9 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const args = compiled.args
   const verbosityLevel = deriveVerbosity(args)
 
-  const parsedSpecJson = jsonStringOfOutputStage(pickOutputStage({ ...compiled, modules: [compiled.mainModule] }))
+  const parsedSpecJson = jsonStringOfOutputStage(
+    pickOutputStage({ ...compiled, modules: [compiled.mainModule], table: compiled.table })
+  )
   switch ((compiled.args.target as string).toLowerCase()) {
     case 'json':
       process.stdout.write(parsedSpecJson)

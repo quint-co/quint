@@ -147,12 +147,6 @@ describe('repl ok', () => {
       |1 + false
       |^^^^^^^^^
       |
-      |
-      |runtime error: error: [QNT501] Expected an integer value
-      |1 + false
-      |^^^^^^^^^
-      |
-      |<undefined value>
       |>>> `
     )
     await assertRepl(input, output)
@@ -215,14 +209,13 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: error: [QNT404] Name 'n' not found
+      |static analysis error: error: [QNT404] Name 'n' not found
       |n * n
       |^
       |
-      |syntax error: error: [QNT404] Name 'n' not found
+      |static analysis error: error: [QNT404] Name 'n' not found
       |n * n
       |    ^
-      |
       |
       |>>> `
     )
@@ -273,7 +266,6 @@ describe('repl ok', () => {
       |div(2, 0)
       |                     ^^^^^
       |
-      |<undefined value>
       |>>> `
     )
     await assertRepl(input, output)
@@ -300,10 +292,6 @@ describe('repl ok', () => {
       |.verbosity=4
       |>>> x' = 0
       |true
-      |
-      |[Frame 0]
-      |_ => true
-      |
       |>>> action step = x' = x + 1
       |
       |>>> action input1 = step
@@ -393,7 +381,6 @@ describe('repl ok', () => {
       |Set(Int)
       |^^^^^^^^
       |
-      |<undefined value>
       |>>> `
     )
     await assertRepl(input, output)

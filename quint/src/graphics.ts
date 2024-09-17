@@ -260,7 +260,7 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
     [text(','), line()],
     frame.args.map(a => prettyQuintEx(a.toQuintEx(zerog)))
   )
-  const r = frame.result.isNone() ? text('none') : prettyQuintEx(frame.result.value.toQuintEx(zerog))
+  const r = frame.result.isLeft() ? text('none') : prettyQuintEx(frame.result.value.toQuintEx(zerog))
   const depth = isLast.length
   // generate the tree ASCII graphics for this frame
   let treeArt = isLast

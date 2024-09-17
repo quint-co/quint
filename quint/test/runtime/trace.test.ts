@@ -1,20 +1,23 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { none } from '@sweet-monads/maybe'
 
 import { newTraceRecorder } from '../../src/runtime/trace'
 import { QuintApp } from '../../src/ir/quintIr'
 import { verbosity } from '../../src/verbosity'
 import { newRng } from '../../src/rng'
+import { QuintError } from '../../src/quintError'
+import { left } from '@sweet-monads/either'
+
+const emptyFrameError: QuintError = { code: 'QNT501', message: 'empty frame' }
 
 describe('newTraceRecorder', () => {
   it('one layer', () => {
     const rec = newTraceRecorder(verbosity.maxVerbosity, newRng())
     const A: QuintApp = { id: 0n, kind: 'app', opcode: 'A', args: [] }
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     const trace = rec.currentFrame
     assert(trace.subframes.length === 2)
     assert(trace.subframes[0].app === A)
@@ -30,12 +33,12 @@ describe('newTraceRecorder', () => {
     // (A calls (B, after that it calls A)), after that another A is called
     rec.onUserOperatorCall(A)
     rec.onUserOperatorCall(B)
-    rec.onUserOperatorReturn(B, [], none())
+    rec.onUserOperatorReturn(B, [], left(emptyFrameError))
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     const trace = rec.currentFrame
     assert(trace.subframes.length === 2)
     assert(trace.subframes[0].app === A)
@@ -59,33 +62,33 @@ describe('newTraceRecorder', () => {
     }
     // A()
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     // any {
     rec.onAnyOptionCall(anyEx, 0)
     // A()
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
     rec.onAnyOptionReturn(anyEx, 0)
 
     rec.onAnyOptionCall(anyEx, 1)
     // B()
     rec.onUserOperatorCall(B)
-    rec.onUserOperatorReturn(B, [], none())
+    rec.onUserOperatorReturn(B, [], left(emptyFrameError))
     // C()
     rec.onUserOperatorCall(C)
-    rec.onUserOperatorReturn(C, [], none())
+    rec.onUserOperatorReturn(C, [], left(emptyFrameError))
     rec.onAnyOptionReturn(anyEx, 1)
 
     rec.onAnyOptionCall(anyEx, 2)
     // C()
     rec.onUserOperatorCall(C)
-    rec.onUserOperatorReturn(C, [], none())
+    rec.onUserOperatorReturn(C, [], left(emptyFrameError))
     rec.onAnyOptionReturn(anyEx, 2)
 
     rec.onAnyReturn(3, 1)
     // } // any
     rec.onUserOperatorCall(A)
-    rec.onUserOperatorReturn(A, [], none())
+    rec.onUserOperatorReturn(A, [], left(emptyFrameError))
 
     const trace = rec.currentFrame
     assert(trace.subframes.length === 4)
