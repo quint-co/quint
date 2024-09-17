@@ -20,7 +20,7 @@ import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/q
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable, UnusedDefinitions } from '../names/base'
-import { resolveNames } from '../names/resolver'
+import { NameResolver, resolveNames } from '../names/resolver'
 import { QuintError } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
@@ -60,6 +60,7 @@ export interface ParserPhase2 extends ParserPhase1 {}
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
+  resolver: NameResolver
 }
 
 /**
