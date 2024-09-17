@@ -36,18 +36,6 @@ module base {
     { baseDenom: baseDenom, path: [] }
   }
 
-  // TODO(#879): Remove and import ../../spells/basicSpells
-  // The following is only here to work around a failing integration test on Windows.
-
-  /// Test whether a key is present in a map
-  ///
-  /// - @param __map a map to query
-  /// - @param __key the key to look for
-  /// - @returns true if and only __map has an entry associated with __key
-  pure def has(__map: a -> b, __key: a): bool = {
-    __map.keys().contains(__key)
-  }
-
   /// Test whether a set is non-empty
   ///
   /// - @param __set a map to query

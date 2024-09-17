@@ -14,6 +14,7 @@
  */
 
 module bank {
+  import basicSpells.* from "../../spells/basicSpells"
   import base.* from "./base"
 
   /* ***************************************************************************
@@ -48,7 +49,7 @@ module bank {
 
   // Get balances of all denominations in the given account `addr`.
   pure def getBalances(accounts: Accounts, addr: Address) : TokenBalances = {
-    if (accounts.keys().contains(addr)) {
+    if (accounts.has(addr)) {
       accounts.get(addr)
     } else {
       Map()
@@ -57,7 +58,7 @@ module bank {
 
   // Get the amount of tokens of denomination `denom` in `balances`.
   pure def getBalance(balances: TokenBalances, denom: Denomination): Amount = {
-    if (balances.keys().contains(denom)) balances.get(denom) else 0
+    if (balances.has(denom)) balances.get(denom) else 0
   }
 
   /* Return `accounts`, where `address` is updated to hold
