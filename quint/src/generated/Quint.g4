@@ -37,7 +37,7 @@ declaration : 'const' qualId ':' type                     # const
 operDef
     : qualifier normalCallName
         // Fully-annotated parameter list with at least one parameter
-        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*) ')'
+        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*)','')'
         // Mandatory annotation for return type
         ':' type
         // We support header declaration with no implementation for documentation genaration
