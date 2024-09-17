@@ -294,9 +294,7 @@ export class ToIrListener implements QuintListener {
     const name = ctx.qualId()!.text
     const id = this.getId(ctx)
 
-    if (name[0].match('[a-z]')) {
-      this.errors.push(lowercaseTypeError(id, name))
-    }
+    this.checkForUppercaseTypeName(id, name)
 
     const def: QuintTypeDef = {
       id,
@@ -319,9 +317,8 @@ export class ToIrListener implements QuintListener {
     const type = this.popType().unwrap(() =>
       fail('internal error: type alias declaration parsed with no right hand side')
     )
-    if (name[0].match('[a-z]')) {
-      this.errors.push(lowercaseTypeError(id, name))
-    }
+
+    this.checkForUppercaseTypeName(id, name)
 
     let defWithoutParams: QuintTypeDef = { id: id, kind: 'typedef', name, type }
     const def: QuintTypeDef =
@@ -1295,6 +1292,15 @@ export class ToIrListener implements QuintListener {
         },
         expr: body,
       }
+    }
+  }
+
+  private checkForUppercaseTypeName(id: bigint, qualifiedName: string) {
+    const parts = qualifiedName.split('::')
+    const unqualifiedName = parts.pop()!
+
+    if (unqualifiedName[0].match('[a-z]')) {
+      this.errors.push(lowercaseTypeError(id, unqualifiedName, parts))
     }
   }
 }

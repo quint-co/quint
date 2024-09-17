@@ -119,7 +119,7 @@ An example execution:
 <!-- !test in writes an ITF trace to file -->
 ```
 quint verify --out-itf violateOnFive.itf.json --invariant inv ./testFixture/apalache/violateOnFive.qnt
-jq '.[0]."#meta".format' violateOnFive.itf.json
+jq '."#meta".format' violateOnFive.itf.json
 rm ./violateOnFive.itf.json
 ```
 
