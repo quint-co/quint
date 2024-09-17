@@ -78,8 +78,13 @@ module basicSpells {
     assert(Set() == Set().setRemove(3)),
   }
 
-  pure def setAdd(__set: Set[a], __elem: a): Set[a] = {
-    __set.union(Set(__elem))
+  /// Adds an element to a set.
+  ///
+  /// - @param s a set to add an element to
+  /// - @param elem an element to add
+  /// - @returns a new set that contains all elements of set and elem
+  pure def setAdd(s: Set[a], elem: a): Set[a] = {
+    s.union(Set(elem))
   }
 
   run setAddTest = all{
