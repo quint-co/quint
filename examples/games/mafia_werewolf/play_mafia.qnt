@@ -24,18 +24,24 @@ module mafia {
         role: Role,
         status: LifeState,
         voted: bool  // Indicates whether the player has voted
-    }
+    }   var players_to_features: str -> PlayerFeatures
+    
     var players_to_features: str -> PlayerFeatures
     var votes_by_player: str -> int
     var game_phase: Phase
+
     type Status = Pending | Done(Role)
     var game_status: Status
+
     /// Check if all alive players have voted
     val all_voted = players_to_features.values().filter(p => p.status == Alive).forall(p => p.voted == true)
+
     /// Check if there are any Mafia players
     val has_alive_mafia = players_to_features.values().exists(p => p.role == Mafia and p.status == Alive)
+
     /// Check if there are any Citizen players
     val has_alive_citizen = players_to_features.values().exists(p => p.role == Citizen and p.status == Alive)
+
     /// Find players with the most votes if all players have voted
     val get_most_voted_players = {
         if (all_voted) {
@@ -46,35 +52,38 @@ module mafia {
             PLAYERS.filter(p => votes_by_player.get(p) == max_votes)
         } else Set()  // Return an empty set if not all players have votedx
     }
+
     pure def transformValues(m: a -> b, f: (b) => c): a -> c = {
         m.keys().mapBy(k => f(m.get(k)))
     }
+    
     /// Check if all Mafia players are dead
     pure def all_mafias_dead(players: str -> PlayerFeatures): bool = {
         players.values().forall(p => p.role == Mafia implies p.status == Dead)
     }
+
     /// Check if all Citizen players are dead
     pure def all_citizens_dead(players: str -> PlayerFeatures): bool = {
         players.values().forall(p => p.role == Citizen implies p.status == Dead)
     }
+
     /// Update the game status based on the current state
     pure def update_status(players: str -> PlayerFeatures): Status = {
         if (all_mafias_dead(players)) Done(Citizen)  // Citizens win if all Mafias are dead
         else if (all_citizens_dead(players)) Done(Mafia)  // Mafia wins if all Citizens are dead
         else Pending  // The game is still ongoing
     }
+
     /// Function to update player features after being killed
     def update_features_after_kill(victim: str): str -> PlayerFeatures = {
         players_to_features.setBy(victim, p => { ...p, status: Dead })
     }
+
     /// Function to update player features after hanging
     def update_features_after_hang(player_to_hang: str): str -> PlayerFeatures = {
-        players_to_features.setBy(player_to_hang, p => { ...p, status: Dead }).transformValues(
-            p => {
-                ...p,
-                voted: false
-            }
-        )
+        players_to_features
+          .setBy(player_to_hang, p => { ...p, status: Dead })
+          .transformValues(p => { ...p, voted: false })
     }
 
     action init = all {
@@ -186,5 +195,5 @@ module mafia {
 
 // Module to play the Mafia game with a specific set of players
 module play_mafia {
-    import mafia(PLAYERS = Set("mahtab", "gabriela","max","kobra","arman","fat")).*
+    import mafia(PLAYERS = Set("mahtab", "gabriela", "max").*
 }
