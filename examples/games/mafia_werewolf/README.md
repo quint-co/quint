@@ -4,8 +4,8 @@ This is an implementation of the Mafia party game, where players are secretly as
 
 # Objective
 
-- **Mafia:** Eliminates all Citizens.
-- **Citizen:** Identify and eliminate all Mafias.
+- **Mafia:** Eliminate all Citizens.
+- **Citizen:** Identify and eliminate all Mafia.
 
 # Components
 
@@ -14,7 +14,7 @@ This is an implementation of the Mafia party game, where players are secretly as
 -   **Role:** Each player is either a `Mafia` or a `Citizen`.
 -   **LifeState:** Represents whether a player is `Alive` or `Dead`.
 -   **Phase:** The game alternates between `Day` and `Night` phases.
--   **PlayerFeatures:** The structure that stores key data about a player, including their role, life status, and whether they have voted.
+-   **PlayerFeatures:** The structure stores key data about a player, including their role, life status, and whether they have voted.
 
 ## Variables:
 
@@ -36,14 +36,14 @@ This is an implementation of the Mafia party game, where players are secretly as
 
 ## Initial Setup:
 
-The game starts in the `Night` phase. Players are randpmpoly assigned as either `Mafia` or `Citizen`, and their status is set to `Alive`. Votes are also initialized to zero. 
+The game starts in the `Night` phase. Players are randomly assigned as either `Mafia` or `Citizen`, and their status is set to `Alive`. Votes are also initialized to zero. 
 Note: A game should consist of both `Mafia` and `Citizen` to be valid.
 
 
 ## Game Phases:
 
 1.  **Night Phase:** During this phase, a Mafia selects a Citizen to kill.
-2.  **Day Phase:** During this phase, all players(Citizens and Mafias) vote to hang one player based on suspicion. The player with maximum votes will be eliminated from the game. In case of a tie in votes for two or more players, nothing happens and the game moves on.
+2.  **Day Phase:** During this phase, all players(Citizens and Mafia) vote to hang one player based on suspicion. The player with maximum votes will be eliminated from the game. In case of a tie in votes for two or more players, nothing happens and the game moves on.
 
 ## Actions:
 
@@ -55,7 +55,7 @@ Note: A game should consist of both `Mafia` and `Citizen` to be valid.
 ## Winning Conditions:
 
 -   **Mafia Wins:** If all Citizens are dead.
--   **Citizen Wins:** If all Mafias are dead.
+-   **Citizen Wins:** If all Mafia are dead.
 
 ## Special Features:
 
@@ -64,7 +64,7 @@ Note: A game should consist of both `Mafia` and `Citizen` to be valid.
 
 ## Usage:
 
--   **Initializing the Game:** Import the `mafia` module and and specify the desired amount of players participating in the game. Roles will be randomly assigned.
+-   **Initializing the Game:** Import the `mafia` module and specify the desired amount of players participating in the game. Roles will be randomly assigned.
 
 -   **Running the Game:**
     - `quint run play_mafia.qnt`
