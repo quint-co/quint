@@ -52,6 +52,174 @@ defined and incompatible interfaces - which are the biggest problems in common
 specifications.
 </FAQBox>
 
+<FAQBox title="How does Quint compare to TLA+?">
+
+Quint is based on TLA+ and uses the same underlying logic (Temporal Logic of
+Actions), so it is very similar to TLA+ in terms of where it is useful. The main
+differences between Quint and TLA+ are:
+1. Quint has programming-style syntax, while TLA+ uses math/latex symbols.
+2. Quint has more static analysis, such as type checking and different modes
+   (`pure def`, `action`, etc), while TLA+ has no native support for types nor
+   explicit distinction between the modes (or levels, as they are called in
+   TLA+'s documentation).
+3. Quint tooling is more similar to what we have for programming languages:
+   near-instant feedback as you type the code, CLI-first executable, an easy way
+   to obtain one execution of your spec in the terminal, a REPL, located error
+   messages, etc. These are all not currently available in TLA+, or available
+   with significant constraints.
+4. Quint won't let you write many things that are allowed in TLA+. TLA+ has a
+   proof system (TLAPS), while Quint doesn't. Therefore, it is possible to write
+   more advanced formulas in TLA+ than in Quint, even ones that are not
+   supported by the existing model checkers, and then prove them using the proof
+   system. Quint restricts you to a fragment of TLA with the intention of
+   preventing unintentional usage of operators that lead to complicated
+   behaviors that are hard to debug and understand. Our understanding is that
+   anything outside of Quint's fragment is only written by people with a strong
+   mathematical mindset, and those people will probably appreciate TLA+'s
+   mathematical syntax much better.
+5. Quint has the concept of a `run` to define executions to be used as tests.
+   There is no corresponding feature in TLA+.
+6. TLA+ has model values and symmetry sets, which are not available in Quint at
+   this time.
+ 
+On a less concrete note, TLA+ supporters will often say that the mathematical
+syntax helps to put people in the correct mindset of formal specification,
+while Quint as a project hopes to teach people this mindset without a big syntax
+and tool disruption.
+</FAQBox>
+
+<FAQBox title="Is Quint the same thing as PlusCal?">
+No. Although both Quint and PlusCal have the goal of making TLA+ more
+approachable to engineers, the strategies are very different. PlusCal uses the
+same tooling and similar syntax to TLA+, but introduces imperative constructs
+(while TLA+ is fully declarative). Quint, on the other hand, introduces new
+tooling and syntax, but keeps the declarative aspect.
+
+It would be possible to add the imperative constructs from PlusCal to Quint. We
+currently don't have a lot of clarity on how useful that would be.
+
+We had experiences were the expressiveness constraints imposed by PlusCal were a
+problem for some of our systems, while Quint has always been enough.
+</FAQBox>
+
+
+<FAQBox title="How does Quint compare to Alloy?">
+
+Alloy is very focused on sets, and is good for specifying requirements and data
+structures, while Quint is natively time oriented, fitting really well with
+concurrent and distributed systems. As everything in Alloy is a set/relation, it
+requires a quite abstract and specific way of modeling. 
+
+While Alloy 6 added temporal operators to handle time, they were not there for a
+long while, requiring complex workarounds to handle passage of time, and
+therefore having the language be used mostly for other things.
+
+Alloy verification can be faster than Quint for specifications without time, as
+it can use SAT solving instead of SMT solving, and the tooling looks very
+different, with Alloy Analyzer being very visual.
+
+</FAQBox>
+
+<FAQBox title="How does Quint compare to Coq/Isabelle/Lean?">
+
+Coq, Isabelle and Lean are proof assistants. They will assist you to write a
+proof, but you still have to do most of the work. Quint uses model checking,
+where you only need to define the model and the properties, and the verification
+process is fully automated. Learning and mastering how to use a proof assistant
+is much harder (usually taking years) then learning and mastering Quint.
+
+Proof assistants require you to write deductive proofs, while model checkers (as
+in Quint), use an inductive approach, exploring all reachable states in a model.
+Proof assistants are mostly used for research, and model checking techniques are
+more present in the industry.
+
+Proving something using one of these tools provides a much stronger guarantee
+then verifying something with a model checker. Proofs derive directly from
+constructive mathematics, while model checkers are complex implementations on
+their own, which can have bugs of their own. However, it is not realistic to
+formalize and prove real systems and protocols, and proof assistants are used in
+much smaller scopes than what Quint is set up for.
+
+Another difference is that these tools are able to generate code from the
+formalization, meaning the code will be correct by construction. For example,
+you can generate Haskell code from Coq. This is very useful if you want to
+extract some sequential library, but code for distributed systems definitions
+might not be so applicable to real world usage.
+
+</FAQBox>
+
+<FAQBox title="How does Quint compare to Agda/Idris?"> 
+
+Agda and Idris are programming languages, while Quint is a specification
+language. Even so, Agda and Idris are formal methods tools, because you can
+write formal specification through dependent types, typing your program in a way
+that guarantees it has a certain behavior.
+
+They also work as proof systems (see "How does Quint compare to
+Coq/Isabelle/Lean?") and, similarly, they require a lot of expertise and
+time to prove things. Proving through dependent types shifts some of this burden
+to the type system, but still demand an advanced understanding. Model checking
+(as in Quint) will usually provide weaker guarantees in comparison, but the
+proofs are fully automated.
+
+Another difference is that programs in Agda and Idris need to be total - that
+is, they need to terminate, and the writer may need to convince the type system
+that in fact it does terminate every time.
+
+</FAQBox>
+
+<FAQBox title="How does Quint compare to Abstract State Machines?"> 
+
+Abstract State Machines (ASMs) are a precise way to write pseudocode to define
+the requirements of a system, and they are mostly used to reason about and
+analyze designs, while Quint is more focused on executing and verifying
+specifications.
+
+This [report](https://arxiv.org/abs/2301.10875) explores the differences and
+similarities between Quint, TLA+ and ASM in more detail. 
+
+</FAQBox>
+
+<FAQBox title="How does Quint compare to tools for specific programming languages?">
+
+There is a big advantage and a big disadvantage for using some
+formal verification tool designed for your programming language of choice instead of using Quint.
+- Advantage: you don't have to write a Quint specification, you can use your own code
+- Disadvantage: the verification capabilities will be extremely limited, because
+  reasoning about generic programming language constructs and concrete program
+  states is incredibly complex.
+
+More generally, the state space of programs are often really large and
+unfeasible for any tool to handle. The solution is to abstract things and work
+on a higher level. Doing so in the same programming language is possible, but
+can be tricky. Using a specific language to do so can help to keep a more
+abstract mindset.
+
+Anything you write in Quint is guaranteed to be compatible with the Temporal
+Logic of Actions (TLA - the logic, not TLA+ the language), and therefore
+verifiable with a model checker. If we were to try and translate arbitrary
+programs to TLA, this would only support a fragment of the language that obeys
+certain rules of the logic. This is also true for other verification techniques,
+and that's why formal verification of generic programs is so limited.
+
+</FAQBox>
+
+<FAQBox title="How does Quint compare to static analyzers?">
+
+Quint is used to reason about behaviors of programs and how things change over
+time. If you can use a static analyzer to search for a class of errors (i.e.
+null checks), you should definitely use that. Use Quint for what you cannot do
+with a static analyzer (which is a lot!).
+
+This is also one of the reasons why Quint has a type system. Although we could
+check typing using invariants, as people often do in TLA+, we can do it
+statically with a regular type checker - and that is much better.
+
+Static analyzers won't be able to tell you if your consensus algorithm does
+consensus as you expect, but Quint will.
+
+</FAQBox>
+
 <FAQBox title="What are spells?">
   Spells are simply Quint modules that contain often-used definitions. There is
   nothing special about these definitions. They are probably a bit more
@@ -79,7 +247,7 @@ Whenever we call `min(2, 3)`, we get `2` as a result, no matter what the values 
 Impure definitions have the following important property:
 **An impure definition may produce different results for the same parameter
 values**. An impure definition **may read** the values of state variables, which
-may effect in different results.
+may affect in different results.
 
 Consider the following definitions:
 
