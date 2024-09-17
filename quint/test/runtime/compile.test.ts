@@ -5,7 +5,7 @@ import { newTraceRecorder } from '../../src/runtime/trace'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { newRng } from '../../src/rng'
-import { stringSourceResolver } from '../../src/parsing/sourceResolver'
+import { fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { QuintEx, parseExpressionOrDeclaration, quintErrorToString, walkExpression } from '../../src'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { Evaluator } from '../../src/runtime/impl/evaluator'
@@ -29,7 +29,7 @@ function assertResultAsString(input: string, expected: string | undefined, evalC
 }
 
 function prepareEvaluator(input: string, evalContext: string): [Evaluator, QuintEx] {
-  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
+  const mockLookupPath = fileSourceResolver(new Map()).lookupPath('/', './mock')
   const { resolver, sourceMap } = parse(idGen, '<test>', mockLookupPath, `module contextM { ${evalContext} }`)
 
   const parseResult = parseExpressionOrDeclaration(input, '<input>', idGen, sourceMap)

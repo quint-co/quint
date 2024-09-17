@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped GRPC message sizes to 1G (#1480)
 - Fix format of ITF trace emitted by `verify` command (#1448)
 - Relax uppercase check for types qualified with a namespace (#1494)
+- Fixed file loading from imports on Windows (#1498)
 
 ### Security
 
