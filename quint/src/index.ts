@@ -21,7 +21,7 @@ export { findExpressionWithId, findTypeWithId, findDefinitionWithId } from './ir
 export * from './quintAnalyzer'
 export * from './quintError'
 export { newIdGenerator, IdGenerator } from './idGenerator'
-export { fileSourceResolver, stringSourceResolver } from './parsing/sourceResolver'
+export { fileSourceResolver } from './parsing/sourceResolver'
 export { format } from './prettierimp'
 export { prettyQuintEx, prettyTypeScheme, prettyQuintDeclaration } from './graphics'
 export { Loc } from './ErrorMessage'
