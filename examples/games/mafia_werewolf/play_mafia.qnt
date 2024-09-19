@@ -6,7 +6,7 @@
  * https://en.wikipedia.org/wiki/Mafia_(party_game)
  *
  * For more information on the implementation and details of the code check this:
- * [1]: https://github.com/informalsystems/quint/blob/main/examples/games/mafia_werewolf/README.md
+ * https://github.com/informalsystems/quint/blob/main/examples/games/mafia_werewolf/README.md
 
  * Mahtab Norouzi, Informal Systems, 2024
  */
@@ -24,7 +24,7 @@ module mafia {
         role: Role,
         status: LifeState,
         voted: bool  // Indicates whether the player has voted
-    }   var players_to_features: str -> PlayerFeatures
+    }
     
     var players_to_features: str -> PlayerFeatures
     var votes_by_player: str -> int
@@ -33,7 +33,7 @@ module mafia {
     type Status = Pending | Done(Role)
     var game_status: Status
 
-    /// Check if all alive players have voted
+    /// Check if all live players have voted
     val all_voted = players_to_features.values().filter(p => p.status == Alive).forall(p => p.voted == true)
 
     /// Check if there are any Mafia players
@@ -50,13 +50,9 @@ module mafia {
                 if (votes > acc) votes else acc
             })
             PLAYERS.filter(p => votes_by_player.get(p) == max_votes)
-        } else Set()  // Return an empty set if not all players have votedx
+        } else Set()  // Return an empty set if not all players have voted
     }
 
-    pure def transformValues(m: a -> b, f: (b) => c): a -> c = {
-        m.keys().mapBy(k => f(m.get(k)))
-    }
-    
     /// Check if all Mafia players are dead
     pure def all_mafias_dead(players: str -> PlayerFeatures): bool = {
         players.values().forall(p => p.role == Mafia implies p.status == Dead)
@@ -186,8 +182,8 @@ module mafia {
         game_status == Pending implies not((mafias_dead) or (citizens_dead))
     }
 
-    /// Invariant to check with a specific ration, mafias outnumber the citizens will always win the game.
-    // Here because there are three players, having two mafias guaranty they win.
+    /// Invariant to check with a specific ratio, mafias outnumber the citizens and will always win the game.
+    // Here because there are three players, having two mafias guarantee they win.
     val win_ratio = {
         (PLAYERS.filter(p => players_to_features.get(p).role == Mafia).size() >= 2) implies not (game_status == Done(Citizen))
     }
@@ -195,5 +191,5 @@ module mafia {
 
 // Module to play the Mafia game with a specific set of players
 module play_mafia {
-    import mafia(PLAYERS = Set("mahtab", "gabriela", "max").*
+    import mafia(PLAYERS = Set("mahtab", "gabriela", "max")).*
 }
