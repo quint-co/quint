@@ -135,14 +135,22 @@ more present in the industry. Some instances of proof assistants in the industry
 do exist, as some properties of [DemiBFT (formerly
 LibraBFT)](https://github.com/novifinancial/LibraChain/) and [ZK circuit
 verifiers](https://veridise.com/wp-content/uploads/2023/09/VAR-RLN.pdf) being
-proven with Coq.
+proven with Coq. However, it is a lot of work formalize and prove real systems
+and protocols, and proof assistants are used in much smaller scopes than what
+Quint is set up for.
 
 Proving something using one of these tools provides a much stronger guarantee
-than verifying something with a model checker. Proofs derive directly from
-constructive mathematics, while model checkers are complex implementations on
-their own, which can have bugs of their own. However, it is not realistic to
-formalize and prove real systems and protocols, and proof assistants are used in
-much smaller scopes than what Quint is set up for.
+than verifying something with a model checker. Proof assistants are software and
+thus can have bugs too, but they are generally more trustworthy than model
+checkers because they usually rely on a small kernel implementing the core
+logical rules. All proofs reduce to the rules in the kernel. The kernel is very
+small, probably a few hundred lines of code, so it's easier to check and trust
+that it faithfully implement the rules. Model checkers are much larger
+implementations and, therefore, more prone to bugs.
+
+While proof assistants enable very general proofs (such as `length(m) +
+length(n) = length(m + n)`), model checkers will always operate over some
+constraint state space (i.e. integers between 0 and 2^256).
 
 Another difference is that these tools are able to generate code from the
 formalization, meaning the code will be correct by construction. For example,
