@@ -1,20 +1,10 @@
+import { FAQBox } from '../../components/faq/FAQBox'
+
 # Frequently Asked Questions
 Here you can find answers to the questions that are often asked by people who
 would like to start with Quint.
 
 <br />
-export function FAQBox({ title, children }) {
-  return (
-    <details
-      className="last-of-type:mb-0 rounded-lg bg-neutral-50 dark:bg-neutral-800 p-2 mt-4"
-    >
-      <summary>
-        <strong className="text-lg">{title}</strong>
-      </summary>
-      <div className="nx-p-2">{children}</div>
-    </details>
-  )
-}
 
 <FAQBox title="How does Quint compare to fuzzing?">
 Main similarities:
@@ -81,7 +71,7 @@ differences between Quint and TLA+ are:
    There is no corresponding feature in TLA+.
 6. TLA+ has model values and symmetry sets, which are not available in Quint at
    this time.
- 
+
 On a less concrete note, TLA+ supporters will often say that the mathematical
 syntax helps to put people in the correct mindset of formal specification,
 while Quint as a project hopes to teach people this mindset without a big syntax
@@ -108,7 +98,7 @@ problem for some of our systems, while Quint has always been enough.
 Alloy is very focused on sets, and is good for specifying requirements and data
 structures, while Quint is natively time oriented, fitting really well with
 concurrent and distributed systems. As everything in Alloy is a set/relation, it
-requires a quite abstract and specific way of modeling. 
+requires a quite abstract and specific way of modeling.
 
 While Alloy 6 added temporal operators, for the longest time,
 handling the passage of time required complex workarounds, and
@@ -121,7 +111,6 @@ different, with Alloy Analyzer being very visual.
 </FAQBox>
 
 <FAQBox title="How does Quint compare to Coq/Isabelle/Lean?">
-
 Coq, Isabelle and Lean are proof assistants. They will assist you to write a
 proof, but you still have to do most of the work. Quint uses model checking,
 where you only need to define the model and the properties, and the verification
@@ -160,19 +149,19 @@ might not be so applicable to real world usage.
 
 </FAQBox>
 
-<FAQBox title="How does Quint compare to Agda/Idris?"> 
+<FAQBox title="How does Quint compare to Agda/Idris?">
 
 Agda and Idris are programming languages, while Quint is a specification
 language. Even so, Agda and Idris are formal methods tools, because you can
 write formal specification through dependent types, typing your program in a way
 that guarantees it has a certain behavior.
 
-They also work as proof systems (see "How does Quint compare to
-Coq/Isabelle/Lean?") and, similarly, they require a lot of expertise and
-time to prove things. Proving through dependent types shifts some of this burden
-to the type system, but still demand an advanced understanding. Model checking
-(as in Quint) will usually provide weaker guarantees in comparison, but the
-proofs are fully automated.
+They also work as proof systems (see ["How does Quint compare to
+Coq/Isabelle/Lean?"](#how-does-quint-compare-to-coqisabellelean)) and,
+similarly, they require a lot of expertise and time to prove things. Proving
+through dependent types shifts some of this burden to the type system, but still
+demand an advanced understanding. Model checking (as in Quint) will usually
+provide weaker guarantees in comparison, but the proofs are fully automated.
 
 Another difference is that programs in Agda and Idris need to be total - that
 is, they need to terminate, and the writer may need to convince the type system
@@ -180,7 +169,7 @@ that in fact it does terminate every time.
 
 </FAQBox>
 
-<FAQBox title="How does Quint compare to Abstract State Machines?"> 
+<FAQBox title="How does Quint compare to Abstract State Machines?">
 
 Abstract State Machines (ASMs) are a precise way to write pseudocode to define
 the requirements of a system, and they are mostly used to reason about and
@@ -188,7 +177,7 @@ analyze designs, while Quint is more focused on executing and verifying
 specifications.
 
 This [report](https://arxiv.org/abs/2301.10875) explores the differences and
-similarities between Quint, TLA+ and ASM in more detail. 
+similarities between Quint, TLA+ and ASM in more detail.
 
 </FAQBox>
 
@@ -306,7 +295,7 @@ changing with the values of `time` and `velocity`.
 A value that is defined via `pure val` is constant in the sense that it never
 changes in an execution. A `const` definition also declares a constant value.
 However, the value of `const` is not fixed at the time of specification writing,
-but it has to be fixed by instantiating the module.  
+but it has to be fixed by instantiating the module.
 
 Here is an example that illustrates the difference between `pure val` and `const`:
 
