@@ -95,7 +95,7 @@ instanceMod :   // creating an instance and importing all names introduced in th
                 'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' '.' '*'
                   ('from' fromSource)?
                 // creating an instance and importing all names with a prefix
-            |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' 'as' qualifiedName
+            |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' 'as' qualifiedName
                   ('from' fromSource)?
         ;
 
