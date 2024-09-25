@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { left, right } from '@sweet-monads/either'
 import { resolve } from 'path'
 
-import { fileSourceResolver, stringSourceResolver } from '../../src/parsing/sourceResolver'
+import { fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { readFileSync } from 'fs'
 import { lf } from 'eol'
 
@@ -17,14 +17,14 @@ function readQuint(name: string): string {
 }
 
 describe('resolve sources from files', () => {
-  it('parses empty module', () => {
+  it('resolves relative path on same dir', () => {
     const expected = readQuint('./_0001emptyModule')
     const r = fileSourceResolver()
     const result = r.load(r.lookupPath(basename, './_0001emptyModule.qnt'))
     assert.deepEqual(result, right(expected))
   })
 
-  it('parses via ..', () => {
+  it('resolves relative path on parent dir', () => {
     const expected = readQuint('./_0001emptyModule')
     const r = fileSourceResolver()
     const result = r.load(r.lookupPath(basename, '../testFixture/_0001emptyModule.qnt'))
@@ -34,61 +34,14 @@ describe('resolve sources from files', () => {
   it('errors on non-existant', () => {
     const r = fileSourceResolver()
     const result = r.load(r.lookupPath(basename, 'does-not-exist'))
-    assert.deepEqual(result, left(`ENOENT: no such file or directory, open '${basename}/does-not-exist'`))
+    const filenameInError = resolve(basename, 'does-not-exist')
+    assert.deepEqual(result, left(`ENOENT: no such file or directory, open '${filenameInError}'`))
   })
 
   it('stemname', () => {
     const r = fileSourceResolver()
     const result = r.stempath(r.lookupPath(`${basename}/testFixture`, './_0001emptyModule.qnt'))
-    assert.deepEqual(result, `${basename}/testFixture`)
-  })
-})
-
-// a static table that contains sources in strings
-const staticTable = new Map<string, string>([
-  ['/foo.qnt', 'module foo {}'],
-  ['/bar.qnt', 'module bar {}'],
-  ['/baz/baz.qnt', 'module baz {}'],
-])
-
-describe('resolve sources from strings', () => {
-  it('parses foo', () => {
-    const expected = staticTable.get('/foo.qnt')
-    const r = stringSourceResolver(staticTable)
-    const result = r.load(r.lookupPath('/', './foo.qnt'))
-    assert.deepEqual(result, right(expected))
-  })
-
-  it('parses bar via ..', () => {
-    const expected = staticTable.get('/bar.qnt')
-    const r = stringSourceResolver(staticTable)
-    const result = r.load(r.lookupPath('/', './baz/../bar.qnt'))
-    assert.deepEqual(result, right(expected))
-  })
-
-  it('parses baz via baz/baz.qnt', () => {
-    const expected = staticTable.get('/baz/baz.qnt')
-    const r = stringSourceResolver(staticTable)
-    const result = r.load(r.lookupPath('/', './baz/baz.qnt'))
-    assert.deepEqual(result, right(expected))
-  })
-
-  it('parses baz via baz.qnt', () => {
-    const expected = staticTable.get('/baz/baz.qnt')
-    const r = stringSourceResolver(staticTable)
-    const result = r.load(r.lookupPath('/baz', './baz.qnt'))
-    assert.deepEqual(result, right(expected))
-  })
-
-  it('errors on non-existant', () => {
-    const r = stringSourceResolver(staticTable)
-    const result = r.load(r.lookupPath('/', 'does-not-exist'))
-    assert.deepEqual(result, left(`Source not found: '/does-not-exist'`))
-  })
-
-  it('stemname', () => {
-    const r = stringSourceResolver(staticTable)
-    const result = r.stempath(r.lookupPath('/baz', './baz.qnt'))
-    assert.deepEqual(result, '/baz')
+    const expected = resolve(basename, 'testFixture')
+    assert.deepEqual(result, expected)
   })
 })

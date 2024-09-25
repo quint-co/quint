@@ -75,7 +75,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-const APALACHE_VERSION_TAG = '0.45.3'
+const APALACHE_VERSION_TAG = '0.46.1'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -357,7 +357,8 @@ function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
  *    - a `left<ApalacheError>` indicating an error.
  */
 async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<string>> {
-  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', 'apalache-mc')
+  const filename = process.platform === 'win32' ? 'apalache-mc.bat' : 'apalache-mc'
+  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', filename)
   if (fs.existsSync(apalacheBinary)) {
     // Use existing download
     debugLog(verbosityLevel, `Using existing Apalache distribution in ${apalacheBinary}`)

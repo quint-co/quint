@@ -266,7 +266,7 @@ const runCmd = {
       .option('invariant', {
         desc: 'invariant to check: a definition name or an expression',
         type: 'string',
-        default: ['true'],
+        default: 'true',
       })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',

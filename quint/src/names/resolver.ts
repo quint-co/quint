@@ -32,14 +32,19 @@ export function resolveNames(quintModules: QuintModule[]): NameResolutionResult 
   quintModules.forEach(module => {
     walkModule(visitor, module)
   })
-  return { table: visitor.table, unusedDefinitions: visitor.unusedDefinitions, errors: visitor.errors }
+  return {
+    table: visitor.table,
+    unusedDefinitions: visitor.unusedDefinitions,
+    errors: visitor.errors,
+    resolver: visitor,
+  }
 }
 
 /**
  * `NameResolver` uses `NameCollector` to collect top-level definitions. Scoped
  * definitions are collected inside of `NameResolver` as it navigates the IR.
  */
-class NameResolver implements IRVisitor {
+export class NameResolver implements IRVisitor {
   collector: NameCollector
   errors: QuintError[] = []
   table: LookupTable = new Map()
@@ -62,6 +67,10 @@ class NameResolver implements IRVisitor {
     const usedDefinitions = [...this.table.values()].flat()
 
     return new Set(difference(definitions, usedDefinitions))
+  }
+
+  switchToModule(moduleName: string): void {
+    this.collector.switchToModule(moduleName)
   }
 
   enterModule(module: QuintModule): void {

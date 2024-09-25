@@ -63,6 +63,11 @@ export class NameCollector implements IRVisitor {
 
   private currentModuleName: string = ''
 
+  switchToModule(moduleName: string): void {
+    this.currentModuleName = moduleName
+    this.definitionsByName = this.definitionsByModule.get(moduleName) ?? new Map()
+  }
+
   enterModule(module: QuintModule): void {
     this.currentModuleName = module.name
     this.definitionsByName = new Map()
@@ -129,7 +134,7 @@ export class NameCollector implements IRVisitor {
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
-    decl.overrides.forEach(([param, ex]) => {
+    decl.overrides.forEach(([param, _ex]) => {
       // Constants are always top-level
       const constDef = getTopLevelDef(instanceTable, param.name)
 
@@ -143,8 +148,6 @@ export class NameCollector implements IRVisitor {
         return
       }
 
-      // Update the definition to point to the expression being overriden
-      constDef.id = ex.id
       constDef.hidden = false
     })
 

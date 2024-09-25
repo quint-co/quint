@@ -1,27 +1,15 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Either, left, right } from '@sweet-monads/either'
 import { expressionToString } from '../../src/ir/IRprinting'
-import { Callable, Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
-import { noExecutionListener } from '../../src/runtime/trace'
-import {
-  CompilationContext,
-  CompilationState,
-  compile,
-  compileDecls,
-  compileExpr,
-  compileFromCode,
-  contextNameLookup,
-  inputDefName,
-} from '../../src/runtime/compile'
-import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
+import { newTraceRecorder } from '../../src/runtime/trace'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
-import { Rng, newRng } from '../../src/rng'
-import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
-import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
-import { flattenModules } from '../../src/flattening/fullFlattener'
-import { newEvaluationState } from '../../src/runtime/impl/base'
+import { newRng } from '../../src/rng'
+import { fileSourceResolver } from '../../src/parsing/sourceResolver'
+import { QuintEx, parseExpressionOrDeclaration, quintErrorToString, walkExpression } from '../../src'
+import { parse } from '../../src/parsing/quintParserFrontend'
+import { Evaluator } from '../../src/runtime/impl/evaluator'
+import { Either, left } from '@sweet-monads/either'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -33,136 +21,70 @@ const idGen = newIdGenerator()
 //        `input` depends on. This content will be wrapped in a module and imported unqualified
 //        before the input is evaluated. If not supplied, the context is empty.
 function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
-  const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
-  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(
-    idGen,
-    moduleText,
-    '__runtime',
-    mockLookupPath,
-    noExecutionListener,
-    newRng().next,
-    false
-  )
-
-  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
-  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
-
-  assertInputFromContext(context, expected)
+  const [evaluator, expr] = prepareEvaluator(input, evalContext)
+  const newEval = evaluator.evaluate(expr)
+  newEval
+    .map(val => assert.deepEqual(expressionToString(val), expected, `Input: ${input}`))
+    .mapLeft(err => assert(expected === undefined, `Expected ${expected}, found error ${quintErrorToString(err)}`))
 }
 
-function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
-  contextNameLookup(context.evaluationState.context, inputDefName, 'callable')
-    .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
-    .mapRight(value => assertComputableAsString(value, expected))
-}
+function prepareEvaluator(input: string, evalContext: string): [Evaluator, QuintEx] {
+  const mockLookupPath = fileSourceResolver(new Map()).lookupPath('/', './mock')
+  const { resolver, sourceMap } = parse(idGen, '<test>', mockLookupPath, `module contextM { ${evalContext} }`)
 
-function assertComputableAsString(computable: Computable, expected: string | undefined) {
-  const result = computable
-    .eval()
-    .map(r => r.toQuintEx(idGen))
-    .map(expressionToString)
-    .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
-  if (result.isLeft()) {
-    assert(expected === undefined, `Expected ${expected}, found undefined`)
+  const parseResult = parseExpressionOrDeclaration(input, '<input>', idGen, sourceMap)
+  if (parseResult.kind !== 'expr') {
+    assert.fail(`Expected an expression, found ${parseResult.kind}`)
   }
-}
 
-// Compile an input and evaluate a callback in the context
-function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
-  const moduleText = `module __runtime { ${input} }`
-  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
-  const context = compileFromCode(
-    idGen,
-    moduleText,
-    '__runtime',
-    mockLookupPath,
-    noExecutionListener,
-    newRng().next,
-    false
-  )
-  return callable(context)
+  walkExpression(resolver, parseResult.expr)
+  if (resolver.errors.length > 0) {
+    assert.fail(`Resolver errors: ${resolver.errors.map(quintErrorToString).join(', ')}`)
+  }
+  const rng = newRng()
+  const evaluator = new Evaluator(resolver.table, newTraceRecorder(0, rng), rng)
+  return [evaluator, parseResult.expr]
 }
 
 // Compile a variable definition and check that the compiled value is defined.
-function assertVarExists(kind: ComputableKind, name: string, input: string) {
-  const callback = (ctx: CompilationContext) => {
-    return contextNameLookup(ctx.evaluationState.context, `${name}`, kind)
-      .mapRight(_ => true)
-      .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
-  }
-  const res = evalInContext(input, callback)
-  res.mapLeft(m => assert.fail(m))
-}
+function assertVarExists(name: string, context: string, input: string) {
+  const [evaluator, expr] = prepareEvaluator(input, context)
+  // Eval the name so we lookup and evaluate the var definition
+  evaluator.evaluate(expr)
 
-// compile a computable for a run definition
-function callableFromContext(ctx: CompilationContext, callee: string): Either<string, Callable> {
-  let key = undefined
-  const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
-  const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
-  if (!def) {
-    return left(`${callee} definition not found`)
-  }
-  key = kindName('callable', def.id)
-  if (!key) {
-    return left(`${callee} not found`)
-  }
-  const run = ctx.evaluationState.context.get(key) as Callable
-  if (!run) {
-    return left(`${callee} not found via ${key}`)
-  }
-
-  return right(run)
+  assert.includeDeepMembers(
+    [...evaluator.ctx.varStorage.vars.values()].map(r => r.name),
+    [name],
+    `Input: ${input}`
+  )
 }
 
 // Scan the context for a callable. If found, evaluate it and return the value of the given var.
 // Assumes the input has a single definition whose name is stored in `callee`.
 function evalVarAfterRun(varName: string, callee: string, input: string): Either<string, string> {
-  // use a combination of Maybe and Either.
-  // Recall that left(...) is used for errors,
-  // whereas right(...) is used for non-errors in sweet monads.
-  const callback = (ctx: CompilationContext): Either<string, string> => {
-    return callableFromContext(ctx, callee).chain(run => {
-      return run
-        .eval()
-        .mapLeft(quintErrorToString)
-        .chain(res => {
-          if ((res as RuntimeValue).toBool() === true) {
-            // extract the value of the state variable
-            const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
-            if (nextVal.isLeft()) {
-              return left(`Value of the variable ${varName} is undefined`)
-            } else {
-              return right(expressionToString(nextVal.value.toQuintEx(idGen)))
-            }
-          } else {
-            const s = expressionToString(res.toQuintEx(idGen))
-            const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
-            return left<string, string>(m)
-          }
-        })
+  const [evaluator, runExpr] = prepareEvaluator(callee, input)
+  const newEval = evaluator.evaluate(runExpr)
+  return newEval
+    .mapLeft(quintErrorToString)
+    .chain(runResult => {
+      if (!(runResult.kind == 'bool' && runResult.value === true)) {
+        return left(`Callable ${callee} was expected to evaluate to true, found: ${expressionToString(runResult)}`)
+      }
+      const registerValue = [...evaluator.ctx.varStorage.nextVars.values()].find(r => r.name === varName)?.value
+      if (!registerValue) {
+        return left(`Value of the variable ${varName} is undefined`)
+      }
+      return registerValue.mapLeft(quintErrorToString)
     })
-  }
-
-  return evalInContext(input, callback)
+    .map(res => expressionToString(res.toQuintEx(idGen)))
 }
 
 // Evaluate a run and return the result.
 function evalRun(callee: string, input: string): Either<string, string> {
-  // Recall that left(...) is used for errors,
-  // whereas right(...) is used for non-errors in sweet monads.
-  const callback = (ctx: CompilationContext): Either<string, string> => {
-    return callableFromContext(ctx, callee).chain(run => {
-      return run
-        .eval()
-        .mapLeft(quintErrorToString)
-        .chain(res => {
-          return right<string, string>(expressionToString(res.toQuintEx(idGen)))
-        })
-    })
-  }
+  const [evaluator, runExpr] = prepareEvaluator(callee, input)
+  const newEval = evaluator.evaluate(runExpr)
 
-  return evalInContext(input, callback)
+  return newEval.mapLeft(quintErrorToString).map(res => expressionToString(res))
 }
 
 function assertVarAfterCall(varName: string, expected: string, callee: string, input: string) {
@@ -379,8 +301,9 @@ describe('compiling specs to runtime values', () => {
 
   describe('compile variables', () => {
     it('variable definitions', () => {
-      const input = 'var x: int'
-      assertVarExists('var', 'x', input)
+      const context = 'var x: int'
+      const input = "x' = 1"
+      assertVarExists('x', context, input)
     })
   })
 
@@ -1038,7 +961,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
+        .mapLeft(m => assert.equal(m, '[QNT513] Reps loop could not continue after iteration #6 evaluated to false'))
     })
 
     it('fail', () => {
@@ -1130,158 +1053,6 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('weakFair(true, [])', undefined)
 
       assertResultAsString('strongFair(true, [])', undefined)
-    })
-  })
-})
-
-describe('incremental compilation', () => {
-  const dummyRng: Rng = {
-    getState: () => 0n,
-    setState: (_: bigint) => {},
-    next: () => 0n,
-  }
-  /* Adds some quint code to the compilation and evaluation state */
-  function compileModules(text: string, mainName: string): CompilationContext {
-    const idGen = newIdGenerator()
-    const sourceCode: Map<string, string> = new Map()
-    const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_path', fake_path, text, sourceCode)
-    assert.isEmpty(errors)
-
-    const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
-    assert.isEmpty(analysisErrors)
-
-    const { flattenedModules, flattenedAnalysis, flattenedTable } = flattenModules(
-      modules,
-      table,
-      idGen,
-      sourceMap,
-      analysisOutput
-    )
-
-    const state: CompilationState = {
-      originalModules: modules,
-      idGen,
-      modules: flattenedModules,
-      mainName,
-      sourceMap,
-      analysisOutput: flattenedAnalysis,
-      sourceCode,
-    }
-
-    const moduleToCompile = flattenedModules[flattenedModules.length - 1]
-
-    return compile(
-      state,
-      newEvaluationState(noExecutionListener),
-      flattenedTable,
-      dummyRng.next,
-      false,
-      moduleToCompile.declarations
-    )
-  }
-
-  describe('compileExpr', () => {
-    it('should compile a Quint expression', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
-
-      const parsed = parseExpressionOrDeclaration(
-        'x + 2',
-        'test.qnt',
-        compilationState.idGen,
-        compilationState.sourceMap
-      )
-      const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-      const context = compileExpr(compilationState, evaluationState, dummyRng, false, expr!)
-
-      assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
-
-      assertInputFromContext(context, '3')
-    })
-  })
-
-  describe('compileDef', () => {
-    it('should compile a Quint definition', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
-
-      const parsed = parseExpressionOrDeclaration(
-        'val y = x + 2',
-        'test.qnt',
-        compilationState.idGen,
-        compilationState.sourceMap
-      )
-      const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
-      const context = compileDecls(compilationState, evaluationState, dummyRng, false, defs!)
-
-      assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
-
-      const computable = context.evaluationState?.context.get(kindName('callable', defs![0].id))!
-      assertComputableAsString(computable, '3')
-    })
-
-    it('non-exported imports are not visible in subsequent importing modules', () => {
-      const { compilationState, evaluationState } = compileModules(
-        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }', // m1 shouldn't be acessible inside m3
-        'm3'
-      )
-
-      const parsed = parseExpressionOrDeclaration(
-        'def x3 = x1',
-        'test.qnt',
-        compilationState.idGen,
-        compilationState.sourceMap
-      )
-      const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
-
-      assert.sameDeepMembers(context.syntaxErrors, [
-        {
-          code: 'QNT404',
-          message: "Name 'x1' not found",
-          reference: 10n,
-          data: {},
-        },
-      ])
-    })
-
-    it('can complile type alias declarations', () => {
-      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
-      const parsed = parseExpressionOrDeclaration(
-        'type T = int',
-        'test.qnt',
-        compilationState.idGen,
-        compilationState.sourceMap
-      )
-      const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
-
-      const typeDecl = decls[0]
-      assert(typeDecl.kind === 'typedef')
-      assert(typeDecl.name === 'T')
-      assert(typeDecl.type!.kind === 'int')
-
-      assert.sameDeepMembers(context.syntaxErrors, [])
-    })
-
-    it('can compile sum type declarations', () => {
-      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
-      const parsed = parseExpressionOrDeclaration(
-        'type T = A(int) | B(str) | C',
-        'test.qnt',
-        compilationState.idGen,
-        compilationState.sourceMap
-      )
-      const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecls(compilationState, evaluationState, dummyRng, false, decls)
-
-      assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
-      // Sum type declarations are expanded to add an
-      // operator declaration for each constructor:
-      assert(decls.find(t => t.kind === 'def' && t.name === 'A'))
-      assert(decls.find(t => t.kind === 'def' && t.name === 'B'))
-      assert(decls.find(t => t.kind === 'def' && t.name === 'C'))
-
-      assert.sameDeepMembers(context.syntaxErrors, [])
     })
   })
 })

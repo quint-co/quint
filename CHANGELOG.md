@@ -8,6 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Some error scenarios when importing files on Windows were fixed (#1498)
+- `quint verify` on Windows should now properly start an Apalache server on the
+  background (#1499)
+
+### Security
+
+## v0.22.0 -- 2024-09-09
+
+### Added
+
+- Calling `q::test`, `q::testOnce` and `q::lastTrace` on the REPL now works properly (#1495)
+
+### Changed
+
+- Performance of the REPL was drastically improved (#1495)
+- Error reporting was improved for many runtime errors (#1495)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Sending SIGINT (hitting Ctrl+C) to the run and test commands now actually stops the execution (#1495)
+
+### Security
+
+## v0.21.2 -- 2024-09-09
+
+### Added
 
 - Add the operator `generate` to mirror `Apalache!Gen` (see #1455).
 - In the `verify` command, add warning if `--out-itf` option contains `{test}` or `{seq}` as those have no effect since Apalache only produces a single trace (#1485)
@@ -33,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped GRPC message sizes to 1G (#1480)
 - Fix format of ITF trace emitted by `verify` command (#1448)
 - Relax uppercase check for types qualified with a namespace (#1494)
+- Fixed file loading from imports on Windows (#1498)
 
 ### Security
 
