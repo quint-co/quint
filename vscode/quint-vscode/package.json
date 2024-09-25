@@ -3,7 +3,7 @@
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
 	"icon": "./icons/logo.png",
-	"version": "0.14.5",
+	"version": "0.14.6",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.52.0"
