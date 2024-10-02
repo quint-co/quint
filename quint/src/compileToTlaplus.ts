@@ -20,6 +20,9 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  *
  * @param serverEndpoint
  *   a server endpoint
+ * 
+ * @param apalacheVersion
+ *  the version of Apalache to use if there is no active server connection
  *
  * @param parseDataJson the flattened, analyzed, parse data, in as a json string
  *
@@ -27,6 +30,7 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  */
 export async function compileToTlaplus(
   serverEndpoint: ServerEndpoint,
+  apalacheVersion: string,
   parseDataJson: string,
   verbosityLevel: number
 ): Promise<ApalacheResult<string>> {
@@ -39,6 +43,6 @@ export async function compileToTlaplus(
       },
     },
   }
-  const connectionResult = await connect(serverEndpoint, verbosityLevel)
+  const connectionResult = await connect(serverEndpoint, apalacheVersion, verbosityLevel)
   return connectionResult.asyncChain(conn => conn.tla(config))
 }
