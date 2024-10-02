@@ -454,7 +454,9 @@ export async function connect(
             verbosityLevel >= verbosity.defaultLevel
               ? ['ignore', process.stdout, process.stderr]
               : ['ignore', 'ignore', 'ignore']
-          const options = { shell: true, stdio: stdio }
+          // importantly, do not wrap the command in a shell,
+          // as this will prevent the child process from being properly terminated
+          const options = { shell: false, stdio: stdio }
           const args = ['server', `--port=${serverEndpoint.port}`]
           const apalache = child_process.spawn(exe, args, options)
 
@@ -462,7 +464,7 @@ export async function connect(
           function exitHandler() {
             debugLog(verbosityLevel, 'Shutting down Apalache server')
             try {
-              process.kill(apalache.pid!)
+              apalache.kill('SIGTERM')
             } catch (error: any) {
               // ESRCH is raised if no process with `pid` exists, i.e.,
               // if Apalache server exited on its own
@@ -476,6 +478,7 @@ export async function connect(
 
           if (apalache.pid) {
             // Apalache launched successfully
+            debugLog(verbosityLevel, `Started Apalache server on pid=${apalache.pid}`)
 
             // Install exit handler that kills Apalache if Quint exists
             process.on('exit', exitHandler.bind(null))
