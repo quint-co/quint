@@ -20,7 +20,7 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  *
  * @param serverEndpoint
  *   a server endpoint
- * 
+ *
  * @param apalacheVersion
  *  the version of Apalache to use if there is no active server connection
  *

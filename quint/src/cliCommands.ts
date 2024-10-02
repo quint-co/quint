@@ -710,8 +710,12 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
       process.stdout.write(parsedSpecJson)
       return right(compiled)
     case 'tlaplus': {
-      const toTlaResult =
-        await compileToTlaplus(args.serverEndpoint, args.apalacheVersion, parsedSpecJson, verbosityLevel)
+      const toTlaResult = await compileToTlaplus(
+        args.serverEndpoint,
+        args.apalacheVersion,
+        parsedSpecJson,
+        verbosityLevel
+      )
       return toTlaResult
         .mapRight(tla => {
           process.stdout.write(tla) // Write out, since all went right
