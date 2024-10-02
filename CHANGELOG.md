@@ -12,10 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.22.1 -- 2024-09-25
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Some error scenarios when importing files on Windows were fixed (#1498)
 - `quint verify` on Windows should now properly start an Apalache server on the
   background (#1499)
+- `quint verify` on Linux properly terminates the spawned instance (#1520)
 
 ### Security
 
