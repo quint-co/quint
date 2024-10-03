@@ -1,3 +1,5 @@
+#!/usr/bin/env -S quint typecheck
+
 module M1 {
   val foo = 4
 }

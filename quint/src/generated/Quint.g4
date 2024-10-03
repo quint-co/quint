@@ -16,8 +16,9 @@ grammar Quint;
 import { quintErrorToString } from '../quintError'
 
 }
+
 // entry point for the parser
-modules : module+ EOF;
+modules : HASHBANG_LINE? module+ EOF;
 
 module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* '}';
 documentedDeclaration : DOCCOMMENT* declaration;
@@ -312,7 +313,9 @@ LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 // An identifier starting with uppercase
 CAP_ID : ([A-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 
-DOCCOMMENT : '///' .*? '\n';
+// Unix script prefix, only valid as the first line of a file
+HASHBANG_LINE : '#!' .*? '\n';
+DOCCOMMENT    : '///' .*? '\n';
 
 // comments and whitespaces
 LINE_COMMENT    :   '//' .*? '\n'   -> skip ;

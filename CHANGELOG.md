@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
+- Grammar updated with support for an optional leading hashbang (`#!`) line (#1522)
+
 ### Changed
 
 - Updated grammar rule to allow an optional trailing comma in parameter lists (#1510):
