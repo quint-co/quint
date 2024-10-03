@@ -8,10 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
+
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.22.1 -- 2024-09-25
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Some error scenarios when importing files on Windows were fixed (#1498)
+- `quint verify` on Windows should now properly start an Apalache server on the
+  background (#1499)
+- `quint verify` on Linux properly terminates the spawned instance (#1520)
+
 ### Security
 
 ## v0.22.0 -- 2024-09-09
@@ -60,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped GRPC message sizes to 1G (#1480)
 - Fix format of ITF trace emitted by `verify` command (#1448)
 - Relax uppercase check for types qualified with a namespace (#1494)
+- Fixed file loading from imports on Windows (#1498)
 
 ### Security
 

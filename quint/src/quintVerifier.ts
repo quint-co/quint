@@ -30,9 +30,10 @@ import { ApalacheResult, ServerEndpoint, connect } from './apalache'
  */
 export async function verify(
   serverEndpoint: ServerEndpoint,
+  apalacheVersion: string,
   config: any,
   verbosityLevel: number
 ): Promise<ApalacheResult<void>> {
-  const connectionResult = await connect(serverEndpoint, verbosityLevel)
+  const connectionResult = await connect(serverEndpoint, apalacheVersion, verbosityLevel)
   return connectionResult.asyncChain(conn => conn.check(config))
 }

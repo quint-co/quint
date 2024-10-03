@@ -75,7 +75,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-const APALACHE_VERSION_TAG = '0.44.11'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.46.1'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -83,8 +83,8 @@ function quintConfigDir(): string {
   return path.join(os.homedir(), '.quint')
 }
 
-function apalacheDistDir(): string {
-  return path.join(quintConfigDir(), `apalache-dist-${APALACHE_VERSION_TAG}`)
+function apalacheDistDir(apalacheVersion: string): string {
+  return path.join(quintConfigDir(), `apalache-dist-${apalacheVersion}`)
 }
 
 // The structure used to report errors
@@ -335,12 +335,12 @@ async function tryConnect(serverEndpoint: ServerEndpoint, retry: boolean = false
     .map(apalache)
 }
 
-function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
-  const url = `https://github.com/apalache-mc/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
+function downloadAndUnpackApalache(apalacheVersion: string): Promise<ApalacheResult<null>> {
+  const url = `https://github.com/apalache-mc/apalache/releases/download/v${apalacheVersion}/apalache.tgz`
   return fetch(url)
     .then(
       // unpack response body
-      res => pipeline(res.body!, tar.extract({ cwd: apalacheDistDir(), strict: true })),
+      res => pipeline(res.body!, tar.extract({ cwd: apalacheDistDir(apalacheVersion), strict: true })),
       error => err(`Error fetching ${url}: ${error}`)
     )
     .then(
@@ -356,16 +356,17 @@ function downloadAndUnpackApalache(): Promise<ApalacheResult<null>> {
  *    - a `right<string>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<ApalacheError>` indicating an error.
  */
-async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<string>> {
-  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', 'apalache-mc')
+async function fetchApalache(apalacheVersion: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
+  const filename = process.platform === 'win32' ? 'apalache-mc.bat' : 'apalache-mc'
+  const apalacheBinary = path.join(apalacheDistDir(apalacheVersion), 'apalache', 'bin', filename)
   if (fs.existsSync(apalacheBinary)) {
     // Use existing download
     debugLog(verbosityLevel, `Using existing Apalache distribution in ${apalacheBinary}`)
     return right(apalacheBinary)
   } else {
-    fs.mkdirSync(apalacheDistDir(), { recursive: true })
-    process.stdout.write('Downloading Apalache distribution...')
-    const res = await downloadAndUnpackApalache()
+    fs.mkdirSync(apalacheDistDir(apalacheVersion), { recursive: true })
+    process.stdout.write(`Downloading Apalache distribution ${apalacheVersion}...`)
+    const res = await downloadAndUnpackApalache(apalacheVersion)
     process.stdout.write(' done.\n')
     return res.map(_ => apalacheBinary)
   }
@@ -429,6 +430,7 @@ async function fetchApalache(verbosityLevel: number): Promise<ApalacheResult<str
  */
 export async function connect(
   serverEndpoint: ServerEndpoint,
+  apalacheVersion: string,
   verbosityLevel: number
 ): Promise<ApalacheResult<Apalache>> {
   // Try to connect to Shai, and try to ping it
@@ -440,7 +442,7 @@ export async function connect(
 
   // Connection or pinging failed, download Apalache
   debugLog(verbosityLevel, 'No running Apalache server found, launching...')
-  const exeResult = await fetchApalache(verbosityLevel)
+  const exeResult = await fetchApalache(apalacheVersion, verbosityLevel)
   // Launch Apalache from download
   return exeResult
     .asyncChain(
@@ -453,7 +455,9 @@ export async function connect(
             verbosityLevel >= verbosity.defaultLevel
               ? ['ignore', process.stdout, process.stderr]
               : ['ignore', 'ignore', 'ignore']
-          const options = { shell: true, stdio: stdio }
+          // importantly, do not wrap the command in a shell,
+          // as this will prevent the child process from being properly terminated
+          const options = { shell: false, stdio: stdio }
           const args = ['server', `--port=${serverEndpoint.port}`]
           const apalache = child_process.spawn(exe, args, options)
 
@@ -461,7 +465,7 @@ export async function connect(
           function exitHandler() {
             debugLog(verbosityLevel, 'Shutting down Apalache server')
             try {
-              process.kill(apalache.pid!)
+              apalache.kill('SIGTERM')
             } catch (error: any) {
               // ESRCH is raised if no process with `pid` exists, i.e.,
               // if Apalache server exited on its own
@@ -475,6 +479,7 @@ export async function connect(
 
           if (apalache.pid) {
             // Apalache launched successfully
+            debugLog(verbosityLevel, `Started Apalache server on pid=${apalache.pid}`)
 
             // Install exit handler that kills Apalache if Quint exists
             process.on('exit', exitHandler.bind(null))
