@@ -710,7 +710,12 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
       process.stdout.write(parsedSpecJson)
       return right(compiled)
     case 'tlaplus': {
-      const toTlaResult = await compileToTlaplus(args.serverEndpoint, parsedSpecJson, verbosityLevel)
+      const toTlaResult = await compileToTlaplus(
+        args.serverEndpoint,
+        args.apalacheVersion,
+        parsedSpecJson,
+        verbosityLevel
+      )
       return toTlaResult
         .mapRight(tla => {
           process.stdout.write(tla) // Write out, since all went right
@@ -791,7 +796,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   const startMs = Date.now()
 
-  return verify(args.serverEndpoint, config, verbosityLevel).then(res => {
+  return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
     const elapsedMs = Date.now() - startMs
     return res
       .map(_ => {

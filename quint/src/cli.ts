@@ -31,7 +31,7 @@ import {
 import { verbosity } from './verbosity'
 
 import { version } from './version'
-import { parseServerEndpoint } from './apalache'
+import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -122,6 +122,11 @@ const compileCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('apalache-version', {
+        desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
+        type: 'string',
+        default: DEFAULT_APALACHE_VERSION_TAG,
       })
       .option('server-endpoint', {
         desc: 'Apalache server endpoint hostname:port',
@@ -321,6 +326,11 @@ const verifyCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('apalache-version', {
+        desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
+        type: 'string',
+        default: DEFAULT_APALACHE_VERSION_TAG,
       })
       .option('server-endpoint', {
         desc: 'Apalache server endpoint hostname:port',
