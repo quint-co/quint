@@ -328,7 +328,7 @@ const verifyCmd = {
         default: verbosity.defaultLevel,
       })
       .option('apalache-version', {
-        desc: 'The version of Apalache to use, if it has to be downloaded',
+        desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
         type: 'string',
         default: DEFAULT_APALACHE_VERSION_TAG,
       })
