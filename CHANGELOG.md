@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated grammar rule to allow an optional trailing comma in parameter lists:
+- Updated grammar rule to allow an optional trailing comma in parameter lists (#1510):
   
   - Operator calls
   - Constant initialization
