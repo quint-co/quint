@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
+
 ### Changed
 
 - Updated grammar rule to allow an optional trailing comma in parameter lists:
