@@ -9,30 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
-### Deprecated
-### Removed
-### Fixed
-### Security
-
-
-## v0.22.1 -- 2024-10-02
-
-### Added
-
-- Trailing commas are now allowed in operator definitions and constant initialization (#1510)
-
-### Changed
 
 - Updated grammar rule to allow an optional trailing comma in parameter lists:
   
-  - Function calls
+  - Operator calls
   - Constant initialization
   - Operator definitions
 
 ### Deprecated
 ### Removed
 ### Fixed
-=======
+### Security
+
+
 ## v0.22.1 -- 2024-09-25
 
 ### Added
