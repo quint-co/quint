@@ -81,6 +81,7 @@ interface OutputStage {
   // Possible results from 'run'
   status?: 'ok' | 'violation' | 'failure' | 'error'
   trace?: QuintEx[]
+  seed?: bigint
   /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
@@ -104,6 +105,7 @@ const pickOutputStage = ({
   ignored,
   status,
   trace,
+  seed,
 }: ProcedureStage) => {
   return {
     stage,
@@ -119,6 +121,7 @@ const pickOutputStage = ({
     ignored,
     status,
     trace,
+    seed,
   }
 }
 
@@ -567,6 +570,10 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
 
+  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
+  const frames = recorder.bestTraces[0]?.frame?.subframes
+  simulator.seed = recorder.bestTraces[0]?.seed
+
   recorder.bestTraces.forEach((trace, index) => {
     const maybeEvalResult = trace.frame.result
     if (maybeEvalResult.isLeft()) {
@@ -584,9 +591,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     options.onTrace(index, status, evaluator.varNames(), states)
   })
 
-  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
-  const frames = recorder.bestTraces[0]?.frame?.subframes
-  const seed = recorder.bestTraces[0]?.seed
   switch (outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
@@ -600,7 +604,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
@@ -617,7 +620,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
 
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
@@ -866,21 +868,29 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
 export function outputResult(result: CLIProcedure<ProcedureStage>) {
   result
     .map(stage => {
+      const verbosityLevel = deriveVerbosity(stage.args)
       const outputData = pickOutputStage(stage)
       if (stage.args.out) {
         writeToJson(stage.args.out, outputData)
+      }
+      if (outputData.seed && verbosity.hasResults(verbosityLevel)) {
+        console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
       }
 
       process.exit(0)
     })
     .mapLeft(({ msg, stage }) => {
       const { args, errors, sourceCode } = stage
+      const verbosityLevel = deriveVerbosity(args)
       const outputData = pickOutputStage(stage)
       if (args.out) {
         writeToJson(args.out, outputData)
       } else {
         const finders = createFinders(sourceCode!)
         uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
+        if (outputData.seed && verbosity.hasResults(verbosityLevel)) {
+          console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
+        }
         console.error(`error: ${msg}`)
       }
       process.exit(1)

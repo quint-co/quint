@@ -443,8 +443,8 @@ An example execution:
 [State 4] { n: 12 }
 
 [violation] Found an issue (duration).
-Use --seed=0x308623f2a48e7 to reproduce.
 Use --verbosity=3 to show executions.
+Use --seed=0x308623f2a48e7 to reproduce.
 error: Invariant violated
 ```
 
@@ -477,8 +477,8 @@ An example execution:
 [State 4] { action_taken: "OnDivByThree", n: 12, nondet_picks: {  } }
 
 [violation] Found an issue (duration).
-Use --seed=0x308623f2a48e7 to reproduce.
 Use --verbosity=3 to show executions.
+Use --seed=0x308623f2a48e7 to reproduce.
 error: Invariant violated
 ```
 
@@ -508,9 +508,9 @@ An example execution:
 [State 4] { n: 12 }
 
 [ok] No violation found (duration).
-Use --seed=0x11 to reproduce.
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
+Use --seed=0x11 to reproduce.
 ```
 
 ### Repl evaluates coin
@@ -589,8 +589,8 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1e352e160ffbb3 to reproduce.
 Use --verbosity=3 to show executions.
+Use --seed=0x1e352e160ffbb3 to reproduce.
 error: Invariant violated
 ```
 
@@ -721,8 +721,8 @@ q::stepAndInvariant => false
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1786e678d460fe to reproduce.
 Use --verbosity=3 to show executions.
+Use --seed=0x1786e678d460fe to reproduce.
 error: Invariant violated
 ```
 
@@ -823,7 +823,7 @@ rm out-itf-mbt-example.itf.json
 
 <!-- !test in successful run itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt >/dev/null
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -842,7 +842,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt >/dev/null
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 rm out-itf-example*.itf.json
 ```
@@ -1164,9 +1164,11 @@ error: Tests failed
 
 ### Fail on run with uninitialized constants
 
+FIXME: this should not be a runtime error
+
 <!-- !test in run uninitialized -->
 ```
-output=$(quint run testFixture/_1041compileConst.qnt 2>&1)
+output=$(quint run testFixture/_1041compileConst.qnt --seed=1 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
   -e 's#^.*_1041compileConst.qnt#HOME/_1041compileConst.qnt#g'
@@ -1180,6 +1182,7 @@ HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: im
 5:   action init = { x' = N }
                           ^
 
+Use --seed=0x1 to reproduce.
 error: Runtime error
 ```
 
