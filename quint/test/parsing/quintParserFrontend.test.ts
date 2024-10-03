@@ -170,11 +170,38 @@ describe('syntax errors', () => {
   })
 
   it('error on unexpected token', () => {
+    // ~ is an unexpected token
+    const code = 'module unexpectedToken { def access(p) = { p ~ name } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '~'`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on unexpected hash', () => {
     // # is an unexpected token
     const code = 'module unexpectedToken { def access(p) = { p # name } }'
     const errors = parseErrorsFrom(defaultSourceName, code)
     assert.isAtLeast(errors.length, 1)
-    assert.equal(errors[0].message, `token recognition error at: '#'`)
+    assert.equal(errors[0].message, `token recognition error at: '# '`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on unexpected hashbang', () => {
+    // hashbang '#!' is only valid at the beginning of a file
+    const code = 'module unexpectedToken { def access(p) = { p #! name } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '#! name } }'`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on multiple hashbangs', () => {
+    // only a single hashbang '#!' is valid at the beginning of a file
+    const code = '#!foo\n#!bar\nmodule unexpectedToken { def access = { true } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `extraneous input '#!bar\\n' expecting {'module', DOCCOMMENT}`)
     assert.equal(errors[0].code, 'QNT000')
   })
 
