@@ -208,7 +208,14 @@ and that's why formal verification of generic programs is so limited.
 <FAQBox title="How does Quint compare to static analyzers?">
 
 Quint is used to reason about behaviors of programs and how things change over
-time. If you can use a static analyzer to search for a class of errors (i.e.
+time, and it does so by simulating or model checking executions. Static
+analyzers, on the other hand, find problems *without* any execution of the
+analyzed code, and only by looking at the code itself. A type checker is a
+static analyzer. You can also have a static analyzer that flags every time
+you write a division without checking that the divisor is not zero before -
+which doesn't necessarily mean that a division by zero will happen in runtime.
+
+If you can use a static analyzer to search for a class of errors (i.e.
 null checks), you should definitely use that. Use Quint for what you cannot do
 with a static analyzer (which is a lot!).
 
@@ -217,7 +224,10 @@ check typing using invariants, as people often do in TLA+, we can do it
 statically with a regular type checker - and that is much better.
 
 Static analyzers won't be able to tell you if your consensus algorithm does
-consensus as you expect, but Quint will.
+consensus as you expect, but Quint will. Also, trying to use static analyzers to
+find complex problems usually results in many false positives, while model
+checking doesn't have that problem - if it finds an issue, you'll get a
+counterexample with a precise way of reproducing the problem.
 
 </FAQBox>
 
