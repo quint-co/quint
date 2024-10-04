@@ -101,7 +101,7 @@ in the lookup table for the expression with ID 7:
 
 <!-- !test in type and effect maps are output -->
 ```
-quint typecheck --out typecheck-out-example.json ../examples/language-features/tuples.qnt > /dev/null
+quint typecheck --out typecheck-out-example.json ../examples/language-features/tuples.qnt
 printf "first type: " && cat typecheck-out-example.json | jq '.types."7".type.kind'
 printf "first effect: " && cat typecheck-out-example.json | jq '.effects."8".effect.kind'
 rm typecheck-out-example.json
@@ -823,7 +823,7 @@ rm out-itf-mbt-example.itf.json
 
 <!-- !test in successful run itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt >/dev/null
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -842,7 +842,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt >/dev/null
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 rm out-itf-example*.itf.json
 ```

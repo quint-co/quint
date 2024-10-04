@@ -872,8 +872,7 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       const outputData = pickOutputStage(stage)
       if (stage.args.out) {
         writeToJson(stage.args.out, outputData)
-      }
-      if (outputData.seed && verbosity.hasResults(verbosityLevel)) {
+      } else if (!stage.args.outItf && outputData.seed && verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
       }
 
@@ -888,7 +887,7 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       } else {
         const finders = createFinders(sourceCode!)
         uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
-        if (outputData.seed && verbosity.hasResults(verbosityLevel)) {
+        if (!stage.args.outItf && outputData.seed && verbosity.hasResults(verbosityLevel)) {
           console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
         }
         console.error(`error: ${msg}`)
