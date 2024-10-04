@@ -96,8 +96,7 @@ module withConsts {
   action asgn = k' = 3
 
   // C-like definition signatures
-  // Updated to allow optional trailing commas in parameter lists.
-  pure def min(x: int, y: int,): int = {
+  pure def min(x: int, y: int): int = {
     if (x < y)
     x
     else y
@@ -228,8 +227,7 @@ module withConsts {
   // import Proto(N = N, x = x) as Inst1
 
   // variables are not supported yet, define only constants for now:
-  // Importing Proto with optional trailing comma for flexibility.
-  import Proto(N = N,) as Inst1
+  import Proto(N = N) as Inst1
 
   // create an instance of Proto by using '*'
   // import Proto(*) as Inst2

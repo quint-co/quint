@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated grammar rule to allow an optional trailing comma in parameter lists (#1510):
-  
+
   - Operator calls
   - Constant initialization
   - Operator definitions
@@ -24,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 ### Security
-
 
 ## v0.22.1 -- 2024-09-25
 

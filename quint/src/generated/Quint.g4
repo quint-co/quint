@@ -38,7 +38,7 @@ declaration : 'const' qualId ':' type                     # const
 operDef
     : qualifier normalCallName
         // Fully-annotated parameter list with at least one parameter
-        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*)','?')'
+        '(' (annotOperParam+=annotatedParameter (',' annotOperParam+=annotatedParameter)*)','? ')'
         // Mandatory annotation for return type
         ':' type
         // We support header declaration with no implementation for documentation genaration
@@ -48,7 +48,7 @@ operDef
         # annotatedOperDef
     | qualifier normalCallName // TODO: Remove as per https://github.com/informalsystems/quint/issues/923
         // Unannotated parameter list
-        ('(' (operParam+=parameter (',' operParam+=parameter)*','?)? ')')?
+        ('(' (operParam+=parameter (',' operParam+=parameter)*','? )? ')')?
         // Optional type annotation using the deprecated format
         (':' annotatedRetType=type)?
         // We support header declaration with no implementation for documentation genaration
@@ -93,7 +93,6 @@ exportMod : 'export' name '.' identOrStar
 // an instance may have a special parameter '*',
 // which means that the missing parameters are identity, e.g., x = x, y = y
 instanceMod :   // creating an instance and importing all names introduced in the instance
-                // import Proto(N = 10, M = 20, ) .*;
                 'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' '.' '*'
                   ('from' fromSource)?
                 // creating an instance and importing all names with a prefix
@@ -206,7 +205,6 @@ declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 // 4. ((x, y, z)) => e          (syntax sugar: arity 1, unboxed into a 3-field tuple)
 lambda          : lambdaUnsugared
                 | lambdaTupleSugar ;
-
 lambdaUnsugared : parameter '=>' expr
                 | '(' parameter (',' parameter)* ')' '=>' expr
                 ;
