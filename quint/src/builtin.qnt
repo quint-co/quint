@@ -237,7 +237,7 @@ module builtin {
   pure def allListsUpTo(s: Set[a], max_length: int): Set[List[a]]
 
   /// `s.getOnlyElement()` is, deterministically, the only element of `s`.
-  /// If the size of `s` is not 1, it results in a error.
+  /// If the size of `s` is not 1, this operator has undefined behavior.
   ///
   /// ### Examples
   ///

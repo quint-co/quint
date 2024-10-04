@@ -311,7 +311,7 @@ assert(Set(1).allListsUpTo(2) == Set([], [1], [1, 1]))
 Signature: `pure def getOnlyElement: (Set[a]) => a`
 
 `s.getOnlyElement()` is, deterministically, the only element of `s`.
-If the size of `s` is not 1, it results in a error.
+If the size of `s` is not 1, this operator has undefined behavior.
 
 ### Examples
 
