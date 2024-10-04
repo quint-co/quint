@@ -16,7 +16,6 @@ grammar Quint;
 import { quintErrorToString } from '../quintError'
 
 }
-
 // entry point for the parser
 modules : HASHBANG_LINE? module+ EOF;
 
@@ -144,7 +143,7 @@ expr:           // apply a built-in operator via the dot notation
         |       lambda                                              # lambdaCons
                 // Call a user-defined operator or a built-in operator.
                 // The operator has at least one argument (otherwise, it's a 'val').
-        |       normalCallName '(' argList? ','? ')'                # operApp
+        |       normalCallName '(' argList? ','? ')'                     # operApp
                 // list access via index
         |       expr '[' expr ']'                                   # listApp
                 // power over integers
