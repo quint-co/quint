@@ -306,6 +306,19 @@ assert(Set(1, 2).allListsUpTo(1) == Set([], [1], [2]))
 assert(Set(1).allListsUpTo(2) == Set([], [1], [1, 1]))
 ```
 
+## getOnlyElement
+
+Signature: `pure def getOnlyElement: (Set[a]) => a`
+
+`s.getOnlyElement()` is, deterministically, the only element of `s`.
+If the size of `s` is not 1, it results in a error.
+
+### Examples
+
+```quint
+assert(Set(5).getOnlyElement() == 5)
+```
+
 ## chooseSome
 
 Signature: `pure def chooseSome: (Set[a]) => a`
