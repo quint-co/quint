@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- The seed was not being properly printed when the simulator found some runtime errors (#1524).
+
 ### Security
 
 ## v0.22.1 -- 2024-09-25
