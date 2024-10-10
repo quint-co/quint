@@ -40,3 +40,47 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  deno-compile:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          [
+            { target: "x86_64-unknown-linux-gnu", suffix: "-linux-amd64" },
+            { target: "aarch64-apple-darwin", suffix: "-darwin-arm64" },
+            { target: "x86_64-pc-windows-msvc", suffix: "-pc-amd64.exe" },
+          ]
+    defaults:
+      run:
+        working-directory: ./quint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Compile with Deno
+        run: |
+          deno compile \
+            --target ${{ matrix.config.target }} \
+            --output quint-${{ matrix.config.suffix }} \
+            --allow-all \
+            "npm:@informalsystems/quint@${{ github.ref_name }}"
+
+      - name: Generate SHA256 Hash
+        run: |
+          sha256sum quint-${{ matrix.config.suffix }} > quint-${{ matrix.config.suffix }}.sha256
+
+      - name: Upload Assets to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            "quint-${{ matrix.config.suffix }}" \
+            "quint-${{ matrix.config.suffix }}.sha256" \
+            --repo "${{ github.repository }}" \
+            --clobber
