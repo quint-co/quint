@@ -35,6 +35,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body_path: ${{ github.workspace }}/release-notes.txt
+          # if this is changed, `gh release upload` argument needs to be updated.
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +44,7 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  deno-compile:
+  compile:
     needs: release
     runs-on: ubuntu-latest
     strategy:
