@@ -67,7 +67,8 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Compile with Deno
+      # Deno can't compile local npm projects. Use the npm release from last step.
+      - name: Compile with Deno from NPM Release
         run: |
           deno compile \
             --target ${{ matrix.config.target }} \
