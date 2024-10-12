@@ -70,11 +70,12 @@ jobs:
       # Deno can't compile local npm projects. Use the npm release from last step.
       - name: Compile with Deno from NPM Release
         run: |
+          VERSION="$(echo ${{ github.ref_name }} | sed 's/^v//')"
           deno compile \
             --allow-all \
             --target "${{ matrix.config.target }}" \
             --output "quint-${{ matrix.config.suffix }}" \
-            "npm:@informalsystems/quint@${{ github.ref_name }}"
+            "npm:@informalsystems/quint@${VERSION}"
 
       - name: Generate SHA256 Hash
         run: |
