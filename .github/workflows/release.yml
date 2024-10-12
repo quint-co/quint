@@ -41,7 +41,7 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  compile:
+  binaries:
     needs: release
     runs-on: ubuntu-latest
     strategy:
@@ -74,11 +74,15 @@ jobs:
             --output "quint-${{ matrix.config.suffix }}" \
             "npm:@informalsystems/quint@${VERSION}"
 
-      - name: Generate SHA256 Hash
+      - name: Test binary
+        run: |
+          ./quint-${{ matrix.config.suffix }} --version
+
+      - name: Generate SHA256 hash
         run: |
           sha256sum "quint-${{ matrix.config.suffix }}" > "quint-${{ matrix.config.suffix }}.sha256"
 
-      - name: Upload Assets to Release
+      - name: Upload assets to Release
         env:
           # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
