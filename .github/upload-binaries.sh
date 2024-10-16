@@ -4,6 +4,9 @@ set -euo pipefail
 
 usage() {
   echo "Usage: $0 [--publish] <repository> <version>"
+  echo "Examples:"
+  echo "  $0 informalsystems/quint v0.22.2"
+  echo "  $0 --publish informalsystems/quint v0.22.2"
   exit 1
 }
 
