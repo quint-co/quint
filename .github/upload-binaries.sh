@@ -41,7 +41,11 @@ VERSION="${VERSION#v}"
 RELEASE_TAG="v$VERSION"
 
 if [ "${GH_TOKEN:-}" = "" ]; then
-  GH_TOKEN=$(gh auth token)
+  GH_TOKEN=$(gh auth token 2>/dev/null || true)
+  if [ "$GH_TOKEN" = "" ]; then
+    echo "GitHub authentication token not found. Run 'gh auth login' to authenticate."
+    exit 1
+  fi
 fi
 
 TARGETS=(
