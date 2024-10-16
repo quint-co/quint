@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [--final] <repository> <version>"
+  echo "Usage: $0 [--publish] <repository> <version>"
   exit 1
 }
 
@@ -13,7 +13,7 @@ VERSION=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --final)
+    --publish)
       DRY_RUN=false
       shift
       ;;
