@@ -60,6 +60,6 @@ jobs:
 
       - name: Upload assets
         run: |
-          ./workflows/upload-binaries.sh ${{ github.repository }} ${{ github.ref_name }} --final
+          ./.github/upload-binaries.sh ${{ github.repository }} ${{ github.ref_name }} --final
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
