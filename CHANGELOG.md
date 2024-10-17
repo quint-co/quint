@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where using `--mbt` resulted in missing data on `nondet_picks`
+  due to internal caching (#1531)
+
 ### Security
 
 ## v0.22.2 -- 2024-10-08
