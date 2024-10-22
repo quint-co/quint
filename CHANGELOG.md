@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Hashbang lines are now properly highlighted as comments in vscode and in highlight.js.
+
+### Security
+
+## v0.22.2 -- 2024-10-08
+
+### Added
 
 - `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
 - Grammar updated with support for an optional leading hashbang (`#!`) line (#1522)

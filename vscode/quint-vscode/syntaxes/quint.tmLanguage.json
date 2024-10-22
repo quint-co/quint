@@ -3,6 +3,9 @@
 	"name": "Quint",
 	"patterns": [
 		{
+			"include": "#hashbangLine"
+		},
+		{
 			"include": "#lineComments"
 		},
 		{
@@ -89,6 +92,14 @@
 				{
 					"name": "constant.language.quint",
 					"match": "(false|true|Bool|Int|Nat)"
+				}
+			]
+		},
+		"hashbangLine": {
+			"patterns": [
+				{
+					"name": "comment.line.hashbang.quint",
+					"match": "^#!.*$"
 				}
 			]
 		},
