@@ -16,6 +16,7 @@ grammar Quint;
 import { quintErrorToString } from '../quintError'
 
 }
+
 // entry point for the parser
 modules : HASHBANG_LINE? module+ EOF;
 

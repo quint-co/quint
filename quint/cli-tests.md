@@ -383,7 +383,9 @@ Regression test for [#1108](https://github.com/informalsystems/quint/issues/1108
     quint parse testFixture/_1052one.qnt
 
 ### OK on typecheck SuperSpec via Unix hashbang
+
 See [#1500](https://github.com/informalsystems/quint/issues/1500).
+
 <!-- !test exit 0 -->
 <!-- !test check typecheck SuperSpec via Unix hashbang -->
 ```

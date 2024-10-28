@@ -177,6 +177,7 @@ describe('syntax errors', () => {
     assert.equal(errors[0].message, `token recognition error at: '~'`)
     assert.equal(errors[0].code, 'QNT000')
   })
+
   it('error on unexpected hash', () => {
     // # is an unexpected token
     const code = 'module unexpectedToken { def access(p) = { p # name } }'
@@ -185,6 +186,7 @@ describe('syntax errors', () => {
     assert.equal(errors[0].message, `token recognition error at: '# '`)
     assert.equal(errors[0].code, 'QNT000')
   })
+
   it('error on unexpected hashbang', () => {
     // hashbang '#!' is only valid at the beginning of a file
     const code = 'module unexpectedToken { def access(p) = { p #! name } }'
@@ -193,6 +195,7 @@ describe('syntax errors', () => {
     assert.equal(errors[0].message, `token recognition error at: '#! name } }'`)
     assert.equal(errors[0].code, 'QNT000')
   })
+
   it('error on multiple hashbangs', () => {
     // only a single hashbang '#!' is valid at the beginning of a file
     const code = '#!foo\n#!bar\nmodule unexpectedToken { def access = { true } }'
