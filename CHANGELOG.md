@@ -27,7 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Grammar updated with support for an optional leading hashbang (`#!`) line (#1522)
 - Added a new operator called `getOnlyElement()` to extract elements out of singleton sets (#1525)
 
+
 ### Changed
+
+- Updated grammar rule to allow an optional trailing comma in parameter lists (#1510):
+
+  - Operator calls
+  - Constant initialization
+  - Operator definitions
+  
 ### Deprecated
 ### Removed
 ### Fixed
