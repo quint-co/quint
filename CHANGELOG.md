@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a problem where using `--mbt` resulted in missing data on `nondet_picks`
   due to internal caching (#1531)
+- Hashbang lines are now properly highlighted as comments in vscode and in highlight.js.
 
 ### Security
 
@@ -24,11 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
 - Grammar updated with support for an optional leading hashbang (`#!`) line (#1522)
+- Added a new operator called `getOnlyElement()` to extract elements out of singleton sets (#1525)
 
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
+
+- The seed was not being properly printed when the simulator found some runtime errors (#1524).
+
 ### Security
 
 ## v0.22.1 -- 2024-09-25

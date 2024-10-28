@@ -779,6 +779,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set().allListsUpTo(3)', 'Set(List())')
       assertResultAsString('Set(1).allListsUpTo(0)', 'Set(List())')
     })
+
+    it('getOnlyElement', () => {
+      assertResultAsString('Set(5).getOnlyElement()', '5')
+      assertResultAsString('Set().getOnlyElement()', undefined)
+      assertResultAsString('Set(1, 2).getOnlyElement()', undefined)
+    })
   })
 
   describe('compile over records', () => {
