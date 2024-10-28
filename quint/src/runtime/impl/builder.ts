@@ -318,12 +318,14 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
       return ctx => {
         if (cachedValue.value === undefined) {
           cachedValue.value = bodyEval(ctx)
-          if (def.qualifier === 'nondet') {
-            cachedValue.value
-              .map(value => ctx.varStorage.nondetPicks.set(def.name, value))
-              .mapLeft(_ => ctx.varStorage.nondetPicks.set(def.name, undefined))
-          }
         }
+
+        if (def.qualifier === 'nondet') {
+          cachedValue.value
+            .map(value => ctx.varStorage.nondetPicks.set(def.name, value))
+            .mapLeft(_ => ctx.varStorage.nondetPicks.set(def.name, undefined))
+        }
+
         return cachedValue.value
       }
     }

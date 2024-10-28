@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Fixed a problem where using `--mbt` resulted in missing data on `nondet_picks`
+  due to internal caching (#1531)
 - Hashbang lines are now properly highlighted as comments in vscode and in highlight.js.
 
 ### Security

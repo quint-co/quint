@@ -482,6 +482,58 @@ Use --seed=0x308623f2a48e7 to reproduce.
 error: Invariant violated
 ```
 
+### Run finds invariant violation with metadata on bank spec
+
+Make sure the bank spec we use at the Getting Started guide has correct tracking of metadata
+
+<!-- !test in run finds violation with metadata on bank -->
+```
+output=$(quint run --seed=0xcc198528dea8b --mbt \
+  --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run finds violation with metadata on bank -->
+```
+An example execution:
+
+[State 0]
+{
+  action_taken: "init",
+  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0),
+  nondet_picks: { account: None, amount: None }
+}
+
+[State 1]
+{
+  action_taken: "deposit",
+  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 53),
+  nondet_picks: { account: Some("charlie"), amount: Some(53) }
+}
+
+[State 2]
+{
+  action_taken: "deposit",
+  balances: Map("alice" -> 26, "bob" -> 0, "charlie" -> 53),
+  nondet_picks: { account: Some("alice"), amount: Some(26) }
+}
+
+[State 3]
+{
+  action_taken: "withdraw",
+  balances: Map("alice" -> -13, "bob" -> 0, "charlie" -> 53),
+  nondet_picks: { account: Some("alice"), amount: Some(39) }
+}
+
+[violation] Found an issue (duration).
+Use --verbosity=3 to show executions.
+Use --seed=0xcc198528dea8b to reproduce.
+error: Invariant violated
+```
+
 ### Run finds an example
 
 The command `run` finds an example.
