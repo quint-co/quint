@@ -752,6 +752,19 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
 
         return right(rv.mkSet(lists.map(list => rv.mkList(list)).toOrderedSet()))
       }
+    case 'getOnlyElement':
+      // Get the only element of a set, or an error if the set is empty or has more than one element.
+      return (_, args) => {
+        const set = args[0].toSet()
+        if (set.size !== 1) {
+          return left({
+            code: 'QNT505',
+            message: `Called 'getOnlyElement' on a set with ${set.size} elements. Make sure the set has exactly one element.`,
+          })
+        }
+
+        return right(set.first())
+      }
 
     case 'q::debug':
       // Print a value to the console, and return it

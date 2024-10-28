@@ -236,6 +236,16 @@ module builtin {
   /// ```
   pure def allListsUpTo(s: Set[a], max_length: int): Set[List[a]]
 
+  /// `s.getOnlyElement()` is, deterministically, the only element of `s`.
+  /// If the size of `s` is not 1, this operator has undefined behavior.
+  ///
+  /// ### Examples
+  ///
+  /// ```quint
+  /// assert(Set(5).getOnlyElement() == 5)
+  /// ```
+  pure def getOnlyElement(s): (Set[a]) => a
+
   /// `s.chooseSome()` is, deterministically, one element of `s`.
   ///
   /// ### Examples
