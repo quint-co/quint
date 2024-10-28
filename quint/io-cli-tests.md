@@ -529,8 +529,8 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
-Use --seed=0xcc198528dea8b to reproduce.
 Use --verbosity=3 to show executions.
+Use --seed=0xcc198528dea8b to reproduce.
 error: Invariant violated
 ```
 
