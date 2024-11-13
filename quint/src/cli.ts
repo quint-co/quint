@@ -273,6 +273,11 @@ const runCmd = {
         type: 'string',
         default: 'true',
       })
+      .option('witnesses', {
+        desc: 'space separated list of witnesses to report on (counting for how many samples the witness is true)',
+        type: 'array',
+        default: '[]',
+      })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',

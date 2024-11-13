@@ -141,10 +141,11 @@ export class Evaluator {
     init: QuintEx,
     step: QuintEx,
     inv: QuintEx,
+    witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
     ntraces: number
-  ): Either<QuintError, QuintEx> {
+  ): Either<QuintError, { result: QuintEx; counters: number[] }> {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
@@ -161,6 +162,8 @@ export class Evaluator {
     const initEval = buildExpr(this.builder, init)
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
+    const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
+    const counters = new Array(witnesses.length).fill(0)
 
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       progressBar.update(runNo)
@@ -208,6 +211,13 @@ export class Evaluator {
 
             this.shift()
 
+            witnessesEvals.forEach((witnessEval, i) => {
+              const witnessResult = witnessEval(this.ctx)
+              if (isTrue(witnessResult)) {
+                counters[i] = counters[i] + 1
+              }
+            })
+
             const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
             if (!isTrue(invResult)) {
               errorsFound++
@@ -222,9 +232,9 @@ export class Evaluator {
     }
     progressBar.stop()
 
-    const outcome: Either<QuintError, QuintEx> = failure
+    const outcome: Either<QuintError, { result: QuintEx; counters: number[] }> = failure
       ? left(failure)
-      : right({ id: 0n, kind: 'bool', value: errorsFound == 0 })
+      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, counters: counters })
 
     return outcome
   }
@@ -386,10 +396,10 @@ export class Evaluator {
   private evaluateSimulation(expr: QuintApp): Either<QuintError, QuintEx> {
     if (expr.opcode === 'q::testOnce') {
       const [nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, 1, toNumber(nsteps), toNumber(ntraces))
+      return this.simulate(init, step, inv, [], 1, toNumber(nsteps), toNumber(ntraces)).map(r => r.result)
     } else {
       const [nruns, nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
+      return this.simulate(init, step, inv, [], toNumber(nruns), toNumber(nsteps), toNumber(ntraces)).map(r => r.result)
     }
   }
 }

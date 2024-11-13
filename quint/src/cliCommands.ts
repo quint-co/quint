@@ -545,20 +545,23 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     return right(parseResult.expr)
   }
 
-  const argsParsingResult = mergeInMany([prev.args.init, prev.args.step, prev.args.invariant].map(toExpr))
+  const argsParsingResult = mergeInMany(
+    [prev.args.init, prev.args.step, prev.args.invariant, ...prev.args.witnesses].map(toExpr)
+  )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
       errors: argsParsingResult.value.map(mkErrorMessage(new Map())),
     })
   }
-  const [init, step, invariant] = argsParsingResult.value
+  const [init, step, invariant, ...witnesses] = argsParsingResult.value
 
   const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
   const evalResult = evaluator.simulate(
     init,
     step,
     invariant,
+    witnesses,
     prev.args.maxSamples,
     prev.args.maxSteps,
     prev.args.nTraces ?? 1
@@ -567,7 +570,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const elapsedMs = Date.now() - startMs
 
   const outcome: Outcome = evalResult.isRight()
-    ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
+    ? { status: (evalResult.value.result as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
 
   const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
@@ -609,6 +612,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
+      evalResult.map(r => {
+        if (r.counters.length > 0) {
+          console.log(chalk.green('Witnesses:'))
+        }
+        r.counters.forEach((c, i) => console.log(chalk.yellow(prev.args.witnesses[i]), 'was true for', c, 'samples'))
+      })
 
       return right({
         ...simulator,
@@ -618,6 +627,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
     case 'violation':
       maybePrintCounterExample(verbosityLevel, states, frames)
+      evalResult.map(r => r.counters.forEach((c, i) => console.log(prev.args.witnesses[i], c)))
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
 
