@@ -31,6 +31,11 @@ module KSetAgreementConsensus {
       x: Value
   }
 
+  type HiddenProcs = {
+    hiddenProcs: Set[Proc],    // processes whose messages are hidden
+    targetProc: Proc           // process from which messages are hidden
+  }
+
   //
   // Local functions
   // 
@@ -176,6 +181,16 @@ module KSetAgreementConsensus {
     crashedProcsMessages' = crashedProcsMessages
   }
 
+  action crashProcessesFromConfig(hidingConfigs) = all {
+    // Collect all processes that need to be crashed from all hiding configurations
+    newlyCrashed' = flatten(hidingConfigs.map(config => config.hiddenProcs)),
+    crashed' = crashed,
+    round' = round,
+    procState' = procState,
+    correctProcsMessages' = correctProcsMessages,
+    crashedProcsMessages' = crashedProcsMessages
+  }
+
   action receiveMessages = all {
     round' = round,
     correctProcsMessages' = Set(),
@@ -221,20 +236,53 @@ module KSetAgreementConsensus {
     newlyCrashed' = newlyCrashed,
   }
 
+  action receiveMessagesWithHiding(hidingConfigs) = all {
+    round' = round,
+    correctProcsMessages' = Set(),
+    crashedProcsMessages' = Set(),
+    val newCorrectValues: Set[Set[Value]] = correctProcsMessages.map(m => m.values)
+    val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(m => m.values)
+    procState' = procState.keys().mapBy(p => {
+      // Find if this process is a target in any hiding config
+      val configForThisProc = hidingConfigs.filter(config => config.targetProc == p)
+      
+      val processedValues = 
+        if (configForThisProc.size() > 0) {
+          // Get all processes that should be hidden from this process
+          val hiddenFromThis = flatten(configForThisProc.map(config => config.hiddenProcs))
+          
+          // Filter out messages from hidden processes
+          val allowedCrashedMessages = crashedProcsMessages
+            .filter(m => not(hiddenFromThis.contains(m.sender)))
+            .map(m => m.values)
+          
+          newCorrectValues.union(allowedCrashedMessages)
+        } else {
+          // If process is not in hiding configs, it receives all messages
+          newCorrectValues.union(newCrashedProcsValues)
+        }
+      
+      { ...procState.get(p), S: processedValues }
+    }),
+    crashed' = crashed,
+    newlyCrashed' = newlyCrashed,
+  }
+
   action step = any{
     randCrash.then(sendMessages).then(receiveMessages).then(computeAction)
   }
 
-  /// we crash process p, and the set s does not receive p's messages
-  action stepHidePsMessagesFromS(p,s) = any{
-    crashProcess(p).then(sendMessages).then(receiveMessage(s)).then(computeAction)
-  }
+  action stepWithMultipleHiding(hidingConfigs) = 
+    crashProcessesFromConfig(hidingConfigs)
+      .then(sendMessages)
+      .then(receiveMessagesWithHiding(hidingConfigs))
+      .then(computeAction)
 
 }
 
 module properValues {
   //quint run --main=properValues KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 6, F = 4, actualFaults = 2, K = 2 ).* 
+  import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 3, K = 2).* 
 
   run consensusRunTest = 
     init
@@ -247,18 +295,26 @@ module properValues {
 module badValues {
   //quint run KSetAgreementConsensus.qnt --main badValues --invariant kSetAgreement --max-steps 5  
   //quint test --main=badValues KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 8, F = 4, actualFaults = 5, K = 2 ).* 
+  import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 4, K = 2).* 
 
   run consensusRunTest  = 
     init
     .then((F/K + 1).reps(_ => step))
     .expect(validity)  
   
+  // Test scenario where processes decide on different values:
+  // - Process 6 doesn't receive from 1,2 => decides 3
+  // - Process 5 doesn't receive from 1 => decides 2
+  // - Process 8 doesn't receive from 3 => decides 1
+  // - Process 7 doesn't receive from 1,2,3,4 => decides 5
   run consensusDisagreementTest = 
     initializeProcsStateWithDistinctValues
-    .then(stepHidePsMessagesFromS(1, Set(2,4)))
-    .then(stepHidePsMessagesFromS(3, Set(4)))
-    .then(stepHidePsMessagesFromS(5, Set(6)))
+    .then((F/K + 1).reps(_ => stepWithMultipleHiding(Set(
+      { hiddenProcs: Set(1, 2), targetProc: 6 },
+      { hiddenProcs: Set(1), targetProc: 5 },
+      { hiddenProcs: Set(3), targetProc: 8 },
+      { hiddenProcs: Set(1, 2, 3, 4), targetProc: 7 }
+    ))))
     .expect(not(kSetAgreement))
 
 }
