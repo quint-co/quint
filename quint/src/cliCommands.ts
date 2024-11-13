@@ -616,7 +616,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         if (r.counters.length > 0) {
           console.log(chalk.green('Witnesses:'))
         }
-        r.counters.forEach((c, i) => console.log(chalk.yellow(prev.args.witnesses[i]), 'was true for', c, 'samples'))
+        r.counters.forEach((c, i) => console.log(chalk.yellow(prev.args.witnesses[i]), 'was true for', c, 'states'))
       })
 
       return right({
