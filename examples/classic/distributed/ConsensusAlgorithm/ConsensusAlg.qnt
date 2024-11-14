@@ -12,6 +12,7 @@ module ConsensusAlg {
   const N : int
   const F : int
   const actualFaults : int
+  const MAX_ROUNDS : int
 
   type Proc = int
   type Value = int
@@ -24,11 +25,13 @@ module ConsensusAlg {
 
   type LocalState = {
       V: Set[Value],
-      k: Round,
+      r: Round,
       y: Decision,
       S: Set[Set[Value]],
       x: Value
   }
+
+  type Stage = Starting | Sending | Receiving | Computing
 
   //
   // Local functions
@@ -41,12 +44,12 @@ module ConsensusAlg {
   pure def compute(s: LocalState): LocalState = {
     
     val newV = s.V.union(flatten(s.S))
-    val newK = s.k + 1
-    val newY = if (newK == F + 1) Some(minValue(newV)) else s.y
+    val newR = s.r + 1
+    val newY = if (newR == MAX_ROUNDS) Some(minValue(newV)) else s.y
     
     {
         V: newV,
-        k: newK,
+        r: newR,
         y: newY,
         S: Set(),
         x: s.x
@@ -65,6 +68,7 @@ module ConsensusAlg {
   var procState: int -> LocalState
   var crashed: Set[int]
   var newlyCrashed: Set[int]
+  var stage: Stage
 
   //
   // Invariants
@@ -96,7 +100,7 @@ module ConsensusAlg {
     nondet initialValues = Procs.setOfMaps(Set(1, 2, 3)).oneOf()
     procState' = Procs.mapBy(i => {
         V: Set(initialValues.get(i)),
-        k: 1, 
+        r: 1,
         y: None, 
         S: Set(),
         x: initialValues.get(i)
@@ -105,13 +109,14 @@ module ConsensusAlg {
     correctProcsMessages' = Set(),
     crashed' = Set(),
     newlyCrashed' = Set(),
-    crashedProcsMessages' = Set()
+    crashedProcsMessages' = Set(),
+    stage' = Starting,
   }
 
   action initializeProcsStateWithDistinctValues = all {
     procState' = Procs.mapBy(i => {
         V: Set(i),
-        k: 1, 
+        r: 1,
         y: None, 
         S: Set(),
         x: i
@@ -120,30 +125,28 @@ module ConsensusAlg {
     correctProcsMessages' = Set(),
     crashed' = Set(),
     newlyCrashed' = Set(),
-    crashedProcsMessages' = Set()
+    crashedProcsMessages' = Set(),
   }
 
   action sendMessages = all {
-    if (round <= F + 1)
-      correctProcsMessages' = Procs.exclude(crashed).exclude(newlyCrashed).map(p => { 
-        sender: p, 
-        values: procState.get(p).V 
-    })
-    else
-      correctProcsMessages' = correctProcsMessages,
-    if(newlyCrashed.size() > 0){
-      crashedProcsMessages' = newlyCrashed.map(p => { 
-            sender: p, 
-            values: procState.get(p).V 
-      })
-    } else{
-      crashedProcsMessages' = crashedProcsMessages
-    },
+    correctProcsMessages' = Procs.exclude(crashed).exclude(newlyCrashed).map(p => {
+      sender: p,
+      values: procState.get(p).V
+    }),
+    crashedProcsMessages' =
+      if (newlyCrashed.size() > 0){
+         newlyCrashed.map(p => {
+           sender: p,
+           values: procState.get(p).V
+        })
+      } else{
+        crashedProcsMessages
+      },
     round' = round,
     procState' = procState,
     crashed' = crashed,
-    newlyCrashed' = newlyCrashed
-  } 
+    newlyCrashed' = newlyCrashed,
+  }
 
   action crashProcess(p) = all {
     newlyCrashed' = Set(p),
@@ -157,7 +160,8 @@ module ConsensusAlg {
   action randCrash = all {
     if (actualFaults - crashed.size() > 0) {
       nondet newCrashCount = oneOf(1.to(actualFaults - crashed.size()))
-      newlyCrashed' = Procs.exclude(crashed).powerset().filter(s => s.size() == newCrashCount).oneOf()
+      nondet newlyCrashedProcesses = Procs.exclude(crashed).powerset().filter(s => s.size() == newCrashCount).oneOf()
+      newlyCrashed' = newlyCrashedProcesses
     } else {
       newlyCrashed' = newlyCrashed
     },
@@ -191,7 +195,7 @@ module ConsensusAlg {
       round' = round + 1,
       crashed' = crashed.union(newlyCrashed),
       newlyCrashed' = Set(),
-      crashedProcsMessages' =Set()
+      crashedProcsMessages' = Set()
   }
 
   /// the set s of correct processes don't receive the messages from newlycrashed
@@ -213,20 +217,33 @@ module ConsensusAlg {
     newlyCrashed' = newlyCrashed,
   }
 
-  action step = any{
-    randCrash.then(sendMessages).then(receiveMessages).then(computeAction)
-  }
+  action stuttering = all {
+     round' = round,
+     correctProcsMessages' = correctProcsMessages,
+     crashedProcsMessages' = crashedProcsMessages,
+     procState' = procState,
+     crashed' = crashed,
+     newlyCrashed' = newlyCrashed,
+     stage' = stage,
+   }
 
-  /// we crash process p, and the set s does not receive p's messages
-  action stepHidePsMessagesFromS(p,s) = any{
-    crashProcess(p).then(sendMessages).then(receiveMessage(s)).then(computeAction)
+  action step =
+    if (round > MAX_ROUNDS) {
+      stuttering
+    } else {
+      match stage {
+        | Starting => all { randCrash, stage' = Sending }
+        | Sending => all { sendMessages, stage' = Receiving }
+        | Receiving => all { receiveMessages, stage' = Computing }
+        | Computing => all { computeAction, stage' = Starting }
+      }
   }
 
 }
 
 module properValues {
   //quint run --main=properValues ConsensusAlg.qnt
-  import ConsensusAlg(N = 6, F = 1, actualFaults = 1 ).* 
+  import ConsensusAlg(N = 6, F = 1, actualFaults = 1, MAX_ROUNDS = 2).*
 
   run consensusRunTest = 
     init
@@ -239,14 +256,19 @@ module properValues {
 module badValues {
   //quint run ConsensusAlg.qnt --main badValues --invariant agreement --max-steps 5  
   //quint test --main=badValues ConsensusAlg.qnt
-  import ConsensusAlg(N = 6, F = 1, actualFaults = 2 ).* 
+  import ConsensusAlg(N = 6, F = 1, actualFaults = 2, MAX_ROUNDS = 2).*
 
-  run consensusRunTest  = 
+  run consensusRunTest  =
     init
     .then((F + 1).reps(_ => step))
-    .expect(validity)  
-  
-  run consensusDisagreementTest = 
+    .expect(validity)
+
+  /// we crash process p, and the set s does not receive p's messages
+  run stepHidePsMessagesFromS(p,s) = any {
+    crashProcess(p).then(sendMessages).then(receiveMessage(s)).then(computeAction)
+  }
+
+  run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
     .then(stepHidePsMessagesFromS(1, Set(2)))
     .then(stepHidePsMessagesFromS(3, Set(4)))
