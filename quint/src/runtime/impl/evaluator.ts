@@ -28,6 +28,7 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 import { Presets, SingleBar } from 'cli-progress'
+import { SimulationResult } from '../../simulation'
 
 /**
  * An evaluator for Quint in Node TS runtime.
@@ -145,7 +146,7 @@ export class Evaluator {
     nruns: number,
     nsteps: number,
     ntraces: number
-  ): Either<QuintError, { result: QuintEx; counters: number[] }> {
+  ): Either<QuintError, SimulationResult> {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
@@ -163,10 +164,12 @@ export class Evaluator {
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
     const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
-    const counters = new Array(witnesses.length).fill(0)
+    const stateCounters = new Array(witnesses.length).fill(0)
+    const traceCounters = new Array(witnesses.length).fill(0)
 
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       progressBar.update(runNo)
+      const traceWitnessed = new Array(witnesses.length).fill(false)
 
       this.recorder.onRunCall()
       this.reset()
@@ -214,7 +217,8 @@ export class Evaluator {
             witnessesEvals.forEach((witnessEval, i) => {
               const witnessResult = witnessEval(this.ctx)
               if (isTrue(witnessResult)) {
-                counters[i] = counters[i] + 1
+                stateCounters[i] = stateCounters[i] + 1
+                traceWitnessed[i] = true
               }
             })
 
@@ -224,6 +228,12 @@ export class Evaluator {
             }
             this.recorder.onUserOperatorReturn(stepApp, [], invResult)
           }
+
+          traceWitnessed.forEach((witnessed, i) => {
+            if (witnessed) {
+              traceCounters[i] = traceCounters[i] + 1
+            }
+          })
         }
       }
 
@@ -232,11 +242,11 @@ export class Evaluator {
     }
     progressBar.stop()
 
-    const outcome: Either<QuintError, { result: QuintEx; counters: number[] }> = failure
-      ? left(failure)
-      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, counters: counters })
+    const witnessResults = { states: stateCounters, traces: traceCounters }
 
-    return outcome
+    return failure
+      ? left(failure)
+      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessResults })
   }
 
   /**

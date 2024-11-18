@@ -39,10 +39,7 @@ export type Outcome =
 /**
  * A result returned by the simulator.
  */
-export interface SimulatorResult {
-  outcome: Outcome
-  vars: string[]
-  states: QuintEx[]
-  frames: ExecutionFrame[]
-  seed: bigint
+export interface SimulationResult {
+  result: QuintEx
+  witnessResults: { states: number[]; traces: number[] }
 }

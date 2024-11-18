@@ -613,10 +613,19 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         }
       }
       evalResult.map(r => {
-        if (r.counters.length > 0) {
+        if (r.witnessResults.states.length > 0) {
           console.log(chalk.green('Witnesses:'))
         }
-        r.counters.forEach((c, i) => console.log(chalk.yellow(prev.args.witnesses[i]), 'was true for', c, 'states'))
+        r.witnessResults.states.forEach((c, i) =>
+          console.log(
+            chalk.yellow(prev.args.witnesses[i]),
+            'was true for',
+            c,
+            'states and',
+            r.witnessResults.traces[i],
+            'traces'
+          )
+        )
       })
 
       return right({
@@ -627,7 +636,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
     case 'violation':
       maybePrintCounterExample(verbosityLevel, states, frames)
-      evalResult.map(r => r.counters.forEach((c, i) => console.log(prev.args.witnesses[i], c)))
+      // TODO: print witnesses
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
 
