@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where traces other than the first one when `--n-traces` > 1
+  and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
+  (#1553).
+
 ### Security
 
 ## v0.22.3 -- 2024-10-28

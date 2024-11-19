@@ -894,14 +894,16 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
+cat out-itf-example1.itf.json | jq '.states[0].action_taken'
 rm out-itf-example*.itf.json
 ```
 
 <!-- !test out run with n-traces itf -->
 ```
 "ok"
+"init"
 ```
 
 ### Run to generate multiple ITF traces with violation
