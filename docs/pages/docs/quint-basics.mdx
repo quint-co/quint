@@ -103,3 +103,80 @@ A counter-example is a trace (a sequence of states) that violates a property. Bo
 
 A counter-example from Quint looks like this:
 
+```
+$ quint run tictactoe.qnt --invariant=XHasNotWon
+An example execution:
+
+[State 0]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
+      2 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
+      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: X
+}
+
+[State 1]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
+      2 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
+      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: O
+}
+
+[State 2]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
+      2 -> Map(1 -> Occupied(O), 2 -> Empty, 3 -> Empty),
+      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: X
+}
+
+[State 3]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
+      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Empty),
+      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: O
+}
+
+[State 4]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
+      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Occupied(O)),
+      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: X
+}
+
+[State 5]
+{
+  board:
+    Map(
+      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
+      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Occupied(O)),
+      3 -> Map(1 -> Occupied(X), 2 -> Empty, 3 -> Empty)
+    ),
+  nextTurn: O
+}
+
+[violation] Found an issue (36ms).
+Use --verbosity=3 to show executions.
+Use --seed=0x8ac91506b011b to reproduce.
+error: Invariant violated
+```
+
+This command asked Quint to run simulations over the [tictactoe spec](https://github.com/informalsystems/quint/blob/main/examples/games/tictactoe/tictactoe.qnt) and check the `XHasNotWon` invariant, which states that the X player did not win at that state. This the invariant is checked for every single state, in many samples, and Quint's simulator found a sequence of states that lead to a state in which the invariant is not true, because X won (at state 5). By examining the trace, we can see that player O failed to block a diagonal and X was able to complete it and take the win.
