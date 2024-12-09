@@ -1,12 +1,17 @@
 {
   "index": "Introduction",
+  "-- Introduction": {
+    "type": "separator",
+    "title": "Introduction"
+  },
   "getting-started": "Getting Started",
+  "quint-basics": "Quint Basics",
   "lang": "Language Manual",
   "quint": "CLI Manual",
   "builtin": "Built-in Operators",
   "previews": "Tool previews",
   "faq": "FAQ",
-   "-- Learning": {
+  "-- Learning": {
     "type": "separator",
     "title": "Learning"
   },
@@ -14,7 +19,7 @@
   "lessons": "Lessons",
   "blogposts": "Blog Posts",
   "literate": "Literate Specifications",
-   "-- Development": {
+  "-- Development": {
     "type": "separator",
     "title": "Design & Development"
   },
