@@ -86,7 +86,7 @@ function isUnserializable(v: ItfValue): v is ItfUnserializable {
  * @param states an array of expressions that represent the states
  * @returns an object that represent the trace in the ITF format
  */
-export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrace> {
+export function toItf(vars: string[], states: QuintEx[], mbtMetadata: boolean = false): Either<string, ItfTrace> {
   const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
@@ -167,6 +167,7 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
       )
     )
   ).mapRight(s => {
+    if (mbtMetadata) {vars = [...vars, 'action_taken', 'nondet_picks']}
     return {
       vars: vars,
       states: s,
