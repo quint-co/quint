@@ -64,6 +64,13 @@ export const verbosity = {
   },
 
   /**
+   * Shall the tool output witnesses counts.
+   */
+  hasWitnessesOutput: (level: number): boolean => {
+    return level >= 1
+  },
+
+  /**
    * Shall the tool track and output actions that were executed.
    */
   hasActionTracking: (level: number): boolean => {

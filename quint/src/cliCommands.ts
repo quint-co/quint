@@ -37,7 +37,7 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
-import { Outcome, SimulatorOptions } from './simulation'
+import { Outcome, SimulatorOptions, SimulationResult } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -480,6 +480,23 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
   }
 }
 
+function maybePrintWitnesses(
+  verbosityLevel: number,
+  evalResult: Either<QuintError, SimulationResult>,
+  witnesses: string[]
+) {
+  if (verbosity.hasWitnessesOutput(verbosityLevel)) {
+    evalResult.map(r => {
+      if (r.witnessResults.states.length > 0) {
+        console.log(chalk.green('Witnesses:'))
+      }
+      r.witnessResults.states.forEach((c, i) =>
+        console.log(chalk.yellow(witnesses[i]), 'was true for', c, 'states and', r.witnessResults.traces[i], 'traces')
+      )
+    })
+  }
+}
+
 /**
  * Run the simulator.
  *
@@ -612,21 +629,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
-      evalResult.map(r => {
-        if (r.witnessResults.states.length > 0) {
-          console.log(chalk.green('Witnesses:'))
-        }
-        r.witnessResults.states.forEach((c, i) =>
-          console.log(
-            chalk.yellow(prev.args.witnesses[i]),
-            'was true for',
-            c,
-            'states and',
-            r.witnessResults.traces[i],
-            'traces'
-          )
-        )
-      })
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return right({
         ...simulator,
@@ -636,7 +639,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
     case 'violation':
       maybePrintCounterExample(verbosityLevel, states, frames)
-      // TODO: print witnesses
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
 
@@ -644,6 +646,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return cliErr('Invariant violated', {
         ...simulator,
