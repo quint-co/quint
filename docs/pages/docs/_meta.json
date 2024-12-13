@@ -1,24 +1,40 @@
 {
-  "index": "Introduction",
   "-- Introduction": {
     "type": "separator",
     "title": "Introduction"
   },
   "getting-started": "Getting Started",
   "quint-basics": "Quint Basics",
+  "language-basics": "Language Basics",
+  "cli-basics": "CLI Basics",
+  "understanding-with-quint": "Understanding with Quint",
+  "faq": "FAQ",
+  "-- Writing specifications": {
+    "type": "separator",
+    "title": "Writing specifications"
+  },
+  "lessons": "Interactive lessons",
+  "-- Using specifications": {
+    "type": "separator",
+    "title": "Using specifications"
+  },
+  "properties": "Checking properties",
+  "repl": "Interacting with REPL",
+  "literate": "Literate Specifications",
+  "model-based-testing": "Model-based Testing",
+  "-- How the tools work": {
+    "type": "separator",
+    "title": "How the tools work"
+  },
+  "model-checkers": "Model Checkers",
+  "understanding-the-simulator": "Understanding the Simulator",
+  "-- Reference Documentation": {
+    "type": "separator",
+    "title": "Reference Documentation"
+  },
   "lang": "Language Manual",
   "quint": "CLI Manual",
   "builtin": "Built-in Operators",
-  "previews": "Tool previews",
-  "faq": "FAQ",
-  "-- Learning": {
-    "type": "separator",
-    "title": "Learning"
-  },
-  "repl": "Using the REPL",
-  "lessons": "Lessons",
-  "blogposts": "Blog Posts",
-  "literate": "Literate Specifications",
   "-- Development": {
     "type": "separator",
     "title": "Design & Development"
@@ -26,5 +42,7 @@
   "design-principles": "",
   "architecture-decision-records": "Architecture Decision Records (ADRs)",
   "rfcs": "Requests for Comments (RFCs)",
-  "stories": "User Stories"
+  "stories": "User Stories",
+  "previews": "Tool previews",
+  "blogposts": "Blog Posts"
 }
