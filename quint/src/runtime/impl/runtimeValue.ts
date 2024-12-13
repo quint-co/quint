@@ -1486,7 +1486,7 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
         // yields nothing
         return
       }
-      
+
       // generate `nmaps` maps by using number increments
       const nmaps = nvalues ** nindices
       for (let i = 0; i < nmaps; i++) {
