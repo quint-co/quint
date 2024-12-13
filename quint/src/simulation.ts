@@ -41,5 +41,5 @@ export type Outcome =
  */
 export interface SimulationResult {
   result: QuintEx
-  witnessResults: { states: number[]; traces: number[] }
+  witnessingTraces: number[]
 }

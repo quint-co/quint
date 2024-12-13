@@ -487,12 +487,10 @@ function maybePrintWitnesses(
 ) {
   if (verbosity.hasWitnessesOutput(verbosityLevel)) {
     evalResult.map(r => {
-      if (r.witnessResults.states.length > 0) {
+      if (r.witnessingTraces.length > 0) {
         console.log(chalk.green('Witnesses:'))
       }
-      r.witnessResults.states.forEach((c, i) =>
-        console.log(chalk.yellow(witnesses[i]), 'was true for', c, 'states and', r.witnessResults.traces[i], 'traces')
-      )
+      r.witnessingTraces.forEach((n, i) => console.log(chalk.yellow(witnesses[i]), 'was witnessed in', n, 'traces'))
     })
   }
 }

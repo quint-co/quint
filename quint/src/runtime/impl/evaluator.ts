@@ -164,8 +164,7 @@ export class Evaluator {
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
     const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
-    const stateCounters = new Array(witnesses.length).fill(0)
-    const traceCounters = new Array(witnesses.length).fill(0)
+    const witnessingTraces = new Array(witnesses.length).fill(0)
 
     for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       progressBar.update(runNo)
@@ -217,7 +216,6 @@ export class Evaluator {
             witnessesEvals.forEach((witnessEval, i) => {
               const witnessResult = witnessEval(this.ctx)
               if (isTrue(witnessResult)) {
-                stateCounters[i] = stateCounters[i] + 1
                 traceWitnessed[i] = true
               }
             })
@@ -231,7 +229,7 @@ export class Evaluator {
 
           traceWitnessed.forEach((witnessed, i) => {
             if (witnessed) {
-              traceCounters[i] = traceCounters[i] + 1
+              witnessingTraces[i] = witnessingTraces[i] + 1
             }
           })
         }
@@ -242,11 +240,9 @@ export class Evaluator {
     }
     progressBar.stop()
 
-    const witnessResults = { states: stateCounters, traces: traceCounters }
-
     return failure
       ? left(failure)
-      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessResults })
+      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessingTraces })
   }
 
   /**
