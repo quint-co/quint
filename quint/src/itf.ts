@@ -170,7 +170,9 @@ export function toItf(vars: string[], states: QuintEx[], mbtMetadata: boolean = 
       )
     )
   ).mapRight(s => {
-    if (mbtMetadata) {vars = [...vars, ACTION_TAKEN, NONDET_PICKS]}
+    if (mbtMetadata) {
+      vars = [...vars, ACTION_TAKEN, NONDET_PICKS]
+    }
     return {
       vars: vars,
       states: s,
