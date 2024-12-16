@@ -9,7 +9,6 @@
  */
 
 import { QuintEx } from './ir/quintIr'
-import { ExecutionFrame } from './runtime/trace'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
 
