@@ -140,6 +140,12 @@ export class VarStorage {
   reset() {
     this.vars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
+    if (this.storeMetadata) {
+      this.actionTaken = undefined
+      this.nondetPicks.forEach((_, key) => {
+        this.nondetPicks.set(key, undefined)
+      })
+    }
   }
 
   /**
