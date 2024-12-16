@@ -274,7 +274,7 @@ const runCmd = {
         default: 'true',
       })
       .option('witnesses', {
-        desc: 'space separated list of witnesses to report on (counting for how many states the witness is true)',
+        desc: 'space separated list of witnesses to report on (counting for how many traces the witness is true)',
         type: 'array',
         default: [],
       })
