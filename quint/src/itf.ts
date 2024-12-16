@@ -25,6 +25,9 @@ export type ItfTrace = {
   loop?: number
 }
 
+export const ACTION_TAKEN = 'mbt::actionTaken'
+export const NONDET_PICKS = 'mbt::nondetPicks'
+
 export type ItfState = {
   '#meta'?: any
   // Mapping of state variables to their values in a state
@@ -167,7 +170,7 @@ export function toItf(vars: string[], states: QuintEx[], mbtMetadata: boolean = 
       )
     )
   ).mapRight(s => {
-    if (mbtMetadata) {vars = [...vars, 'action_taken', 'nondet_picks']}
+    if (mbtMetadata) {vars = [...vars, ACTION_TAKEN, NONDET_PICKS]}
     return {
       vars: vars,
       states: s,
