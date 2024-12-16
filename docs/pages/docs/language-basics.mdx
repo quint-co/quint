@@ -59,7 +59,26 @@ You can see `init` and `step` as the entrypoint for the model, like the `main` f
 
 ## Non-determinism
 
-TODO
+If only a single path was possible in our model, it would be easy to table test it manually and Quint tools wouldn't be necessary. In the reality, most systems involve many possibilities through non-deterministic factors: user's input, random factors, processes that can execute in different orders, failures that may or may not happen, etc. In Quint models, we express all of these possibilities using `any` and `oneOf`.
+
+For example, there's non-determinism when a user get's to decide if they want to deposit or withdraw, so we use `any`:
+```quint
+action step = any {
+  deposit,
+  withdraw,
+}
+```
+
+Also, this user can pick the amount they want to deposit or withdraw, which therefore is also non-deterministic:
+```quint
+action step = {
+  nondet amount = 1.to(100).oneOf()
+  any {
+    deposit(amount),
+    withdraw(amount),
+  }
+}
+```
 
 ## Modes
 
