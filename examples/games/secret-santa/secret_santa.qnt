@@ -3,7 +3,7 @@
  * A secret santa spec, in celebration of the 2023 end-of-year holidays.
  * This is accompanied by a blogpost! See [1].
  *
- * [1]: https://github.com/informalsystems/quint/tree/main/tutorials/blogpost0-secretsanta/secret_santa.org
+ * [1]: https://quint-lang.org/docs/blogposts/secret_santa
  *
  * Gabriela Moreira, Informal Systems, 2023
  */
