@@ -189,12 +189,6 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     if (typeof value === 'boolean') {
       return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
-      if (value === 'U_OF_UNIT') {
-        // Apalache converts empty tuples to its unit value, "U_OF_UNIT".
-        // We need to convert it back to Quint's unit value, the empty tuple.
-        return { id, kind: 'app', opcode: 'Tup', args: [] }
-      }
-
       return { id, kind: 'str', value }
     } else if (isBigint(value)) {
       // this is the standard way of encoding an integer in ITF.
@@ -226,6 +220,11 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       }
     } else if (isVariant(value)) {
       const l = ofItfValue(value.tag)
+      if (l.kind === 'str' && l.value === 'UNIT') {
+        // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
+        // We need to convert it back to Quint's unit value, the empty tuple.
+        return { id, kind: 'app', opcode: 'Tup', args: [] }
+      }
       const v = ofItfValue(value.value)
       return { id, kind: 'app', opcode: 'variant', args: [l, v] }
     } else if (typeof value === 'object') {
