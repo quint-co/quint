@@ -254,7 +254,7 @@ VARIABLE
 A == Variant("A", [tag |-> "UNIT"])
 
 (*
-  @type: ((Int) => A({ tag: Str })) | B(Int));
+  @type: ((Int) => A({ tag: Str }) | B(Int));
 *)
 B(__BParam_31) == Variant("B", __BParam_31)
 
