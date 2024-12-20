@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`. 
+Added those variables to the `vars` field of the ITF json so that they are displayed correctly in the trace viewer.
 - Fixed a problem where traces other than the first one when `--n-traces` > 1
   and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
   (#1553).

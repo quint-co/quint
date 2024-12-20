@@ -517,7 +517,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       const itfFile: string | undefined = prev.args.outItf
       if (itfFile) {
         const filename = expandOutputTemplate(itfFile, index, { autoAppend: prev.args.nTraces > 1 })
-        const trace = toItf(vars, states)
+        const trace = toItf(vars, states, prev.args.mbt)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
           writeToJson(filename, jsonObj)
