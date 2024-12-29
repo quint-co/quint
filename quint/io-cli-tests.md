@@ -466,15 +466,15 @@ exit $exit_code
 ```
 An example execution:
 
-[State 0] { action_taken: "init", n: 1, nondet_picks: {  } }
+[State 0] { mbt::actionTaken: "init", mbt::nondetPicks: {  }, n: 1 }
 
-[State 1] { action_taken: "OnPositive", n: 2, nondet_picks: {  } }
+[State 1] { mbt::actionTaken: "OnPositive", mbt::nondetPicks: {  }, n: 2 }
 
-[State 2] { action_taken: "OnPositive", n: 3, nondet_picks: {  } }
+[State 2] { mbt::actionTaken: "OnPositive", mbt::nondetPicks: {  }, n: 3 }
 
-[State 3] { action_taken: "OnDivByThree", n: 6, nondet_picks: {  } }
+[State 3] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 6 }
 
-[State 4] { action_taken: "OnDivByThree", n: 12, nondet_picks: {  } }
+[State 4] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 12 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
@@ -502,30 +502,30 @@ An example execution:
 
 [State 0]
 {
-  action_taken: "init",
   balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0),
-  nondet_picks: { account: None, amount: None }
+  mbt::actionTaken: "init",
+  mbt::nondetPicks: { account: None, amount: None }
 }
 
 [State 1]
 {
-  action_taken: "deposit",
   balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("charlie"), amount: Some(53) }
+  mbt::actionTaken: "deposit",
+  mbt::nondetPicks: { account: Some("charlie"), amount: Some(53) }
 }
 
 [State 2]
 {
-  action_taken: "deposit",
   balances: Map("alice" -> 26, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("alice"), amount: Some(26) }
+  mbt::actionTaken: "deposit",
+  mbt::nondetPicks: { account: Some("alice"), amount: Some(26) }
 }
 
 [State 3]
 {
-  action_taken: "withdraw",
   balances: Map("alice" -> -13, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("alice"), amount: Some(39) }
+  mbt::actionTaken: "withdraw",
+  mbt::nondetPicks: { account: Some("alice"), amount: Some(39) }
 }
 
 [violation] Found an issue (duration).
@@ -816,7 +816,6 @@ rm out-itf-mbt-example.itf.json
   "#meta": {
     "index": 1
   },
-  "action_taken": "mint",
   "balances": {
     "#map": [
       [
@@ -851,8 +850,8 @@ rm out-itf-mbt-example.itf.json
       ]
     ]
   },
-  "minter": "bob",
-  "nondet_picks": {
+  "mbt::actionTaken": "mint",
+  "mbt::nondetPicks": {
     "amount": {
       "tag": "Some",
       "value": {
@@ -867,7 +866,8 @@ rm out-itf-mbt-example.itf.json
       "tag": "Some",
       "value": "bob"
     }
-  }
+  },
+  "minter": "bob"
 }
 ```
 
@@ -896,7 +896,7 @@ rm out-itf-example.itf.json
 ```
 quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
-cat out-itf-example1.itf.json | jq '.states[0].action_taken'
+cat out-itf-example1.itf.json | jq '.states[0]["mbt::actionTaken"]'
 rm out-itf-example*.itf.json
 ```
 

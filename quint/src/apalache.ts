@@ -75,7 +75,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.46.1'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.47.2'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -437,6 +437,7 @@ export async function connect(
   const connectionResult = await tryConnect(serverEndpoint)
   // We managed to connect, simply return this connection
   if (connectionResult.isRight()) {
+    debugLog(verbosityLevel, 'Connecting with existing Apalache server')
     return connectionResult
   }
 

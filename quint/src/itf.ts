@@ -25,6 +25,9 @@ export type ItfTrace = {
   loop?: number
 }
 
+export const ACTION_TAKEN = 'mbt::actionTaken'
+export const NONDET_PICKS = 'mbt::nondetPicks'
+
 export type ItfState = {
   '#meta'?: any
   // Mapping of state variables to their values in a state
@@ -86,7 +89,7 @@ function isUnserializable(v: ItfValue): v is ItfUnserializable {
  * @param states an array of expressions that represent the states
  * @returns an object that represent the trace in the ITF format
  */
-export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrace> {
+export function toItf(vars: string[], states: QuintEx[], mbtMetadata: boolean = false): Either<string, ItfTrace> {
   const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
@@ -167,6 +170,9 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
       )
     )
   ).mapRight(s => {
+    if (mbtMetadata) {
+      vars = [...vars, ACTION_TAKEN, NONDET_PICKS]
+    }
     return {
       vars: vars,
       states: s,
@@ -189,12 +195,6 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     if (typeof value === 'boolean') {
       return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
-      if (value === 'U_OF_UNIT') {
-        // Apalache converts empty tuples to its unit value, "U_OF_UNIT".
-        // We need to convert it back to Quint's unit value, the empty tuple.
-        return { id, kind: 'app', opcode: 'Tup', args: [] }
-      }
-
       return { id, kind: 'str', value }
     } else if (isBigint(value)) {
       // this is the standard way of encoding an integer in ITF.
@@ -226,6 +226,11 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       }
     } else if (isVariant(value)) {
       const l = ofItfValue(value.tag)
+      if (l.kind === 'str' && l.value === 'UNIT') {
+        // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
+        // We need to convert it back to Quint's unit value, the empty tuple.
+        return { id, kind: 'app', opcode: 'Tup', args: [] }
+      }
       const v = ofItfValue(value.value)
       return { id, kind: 'app', opcode: 'variant', args: [l, v] }
     } else if (typeof value === 'object') {

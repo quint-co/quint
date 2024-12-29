@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Bumped Apalache to 0.47.2 (#1565)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where calling `setOfMaps()` on empty sets resulted in errors in the simulator (#1561)
+
 ### Security
 
 ## v0.22.4 -- 2024-11-19
@@ -22,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`. 
+Added those variables to the `vars` field of the ITF json so that they are displayed correctly in the trace viewer.
 - Fixed a problem where traces other than the first one when `--n-traces` > 1
   and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
   (#1553).
