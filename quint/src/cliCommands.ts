@@ -490,7 +490,14 @@ function maybePrintWitnesses(
       if (r.witnessingTraces.length > 0) {
         console.log(chalk.green('Witnesses:'))
       }
-      r.witnessingTraces.forEach((n, i) => console.log(chalk.yellow(witnesses[i]), 'was witnessed in', n, 'traces'))
+      r.witnessingTraces.forEach((n, i) => {
+        const percentage = chalk.gray(`(${(((1.0 * n) / r.samples) * 100).toFixed(2)}%)`)
+        console.log(
+          `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+            r.samples
+          } explored ${percentage}`
+        )
+      })
     })
   }
 }

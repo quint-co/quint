@@ -166,7 +166,8 @@ export class Evaluator {
     const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
     const witnessingTraces = new Array(witnesses.length).fill(0)
 
-    for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
+    let runNo = 0
+    for (; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       progressBar.update(runNo)
       const traceWitnessed = new Array(witnesses.length).fill(false)
 
@@ -242,7 +243,7 @@ export class Evaluator {
 
     return failure
       ? left(failure)
-      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessingTraces })
+      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessingTraces, samples: runNo })
   }
 
   /**

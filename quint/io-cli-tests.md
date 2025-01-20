@@ -1478,7 +1478,7 @@ exit $exit_code
 ```
 [ok] No violation found (duration).
 Witnesses:
-won(X) was witnessed in 98 traces
-stalemate was witnessed in 2 traces
+won(X) was witnessed in 98 trace(s) out of 100 explored (98.00%)
+stalemate was witnessed in 2 trace(s) out of 100 explored (2.00%)
 Use --seed=0x2b442ab439177 to reproduce.
 ```
