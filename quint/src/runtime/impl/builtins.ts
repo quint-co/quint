@@ -148,8 +148,10 @@ export function lazyBuiltinLambda(
 
         // Create array of indices and shuffle them
         const indices = Array.from(args.keys())
+        // Fisher-Yates shuffle algorithm
         for (let i = indices.length - 1; i > 0; i--) {
           const j = Number(ctx.rand(BigInt(i + 1)))
+          // Swap: indices[i] <--> indices[j]
           ;[indices[i], indices[j]] = [indices[j], indices[i]]
         }
 
