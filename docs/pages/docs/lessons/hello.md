@@ -182,7 +182,7 @@ Finally, the third statement may look useless to you too:
 Why shall we say that `readByUser` keeps its value in the next state?
 Most likely, we will be able to automatically infer this in the future.
 In the current version of Quint, if an action is used to execute transitions,
-it has to explicitely assign values to all of the state variables.
+it has to explicitly assign values to all of the state variables.
         
 ## 7. Introduce an action by the user
 

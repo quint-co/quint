@@ -249,12 +249,12 @@ VARIABLE
   x
 
 (*
-  @type: (() => A(UNIT) | B(Int));
+  @type: (() => A({ tag: Str }) | B(Int));
 *)
-A == Variant("A", "U_OF_UNIT")
+A == Variant("A", [tag |-> "UNIT"])
 
 (*
-  @type: ((Int) => A(UNIT) | B(Int));
+  @type: ((Int) => A({ tag: Str }) | B(Int));
 *)
 B(__BParam_31) == Variant("B", __BParam_31)
 

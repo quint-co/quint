@@ -266,10 +266,10 @@ Options:
 ### The `--mbt` flag
 When this flag is given, the Quint simulator will keep track of two additional
 variables on the traces it produces:
-- `action_taken`: The first action executed by the simulator on each step, reset
+- `mbt::actionTaken`: The first action executed by the simulator on each step, reset
   at every `any` evaluation. That is, if the spec has nested `any` statements,
-  `action_taken` will correspond to the action picked in the innermost `any`.
-- `nondet_picks`: A record with all `nondet` values that were picked since the
+  `mbt::actionTaken` will correspond to the action picked in the innermost `any`.
+- `mbt::nondetPicks`: A record with all `nondet` values that were picked since the
   last `any` was called (or since the start, if there were no `any` calls in the
   step).
 
