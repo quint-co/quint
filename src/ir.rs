@@ -1,37 +1,37 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-type QuintId = u64;
+pub type QuintId = u64;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintOutput {
-    modules: Vec<QuintModule>,
-    table: LookupTable,
+    pub modules: Vec<QuintModule>,
+    pub table: LookupTable,
 }
 
-type LookupTable = HashMap<QuintId, LookupDefinition>;
+pub type LookupTable = HashMap<QuintId, LookupDefinition>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
-enum LookupDefinition {
+pub enum LookupDefinition {
     Definition(QuintDef),
     Param(QuintLambdaParameter),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintModule {
-    name: String,
+    pub name: String,
     // We can use QuintDef instead of QuintDeclaration as flattening removes all
     // non-defs (imports, instances and exports)
-    declarations: Vec<QuintDef>,
+    pub declarations: Vec<QuintDef>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpDef {
-    id: QuintId,
-    name: String,
-    qualifier: OpQualifier,
-    expr: QuintEx,
+    pub id: QuintId,
+    pub name: String,
+    pub qualifier: OpQualifier,
+    pub expr: QuintEx,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
