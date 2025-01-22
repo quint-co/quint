@@ -4,14 +4,15 @@ use fxhash::FxHashMap;
 
 use crate::{ir::*, value::*};
 
-pub struct CompiledExpr<'a>(Box<dyn Fn(&mut Env) -> Result<Value> + 'a>);
+// #[derive(Clone)]
+pub struct CompiledExpr<'a>(Box<dyn Fn(&mut Env) -> Result<Value<'a>> + 'a>);
 
 impl<'a> CompiledExpr<'a> {
-    pub fn new(closure: impl 'a + Fn(&mut Env) -> Result<Value>) -> Self {
+    pub fn new(closure: impl 'a + Fn(&mut Env) -> Result<Value<'a>>) -> Self {
         CompiledExpr(Box::new(closure))
     }
 
-    pub fn execute(&self, env: &mut Env) -> Result<Value> {
+    pub fn execute(&self, env: &mut Env) -> Result<Value<'a>> {
         self.0(env)
     }
 }
@@ -46,6 +47,7 @@ impl Env {
 
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
+    paramRegistry: FxHashMap<QuintId, Box<Result<Value<'a>>>>,
     // paramRegistry: Map<bigint, Register> = new Map()
     // constRegistry: Map<bigint, Register> = new Map()
     // scopedCachedValues: Map<bigint, CachedValue> = new Map()
@@ -56,191 +58,119 @@ pub struct Interpreter<'a> {
     // varStorage: VarStorage
 }
 
+fn builtin_value<'e>(name: String) -> CompiledExpr<'e> {
+    match name.as_str() {
+        "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
+        "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
+        // "iadd" => CompiledExpr::new(move |args| Ok(Value::Int(args.0.to_int() + args.1.to_int()))),
+        _ => CompiledExpr::new(move |_| Err(eyre!("Undefined builtin value: {name}"))),
+    }
+}
+
 impl<'a> Interpreter<'a> {
     pub fn new(table: &'a LookupTable) -> Self {
-        Self { table }
+        let mut paramRegistry = FxHashMap::default();
+
+        for (_key, value) in table.iter() {
+            if let LookupDefinition::Param(p) = value {
+                // Create the heap-allocated error
+                let error = Box::new(Err(eyre!("Undefined parameter: {:#?}", p)));
+
+                // Insert the reference into the paramRegistry
+                paramRegistry.insert(p.id, error);
+            }
+        }
+
+        Self {
+            table,
+            paramRegistry,
+        }
     }
 
-    pub fn compile<'e>(&self, expr: &'e QuintEx) -> Result<CompiledExpr<'e>>
+    pub fn compile_def<'e>(&mut self, def: &'e LookupDefinition) -> CompiledExpr<'e>
+    where
+        'a: 'e,
+    {
+        match def {
+            LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
+            _ => CompiledExpr::new(move |_| Err(eyre!("def not implemented: {:#?}", def))),
+        }
+    }
+
+    fn mk_lambda<'e>(
+        &mut self,
+        params: Vec<QuintLambdaParameter>,
+        body: CompiledExpr<'e>,
+    ) -> CompiledExpr<'e>
+    where
+        'a: 'e,
+    {
+        // I don't think this strategy from the typescript implementation will work
+        // with Rust's borrow checker. Maybe there's a different (more local?) approach
+        let registers = params
+            .into_iter()
+            .map(|param| *self.paramRegistry.get(&param.id).unwrap())
+            .collect();
+        CompiledExpr::new(move |_| Ok(Value::Lambda(registers, body)))
+    }
+
+    pub fn compile<'e>(&mut self, expr: &'e QuintEx) -> CompiledExpr<'e>
     where
         'a: 'e,
     {
         match expr {
-            QuintEx::QuintInt { id: _, value: n } => {
-                Ok(CompiledExpr::new(move |_| Ok(Value::Int(*n).clone())))
+            QuintEx::QuintInt { id: _, value } => {
+                CompiledExpr::new(move |_| Ok(Value::Int(*value)))
             }
-            QuintEx::QuintBool { id: _, value: b } => {
-                Ok(CompiledExpr::new(move |_| Ok(Value::Bool(*b).clone())))
+
+            QuintEx::QuintBool { id: _, value } => {
+                CompiledExpr::new(move |_| Ok(Value::Bool(*value)))
             }
-            _ => Err(eyre!("Not implemented")),
-            // Expr::Lit(lit) => {
-            //     let val = match lit {
-            //         Lit::Int(n) => Value::Int(*n),
-            //         Lit::Bool(b) => Value::Bool(*b),
-            //         Lit::Set(elems) => {
-            //             let elems = elems
-            //                 .iter()
-            //                 .map(|elem| self.compile(elem))
-            //                 .collect::<Result<Vec<_>>>()?;
 
-            //             return Ok(Box::new(move |env| {
-            //                 let elems = elems
-            //                     .iter()
-            //                     .map(|elem| elem(env))
-            //                     .collect::<Result<FxHashSet<_>>>()?;
+            QuintEx::QuintName { id, name } => self
+                .table
+                .get(id)
+                .map(|def| self.compile_def(def))
+                .unwrap_or_else(|| builtin_value(name.to_string())),
 
-            //                 Ok(Value::Set(elems))
-            //             }));
-            //         }
-            //     };
+            QuintEx::QuintLambda {
+                id: _,
+                params,
+                expr,
+            } => {
+                let body = self.compile(expr);
+                self.mk_lambda(params.to_vec(), body);
+                CompiledExpr::new(move |_| Err(eyre!("expr not implemented: {:#?}", expr)))
+            }
 
-            // }
+            QuintEx::QuintApp {
+                id: _,
+                opcode,
+                args,
+            } => match opcode.as_str() {
+                "iadd" => {
+                    let lhs = self.compile(&args[0]);
+                    let rhs = self.compile(&args[1]);
+                    CompiledExpr::new(move |env| {
+                        let lhs = lhs.execute(env)?;
+                        let rhs = rhs.execute(env)?;
+                        Ok(Value::Int(lhs.as_int()? + rhs.as_int()?))
+                    })
+                }
+                _ => {
+                    CompiledExpr::new(move |_| Err(eyre!("opcode not implemented: {:#?}", opcode)))
+                }
+            },
 
-            //     Expr::Var(var) => {
-            //         let sym = var.sym;
-            //         Ok(Box::new(move |env| {
-            //             env.value(&sym)
-            //                 .cloned()
-            //                 .ok_or_else(|| eyre!("Undefined variable: {sym}"))
-            //         }))
-            //     }
-
-            //     Expr::Let(sym, value, body) => {
-            //         let value = self.compile(value)?;
-            //         let body = self.compile(body)?;
-
-            //         Ok(Box::new(move |env| {
-            //             let value = value(env)?;
-            //             body(&mut env.with(sym.sym, value))
-            //         }))
-            //     }
-
-            //     Expr::Block(exprs) => {
-            //         let exprs = exprs
-            //             .iter()
-            //             .map(|expr| self.compile(expr))
-            //             .collect::<Result<Vec<_>>>()?;
-
-            //         Ok(Box::new(move |env| {
-            //             let mut result = Value::Int(0);
-            //             for expr in &exprs {
-            //                 result = expr(env)?;
-            //             }
-            //             Ok(result)
-            //         }))
-            //     }
-
-            //     Expr::BinOp(op, lhs, rhs) => {
-            //         let lhs = self.compile(lhs)?;
-            //         let rhs = self.compile(rhs)?;
-            //         let apply = op.to_fn();
-
-            //         Ok(Box::new(move |env| {
-            //             let l = lhs(env)?;
-            //             let r = rhs(env)?;
-            //             apply(l, r)
-            //         }))
-            //     }
-
-            //     Expr::If(cnd, thn, els) => {
-            //         let cnd = self.compile(cnd)?;
-            //         let thn = self.compile(thn)?;
-            //         let els = self.compile(els)?;
-
-            //         Ok(Box::new(move |env| match cnd(env)? {
-            //             Value::Bool(true) => thn(env),
-            //             Value::Bool(false) => els(env),
-            //             _ => Err(eyre!("Condition must be boolean")),
-            //         }))
-            //     }
-
-            //     Expr::While(cond, body) => {
-            //         let cond = self.compile(cond)?;
-            //         let body = self.compile(body)?;
-
-            //         Ok(Box::new(move |env| {
-            //             let mut result = Value::Int(0);
-            //             while cond(env)?.as_bool()? {
-            //                 result = body(env)?;
-            //             }
-            //             Ok(result)
-            //         }))
-            //     }
-
-            //     Expr::Call(sym, args) => {
-            //         let def = self
-            //             .table
-            //             .defs
-            //             .get(sym)
-            //             .ok_or_else(|| eyre!("Undefined function: {sym}"))?;
-
-            //         let args = args
-            //             .iter()
-            //             .map(|arg| self.compile(arg))
-            //             .collect::<Result<Vec<_>>>()?;
-
-            //         Ok(Box::new(move |env| {
-            //             let mut values = FxHashMap::default();
-            //             for (param, arg) in def.args.iter().zip(&args) {
-            //                 values.insert(param.sym, arg(env)?);
-            //             }
-
-            //             let body = env
-            //                 .cached(sym)
-            //                 .ok_or_else(|| eyre!("Cached function not found: {sym}"))?;
-
-            //             body(&mut env.nested(values))
-            //         }))
-            //     }
-
-            //     Expr::SetAdd(set, elem) => {
-            //         let set = self.compile(set)?;
-            //         let elem = self.compile(elem)?;
-
-            //         Ok(Box::new(move |env| {
-            //             let mut set = set(env)?;
-            //             let elem = elem(env)?;
-
-            //             match &mut set {
-            //                 Value::Set(elems) => {
-            //                     elems.insert(elem);
-            //                     Ok(Value::Set(elems.clone()))
-            //                 }
-            //                 _ => Err(eyre!("Expected set")),
-            //             }
-            //         }))
-            //     }
-
-            //     Expr::SetContains(set, elem) => {
-            //         let set = self.compile(set)?;
-            //         let elem = self.compile(elem)?;
-
-            //         Ok(Box::new(move |env| {
-            //             let set = set(env)?;
-            //             let elem = elem(env)?;
-
-            //             match &set {
-            //                 Value::Set(elems) => Ok(Value::Bool(elems.contains(&elem))),
-            //                 _ => Err(eyre!("Expected set")),
-            //             }
-            //         }))
-            //     }
+            _ => CompiledExpr::new(move |_| Err(eyre!("expr not implemented: {:#?}", expr))),
         }
     }
 
-    pub fn eval(&self, expr: &QuintEx) -> Result<Value> {
-        let compiled_expr = self.compile(expr)?;
-
-        let mut env = Env::new();
-
-        // Should be on-demand
-        // for def in self.table.defs.values() {
-        //     let sym = def.sym;
-        //     let closure = self.compile(&def.body)?;
-        //     env.cache.insert(sym, closure);
-        // }
-
-        compiled_expr.execute(&mut env)
+    pub fn eval<'b>(&mut self, env: &mut Env, expr: &'b QuintEx) -> Result<Value<'a>>
+    where
+        'a: 'b,
+    {
+        self.compile(expr).execute(env)
     }
 }
 
@@ -265,9 +195,10 @@ impl<'a> Interpreter<'a> {
 // }
 
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<i64> {
-    let interpreter = Interpreter::new(table);
+    let mut interpreter = Interpreter::new(table);
+    let mut env = Env::new();
 
-    match interpreter.eval(expr)? {
+    match interpreter.eval(&mut env, expr)? {
         Value::Int(result) => Ok(result),
         _ => Err(eyre!("Expected integer result")),
     }

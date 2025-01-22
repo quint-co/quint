@@ -111,8 +111,8 @@ pub enum QuintEx {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuintLambdaParameter {
-    id: QuintId,
-    name: String,
+    pub id: QuintId,
+    pub name: String,
 }
