@@ -4,60 +4,56 @@ use fxhash::FxHashMap;
 
 use crate::{ir::*, value::*};
 
-type Closure<'a> = Box<dyn Fn(&mut Env) -> Result<Value> + 'a>;
+pub struct CompiledExpr<'a>(Box<dyn Fn(&mut Env) -> Result<Value> + 'a>);
 
-#[derive(Default)]
-pub struct Env<'a> {
-    // Can we make this into Vec<Optional<?>> for better performance?
-    values: FxHashMap<QuintId, Value>,
-    cache: FxHashMap<QuintId, Closure<'a>>,
-    parent: Option<&'a Env<'a>>,
+impl<'a> CompiledExpr<'a> {
+    pub fn new(closure: impl 'a + Fn(&mut Env) -> Result<Value>) -> Self {
+        CompiledExpr(Box::new(closure))
+    }
+
+    pub fn execute(&self, env: &mut Env) -> Result<Value> {
+        self.0(env)
+    }
 }
 
-impl<'a> Env<'a> {
+// pub struct NamedRegister<'a> {
+//     name: String,
+//     value: Result<Value>,
+// }
+
+#[derive(Default)]
+pub struct Env {
+    // rand
+    // recorder
+    // trace
+    // varStorage: Box<[Option<Value<'a>>]>,
+    //
+    // Can we make this into Vec<Optional<?>> for better performance?
+    // values: FxHashMap<QuintId, Value>,
+    // cache: FxHashMap<QuintId, Closure<'a>>,
+    // parent: Option<&'a Env<'a>>,
+}
+
+impl Env {
     pub fn new() -> Self {
         Self {
-            values: FxHashMap::default(),
-            cache: FxHashMap::default(),
-            parent: None,
-        }
-    }
-
-    pub fn nested(&self, values: FxHashMap<QuintId, Value>) -> Env<'_> {
-        Env {
-            values,
-            cache: FxHashMap::default(),
-            parent: Some(self),
-        }
-    }
-
-    pub fn with(&self, name: QuintId, value: Value) -> Env<'_> {
-        let mut env = Env {
-            values: FxHashMap::default(),
-            cache: FxHashMap::default(),
-            parent: Some(self),
-        };
-        env.values.insert(name, value);
-        env
-    }
-
-    pub fn value(&self, name: &QuintId) -> Option<&Value> {
-        match self.values.get(name) {
-            Some(value) => Some(value),
-            None => self.parent.as_ref().and_then(|p| p.value(name)),
-        }
-    }
-
-    pub fn cached(&self, name: &QuintId) -> Option<&Closure> {
-        match self.cache.get(name) {
-            Some(closure) => Some(closure),
-            None => self.parent.as_ref().and_then(|p| p.cached(name)),
+            // values: FxHashMap::default(),
+            // cache: FxHashMap::default(),
+            // parent: None,
         }
     }
 }
 
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
+    // paramRegistry: Map<bigint, Register> = new Map()
+    // constRegistry: Map<bigint, Register> = new Map()
+    // scopedCachedValues: Map<bigint, CachedValue> = new Map()
+    // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
+    // memo: Map<bigint, EvalFunction> = new Map()
+    // memoByInstance: Map<bigint, Map<bigint, EvalFunction>> = new Map()
+    // namespaces: List<string> = List()
+    // varStorage: VarStorage
 }
 
 impl<'a> Interpreter<'a> {
@@ -65,16 +61,16 @@ impl<'a> Interpreter<'a> {
         Self { table }
     }
 
-    pub fn compile<'e>(&self, expr: &'e QuintEx) -> Result<Closure<'e>>
+    pub fn compile<'e>(&self, expr: &'e QuintEx) -> Result<CompiledExpr<'e>>
     where
         'a: 'e,
     {
         match expr {
             QuintEx::QuintInt { id: _, value: n } => {
-                Ok(Box::new(move |_| Ok(Value::Int(*n).clone())))
+                Ok(CompiledExpr::new(move |_| Ok(Value::Int(*n).clone())))
             }
             QuintEx::QuintBool { id: _, value: b } => {
-                Ok(Box::new(move |_| Ok(Value::Bool(*b).clone())))
+                Ok(CompiledExpr::new(move |_| Ok(Value::Bool(*b).clone())))
             }
             _ => Err(eyre!("Not implemented")),
             // Expr::Lit(lit) => {
@@ -233,7 +229,7 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn eval(&self, expr: &QuintEx) -> Result<Value> {
-        let closure = self.compile(expr)?;
+        let compiled_expr = self.compile(expr)?;
 
         let mut env = Env::new();
 
@@ -244,7 +240,7 @@ impl<'a> Interpreter<'a> {
         //     env.cache.insert(sym, closure);
         // }
 
-        closure(&mut env)
+        compiled_expr.execute(&mut env)
     }
 }
 
