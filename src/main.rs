@@ -9,8 +9,11 @@ fn main() {
     let parsed: QuintOutput = serde_json::from_reader(file).unwrap();
     println!("{:?}", parsed);
 
-    if let QuintDef::QuintOpDef(def) = &parsed.modules[0].declarations[0] {
+    if let QuintDef::QuintOpDef(def) = &parsed.modules[0].declarations[1] {
         let value = run(&parsed.table, &def.expr);
-        println!("{:?}", value);
+        match value {
+            Ok(value) => println!("{:#}", value),
+            Err(err) => println!("Error: {:#}", err),
+        }
     };
 }

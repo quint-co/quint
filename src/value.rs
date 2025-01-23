@@ -2,8 +2,9 @@ use std::hash::{Hash, Hasher};
 
 use fxhash::FxHashSet;
 
-use crate::evaluator::{CompiledExpr, EvalResult};
+use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -36,7 +37,7 @@ impl Hash for Value<'_> {
     }
 }
 
-impl Value<'_> {
+impl<'a> Value<'a> {
     pub fn as_int(&self) -> Result<i64, &str> {
         match self {
             Value::Int(n) => Ok(*n),
@@ -64,4 +65,41 @@ impl Value<'_> {
     //         _ => bail!("Expected set"),
     //     }
     // }
+    //
+    pub fn as_closure<'b>(
+        &'b self,
+    ) -> Result<impl Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'b, String> {
+        match self {
+            Value::Lambda(registers, body) => Ok(move |env: &mut Env, args: Vec<Value<'a>>| {
+                args.iter().enumerate().for_each(|(i, arg)| {
+                    *registers[i].borrow_mut() = Ok(arg.clone());
+                });
+
+                body.execute(env)
+                // TODO: restore previous values
+            }),
+            _ => Err("Expected lambda".to_string()),
+        }
+    }
+}
+
+impl fmt::Display for Value<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Undefined => write!(f, "undefined"),
+            Value::Int(n) => write!(f, "{}", n),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Set(set) => {
+                write!(f, "{{")?;
+                for (i, elem) in set.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{:#}", elem)?;
+                }
+                write!(f, "}}")
+            }
+            Value::Lambda(_, _) => write!(f, "<lambda>"),
+        }
+    }
 }

@@ -86,6 +86,10 @@ impl<'a> Interpreter<'a> {
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
         match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
+            LookupDefinition::Param(p) => {
+                let register = self.param_registry.get(&p.id).unwrap().clone();
+                CompiledExpr::new(move |_| register.borrow().clone())
+            }
             _ => CompiledExpr::new(move |_| Err(format!("def not implemented: %{:#?}", def))),
         }
     }
@@ -131,11 +135,7 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| Ok(lambda.clone()))
             }
 
-            QuintEx::QuintApp {
-                id: _,
-                opcode,
-                args,
-            } => match opcode.as_str() {
+            QuintEx::QuintApp { id, opcode, args } => match opcode.as_str() {
                 "iadd" => {
                     let lhs = self.compile(&args[0]);
                     let rhs = self.compile(&args[1]);
@@ -145,9 +145,20 @@ impl<'a> Interpreter<'a> {
                         Ok(Value::Int(lhs.as_int()? + rhs.as_int()?))
                     })
                 }
-                _ => CompiledExpr::new(move |_| {
-                    Err(format!("opcode not implemented: %{:#?}", opcode))
-                }),
+                _ => {
+                    let op = self.table.get(id).map(|def| self.compile_def(def)).unwrap();
+                    let compiled_args =
+                        args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
+                    CompiledExpr::new(move |env| {
+                        let lambda = op.execute(env)?;
+                        let closure = lambda.as_closure()?;
+                        let arg_values = compiled_args
+                            .iter()
+                            .map(|arg| arg.execute(env))
+                            .collect::<Result<Vec<_>, _>>()?;
+                        closure(env, arg_values)
+                    })
+                }
             },
 
             _ => CompiledExpr::new(move |_| Err(format!("expr not implemented: %{:#?}", expr))),
@@ -179,12 +190,9 @@ impl<'a> Interpreter<'a> {
 //     Ok(Box::new(move || closure(&mut env)))
 // }
 
-pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<i64, String> {
+pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, String> {
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new();
 
-    match interpreter.eval(&mut env, expr)? {
-        Value::Int(result) => Ok(result),
-        _ => Err("Expected integer result".to_string()),
-    }
+    interpreter.eval(&mut env, expr)
 }
