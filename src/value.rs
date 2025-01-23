@@ -1,22 +1,21 @@
 use std::hash::{Hash, Hasher};
 
-use color_eyre::eyre::bail;
-use color_eyre::Result;
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashSet;
 
-use crate::evaluator::CompiledExpr;
-use crate::ir::{QuintId, QuintLambdaParameter};
+use crate::evaluator::{CompiledExpr, EvalResult};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-// #[derive(Clone)]
+#[derive(Clone)]
 pub enum Value<'a> {
     Undefined,
     Int(i64),
     Bool(bool),
     Set(FxHashSet<Value<'a>>),
-    Lambda(Vec<Box<Result<Value<'a>>>>, CompiledExpr<'a>),
+    Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
 }
 
-impl<'a> Hash for Value<'a> {
+impl Hash for Value<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let discr = core::mem::discriminant(self);
         discr.hash(state);
@@ -38,10 +37,10 @@ impl<'a> Hash for Value<'a> {
 }
 
 impl Value<'_> {
-    pub fn as_int(&self) -> Result<i64> {
+    pub fn as_int(&self) -> Result<i64, &str> {
         match self {
             Value::Int(n) => Ok(*n),
-            _ => bail!("Expected integer"),
+            _ => Err("Expected integer"),
         }
     }
 

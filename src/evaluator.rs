@@ -1,26 +1,22 @@
-use color_eyre::eyre::eyre;
-use color_eyre::Result;
-use fxhash::FxHashMap;
-
 use crate::{ir::*, value::*};
+use fxhash::FxHashMap;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-// #[derive(Clone)]
-pub struct CompiledExpr<'a>(Box<dyn Fn(&mut Env) -> Result<Value<'a>> + 'a>);
+pub type EvalResult<'a> = Result<Value<'a>, String>;
+
+#[derive(Clone)]
+pub struct CompiledExpr<'a>(Rc<dyn Fn(&mut Env) -> EvalResult<'a> + 'a>);
 
 impl<'a> CompiledExpr<'a> {
-    pub fn new(closure: impl 'a + Fn(&mut Env) -> Result<Value<'a>>) -> Self {
-        CompiledExpr(Box::new(closure))
+    pub fn new(closure: impl 'a + Fn(&mut Env) -> EvalResult<'a>) -> Self {
+        CompiledExpr(Rc::new(closure))
     }
 
-    pub fn execute(&self, env: &mut Env) -> Result<Value<'a>> {
+    pub fn execute(&self, env: &mut Env) -> EvalResult<'a> {
         self.0(env)
     }
 }
-
-// pub struct NamedRegister<'a> {
-//     name: String,
-//     value: Result<Value>,
-// }
 
 #[derive(Default)]
 pub struct Env {
@@ -47,8 +43,8 @@ impl Env {
 
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
-    paramRegistry: FxHashMap<QuintId, Box<Result<Value<'a>>>>,
-    // paramRegistry: Map<bigint, Register> = new Map()
+    param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
+    // param_registry: Map<bigint, Register> = new Map()
     // constRegistry: Map<bigint, Register> = new Map()
     // scopedCachedValues: Map<bigint, CachedValue> = new Map()
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
@@ -63,61 +59,53 @@ fn builtin_value<'e>(name: String) -> CompiledExpr<'e> {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
         // "iadd" => CompiledExpr::new(move |args| Ok(Value::Int(args.0.to_int() + args.1.to_int()))),
-        _ => CompiledExpr::new(move |_| Err(eyre!("Undefined builtin value: {name}"))),
+        _ => CompiledExpr::new(move |_| Err(format!("Undefined builtin value: {name}"))),
     }
 }
 
 impl<'a> Interpreter<'a> {
     pub fn new(table: &'a LookupTable) -> Self {
-        let mut paramRegistry = FxHashMap::default();
+        let mut param_registry = FxHashMap::default();
 
         for (_key, value) in table.iter() {
             if let LookupDefinition::Param(p) = value {
                 // Create the heap-allocated error
-                let error = Box::new(Err(eyre!("Undefined parameter: {:#?}", p)));
+                let error = Rc::new(RefCell::new(Err(format!("Undefined parameter: {:#?}", p))));
 
-                // Insert the reference into the paramRegistry
-                paramRegistry.insert(p.id, error);
+                // Insert the reference into the param_registry
+                param_registry.insert(p.id, error);
             }
         }
 
         Self {
             table,
-            paramRegistry,
+            param_registry,
         }
     }
 
-    pub fn compile_def<'e>(&mut self, def: &'e LookupDefinition) -> CompiledExpr<'e>
-    where
-        'a: 'e,
-    {
+    pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
         match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
-            _ => CompiledExpr::new(move |_| Err(eyre!("def not implemented: {:#?}", def))),
+            _ => CompiledExpr::new(move |_| Err(format!("def not implemented: %{:#?}", def))),
         }
     }
 
-    fn mk_lambda<'e>(
-        &mut self,
-        params: Vec<QuintLambdaParameter>,
-        body: CompiledExpr<'e>,
-    ) -> CompiledExpr<'e>
+    fn mk_lambda<'e>(&self, params: Vec<QuintLambdaParameter>, body: CompiledExpr<'a>) -> Value<'a>
     where
         'a: 'e,
     {
-        // I don't think this strategy from the typescript implementation will work
-        // with Rust's borrow checker. Maybe there's a different (more local?) approach
         let registers = params
             .into_iter()
-            .map(|param| *self.paramRegistry.get(&param.id).unwrap())
-            .collect();
-        CompiledExpr::new(move |_| Ok(Value::Lambda(registers, body)))
+            .map(|param| {
+                let register = self.param_registry.get(&param.id).unwrap().clone();
+                Rc::clone(&register)
+            })
+            .collect::<Vec<_>>();
+
+        Value::Lambda(registers.clone(), body.clone())
     }
 
-    pub fn compile<'e>(&mut self, expr: &'e QuintEx) -> CompiledExpr<'e>
-    where
-        'a: 'e,
-    {
+    pub fn compile(&mut self, expr: &'a QuintEx) -> CompiledExpr<'a> {
         match expr {
             QuintEx::QuintInt { id: _, value } => {
                 CompiledExpr::new(move |_| Ok(Value::Int(*value)))
@@ -139,8 +127,8 @@ impl<'a> Interpreter<'a> {
                 expr,
             } => {
                 let body = self.compile(expr);
-                self.mk_lambda(params.to_vec(), body);
-                CompiledExpr::new(move |_| Err(eyre!("expr not implemented: {:#?}", expr)))
+                let lambda = self.mk_lambda(params.to_vec(), body);
+                CompiledExpr::new(move |_| Ok(lambda.clone()))
             }
 
             QuintEx::QuintApp {
@@ -157,19 +145,16 @@ impl<'a> Interpreter<'a> {
                         Ok(Value::Int(lhs.as_int()? + rhs.as_int()?))
                     })
                 }
-                _ => {
-                    CompiledExpr::new(move |_| Err(eyre!("opcode not implemented: {:#?}", opcode)))
-                }
+                _ => CompiledExpr::new(move |_| {
+                    Err(format!("opcode not implemented: %{:#?}", opcode))
+                }),
             },
 
-            _ => CompiledExpr::new(move |_| Err(eyre!("expr not implemented: {:#?}", expr))),
+            _ => CompiledExpr::new(move |_| Err(format!("expr not implemented: %{:#?}", expr))),
         }
     }
 
-    pub fn eval<'b>(&mut self, env: &mut Env, expr: &'b QuintEx) -> Result<Value<'a>>
-    where
-        'a: 'b,
-    {
+    pub fn eval(&mut self, env: &mut Env, expr: &'a QuintEx) -> EvalResult<'a> {
         self.compile(expr).execute(env)
     }
 }
@@ -194,12 +179,12 @@ impl<'a> Interpreter<'a> {
 //     Ok(Box::new(move || closure(&mut env)))
 // }
 
-pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<i64> {
+pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<i64, String> {
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new();
 
     match interpreter.eval(&mut env, expr)? {
         Value::Int(result) => Ok(result),
-        _ => Err(eyre!("Expected integer result")),
+        _ => Err("Expected integer result".to_string()),
     }
 }
