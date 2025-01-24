@@ -6,8 +6,6 @@
   "getting-started": "Getting Started",
   "quint-basics": "Quint Basics",
   "language-basics": "Language Basics",
-  "cli-basics": "CLI Basics",
-  "understanding-with-quint": "Understanding with Quint",
   "faq": "FAQ",
   "-- Writing specifications": {
     "type": "separator",
