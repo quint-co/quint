@@ -1,70 +1,82 @@
 // -*- mode: Bluespec; -*-
 /**
  * Dijkstra's Stabilizing Token Ring (EWD426)
- * This implementation ensures that exactly one token circulates in a ring of nodes, self-stabilizing to this state.
+ * K state machine
+ * This implementation ensures that from some time on,
+ * exactly one token circulates in a ring of nodes, 
  *
- * Mahtab Norouzi, Informal Systems, 2024
+ * Mahtab Norouzi, Josef Widder, Informal Systems, 2024, 2025
  */
 
 module token_ring {
     // Number of nodes in the ring
     const N: int
-    const K: int // K > N, ensures the state space is larger than the number of nodes
+    const K: int // K >= N, ensures the state space is larger than the number of nodes
+
+    val bottom = 0
+    val top = N
 
     // Variable: Mapping of node indices to their states
-    var nodes_to_states: int -> int
+    var system: int -> int
 
     // Pure function to check if a node has the token
-    pure def has_token(nodes: int -> int, index: int): bool = {
-        val predecessor_index = if (index == 0) N - 1 else index - 1 // Wrap-around for the ring
-        nodes.get(index) == (nodes.get(predecessor_index) + 1) % K
-    }
+    pure def has_token(nodes: int -> int, index: int): bool = 
+        if (index == bottom)
+            nodes.get(bottom) == nodes.get(top)
+        else
+            not(nodes.get(index) == nodes.get(index - 1))
 
-    // Pure function to count how many tokens exist
-    pure def count_tokens(nodes: int -> int): int = {
-        to(0, N - 1).filter(i => has_token(nodes, i)).size()
-    }
 
     // Pure function to update the state of a specific node
-    pure def update_node(nodes: int -> int, index: int): int -> int = {
-        val predecessor_index = if (index == 0) N - 1 else index - 1 // Wrap-around for the ring
-        val updated_state = (nodes.get(predecessor_index) + 1) % K
-        nodes.set(index, updated_state)
-    }
+    pure def state_transition(nodes: int -> int, index: int): int = 
+        if (not(has_token(nodes, index)))
+            nodes.get(index)
+        else   
+            if (index == bottom)
+                (nodes.get(bottom) +1) % K
+            else
+                nodes.get(index - 1)
+
+    
 
     /// Initialize all nodes with random states
     action init = all {
-        nondet random = to(0, N - 1).setOfMaps(to(0, K - 1)).oneOf()
-        nodes_to_states' = to(0, N - 1).mapBy(i => random.get(i))
+        nondet random = to(0, N).setOfMaps(to(0, K - 1)).oneOf()
+        system' = to(0, N).mapBy(i => random.get(i))
     }
 
-    /// Update a single random node based on its predecessor
-    action update = {
-        nondet node_to_update = to(0, N - 1).oneOf()
-        nodes_to_states' = update_node(nodes_to_states, node_to_update)
+    /// Update a single random active node
+    action step = {
+        nondet node = to(0, N)  .filter(i => has_token(system, i))
+                                .oneOf()
+        system' = system.set(node, state_transition(system, node) )
     }
 
-    action step = any {
-        update
-    }
 
-    // Invariants
-    // val one_token_invariant = {
-    //     count_tokens(nodes_to_states) == 1
-    // }
+
+    // Pure function to count how many tokens exist
+    pure def count_tokens(nodes: int -> int): int = {
+        to(0, N).filter(i => has_token(nodes, i)).size()
+    }
 
     // Temporal properties
-    temporal convergence = eventually (count_tokens(nodes_to_states) == 1)
-    temporal closure = always (count_tokens(nodes_to_states) == 1 implies always (count_tokens(nodes_to_states) == 1))
+    temporal convergence = eventually (count_tokens(system) == 1)
+    temporal closure = always (count_tokens(system) == 1 implies always (count_tokens(system) == 1))
 
-        /// check whether witness is invariant. 
-    val convergence_witness = {
-        count_tokens(nodes_to_states) > 1
-    }
+    // Invariant
+    def tokenInv = count_tokens(system) > 0
+
+    /// to better see the token in the repl
+    pure def show_token(nodes: int -> int): int -> bool =
+        nodes.keys().mapBy(i => has_token(nodes, i))
+
 }
-// write the command
-//temporal properties are not verified
+
 
 module Dijkstra {
     import token_ring(N = 5, K = 7).*
+}
+
+module BrokenDijkstra {
+    import token_ring(N = 3, K = 2).*
 }
