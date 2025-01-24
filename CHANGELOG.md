@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.23.0 -- 2025-01-24
+
+### Added
 
 - Added a `--witnesses` option to `quint run` that enables counting for how many explored traces each of the given predicates (witnesses) were true (#1562)
 
