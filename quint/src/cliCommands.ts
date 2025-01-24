@@ -37,7 +37,7 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
-import { Outcome, SimulatorOptions } from './simulation'
+import { Outcome, SimulationResult, SimulatorOptions } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -480,6 +480,28 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
   }
 }
 
+function maybePrintWitnesses(
+  verbosityLevel: number,
+  evalResult: Either<QuintError, SimulationResult>,
+  witnesses: string[]
+) {
+  if (verbosity.hasWitnessesOutput(verbosityLevel)) {
+    evalResult.map(r => {
+      if (r.witnessingTraces.length > 0) {
+        console.log(chalk.green('Witnesses:'))
+      }
+      r.witnessingTraces.forEach((n, i) => {
+        const percentage = chalk.gray(`(${(((1.0 * n) / r.samples) * 100).toFixed(2)}%)`)
+        console.log(
+          `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+            r.samples
+          } explored ${percentage}`
+        )
+      })
+    })
+  }
+}
+
 /**
  * Run the simulator.
  *
@@ -545,20 +567,23 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     return right(parseResult.expr)
   }
 
-  const argsParsingResult = mergeInMany([prev.args.init, prev.args.step, prev.args.invariant].map(toExpr))
+  const argsParsingResult = mergeInMany(
+    [prev.args.init, prev.args.step, prev.args.invariant, ...prev.args.witnesses].map(toExpr)
+  )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
       errors: argsParsingResult.value.map(mkErrorMessage(new Map())),
     })
   }
-  const [init, step, invariant] = argsParsingResult.value
+  const [init, step, invariant, ...witnesses] = argsParsingResult.value
 
   const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
   const evalResult = evaluator.simulate(
     init,
     step,
     invariant,
+    witnesses,
     prev.args.maxSamples,
     prev.args.maxSteps,
     prev.args.nTraces ?? 1
@@ -567,7 +592,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const elapsedMs = Date.now() - startMs
 
   const outcome: Outcome = evalResult.isRight()
-    ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
+    ? { status: (evalResult.value.result as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
 
   const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
@@ -609,6 +634,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return right({
         ...simulator,
@@ -625,6 +651,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return cliErr('Invariant violated', {
         ...simulator,

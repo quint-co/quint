@@ -9,7 +9,6 @@
  */
 
 import { QuintEx } from './ir/quintIr'
-import { ExecutionFrame } from './runtime/trace'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
 
@@ -39,10 +38,8 @@ export type Outcome =
 /**
  * A result returned by the simulator.
  */
-export interface SimulatorResult {
-  outcome: Outcome
-  vars: string[]
-  states: QuintEx[]
-  frames: ExecutionFrame[]
-  seed: bigint
+export interface SimulationResult {
+  result: QuintEx
+  witnessingTraces: number[]
+  samples: number
 }

@@ -1410,3 +1410,22 @@ exit $exit_code
 
 error: parsing failed
 ```
+### Prints witnesses counts
+
+<!-- !test exit 0 -->
+<!-- !test in witnesses -->
+```
+output=$(quint run ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out witnesses -->
+```
+[ok] No violation found (duration).
+Witnesses:
+won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
+stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
+Use --seed=0x2b442ab439177 to reproduce.
+```

@@ -235,6 +235,8 @@ Options:
   --invariant    invariant to check: a definition name or an expression
                                                     [string] [default: ["true"]]
   --seed         random seed to use for non-deterministic choice        [string]
+  --witnesses    space separated list of witnesses to report on (counting for
+                 how many traces the witness is true)      [array] [default: []]
   --mbt          (experimental) whether to produce metadata to be used by
                  model-based testing                  [boolean] [default: false]
 ```
