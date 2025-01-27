@@ -7,7 +7,7 @@
  *
  * Mahtab Norouzi, Josef Widder, Informal Systems, 2024-2025
  */
-module self_stabilization_three_states {
+module self_stabilization_three_state {
   // Number of nodes in the ring
   const N: int
 
@@ -90,5 +90,5 @@ module self_stabilization_three_states {
 }
 
 module ewd426_3 {
-  import self_stabilization_three_states(N = 5).*
+  import self_stabilization_three_state(N = 5).*
 }

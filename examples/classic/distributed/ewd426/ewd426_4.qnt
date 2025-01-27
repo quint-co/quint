@@ -7,7 +7,7 @@
  *
  * Mahtab Norouzi, Josef Widder, Informal Systems, 2024-2025
  */
-module self_stabilization_four_states {
+module self_stabilization_four_state {
   const N: int
 
   val bottom = 0
@@ -97,5 +97,5 @@ module self_stabilization_four_states {
 }
 
 module ewd426_4 {
-  import self_stabilization_four_states(N = 5).*
+  import self_stabilization_four_state(N = 5).*
 }
