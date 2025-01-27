@@ -92,7 +92,8 @@ module self_stabilization_four_states {
   def tokenInv = count_tokens(system) > 0
 
   /// to better see the token in the repl
-  pure def show_token(nodes: int -> State): int -> bool = nodes.keys().mapBy(i => has_token(nodes, i))
+  pure def show_token(nodes: int -> State): int -> bool =
+    nodes.keys().mapBy(i => has_token(nodes, i))
 }
 
 module ewd426_4 {
