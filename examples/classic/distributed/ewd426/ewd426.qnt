@@ -10,22 +10,25 @@
 module self_stabilization {
   // Number of nodes in the ring
   const N: int
-  const K: int // K >= N, ensures the state space is larger than the number of nodes
+  const K: int
+
+  /// Ensures the state space is larger than the number of nodes
+  assume _ = K >= N
 
   val bottom = 0
   val top = N
 
-  // Variable: Mapping of node indices to their states
+  /// Mapping of node indices to their states
   var system: int -> int
 
-  // Pure function to check if a node has the token
+  /// Check if a node has the token
   pure def has_token(nodes: int -> int, index: int): bool =
     if (index == bottom)
       nodes.get(bottom) == nodes.get(top)
     else
       not(nodes.get(index) == nodes.get(index - 1))
 
-  // Pure function to update the state of a specific node
+  /// Update the state of a specific node
   pure def state_transition(nodes: int -> int, index: int): int =
     if (not(has_token(nodes, index)))
       nodes.get(index)
@@ -34,16 +37,15 @@ module self_stabilization {
     else
       nodes.get(index - 1)
 
-  /// Initialize all nodes with random states
+  /// Initialize all nodes with non-deterministic states
   action init = all {
     nondet initial = 0.to(N).setOfMaps(0.to(K - 1)).oneOf()
     system' = initial
   }
 
-  /// Update a single random active node
+  /// Update a single non-deterministic active node
   action step = {
-    nondet node = 0.to(N).filter(i => has_token(system, i))
-        .oneOf()
+    nondet node = 0.to(N).filter(i => has_token(system, i)).oneOf()
     system' = system.set(node, state_transition(system, node))
   }
 
@@ -53,16 +55,16 @@ module self_stabilization {
   }
 
   // Temporal properties
-  temporal convergence = eventually(count_tokens(system) == 1)
+  temporal convergence = step.weakFair(Set(system)) implies eventually(count_tokens(system) == 1)
   temporal closure = always(count_tokens(system) == 1 implies always(count_tokens(system) == 1))
-
-  temporal persistance = eventually(always(count_tokens(system) == 1))
+  temporal persistence = step.weakFair(Set(system)) implies eventually(always(count_tokens(system) == 1))
 
   // Invariant
   def tokenInv = count_tokens(system) > 0
 
   /// to better see the token in the repl
-  pure def show_token(nodes: int -> int): int -> bool = nodes.keys().mapBy(i => has_token(nodes, i))
+  pure def show_token(nodes: int -> int): int -> bool =
+    nodes.keys().mapBy(i => has_token(nodes, i))
 }
 
 module ewd426 {
@@ -70,5 +72,6 @@ module ewd426 {
 }
 
 module broken_ewd426 {
+  // This should break the assumption of K >= N. See #1182.
   import self_stabilization(N = 3, K = 2).*
 }

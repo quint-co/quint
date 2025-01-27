@@ -84,10 +84,9 @@ module self_stabilization_four_states {
   }
 
   // Temporal properties
-  temporal convergence = eventually(count_tokens(system) == 1)
-  temporal closure = always(
-    count_tokens(system) == 1 implies always(count_tokens(system) == 1)
-  )
+  temporal convergence = step.weakFair(Set(system)) implies eventually(count_tokens(system) == 1)
+  temporal closure = always(count_tokens(system) == 1 implies always(count_tokens(system) == 1))
+  temporal persistence = step.weakFair(Set(system)) implies eventually(always(count_tokens(system) == 1))
 
   // Invariant
   def tokenInv = count_tokens(system) > 0
