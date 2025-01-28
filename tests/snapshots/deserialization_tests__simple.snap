@@ -1,5 +1,5 @@
 ---
-source: tests/integration_tests.rs
+source: tests/deserialization_tests.rs
 expression: parsed
 ---
 modules:
