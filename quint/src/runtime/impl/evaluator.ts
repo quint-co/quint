@@ -28,6 +28,7 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 import { Presets, SingleBar } from 'cli-progress'
+import { SimulationResult } from '../../simulation'
 
 /**
  * An evaluator for Quint in Node TS runtime.
@@ -141,10 +142,11 @@ export class Evaluator {
     init: QuintEx,
     step: QuintEx,
     inv: QuintEx,
+    witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
     ntraces: number
-  ): Either<QuintError, QuintEx> {
+  ): Either<QuintError, SimulationResult> {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
 
@@ -161,9 +163,13 @@ export class Evaluator {
     const initEval = buildExpr(this.builder, init)
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
+    const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
+    const witnessingTraces = new Array(witnesses.length).fill(0)
 
-    for (let runNo = 0; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
+    let runNo = 0
+    for (; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
       progressBar.update(runNo)
+      const traceWitnessed = new Array(witnesses.length).fill(false)
 
       this.recorder.onRunCall()
       this.reset()
@@ -208,12 +214,25 @@ export class Evaluator {
 
             this.shift()
 
+            witnessesEvals.forEach((witnessEval, i) => {
+              const witnessResult = witnessEval(this.ctx)
+              if (isTrue(witnessResult)) {
+                traceWitnessed[i] = true
+              }
+            })
+
             const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
             if (!isTrue(invResult)) {
               errorsFound++
             }
             this.recorder.onUserOperatorReturn(stepApp, [], invResult)
           }
+
+          traceWitnessed.forEach((witnessed, i) => {
+            if (witnessed) {
+              witnessingTraces[i] = witnessingTraces[i] + 1
+            }
+          })
         }
       }
 
@@ -222,11 +241,9 @@ export class Evaluator {
     }
     progressBar.stop()
 
-    const outcome: Either<QuintError, QuintEx> = failure
+    return failure
       ? left(failure)
-      : right({ id: 0n, kind: 'bool', value: errorsFound == 0 })
-
-    return outcome
+      : right({ result: { id: 0n, kind: 'bool', value: errorsFound == 0 }, witnessingTraces, samples: runNo })
   }
 
   /**
@@ -386,10 +403,10 @@ export class Evaluator {
   private evaluateSimulation(expr: QuintApp): Either<QuintError, QuintEx> {
     if (expr.opcode === 'q::testOnce') {
       const [nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, 1, toNumber(nsteps), toNumber(ntraces))
+      return this.simulate(init, step, inv, [], 1, toNumber(nsteps), toNumber(ntraces)).map(r => r.result)
     } else {
       const [nruns, nsteps, ntraces, init, step, inv] = expr.args
-      return this.simulate(init, step, inv, toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
+      return this.simulate(init, step, inv, [], toNumber(nruns), toNumber(nsteps), toNumber(ntraces)).map(r => r.result)
     }
   }
 }
