@@ -1,10 +1,8 @@
-use std::hash::{Hash, Hasher};
-
-use fxhash::FxHashSet;
-
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
+use fxhash::FxHashSet;
 use std::cell::RefCell;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -45,27 +43,20 @@ impl<'a> Value<'a> {
         }
     }
 
-    // pub fn as_bool(&self) -> Result<bool> {
-    //     match self {
-    //         Value::Bool(b) => Ok(*b),
-    //         _ => bail!("Expected boolean"),
-    //     }
-    // }
+    pub fn as_bool(&self) -> Result<bool, &str> {
+        match self {
+            Value::Bool(b) => Ok(*b),
+            _ => Err("Expected boolean"),
+        }
+    }
 
-    // pub fn as_set(&self) -> Result<&FxHashSet<Value>> {
-    //     match self {
-    //         Value::Set(set) => Ok(set),
-    //         _ => bail!("Expected set"),
-    //     }
-    // }
+    pub fn as_set(&self) -> Result<&'a FxHashSet<Value>, &str> {
+        match self {
+            Value::Set(set) => Ok(set),
+            _ => Err("Expected set"),
+        }
+    }
 
-    // pub fn to_set(self) -> Result<FxHashSet<Value>> {
-    //     match self {
-    //         Value::Set(set) => Ok(set),
-    //         _ => bail!("Expected set"),
-    //     }
-    // }
-    //
     pub fn as_closure<'b>(
         &'b self,
     ) -> Result<impl Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'b, String> {

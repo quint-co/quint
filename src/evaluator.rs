@@ -20,23 +20,17 @@ impl<'a> CompiledExpr<'a> {
 
 #[derive(Default)]
 pub struct Env {
+    // Other params from Typescript implementation, for future reference:
     // rand
     // recorder
     // trace
-    // varStorage: Box<[Option<Value<'a>>]>,
-    //
-    // Can we make this into Vec<Optional<?>> for better performance?
-    // values: FxHashMap<QuintId, Value>,
-    // cache: FxHashMap<QuintId, Closure<'a>>,
-    // parent: Option<&'a Env<'a>>,
+    // varStorage
 }
 
 impl Env {
     pub fn new() -> Self {
         Self {
-            // values: FxHashMap::default(),
-            // cache: FxHashMap::default(),
-            // parent: None,
+            // TODO
         }
     }
 }
@@ -44,7 +38,7 @@ impl Env {
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
-    // param_registry: Map<bigint, Register> = new Map()
+    // Other params from Typescript implementation, for future reference:
     // constRegistry: Map<bigint, Register> = new Map()
     // scopedCachedValues: Map<bigint, CachedValue> = new Map()
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
@@ -58,7 +52,6 @@ fn builtin_value<'e>(name: String) -> CompiledExpr<'e> {
     match name.as_str() {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
-        // "iadd" => CompiledExpr::new(move |args| Ok(Value::Int(args.0.to_int() + args.1.to_int()))),
         _ => CompiledExpr::new(move |_| Err(format!("Undefined builtin value: {name}"))),
     }
 }
@@ -137,6 +130,7 @@ impl<'a> Interpreter<'a> {
 
             QuintEx::QuintApp { id, opcode, args } => match opcode.as_str() {
                 "iadd" => {
+                    // TODO: generalize argument compilation for eager operators
                     let lhs = self.compile(&args[0]);
                     let rhs = self.compile(&args[1]);
                     CompiledExpr::new(move |env| {
@@ -146,6 +140,7 @@ impl<'a> Interpreter<'a> {
                     })
                 }
                 _ => {
+                    // User-defined operator, lookup the definition and compile it
                     let op = self.table.get(id).map(|def| self.compile_def(def)).unwrap();
                     let compiled_args =
                         args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
@@ -169,26 +164,6 @@ impl<'a> Interpreter<'a> {
         self.compile(expr).execute(env)
     }
 }
-
-// pub fn prepare(
-//     table: &LookupTable,
-//     expr: QuintEx,
-// ) -> Result<Box<dyn FnMut() -> Result<Value> + '_>> {
-//     let interpreter = Interpreter::new(table);
-//     // let expr: &'static Expr = Box::leak(Box::new(Expr::Call(main_sym, vec![])));
-
-//     let closure = interpreter.compile(&expr)?;
-
-//     let mut env = Env::new();
-
-//     // for def in interpreter.table.defs.values() {
-//     //     let sym = def.sym;
-//     //     let closure = interpreter.compile(&def.body)?;
-//     //     env.cache.insert(sym, closure);
-//     // }
-
-//     Ok(Box::new(move || closure(&mut env)))
-// }
 
 pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, String> {
     let mut interpreter = Interpreter::new(table);
