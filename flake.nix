@@ -8,7 +8,12 @@
       let pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShell = pkgs.mkShell {
-          buildInputs = [ pkgs.rustup pkgs.rustc pkgs.rust-analyzer ];
+          buildInputs = [
+            pkgs.rustup
+            pkgs.rustc
+            pkgs.rust-analyzer
+            pkgs.cargo-insta
+          ];
           shellHook = ''
             rustup default stable
           '';

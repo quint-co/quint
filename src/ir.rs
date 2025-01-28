@@ -1,5 +1,5 @@
+use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 pub type QuintId = u64;
 
@@ -9,7 +9,7 @@ pub struct QuintOutput {
     pub table: LookupTable,
 }
 
-pub type LookupTable = HashMap<QuintId, LookupDefinition>;
+pub type LookupTable = FxHashMap<QuintId, LookupDefinition>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -50,7 +50,19 @@ pub enum QuintDef {
     QuintAssume {
         id: QuintId,
         name: String,
-        expr: QuintEx,
+        assumption: QuintEx,
+    },
+
+    #[serde(rename = "typedef")]
+    QuintTypeDef {
+        id: QuintId,
+        // We don't care about the type definition
+    },
+
+    #[serde(rename = "const")]
+    QuintConst {
+        id: QuintId,
+        // We don't care about the constant definition
     },
 }
 
@@ -106,8 +118,8 @@ pub enum QuintEx {
     #[serde(rename = "let")]
     QuintLet {
         id: QuintId,
-        opdef: Vec<OpDef>,
-        body: Box<QuintEx>,
+        opdef: Box<OpDef>,
+        expr: Box<QuintEx>,
     },
 }
 
