@@ -1,0 +1,6023 @@
+---
+source: tests/integration_tests.rs
+expression: parsed
+---
+modules:
+  - name: ewd426
+    declarations:
+      - kind: def
+        id: 195
+        name: "ewd426::self_stabilization::N"
+        qualifier: pureval
+        expr:
+          kind: int
+          id: 193
+          value: 5
+      - kind: def
+        id: 196
+        name: "ewd426::self_stabilization::K"
+        qualifier: pureval
+        expr:
+          kind: int
+          id: 194
+          value: 7
+      - kind: var
+        id: 211
+        name: "ewd426::self_stabilization::system"
+      - kind: def
+        id: 255
+        name: "ewd426::self_stabilization::init"
+        qualifier: action
+        expr:
+          kind: app
+          id: 256
+          opcode: actionAll
+          args:
+            - kind: let
+              id: 257
+              opdef:
+                id: 258
+                name: "ewd426::self_stabilization::initial"
+                qualifier: nondet
+                expr:
+                  kind: app
+                  id: 259
+                  opcode: oneOf
+                  args:
+                    - kind: app
+                      id: 260
+                      opcode: setOfMaps
+                      args:
+                        - kind: app
+                          id: 261
+                          opcode: to
+                          args:
+                            - kind: int
+                              id: 262
+                              value: 0
+                            - kind: name
+                              id: 263
+                              name: "ewd426::self_stabilization::N"
+                        - kind: app
+                          id: 264
+                          opcode: to
+                          args:
+                            - kind: int
+                              id: 265
+                              value: 0
+                            - kind: app
+                              id: 266
+                              opcode: isub
+                              args:
+                                - kind: name
+                                  id: 267
+                                  name: "ewd426::self_stabilization::K"
+                                - kind: int
+                                  id: 268
+                                  value: 1
+              expr:
+                kind: app
+                id: 269
+                opcode: assign
+                args:
+                  - kind: name
+                    id: 270
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 271
+                    name: "ewd426::self_stabilization::initial"
+      - kind: def
+        id: 206
+        name: "q::init"
+        qualifier: action
+        expr:
+          kind: name
+          id: 205
+          name: "ewd426::self_stabilization::init"
+      - kind: def
+        id: 209
+        name: "ewd426::self_stabilization::bottom"
+        qualifier: val
+        expr:
+          kind: int
+          id: 210
+          value: 0
+      - kind: def
+        id: 215
+        name: "ewd426::self_stabilization::top"
+        qualifier: val
+        expr:
+          kind: name
+          id: 216
+          name: "ewd426::self_stabilization::N"
+      - kind: def
+        id: 221
+        name: "ewd426::self_stabilization::has_token"
+        qualifier: puredef
+        expr:
+          kind: lambda
+          id: 227
+          params:
+            - id: 228
+              name: "ewd426::self_stabilization::nodes_45"
+            - id: 229
+              name: "ewd426::self_stabilization::index_45"
+          expr:
+            kind: app
+            id: 234
+            opcode: ite
+            args:
+              - kind: app
+                id: 235
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 236
+                    name: "ewd426::self_stabilization::index_45"
+                  - kind: name
+                    id: 237
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 238
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 239
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 240
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 241
+                        name: "ewd426::self_stabilization::bottom"
+                  - kind: app
+                    id: 242
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 243
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 244
+                        name: "ewd426::self_stabilization::top"
+              - kind: app
+                id: 245
+                opcode: not
+                args:
+                  - kind: app
+                    id: 246
+                    opcode: eq
+                    args:
+                      - kind: app
+                        id: 247
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 248
+                            name: "ewd426::self_stabilization::nodes_45"
+                          - kind: name
+                            id: 249
+                            name: "ewd426::self_stabilization::index_45"
+                      - kind: app
+                        id: 250
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 251
+                            name: "ewd426::self_stabilization::nodes_45"
+                          - kind: app
+                            id: 252
+                            opcode: isub
+                            args:
+                              - kind: name
+                                id: 253
+                                name: "ewd426::self_stabilization::index_45"
+                              - kind: int
+                                id: 254
+                                value: 1
+      - kind: def
+        id: 312
+        name: "ewd426::self_stabilization::state_transition"
+        qualifier: puredef
+        expr:
+          kind: lambda
+          id: 318
+          params:
+            - id: 319
+              name: "ewd426::self_stabilization::nodes_78"
+            - id: 320
+              name: "ewd426::self_stabilization::index_78"
+          expr:
+            kind: app
+            id: 325
+            opcode: ite
+            args:
+              - kind: app
+                id: 326
+                opcode: not
+                args:
+                  - kind: app
+                    id: 327
+                    opcode: "ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 328
+                        name: "ewd426::self_stabilization::nodes_78"
+                      - kind: name
+                        id: 329
+                        name: "ewd426::self_stabilization::index_78"
+              - kind: app
+                id: 330
+                opcode: get
+                args:
+                  - kind: name
+                    id: 331
+                    name: "ewd426::self_stabilization::nodes_78"
+                  - kind: name
+                    id: 332
+                    name: "ewd426::self_stabilization::index_78"
+              - kind: app
+                id: 333
+                opcode: ite
+                args:
+                  - kind: app
+                    id: 334
+                    opcode: eq
+                    args:
+                      - kind: name
+                        id: 335
+                        name: "ewd426::self_stabilization::index_78"
+                      - kind: name
+                        id: 336
+                        name: "ewd426::self_stabilization::bottom"
+                  - kind: app
+                    id: 337
+                    opcode: imod
+                    args:
+                      - kind: app
+                        id: 338
+                        opcode: iadd
+                        args:
+                          - kind: app
+                            id: 339
+                            opcode: get
+                            args:
+                              - kind: name
+                                id: 340
+                                name: "ewd426::self_stabilization::nodes_78"
+                              - kind: name
+                                id: 341
+                                name: "ewd426::self_stabilization::bottom"
+                          - kind: int
+                            id: 342
+                            value: 1
+                      - kind: name
+                        id: 343
+                        name: "ewd426::self_stabilization::K"
+                  - kind: app
+                    id: 344
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 345
+                        name: "ewd426::self_stabilization::nodes_78"
+                      - kind: app
+                        id: 346
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 347
+                            name: "ewd426::self_stabilization::index_78"
+                          - kind: int
+                            id: 348
+                            value: 1
+      - kind: def
+        id: 349
+        name: "ewd426::self_stabilization::step"
+        qualifier: action
+        expr:
+          kind: let
+          id: 350
+          opdef:
+            id: 351
+            name: "ewd426::self_stabilization::node"
+            qualifier: nondet
+            expr:
+              kind: app
+              id: 352
+              opcode: oneOf
+              args:
+                - kind: app
+                  id: 353
+                  opcode: filter
+                  args:
+                    - kind: app
+                      id: 354
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 355
+                          value: 0
+                        - kind: name
+                          id: 356
+                          name: "ewd426::self_stabilization::N"
+                    - kind: lambda
+                      id: 357
+                      params:
+                        - id: 358
+                          name: "ewd426::self_stabilization::i_104"
+                      expr:
+                        kind: app
+                        id: 359
+                        opcode: "ewd426::self_stabilization::has_token"
+                        args:
+                          - kind: name
+                            id: 360
+                            name: "ewd426::self_stabilization::system"
+                          - kind: name
+                            id: 361
+                            name: "ewd426::self_stabilization::i_104"
+          expr:
+            kind: app
+            id: 362
+            opcode: assign
+            args:
+              - kind: name
+                id: 363
+                name: "ewd426::self_stabilization::system"
+              - kind: app
+                id: 364
+                opcode: set
+                args:
+                  - kind: name
+                    id: 365
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 366
+                    name: "ewd426::self_stabilization::node"
+                  - kind: app
+                    id: 367
+                    opcode: "ewd426::self_stabilization::state_transition"
+                    args:
+                      - kind: name
+                        id: 368
+                        name: "ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 369
+                        name: "ewd426::self_stabilization::node"
+      - kind: def
+        id: 208
+        name: "q::step"
+        qualifier: action
+        expr:
+          kind: name
+          id: 207
+          name: "ewd426::self_stabilization::step"
+table:
+  512:
+    id: 509
+    name: "broken_ewd426::self_stabilization::i_188"
+  55:
+    id: 52
+    name: index_78
+  244:
+    kind: def
+    id: 215
+    name: "ewd426::self_stabilization::top"
+    qualifier: val
+    expr:
+      kind: name
+      id: 216
+      name: "ewd426::self_stabilization::N"
+  567:
+    kind: def
+    id: 552
+    name: "broken_ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 553
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 554
+          opcode: filter
+          args:
+            - kind: app
+              id: 555
+              opcode: to
+              args:
+                - kind: int
+                  id: 556
+                  value: 0
+                - kind: name
+                  id: 557
+                  name: "broken_ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 558
+              params:
+                - id: 559
+                  name: "broken_ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 560
+                opcode: "broken_ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 561
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 562
+                    name: "broken_ewd426::self_stabilization::i_104"
+  110:
+    kind: var
+    id: 16
+    name: system
+  31:
+    kind: def
+    id: 12
+    name: top
+    qualifier: val
+    expr:
+      kind: name
+      id: 11
+      name: N
+  220:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  464:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  196:
+    kind: def
+    id: 196
+    name: "ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 194
+      value: 7
+  385:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  62:
+    kind: def
+    id: 10
+    name: bottom
+    qualifier: val
+    expr:
+      kind: int
+      id: 9
+      value: 0
+  251:
+    id: 228
+    name: "ewd426::self_stabilization::nodes_45"
+  117:
+    kind: def
+    id: 117
+    name: step
+    qualifier: action
+    expr:
+      kind: let
+      id: 116
+      opdef:
+        id: 107
+        name: node
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 106
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 105
+              opcode: filter
+              args:
+                - kind: app
+                  id: 99
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 97
+                      value: 0
+                    - kind: name
+                      id: 98
+                      name: N
+                - kind: lambda
+                  id: 104
+                  params:
+                    - id: 100
+                      name: i_104
+                  expr:
+                    kind: app
+                    id: 103
+                    opcode: has_token
+                    args:
+                      - kind: name
+                        id: 101
+                        name: system
+                      - kind: name
+                        id: 102
+                        name: i_104
+      expr:
+        kind: app
+        id: 115
+        opcode: assign
+        args:
+          - kind: name
+            id: 114
+            name: system
+          - kind: app
+            id: 113
+            opcode: set
+            args:
+              - kind: name
+                id: 108
+                name: system
+              - kind: name
+                id: 109
+                name: node
+              - kind: app
+                id: 112
+                opcode: state_transition
+                args:
+                  - kind: name
+                    id: 110
+                    name: system
+                  - kind: name
+                    id: 111
+                    name: node
+  306:
+    id: 300
+    name: "ewd426::self_stabilization::nodes_190"
+  361:
+    id: 358
+    name: "ewd426::self_stabilization::i_104"
+  38:
+    id: 22
+    name: index_45
+  550:
+    kind: def
+    id: 550
+    name: "broken_ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 551
+      opdef:
+        id: 552
+        name: "broken_ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 553
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 554
+              opcode: filter
+              args:
+                - kind: app
+                  id: 555
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 556
+                      value: 0
+                    - kind: name
+                      id: 557
+                      name: "broken_ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 558
+                  params:
+                    - id: 559
+                      name: "broken_ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 560
+                    opcode: "broken_ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 561
+                        name: "broken_ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 562
+                        name: "broken_ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 563
+        opcode: assign
+        args:
+          - kind: name
+            id: 564
+            name: "broken_ewd426::self_stabilization::system"
+          - kind: app
+            id: 565
+            opcode: set
+            args:
+              - kind: name
+                id: 566
+                name: "broken_ewd426::self_stabilization::system"
+              - kind: name
+                id: 567
+                name: "broken_ewd426::self_stabilization::node"
+              - kind: app
+                id: 568
+                opcode: "broken_ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 569
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 570
+                    name: "broken_ewd426::self_stabilization::node"
+  416:
+    kind: def
+    id: 416
+    name: "broken_ewd426::self_stabilization::top"
+    qualifier: val
+    expr:
+      kind: name
+      id: 417
+      name: "broken_ewd426::self_stabilization::N"
+  471:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  392:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  69:
+    kind: const
+    id: 4
+  258:
+    kind: def
+    id: 258
+    name: "ewd426::self_stabilization::initial"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 259
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 260
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 261
+              opcode: to
+              args:
+                - kind: int
+                  id: 262
+                  value: 0
+                - kind: name
+                  id: 263
+                  name: "ewd426::self_stabilization::N"
+            - kind: app
+              id: 264
+              opcode: to
+              args:
+                - kind: int
+                  id: 265
+                  value: 0
+                - kind: app
+                  id: 266
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 267
+                      name: "ewd426::self_stabilization::K"
+                    - kind: int
+                      id: 268
+                      value: 1
+  581:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  124:
+    kind: const
+    id: 2
+  368:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  557:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  289:
+    kind: def
+    id: 221
+    name: "ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 227
+      params:
+        - id: 228
+          name: "ewd426::self_stabilization::nodes_45"
+        - id: 229
+          name: "ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 234
+        opcode: ite
+        args:
+          - kind: app
+            id: 235
+            opcode: eq
+            args:
+              - kind: name
+                id: 236
+                name: "ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 237
+                name: "ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 238
+            opcode: eq
+            args:
+              - kind: app
+                id: 239
+                opcode: get
+                args:
+                  - kind: name
+                    id: 240
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 241
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 242
+                opcode: get
+                args:
+                  - kind: name
+                    id: 243
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 244
+                    name: "ewd426::self_stabilization::top"
+          - kind: app
+            id: 245
+            opcode: not
+            args:
+              - kind: app
+                id: 246
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 247
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 248
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 249
+                        name: "ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 250
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 251
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 252
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 253
+                            name: "ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 254
+                            value: 1
+  533:
+    id: 521
+    name: "broken_ewd426::self_stabilization::index_78"
+  588:
+    kind: def
+    id: 588
+    name: "broken_ewd426::self_stabilization::convergence"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 589
+      opcode: implies
+      args:
+        - kind: app
+          id: 590
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 591
+              name: "broken_ewd426::self_stabilization::step"
+            - kind: app
+              id: 592
+              opcode: Set
+              args:
+                - kind: name
+                  id: 593
+                  name: "broken_ewd426::self_stabilization::system"
+        - kind: app
+          id: 594
+          opcode: eventually
+          args:
+            - kind: app
+              id: 595
+              opcode: eq
+              args:
+                - kind: app
+                  id: 596
+                  opcode: "broken_ewd426::self_stabilization::count_tokens"
+                  args:
+                    - kind: name
+                      id: 597
+                      name: "broken_ewd426::self_stabilization::system"
+                - kind: int
+                  id: 598
+                  value: 1
+  454:
+    id: 430
+    name: "broken_ewd426::self_stabilization::index_45"
+  186:
+    id: 184
+    name: i_188
+  375:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  564:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  241:
+    kind: def
+    id: 209
+    name: "ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 210
+      value: 0
+  107:
+    kind: def
+    id: 107
+    name: node
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 106
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 105
+          opcode: filter
+          args:
+            - kind: app
+              id: 99
+              opcode: to
+              args:
+                - kind: int
+                  id: 97
+                  value: 0
+                - kind: name
+                  id: 98
+                  name: N
+            - kind: lambda
+              id: 104
+              params:
+                - id: 100
+                  name: i_104
+              expr:
+                kind: app
+                id: 103
+                opcode: has_token
+                args:
+                  - kind: name
+                    id: 101
+                    name: system
+                  - kind: name
+                    id: 102
+                    name: i_104
+  162:
+    kind: var
+    id: 16
+    name: system
+  351:
+    kind: def
+    id: 351
+    name: "ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 352
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 353
+          opcode: filter
+          args:
+            - kind: app
+              id: 354
+              opcode: to
+              args:
+                - kind: int
+                  id: 355
+                  value: 0
+                - kind: name
+                  id: 356
+                  name: "ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 357
+              params:
+                - id: 358
+                  name: "ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 359
+                opcode: "ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 360
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 361
+                    name: "ewd426::self_stabilization::i_104"
+  28:
+    kind: def
+    id: 10
+    name: bottom
+    qualifier: val
+    expr:
+      kind: int
+      id: 9
+      value: 0
+  272:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  327:
+    kind: def
+    id: 221
+    name: "ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 227
+      params:
+        - id: 228
+          name: "ewd426::self_stabilization::nodes_45"
+        - id: 229
+          name: "ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 234
+        opcode: ite
+        args:
+          - kind: app
+            id: 235
+            opcode: eq
+            args:
+              - kind: name
+                id: 236
+                name: "ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 237
+                name: "ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 238
+            opcode: eq
+            args:
+              - kind: app
+                id: 239
+                opcode: get
+                args:
+                  - kind: name
+                    id: 240
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 241
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 242
+                opcode: get
+                args:
+                  - kind: name
+                    id: 243
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 244
+                    name: "ewd426::self_stabilization::top"
+          - kind: app
+            id: 245
+            opcode: not
+            args:
+              - kind: app
+                id: 246
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 247
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 248
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 249
+                        name: "ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 250
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 251
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 252
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 253
+                            name: "ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 254
+                            value: 1
+  382:
+    kind: def
+    id: 382
+    name: "ewd426::self_stabilization::tokenInv"
+    qualifier: def
+    expr:
+      kind: app
+      id: 383
+      opcode: igt
+      args:
+        - kind: app
+          id: 384
+          opcode: "ewd426::self_stabilization::count_tokens"
+          args:
+            - kind: name
+              id: 385
+              name: "ewd426::self_stabilization::system"
+        - kind: int
+          id: 386
+          value: 0
+  59:
+    id: 52
+    name: index_78
+  248:
+    id: 228
+    name: "ewd426::self_stabilization::nodes_45"
+  437:
+    id: 430
+    name: "broken_ewd426::self_stabilization::index_45"
+  114:
+    kind: var
+    id: 16
+    name: system
+  571:
+    kind: def
+    id: 571
+    name: "broken_ewd426::self_stabilization::closure"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 572
+      opcode: always
+      args:
+        - kind: app
+          id: 573
+          opcode: implies
+          args:
+            - kind: app
+              id: 574
+              opcode: eq
+              args:
+                - kind: app
+                  id: 575
+                  opcode: "broken_ewd426::self_stabilization::count_tokens"
+                  args:
+                    - kind: name
+                      id: 576
+                      name: "broken_ewd426::self_stabilization::system"
+                - kind: int
+                  id: 577
+                  value: 1
+            - kind: app
+              id: 578
+              opcode: always
+              args:
+                - kind: app
+                  id: 579
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 580
+                      opcode: "broken_ewd426::self_stabilization::count_tokens"
+                      args:
+                        - kind: name
+                          id: 581
+                          name: "broken_ewd426::self_stabilization::system"
+                    - kind: int
+                      id: 582
+                      value: 1
+  492:
+    id: 489
+    name: "broken_ewd426::self_stabilization::i_130"
+  169:
+    kind: def
+    id: 169
+    name: persistence
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 168
+      opcode: implies
+      args:
+        - kind: app
+          id: 161
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 158
+              name: step
+            - kind: app
+              id: 160
+              opcode: Set
+              args:
+                - kind: name
+                  id: 159
+                  name: system
+        - kind: app
+          id: 167
+          opcode: eventually
+          args:
+            - kind: app
+              id: 166
+              opcode: always
+              args:
+                - kind: app
+                  id: 165
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 163
+                      opcode: count_tokens
+                      args:
+                        - kind: name
+                          id: 162
+                          name: system
+                    - kind: int
+                      id: 164
+                      value: 1
+  35:
+    id: 22
+    name: index_45
+  90:
+    kind: def
+    id: 90
+    name: initial
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 89
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 88
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 82
+              opcode: to
+              args:
+                - kind: int
+                  id: 80
+                  value: 0
+                - kind: name
+                  id: 81
+                  name: N
+            - kind: app
+              id: 87
+              opcode: to
+              args:
+                - kind: int
+                  id: 83
+                  value: 0
+                - kind: app
+                  id: 86
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 84
+                      name: K
+                    - kind: int
+                      id: 85
+                      value: 1
+  602:
+    kind: def
+    id: 550
+    name: "broken_ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 551
+      opdef:
+        id: 552
+        name: "broken_ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 553
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 554
+              opcode: filter
+              args:
+                - kind: app
+                  id: 555
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 556
+                      value: 0
+                    - kind: name
+                      id: 557
+                      name: "broken_ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 558
+                  params:
+                    - id: 559
+                      name: "broken_ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 560
+                    opcode: "broken_ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 561
+                        name: "broken_ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 562
+                        name: "broken_ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 563
+        opcode: assign
+        args:
+          - kind: name
+            id: 564
+            name: "broken_ewd426::self_stabilization::system"
+          - kind: app
+            id: 565
+            opcode: set
+            args:
+              - kind: name
+                id: 566
+                name: "broken_ewd426::self_stabilization::system"
+              - kind: name
+                id: 567
+                name: "broken_ewd426::self_stabilization::node"
+              - kind: app
+                id: 568
+                opcode: "broken_ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 569
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 570
+                    name: "broken_ewd426::self_stabilization::node"
+  468:
+    kind: def
+    id: 202
+    name: "broken_ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 200
+      value: 2
+  145:
+    kind: def
+    id: 145
+    name: convergence
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 144
+      opcode: implies
+      args:
+        - kind: app
+          id: 138
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 135
+              name: step
+            - kind: app
+              id: 137
+              opcode: Set
+              args:
+                - kind: name
+                  id: 136
+                  name: system
+        - kind: app
+          id: 143
+          opcode: eventually
+          args:
+            - kind: app
+              id: 142
+              opcode: eq
+              args:
+                - kind: app
+                  id: 140
+                  opcode: count_tokens
+                  args:
+                    - kind: name
+                      id: 139
+                      name: system
+                - kind: int
+                  id: 141
+                  value: 1
+  11:
+    kind: const
+    id: 2
+  255:
+    kind: def
+    id: 255
+    name: "ewd426::self_stabilization::init"
+    qualifier: action
+    expr:
+      kind: app
+      id: 256
+      opcode: actionAll
+      args:
+        - kind: let
+          id: 257
+          opdef:
+            id: 258
+            name: "ewd426::self_stabilization::initial"
+            qualifier: nondet
+            expr:
+              kind: app
+              id: 259
+              opcode: oneOf
+              args:
+                - kind: app
+                  id: 260
+                  opcode: setOfMaps
+                  args:
+                    - kind: app
+                      id: 261
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 262
+                          value: 0
+                        - kind: name
+                          id: 263
+                          name: "ewd426::self_stabilization::N"
+                    - kind: app
+                      id: 264
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 265
+                          value: 0
+                        - kind: app
+                          id: 266
+                          opcode: isub
+                          args:
+                            - kind: name
+                              id: 267
+                              name: "ewd426::self_stabilization::K"
+                            - kind: int
+                              id: 268
+                              value: 1
+          expr:
+            kind: app
+            id: 269
+            opcode: assign
+            args:
+              - kind: name
+                id: 270
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 271
+                name: "ewd426::self_stabilization::initial"
+  444:
+    id: 429
+    name: "broken_ewd426::self_stabilization::nodes_45"
+  310:
+    id: 300
+    name: "ewd426::self_stabilization::nodes_190"
+  365:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  420:
+    kind: def
+    id: 202
+    name: "broken_ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 200
+      value: 2
+  609:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  286:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  341:
+    kind: def
+    id: 209
+    name: "ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 210
+      value: 0
+  530:
+    id: 521
+    name: "broken_ewd426::self_stabilization::index_78"
+  207:
+    kind: def
+    id: 349
+    name: "ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 350
+      opdef:
+        id: 351
+        name: "ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 352
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 353
+              opcode: filter
+              args:
+                - kind: app
+                  id: 354
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 355
+                      value: 0
+                    - kind: name
+                      id: 356
+                      name: "ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 357
+                  params:
+                    - id: 358
+                      name: "ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 359
+                    opcode: "ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 360
+                        name: "ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 361
+                        name: "ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 362
+        opcode: assign
+        args:
+          - kind: name
+            id: 363
+            name: "ewd426::self_stabilization::system"
+          - kind: app
+            id: 364
+            opcode: set
+            args:
+              - kind: name
+                id: 365
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 366
+                name: "ewd426::self_stabilization::node"
+              - kind: app
+                id: 367
+                opcode: "ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 368
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 369
+                    name: "ewd426::self_stabilization::node"
+  396:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  585:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  128:
+    id: 126
+    name: i_130
+  561:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  159:
+    kind: var
+    id: 16
+    name: system
+  25:
+    kind: def
+    id: 10
+    name: bottom
+    qualifier: val
+    expr:
+      kind: int
+      id: 9
+      value: 0
+  537:
+    kind: def
+    id: 410
+    name: "broken_ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 411
+      value: 0
+  403:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  135:
+    kind: def
+    id: 117
+    name: step
+    qualifier: action
+    expr:
+      kind: let
+      id: 116
+      opdef:
+        id: 107
+        name: node
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 106
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 105
+              opcode: filter
+              args:
+                - kind: app
+                  id: 99
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 97
+                      value: 0
+                    - kind: name
+                      id: 98
+                      name: N
+                - kind: lambda
+                  id: 104
+                  params:
+                    - id: 100
+                      name: i_104
+                  expr:
+                    kind: app
+                    id: 103
+                    opcode: has_token
+                    args:
+                      - kind: name
+                        id: 101
+                        name: system
+                      - kind: name
+                        id: 102
+                        name: i_104
+      expr:
+        kind: app
+        id: 115
+        opcode: assign
+        args:
+          - kind: name
+            id: 114
+            name: system
+          - kind: app
+            id: 113
+            opcode: set
+            args:
+              - kind: name
+                id: 108
+                name: system
+              - kind: name
+                id: 109
+                name: node
+              - kind: app
+                id: 112
+                opcode: state_transition
+                args:
+                  - kind: name
+                    id: 110
+                    name: system
+                  - kind: name
+                    id: 111
+                    name: node
+  513:
+    kind: def
+    id: 513
+    name: "broken_ewd426::self_stabilization::state_transition"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 519
+      params:
+        - id: 520
+          name: "broken_ewd426::self_stabilization::nodes_78"
+        - id: 521
+          name: "broken_ewd426::self_stabilization::index_78"
+      expr:
+        kind: app
+        id: 526
+        opcode: ite
+        args:
+          - kind: app
+            id: 527
+            opcode: not
+            args:
+              - kind: app
+                id: 528
+                opcode: "broken_ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 529
+                    name: "broken_ewd426::self_stabilization::nodes_78"
+                  - kind: name
+                    id: 530
+                    name: "broken_ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 531
+            opcode: get
+            args:
+              - kind: name
+                id: 532
+                name: "broken_ewd426::self_stabilization::nodes_78"
+              - kind: name
+                id: 533
+                name: "broken_ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 534
+            opcode: ite
+            args:
+              - kind: app
+                id: 535
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 536
+                    name: "broken_ewd426::self_stabilization::index_78"
+                  - kind: name
+                    id: 537
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 538
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 539
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 540
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 541
+                            name: "broken_ewd426::self_stabilization::nodes_78"
+                          - kind: name
+                            id: 542
+                            name: "broken_ewd426::self_stabilization::bottom"
+                      - kind: int
+                        id: 543
+                        value: 1
+                  - kind: name
+                    id: 544
+                    name: "broken_ewd426::self_stabilization::K"
+              - kind: app
+                id: 545
+                opcode: get
+                args:
+                  - kind: name
+                    id: 546
+                    name: "broken_ewd426::self_stabilization::nodes_78"
+                  - kind: app
+                    id: 547
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 548
+                        name: "broken_ewd426::self_stabilization::index_78"
+                      - kind: int
+                        id: 549
+                        value: 1
+  379:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  56:
+    kind: def
+    id: 46
+    name: has_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 45
+      params:
+        - id: 20
+          name: nodes_45
+        - id: 22
+          name: index_45
+      expr:
+        kind: app
+        id: 44
+        opcode: ite
+        args:
+          - kind: app
+            id: 26
+            opcode: eq
+            args:
+              - kind: name
+                id: 24
+                name: index_45
+              - kind: name
+                id: 25
+                name: bottom
+          - kind: app
+            id: 33
+            opcode: eq
+            args:
+              - kind: app
+                id: 29
+                opcode: get
+                args:
+                  - kind: name
+                    id: 27
+                    name: nodes_45
+                  - kind: name
+                    id: 28
+                    name: bottom
+              - kind: app
+                id: 32
+                opcode: get
+                args:
+                  - kind: name
+                    id: 30
+                    name: nodes_45
+                  - kind: name
+                    id: 31
+                    name: top
+          - kind: app
+            id: 43
+            opcode: not
+            args:
+              - kind: app
+                id: 42
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 36
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 34
+                        name: nodes_45
+                      - kind: name
+                        id: 35
+                        name: index_45
+                  - kind: app
+                    id: 41
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 37
+                        name: nodes_45
+                      - kind: app
+                        id: 40
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 38
+                            name: index_45
+                          - kind: int
+                            id: 39
+                            value: 1
+  568:
+    kind: def
+    id: 513
+    name: "broken_ewd426::self_stabilization::state_transition"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 519
+      params:
+        - id: 520
+          name: "broken_ewd426::self_stabilization::nodes_78"
+        - id: 521
+          name: "broken_ewd426::self_stabilization::index_78"
+      expr:
+        kind: app
+        id: 526
+        opcode: ite
+        args:
+          - kind: app
+            id: 527
+            opcode: not
+            args:
+              - kind: app
+                id: 528
+                opcode: "broken_ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 529
+                    name: "broken_ewd426::self_stabilization::nodes_78"
+                  - kind: name
+                    id: 530
+                    name: "broken_ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 531
+            opcode: get
+            args:
+              - kind: name
+                id: 532
+                name: "broken_ewd426::self_stabilization::nodes_78"
+              - kind: name
+                id: 533
+                name: "broken_ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 534
+            opcode: ite
+            args:
+              - kind: app
+                id: 535
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 536
+                    name: "broken_ewd426::self_stabilization::index_78"
+                  - kind: name
+                    id: 537
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 538
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 539
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 540
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 541
+                            name: "broken_ewd426::self_stabilization::nodes_78"
+                          - kind: name
+                            id: 542
+                            name: "broken_ewd426::self_stabilization::bottom"
+                      - kind: int
+                        id: 543
+                        value: 1
+                  - kind: name
+                    id: 544
+                    name: "broken_ewd426::self_stabilization::K"
+              - kind: app
+                id: 545
+                opcode: get
+                args:
+                  - kind: name
+                    id: 546
+                    name: "broken_ewd426::self_stabilization::nodes_78"
+                  - kind: app
+                    id: 547
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 548
+                        name: "broken_ewd426::self_stabilization::index_78"
+                      - kind: int
+                        id: 549
+                        value: 1
+  111:
+    kind: def
+    id: 107
+    name: node
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 106
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 105
+          opcode: filter
+          args:
+            - kind: app
+              id: 99
+              opcode: to
+              args:
+                - kind: int
+                  id: 97
+                  value: 0
+                - kind: name
+                  id: 98
+                  name: N
+            - kind: lambda
+              id: 104
+              params:
+                - id: 100
+                  name: i_104
+              expr:
+                kind: app
+                id: 103
+                opcode: has_token
+                args:
+                  - kind: name
+                    id: 101
+                    name: system
+                  - kind: name
+                    id: 102
+                    name: i_104
+  544:
+    kind: def
+    id: 202
+    name: "broken_ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 200
+      value: 2
+  221:
+    kind: def
+    id: 221
+    name: "ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 227
+      params:
+        - id: 228
+          name: "ewd426::self_stabilization::nodes_45"
+        - id: 229
+          name: "ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 234
+        opcode: ite
+        args:
+          - kind: app
+            id: 235
+            opcode: eq
+            args:
+              - kind: name
+                id: 236
+                name: "ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 237
+                name: "ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 238
+            opcode: eq
+            args:
+              - kind: app
+                id: 239
+                opcode: get
+                args:
+                  - kind: name
+                    id: 240
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 241
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 242
+                opcode: get
+                args:
+                  - kind: name
+                    id: 243
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 244
+                    name: "ewd426::self_stabilization::top"
+          - kind: app
+            id: 245
+            opcode: not
+            args:
+              - kind: app
+                id: 246
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 247
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 248
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 249
+                        name: "ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 250
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 251
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 252
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 253
+                            name: "ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 254
+                            value: 1
+  410:
+    kind: def
+    id: 410
+    name: "broken_ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 411
+      value: 0
+  599:
+    kind: def
+    id: 599
+    name: "broken_ewd426::self_stabilization::persistence"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 600
+      opcode: implies
+      args:
+        - kind: app
+          id: 601
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 602
+              name: "broken_ewd426::self_stabilization::step"
+            - kind: app
+              id: 603
+              opcode: Set
+              args:
+                - kind: name
+                  id: 604
+                  name: "broken_ewd426::self_stabilization::system"
+        - kind: app
+          id: 605
+          opcode: eventually
+          args:
+            - kind: app
+              id: 606
+              opcode: always
+              args:
+                - kind: app
+                  id: 607
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 608
+                      opcode: "broken_ewd426::self_stabilization::count_tokens"
+                      args:
+                        - kind: name
+                          id: 609
+                          name: "broken_ewd426::self_stabilization::system"
+                    - kind: int
+                      id: 610
+                      value: 1
+  331:
+    id: 319
+    name: "ewd426::self_stabilization::nodes_78"
+  575:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  441:
+    id: 429
+    name: "broken_ewd426::self_stabilization::nodes_45"
+  417:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  472:
+    kind: def
+    id: 459
+    name: "broken_ewd426::self_stabilization::initial"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 460
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 461
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 462
+              opcode: to
+              args:
+                - kind: int
+                  id: 463
+                  value: 0
+                - kind: name
+                  id: 464
+                  name: "broken_ewd426::self_stabilization::N"
+            - kind: app
+              id: 465
+              opcode: to
+              args:
+                - kind: int
+                  id: 466
+                  value: 0
+                - kind: app
+                  id: 467
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 468
+                      name: "broken_ewd426::self_stabilization::K"
+                    - kind: int
+                      id: 469
+                      value: 1
+  369:
+    kind: def
+    id: 351
+    name: "ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 352
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 353
+          opcode: filter
+          args:
+            - kind: app
+              id: 354
+              opcode: to
+              args:
+                - kind: int
+                  id: 355
+                  value: 0
+                - kind: name
+                  id: 356
+                  name: "ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 357
+              params:
+                - id: 358
+                  name: "ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 359
+                opcode: "ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 360
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 361
+                    name: "ewd426::self_stabilization::i_104"
+  46:
+    kind: def
+    id: 46
+    name: has_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 45
+      params:
+        - id: 20
+          name: nodes_45
+        - id: 22
+          name: index_45
+      expr:
+        kind: app
+        id: 44
+        opcode: ite
+        args:
+          - kind: app
+            id: 26
+            opcode: eq
+            args:
+              - kind: name
+                id: 24
+                name: index_45
+              - kind: name
+                id: 25
+                name: bottom
+          - kind: app
+            id: 33
+            opcode: eq
+            args:
+              - kind: app
+                id: 29
+                opcode: get
+                args:
+                  - kind: name
+                    id: 27
+                    name: nodes_45
+                  - kind: name
+                    id: 28
+                    name: bottom
+              - kind: app
+                id: 32
+                opcode: get
+                args:
+                  - kind: name
+                    id: 30
+                    name: nodes_45
+                  - kind: name
+                    id: 31
+                    name: top
+          - kind: app
+            id: 43
+            opcode: not
+            args:
+              - kind: app
+                id: 42
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 36
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 34
+                        name: nodes_45
+                      - kind: name
+                        id: 35
+                        name: index_45
+                  - kind: app
+                    id: 41
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 37
+                        name: nodes_45
+                      - kind: app
+                        id: 40
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 38
+                            name: index_45
+                          - kind: int
+                            id: 39
+                            value: 1
+  101:
+    kind: var
+    id: 16
+    name: system
+  290:
+    id: 278
+    name: "ewd426::self_stabilization::nodes_133"
+  345:
+    id: 319
+    name: "ewd426::self_stabilization::nodes_78"
+  510:
+    kind: def
+    id: 422
+    name: "broken_ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 428
+      params:
+        - id: 429
+          name: "broken_ewd426::self_stabilization::nodes_45"
+        - id: 430
+          name: "broken_ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 435
+        opcode: ite
+        args:
+          - kind: app
+            id: 436
+            opcode: eq
+            args:
+              - kind: name
+                id: 437
+                name: "broken_ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 438
+                name: "broken_ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 439
+            opcode: eq
+            args:
+              - kind: app
+                id: 440
+                opcode: get
+                args:
+                  - kind: name
+                    id: 441
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 442
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 443
+                opcode: get
+                args:
+                  - kind: name
+                    id: 444
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 445
+                    name: "broken_ewd426::self_stabilization::top"
+          - kind: app
+            id: 446
+            opcode: not
+            args:
+              - kind: app
+                id: 447
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 448
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 449
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 450
+                        name: "broken_ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 451
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 452
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 453
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 454
+                            name: "broken_ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 455
+                            value: 1
+  187:
+    kind: def
+    id: 46
+    name: has_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 45
+      params:
+        - id: 20
+          name: nodes_45
+        - id: 22
+          name: index_45
+      expr:
+        kind: app
+        id: 44
+        opcode: ite
+        args:
+          - kind: app
+            id: 26
+            opcode: eq
+            args:
+              - kind: name
+                id: 24
+                name: index_45
+              - kind: name
+                id: 25
+                name: bottom
+          - kind: app
+            id: 33
+            opcode: eq
+            args:
+              - kind: app
+                id: 29
+                opcode: get
+                args:
+                  - kind: name
+                    id: 27
+                    name: nodes_45
+                  - kind: name
+                    id: 28
+                    name: bottom
+              - kind: app
+                id: 32
+                opcode: get
+                args:
+                  - kind: name
+                    id: 30
+                    name: nodes_45
+                  - kind: name
+                    id: 31
+                    name: top
+          - kind: app
+            id: 43
+            opcode: not
+            args:
+              - kind: app
+                id: 42
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 36
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 34
+                        name: nodes_45
+                      - kind: name
+                        id: 35
+                        name: index_45
+                  - kind: app
+                    id: 41
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 37
+                        name: nodes_45
+                      - kind: app
+                        id: 40
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 38
+                            name: index_45
+                          - kind: int
+                            id: 39
+                            value: 1
+  108:
+    kind: var
+    id: 16
+    name: system
+  163:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130
+  541:
+    id: 520
+    name: "broken_ewd426::self_stabilization::nodes_78"
+  407:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  84:
+    kind: const
+    id: 4
+  596:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  139:
+    kind: var
+    id: 16
+    name: system
+  328:
+    id: 319
+    name: "ewd426::self_stabilization::nodes_78"
+  5:
+    kind: const
+    id: 4
+  249:
+    id: 229
+    name: "ewd426::self_stabilization::index_45"
+  438:
+    kind: def
+    id: 410
+    name: "broken_ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 411
+      value: 0
+  493:
+    kind: def
+    id: 493
+    name: "broken_ewd426::self_stabilization::show_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 500
+      params:
+        - id: 501
+          name: "broken_ewd426::self_stabilization::nodes_190"
+      expr:
+        kind: app
+        id: 505
+        opcode: mapBy
+        args:
+          - kind: app
+            id: 506
+            opcode: keys
+            args:
+              - kind: name
+                id: 507
+                name: "broken_ewd426::self_stabilization::nodes_190"
+          - kind: lambda
+            id: 508
+            params:
+              - id: 509
+                name: "broken_ewd426::self_stabilization::i_188"
+            expr:
+              kind: app
+              id: 510
+              opcode: "broken_ewd426::self_stabilization::has_token"
+              args:
+                - kind: name
+                  id: 511
+                  name: "broken_ewd426::self_stabilization::nodes_190"
+                - kind: name
+                  id: 512
+                  name: "broken_ewd426::self_stabilization::i_188"
+  170:
+    kind: var
+    id: 16
+    name: system
+  359:
+    kind: def
+    id: 221
+    name: "ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 227
+      params:
+        - id: 228
+          name: "ewd426::self_stabilization::nodes_45"
+        - id: 229
+          name: "ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 234
+        opcode: ite
+        args:
+          - kind: app
+            id: 235
+            opcode: eq
+            args:
+              - kind: name
+                id: 236
+                name: "ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 237
+                name: "ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 238
+            opcode: eq
+            args:
+              - kind: app
+                id: 239
+                opcode: get
+                args:
+                  - kind: name
+                    id: 240
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 241
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 242
+                opcode: get
+                args:
+                  - kind: name
+                    id: 243
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 244
+                    name: "ewd426::self_stabilization::top"
+          - kind: app
+            id: 245
+            opcode: not
+            args:
+              - kind: app
+                id: 246
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 247
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 248
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 249
+                        name: "ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 250
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 251
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 252
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 253
+                            name: "ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 254
+                            value: 1
+  548:
+    id: 521
+    name: "broken_ewd426::self_stabilization::index_78"
+  91:
+    kind: def
+    id: 90
+    name: initial
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 89
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 88
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 82
+              opcode: to
+              args:
+                - kind: int
+                  id: 80
+                  value: 0
+                - kind: name
+                  id: 81
+                  name: N
+            - kind: app
+              id: 87
+              opcode: to
+              args:
+                - kind: int
+                  id: 83
+                  value: 0
+                - kind: app
+                  id: 86
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 84
+                      name: K
+                    - kind: int
+                      id: 85
+                      value: 1
+  146:
+    kind: var
+    id: 16
+    name: system
+  335:
+    id: 320
+    name: "ewd426::self_stabilization::index_78"
+  12:
+    kind: def
+    id: 12
+    name: top
+    qualifier: val
+    expr:
+      kind: name
+      id: 11
+      name: N
+  201:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  390:
+    kind: def
+    id: 349
+    name: "ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 350
+      opdef:
+        id: 351
+        name: "ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 352
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 353
+              opcode: filter
+              args:
+                - kind: app
+                  id: 354
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 355
+                      value: 0
+                    - kind: name
+                      id: 356
+                      name: "ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 357
+                  params:
+                    - id: 358
+                      name: "ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 359
+                    opcode: "ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 360
+                        name: "ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 361
+                        name: "ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 362
+        opcode: assign
+        args:
+          - kind: name
+            id: 363
+            name: "ewd426::self_stabilization::system"
+          - kind: app
+            id: 364
+            opcode: set
+            args:
+              - kind: name
+                id: 365
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 366
+                name: "ewd426::self_stabilization::node"
+              - kind: app
+                id: 367
+                opcode: "ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 368
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 369
+                    name: "ewd426::self_stabilization::node"
+  445:
+    kind: def
+    id: 416
+    name: "broken_ewd426::self_stabilization::top"
+    qualifier: val
+    expr:
+      kind: name
+      id: 417
+      name: "broken_ewd426::self_stabilization::N"
+  311:
+    id: 308
+    name: "ewd426::self_stabilization::i_188"
+  366:
+    kind: def
+    id: 351
+    name: "ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 352
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 353
+          opcode: filter
+          args:
+            - kind: app
+              id: 354
+              opcode: to
+              args:
+                - kind: int
+                  id: 355
+                  value: 0
+                - kind: name
+                  id: 356
+                  name: "ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 357
+              params:
+                - id: 358
+                  name: "ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 359
+                opcode: "ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 360
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 361
+                    name: "ewd426::self_stabilization::i_104"
+  421:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  98:
+    kind: const
+    id: 2
+  208:
+    kind: def
+    id: 208
+    name: "q::step"
+    qualifier: action
+    expr:
+      kind: name
+      id: 207
+      name: "ewd426::self_stabilization::step"
+  586:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  263:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  452:
+    id: 429
+    name: "broken_ewd426::self_stabilization::nodes_45"
+  129:
+    kind: def
+    id: 46
+    name: has_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 45
+      params:
+        - id: 20
+          name: nodes_45
+        - id: 22
+          name: index_45
+      expr:
+        kind: app
+        id: 44
+        opcode: ite
+        args:
+          - kind: app
+            id: 26
+            opcode: eq
+            args:
+              - kind: name
+                id: 24
+                name: index_45
+              - kind: name
+                id: 25
+                name: bottom
+          - kind: app
+            id: 33
+            opcode: eq
+            args:
+              - kind: app
+                id: 29
+                opcode: get
+                args:
+                  - kind: name
+                    id: 27
+                    name: nodes_45
+                  - kind: name
+                    id: 28
+                    name: bottom
+              - kind: app
+                id: 32
+                opcode: get
+                args:
+                  - kind: name
+                    id: 30
+                    name: nodes_45
+                  - kind: name
+                    id: 31
+                    name: top
+          - kind: app
+            id: 43
+            opcode: not
+            args:
+              - kind: app
+                id: 42
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 36
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 34
+                        name: nodes_45
+                      - kind: name
+                        id: 35
+                        name: index_45
+                  - kind: app
+                    id: 41
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 37
+                        name: nodes_45
+                      - kind: app
+                        id: 40
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 38
+                            name: index_45
+                          - kind: int
+                            id: 39
+                            value: 1
+  507:
+    id: 501
+    name: "broken_ewd426::self_stabilization::nodes_190"
+  562:
+    id: 559
+    name: "broken_ewd426::self_stabilization::i_104"
+  349:
+    kind: def
+    id: 349
+    name: "ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 350
+      opdef:
+        id: 351
+        name: "ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 352
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 353
+              opcode: filter
+              args:
+                - kind: app
+                  id: 354
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 355
+                      value: 0
+                    - kind: name
+                      id: 356
+                      name: "ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 357
+                  params:
+                    - id: 358
+                      name: "ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 359
+                    opcode: "ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 360
+                        name: "ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 361
+                        name: "ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 362
+        opcode: assign
+        args:
+          - kind: name
+            id: 363
+            name: "ewd426::self_stabilization::system"
+          - kind: app
+            id: 364
+            opcode: set
+            args:
+              - kind: name
+                id: 365
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 366
+                name: "ewd426::self_stabilization::node"
+              - kind: app
+                id: 367
+                opcode: "ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 368
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 369
+                    name: "ewd426::self_stabilization::node"
+  215:
+    kind: def
+    id: 215
+    name: "ewd426::self_stabilization::top"
+    qualifier: val
+    expr:
+      kind: name
+      id: 216
+      name: "ewd426::self_stabilization::N"
+  81:
+    kind: const
+    id: 2
+  270:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  459:
+    kind: def
+    id: 459
+    name: "broken_ewd426::self_stabilization::initial"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 460
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 461
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 462
+              opcode: to
+              args:
+                - kind: int
+                  id: 463
+                  value: 0
+                - kind: name
+                  id: 464
+                  name: "broken_ewd426::self_stabilization::N"
+            - kind: app
+              id: 465
+              opcode: to
+              args:
+                - kind: int
+                  id: 466
+                  value: 0
+                - kind: app
+                  id: 467
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 468
+                      name: "broken_ewd426::self_stabilization::K"
+                    - kind: int
+                      id: 469
+                      value: 1
+  136:
+    kind: var
+    id: 16
+    name: system
+  593:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  191:
+    kind: def
+    id: 191
+    name: show_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 190
+      params:
+        - id: 178
+          name: nodes_190
+      expr:
+        kind: app
+        id: 189
+        opcode: mapBy
+        args:
+          - kind: app
+            id: 183
+            opcode: keys
+            args:
+              - kind: name
+                id: 182
+                name: nodes_190
+          - kind: lambda
+            id: 188
+            params:
+              - id: 184
+                name: i_188
+            expr:
+              kind: app
+              id: 187
+              opcode: has_token
+              args:
+                - kind: name
+                  id: 185
+                  name: nodes_190
+                - kind: name
+                  id: 186
+                  name: i_188
+  380:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  569:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  112:
+    kind: def
+    id: 79
+    name: state_transition
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 78
+      params:
+        - id: 50
+          name: nodes_78
+        - id: 52
+          name: index_78
+      expr:
+        kind: app
+        id: 77
+        opcode: ite
+        args:
+          - kind: app
+            id: 57
+            opcode: not
+            args:
+              - kind: app
+                id: 56
+                opcode: has_token
+                args:
+                  - kind: name
+                    id: 54
+                    name: nodes_78
+                  - kind: name
+                    id: 55
+                    name: index_78
+          - kind: app
+            id: 60
+            opcode: get
+            args:
+              - kind: name
+                id: 58
+                name: nodes_78
+              - kind: name
+                id: 59
+                name: index_78
+          - kind: app
+            id: 76
+            opcode: ite
+            args:
+              - kind: app
+                id: 63
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 61
+                    name: index_78
+                  - kind: name
+                    id: 62
+                    name: bottom
+              - kind: app
+                id: 70
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 68
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 66
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 64
+                            name: nodes_78
+                          - kind: name
+                            id: 65
+                            name: bottom
+                      - kind: int
+                        id: 67
+                        value: 1
+                  - kind: name
+                    id: 69
+                    name: K
+              - kind: app
+                id: 75
+                opcode: get
+                args:
+                  - kind: name
+                    id: 71
+                    name: nodes_78
+                  - kind: app
+                    id: 74
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 72
+                        name: index_78
+                      - kind: int
+                        id: 73
+                        value: 1
+  490:
+    kind: def
+    id: 422
+    name: "broken_ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 428
+      params:
+        - id: 429
+          name: "broken_ewd426::self_stabilization::nodes_45"
+        - id: 430
+          name: "broken_ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 435
+        opcode: ite
+        args:
+          - kind: app
+            id: 436
+            opcode: eq
+            args:
+              - kind: name
+                id: 437
+                name: "broken_ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 438
+                name: "broken_ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 439
+            opcode: eq
+            args:
+              - kind: app
+                id: 440
+                opcode: get
+                args:
+                  - kind: name
+                    id: 441
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 442
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 443
+                opcode: get
+                args:
+                  - kind: name
+                    id: 444
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 445
+                    name: "broken_ewd426::self_stabilization::top"
+          - kind: app
+            id: 446
+            opcode: not
+            args:
+              - kind: app
+                id: 447
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 448
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 449
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 450
+                        name: "broken_ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 451
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 452
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 453
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 454
+                            name: "broken_ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 455
+                            value: 1
+  356:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  332:
+    id: 320
+    name: "ewd426::self_stabilization::index_78"
+  387:
+    kind: def
+    id: 387
+    name: "ewd426::self_stabilization::convergence"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 388
+      opcode: implies
+      args:
+        - kind: app
+          id: 389
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 390
+              name: "ewd426::self_stabilization::step"
+            - kind: app
+              id: 391
+              opcode: Set
+              args:
+                - kind: name
+                  id: 392
+                  name: "ewd426::self_stabilization::system"
+        - kind: app
+          id: 393
+          opcode: eventually
+          args:
+            - kind: app
+              id: 394
+              opcode: eq
+              args:
+                - kind: app
+                  id: 395
+                  opcode: "ewd426::self_stabilization::count_tokens"
+                  args:
+                    - kind: name
+                      id: 396
+                      name: "ewd426::self_stabilization::system"
+                - kind: int
+                  id: 397
+                  value: 1
+  64:
+    id: 50
+    name: nodes_78
+  253:
+    id: 229
+    name: "ewd426::self_stabilization::index_45"
+  442:
+    kind: def
+    id: 410
+    name: "broken_ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 411
+      value: 0
+  576:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  174:
+    kind: def
+    id: 174
+    name: tokenInv
+    qualifier: def
+    expr:
+      kind: app
+      id: 173
+      opcode: igt
+      args:
+        - kind: app
+          id: 171
+          opcode: count_tokens
+          args:
+            - kind: name
+              id: 170
+              name: system
+        - kind: int
+          id: 172
+          value: 0
+  363:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  552:
+    kind: def
+    id: 552
+    name: "broken_ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 553
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 554
+          opcode: filter
+          args:
+            - kind: app
+              id: 555
+              opcode: to
+              args:
+                - kind: int
+                  id: 556
+                  value: 0
+                - kind: name
+                  id: 557
+                  name: "broken_ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 558
+              params:
+                - id: 559
+                  name: "broken_ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 560
+                opcode: "broken_ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 561
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 562
+                    name: "broken_ewd426::self_stabilization::i_104"
+  473:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  150:
+    kind: var
+    id: 16
+    name: system
+  528:
+    kind: def
+    id: 422
+    name: "broken_ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 428
+      params:
+        - id: 429
+          name: "broken_ewd426::self_stabilization::nodes_45"
+        - id: 430
+          name: "broken_ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 435
+        opcode: ite
+        args:
+          - kind: app
+            id: 436
+            opcode: eq
+            args:
+              - kind: name
+                id: 437
+                name: "broken_ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 438
+                name: "broken_ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 439
+            opcode: eq
+            args:
+              - kind: app
+                id: 440
+                opcode: get
+                args:
+                  - kind: name
+                    id: 441
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 442
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 443
+                opcode: get
+                args:
+                  - kind: name
+                    id: 444
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 445
+                    name: "broken_ewd426::self_stabilization::top"
+          - kind: app
+            id: 446
+            opcode: not
+            args:
+              - kind: app
+                id: 447
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 448
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 449
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 450
+                        name: "broken_ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 451
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 452
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 453
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 454
+                            name: "broken_ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 455
+                            value: 1
+  205:
+    kind: def
+    id: 255
+    name: "ewd426::self_stabilization::init"
+    qualifier: action
+    expr:
+      kind: app
+      id: 256
+      opcode: actionAll
+      args:
+        - kind: let
+          id: 257
+          opdef:
+            id: 258
+            name: "ewd426::self_stabilization::initial"
+            qualifier: nondet
+            expr:
+              kind: app
+              id: 259
+              opcode: oneOf
+              args:
+                - kind: app
+                  id: 260
+                  opcode: setOfMaps
+                  args:
+                    - kind: app
+                      id: 261
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 262
+                          value: 0
+                        - kind: name
+                          id: 263
+                          name: "ewd426::self_stabilization::N"
+                    - kind: app
+                      id: 264
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 265
+                          value: 0
+                        - kind: app
+                          id: 266
+                          opcode: isub
+                          args:
+                            - kind: name
+                              id: 267
+                              name: "ewd426::self_stabilization::K"
+                            - kind: int
+                              id: 268
+                              value: 1
+          expr:
+            kind: app
+            id: 269
+            opcode: assign
+            args:
+              - kind: name
+                id: 270
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 271
+                name: "ewd426::self_stabilization::initial"
+  71:
+    id: 50
+    name: nodes_78
+  583:
+    kind: def
+    id: 583
+    name: "broken_ewd426::self_stabilization::tokenInv"
+    qualifier: def
+    expr:
+      kind: app
+      id: 584
+      opcode: igt
+      args:
+        - kind: app
+          id: 585
+          opcode: "broken_ewd426::self_stabilization::count_tokens"
+          args:
+            - kind: name
+              id: 586
+              name: "broken_ewd426::self_stabilization::system"
+        - kind: int
+          id: 587
+          value: 0
+  449:
+    id: 429
+    name: "broken_ewd426::self_stabilization::nodes_45"
+  370:
+    kind: def
+    id: 370
+    name: "ewd426::self_stabilization::closure"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 371
+      opcode: always
+      args:
+        - kind: app
+          id: 372
+          opcode: implies
+          args:
+            - kind: app
+              id: 373
+              opcode: eq
+              args:
+                - kind: app
+                  id: 374
+                  opcode: "ewd426::self_stabilization::count_tokens"
+                  args:
+                    - kind: name
+                      id: 375
+                      name: "ewd426::self_stabilization::system"
+                - kind: int
+                  id: 376
+                  value: 1
+            - kind: app
+              id: 377
+              opcode: always
+              args:
+                - kind: app
+                  id: 378
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 379
+                      opcode: "ewd426::self_stabilization::count_tokens"
+                      args:
+                        - kind: name
+                          id: 380
+                          name: "ewd426::self_stabilization::system"
+                    - kind: int
+                      id: 381
+                      value: 1
+  236:
+    id: 229
+    name: "ewd426::self_stabilization::index_45"
+  102:
+    id: 100
+    name: i_104
+  291:
+    id: 288
+    name: "ewd426::self_stabilization::i_130"
+  157:
+    kind: def
+    id: 157
+    name: closure
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 156
+      opcode: always
+      args:
+        - kind: app
+          id: 155
+          opcode: implies
+          args:
+            - kind: app
+              id: 149
+              opcode: eq
+              args:
+                - kind: app
+                  id: 147
+                  opcode: count_tokens
+                  args:
+                    - kind: name
+                      id: 146
+                      name: system
+                - kind: int
+                  id: 148
+                  value: 1
+            - kind: app
+              id: 154
+              opcode: always
+              args:
+                - kind: app
+                  id: 153
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 151
+                      opcode: count_tokens
+                      args:
+                        - kind: name
+                          id: 150
+                          name: system
+                    - kind: int
+                      id: 152
+                      value: 1
+  401:
+    kind: def
+    id: 349
+    name: "ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 350
+      opdef:
+        id: 351
+        name: "ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 352
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 353
+              opcode: filter
+              args:
+                - kind: app
+                  id: 354
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 355
+                      value: 0
+                    - kind: name
+                      id: 356
+                      name: "ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 357
+                  params:
+                    - id: 358
+                      name: "ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 359
+                    opcode: "ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 360
+                        name: "ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 361
+                        name: "ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 362
+        opcode: assign
+        args:
+          - kind: name
+            id: 363
+            name: "ewd426::self_stabilization::system"
+          - kind: app
+            id: 364
+            opcode: set
+            args:
+              - kind: name
+                id: 365
+                name: "ewd426::self_stabilization::system"
+              - kind: name
+                id: 366
+                name: "ewd426::self_stabilization::node"
+              - kind: app
+                id: 367
+                opcode: "ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 368
+                    name: "ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 369
+                    name: "ewd426::self_stabilization::node"
+  267:
+    kind: def
+    id: 196
+    name: "ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 194
+      value: 7
+  456:
+    kind: def
+    id: 456
+    name: "broken_ewd426::self_stabilization::init"
+    qualifier: action
+    expr:
+      kind: app
+      id: 457
+      opcode: actionAll
+      args:
+        - kind: let
+          id: 458
+          opdef:
+            id: 459
+            name: "broken_ewd426::self_stabilization::initial"
+            qualifier: nondet
+            expr:
+              kind: app
+              id: 460
+              opcode: oneOf
+              args:
+                - kind: app
+                  id: 461
+                  opcode: setOfMaps
+                  args:
+                    - kind: app
+                      id: 462
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 463
+                          value: 0
+                        - kind: name
+                          id: 464
+                          name: "broken_ewd426::self_stabilization::N"
+                    - kind: app
+                      id: 465
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 466
+                          value: 0
+                        - kind: app
+                          id: 467
+                          opcode: isub
+                          args:
+                            - kind: name
+                              id: 468
+                              name: "broken_ewd426::self_stabilization::K"
+                            - kind: int
+                              id: 469
+                              value: 1
+          expr:
+            kind: app
+            id: 470
+            opcode: assign
+            args:
+              - kind: name
+                id: 471
+                name: "broken_ewd426::self_stabilization::system"
+              - kind: name
+                id: 472
+                name: "broken_ewd426::self_stabilization::initial"
+  511:
+    id: 501
+    name: "broken_ewd426::self_stabilization::nodes_190"
+  54:
+    id: 50
+    name: nodes_78
+  243:
+    id: 228
+    name: "ewd426::self_stabilization::nodes_45"
+  566:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  109:
+    kind: def
+    id: 107
+    name: node
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 106
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 105
+          opcode: filter
+          args:
+            - kind: app
+              id: 99
+              opcode: to
+              args:
+                - kind: int
+                  id: 97
+                  value: 0
+                - kind: name
+                  id: 98
+                  name: N
+            - kind: lambda
+              id: 104
+              params:
+                - id: 100
+                  name: i_104
+              expr:
+                kind: app
+                id: 103
+                opcode: has_token
+                args:
+                  - kind: name
+                    id: 101
+                    name: system
+                  - kind: name
+                    id: 102
+                    name: i_104
+  487:
+    kind: def
+    id: 201
+    name: "broken_ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 199
+      value: 3
+  30:
+    id: 20
+    name: nodes_45
+  219:
+    kind: def
+    id: 196
+    name: "ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 194
+      value: 7
+  408:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  542:
+    kind: def
+    id: 410
+    name: "broken_ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 411
+      value: 0
+  597:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  140:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130
+  329:
+    id: 320
+    name: "ewd426::self_stabilization::index_78"
+  6:
+    kind: const
+    id: 2
+  195:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  384:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  61:
+    id: 52
+    name: index_78
+  171:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130
+  360:
+    kind: var
+    id: 211
+    name: "ewd426::self_stabilization::system"
+  37:
+    id: 20
+    name: nodes_45
+  92:
+    kind: var
+    id: 16
+    name: system
+  604:
+    kind: var
+    id: 412
+    name: "broken_ewd426::self_stabilization::system"
+  147:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130
+  336:
+    kind: def
+    id: 209
+    name: "ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 210
+      value: 0
+  202:
+    kind: def
+    id: 202
+    name: "broken_ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 200
+      value: 2
+  580:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  312:
+    kind: def
+    id: 312
+    name: "ewd426::self_stabilization::state_transition"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 318
+      params:
+        - id: 319
+          name: "ewd426::self_stabilization::nodes_78"
+        - id: 320
+          name: "ewd426::self_stabilization::index_78"
+      expr:
+        kind: app
+        id: 325
+        opcode: ite
+        args:
+          - kind: app
+            id: 326
+            opcode: not
+            args:
+              - kind: app
+                id: 327
+                opcode: "ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 328
+                    name: "ewd426::self_stabilization::nodes_78"
+                  - kind: name
+                    id: 329
+                    name: "ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 330
+            opcode: get
+            args:
+              - kind: name
+                id: 331
+                name: "ewd426::self_stabilization::nodes_78"
+              - kind: name
+                id: 332
+                name: "ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 333
+            opcode: ite
+            args:
+              - kind: app
+                id: 334
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 335
+                    name: "ewd426::self_stabilization::index_78"
+                  - kind: name
+                    id: 336
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 337
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 338
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 339
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 340
+                            name: "ewd426::self_stabilization::nodes_78"
+                          - kind: name
+                            id: 341
+                            name: "ewd426::self_stabilization::bottom"
+                      - kind: int
+                        id: 342
+                        value: 1
+                  - kind: name
+                    id: 343
+                    name: "ewd426::self_stabilization::K"
+              - kind: app
+                id: 344
+                opcode: get
+                args:
+                  - kind: name
+                    id: 345
+                    name: "ewd426::self_stabilization::nodes_78"
+                  - kind: app
+                    id: 346
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 347
+                        name: "ewd426::self_stabilization::index_78"
+                      - kind: int
+                        id: 348
+                        value: 1
+  367:
+    kind: def
+    id: 312
+    name: "ewd426::self_stabilization::state_transition"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 318
+      params:
+        - id: 319
+          name: "ewd426::self_stabilization::nodes_78"
+        - id: 320
+          name: "ewd426::self_stabilization::index_78"
+      expr:
+        kind: app
+        id: 325
+        opcode: ite
+        args:
+          - kind: app
+            id: 326
+            opcode: not
+            args:
+              - kind: app
+                id: 327
+                opcode: "ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 328
+                    name: "ewd426::self_stabilization::nodes_78"
+                  - kind: name
+                    id: 329
+                    name: "ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 330
+            opcode: get
+            args:
+              - kind: name
+                id: 331
+                name: "ewd426::self_stabilization::nodes_78"
+              - kind: name
+                id: 332
+                name: "ewd426::self_stabilization::index_78"
+          - kind: app
+            id: 333
+            opcode: ite
+            args:
+              - kind: app
+                id: 334
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 335
+                    name: "ewd426::self_stabilization::index_78"
+                  - kind: name
+                    id: 336
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 337
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 338
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 339
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 340
+                            name: "ewd426::self_stabilization::nodes_78"
+                          - kind: name
+                            id: 341
+                            name: "ewd426::self_stabilization::bottom"
+                      - kind: int
+                        id: 342
+                        value: 1
+                  - kind: name
+                    id: 343
+                    name: "ewd426::self_stabilization::K"
+              - kind: app
+                id: 344
+                opcode: get
+                args:
+                  - kind: name
+                    id: 345
+                    name: "ewd426::self_stabilization::nodes_78"
+                  - kind: app
+                    id: 346
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 347
+                        name: "ewd426::self_stabilization::index_78"
+                      - kind: int
+                        id: 348
+                        value: 1
+  422:
+    kind: def
+    id: 422
+    name: "broken_ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 428
+      params:
+        - id: 429
+          name: "broken_ewd426::self_stabilization::nodes_45"
+        - id: 430
+          name: "broken_ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 435
+        opcode: ite
+        args:
+          - kind: app
+            id: 436
+            opcode: eq
+            args:
+              - kind: name
+                id: 437
+                name: "broken_ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 438
+                name: "broken_ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 439
+            opcode: eq
+            args:
+              - kind: app
+                id: 440
+                opcode: get
+                args:
+                  - kind: name
+                    id: 441
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 442
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 443
+                opcode: get
+                args:
+                  - kind: name
+                    id: 444
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 445
+                    name: "broken_ewd426::self_stabilization::top"
+          - kind: app
+            id: 446
+            opcode: not
+            args:
+              - kind: app
+                id: 447
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 448
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 449
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 450
+                        name: "broken_ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 451
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 452
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 453
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 454
+                            name: "broken_ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 455
+                            value: 1
+  343:
+    kind: def
+    id: 196
+    name: "ewd426::self_stabilization::K"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 194
+      value: 7
+  532:
+    id: 520
+    name: "broken_ewd426::self_stabilization::nodes_78"
+  209:
+    kind: def
+    id: 209
+    name: "ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 210
+      value: 0
+  398:
+    kind: def
+    id: 398
+    name: "ewd426::self_stabilization::persistence"
+    qualifier: temporal
+    expr:
+      kind: app
+      id: 399
+      opcode: implies
+      args:
+        - kind: app
+          id: 400
+          opcode: weakFair
+          args:
+            - kind: name
+              id: 401
+              name: "ewd426::self_stabilization::step"
+            - kind: app
+              id: 402
+              opcode: Set
+              args:
+                - kind: name
+                  id: 403
+                  name: "ewd426::self_stabilization::system"
+        - kind: app
+          id: 404
+          opcode: eventually
+          args:
+            - kind: app
+              id: 405
+              opcode: always
+              args:
+                - kind: app
+                  id: 406
+                  opcode: eq
+                  args:
+                    - kind: app
+                      id: 407
+                      opcode: "ewd426::self_stabilization::count_tokens"
+                      args:
+                        - kind: name
+                          id: 408
+                          name: "ewd426::self_stabilization::system"
+                    - kind: int
+                      id: 409
+                      value: 1
+  185:
+    id: 178
+    name: nodes_190
+  374:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  240:
+    id: 228
+    name: "ewd426::self_stabilization::nodes_45"
+  27:
+    id: 20
+    name: nodes_45
+  216:
+    kind: def
+    id: 195
+    name: "ewd426::self_stabilization::N"
+    qualifier: pureval
+    expr:
+      kind: int
+      id: 193
+      value: 5
+  271:
+    kind: def
+    id: 258
+    name: "ewd426::self_stabilization::initial"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 259
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 260
+          opcode: setOfMaps
+          args:
+            - kind: app
+              id: 261
+              opcode: to
+              args:
+                - kind: int
+                  id: 262
+                  value: 0
+                - kind: name
+                  id: 263
+                  name: "ewd426::self_stabilization::N"
+            - kind: app
+              id: 264
+              opcode: to
+              args:
+                - kind: int
+                  id: 265
+                  value: 0
+                - kind: app
+                  id: 266
+                  opcode: isub
+                  args:
+                    - kind: name
+                      id: 267
+                      name: "ewd426::self_stabilization::K"
+                    - kind: int
+                      id: 268
+                      value: 1
+  58:
+    id: 50
+    name: nodes_78
+  570:
+    kind: def
+    id: 552
+    name: "broken_ewd426::self_stabilization::node"
+    qualifier: nondet
+    expr:
+      kind: app
+      id: 553
+      opcode: oneOf
+      args:
+        - kind: app
+          id: 554
+          opcode: filter
+          args:
+            - kind: app
+              id: 555
+              opcode: to
+              args:
+                - kind: int
+                  id: 556
+                  value: 0
+                - kind: name
+                  id: 557
+                  name: "broken_ewd426::self_stabilization::N"
+            - kind: lambda
+              id: 558
+              params:
+                - id: 559
+                  name: "broken_ewd426::self_stabilization::i_104"
+              expr:
+                kind: app
+                id: 560
+                opcode: "broken_ewd426::self_stabilization::has_token"
+                args:
+                  - kind: name
+                    id: 561
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 562
+                    name: "broken_ewd426::self_stabilization::i_104"
+  491:
+    id: 479
+    name: "broken_ewd426::self_stabilization::nodes_133"
+  34:
+    id: 20
+    name: nodes_45
+  546:
+    id: 520
+    name: "broken_ewd426::self_stabilization::nodes_78"
+  10:
+    kind: def
+    id: 10
+    name: bottom
+    qualifier: val
+    expr:
+      kind: int
+      id: 9
+      value: 0
+  65:
+    kind: def
+    id: 10
+    name: bottom
+    qualifier: val
+    expr:
+      kind: int
+      id: 9
+      value: 0
+  309:
+    kind: def
+    id: 221
+    name: "ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 227
+      params:
+        - id: 228
+          name: "ewd426::self_stabilization::nodes_45"
+        - id: 229
+          name: "ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 234
+        opcode: ite
+        args:
+          - kind: app
+            id: 235
+            opcode: eq
+            args:
+              - kind: name
+                id: 236
+                name: "ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 237
+                name: "ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 238
+            opcode: eq
+            args:
+              - kind: app
+                id: 239
+                opcode: get
+                args:
+                  - kind: name
+                    id: 240
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 241
+                    name: "ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 242
+                opcode: get
+                args:
+                  - kind: name
+                    id: 243
+                    name: "ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 244
+                    name: "ewd426::self_stabilization::top"
+          - kind: app
+            id: 245
+            opcode: not
+            args:
+              - kind: app
+                id: 246
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 247
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 248
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 249
+                        name: "ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 250
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 251
+                        name: "ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 252
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 253
+                            name: "ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 254
+                            value: 1
+  96:
+    kind: def
+    id: 96
+    name: init
+    qualifier: action
+    expr:
+      kind: app
+      id: 95
+      opcode: actionAll
+      args:
+        - kind: let
+          id: 94
+          opdef:
+            id: 90
+            name: initial
+            qualifier: nondet
+            expr:
+              kind: app
+              id: 89
+              opcode: oneOf
+              args:
+                - kind: app
+                  id: 88
+                  opcode: setOfMaps
+                  args:
+                    - kind: app
+                      id: 82
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 80
+                          value: 0
+                        - kind: name
+                          id: 81
+                          name: N
+                    - kind: app
+                      id: 87
+                      opcode: to
+                      args:
+                        - kind: int
+                          id: 83
+                          value: 0
+                        - kind: app
+                          id: 86
+                          opcode: isub
+                          args:
+                            - kind: name
+                              id: 84
+                              name: K
+                            - kind: int
+                              id: 85
+                              value: 1
+          expr:
+            kind: app
+            id: 93
+            opcode: assign
+            args:
+              - kind: name
+                id: 92
+                name: system
+              - kind: name
+                id: 91
+                name: initial
+  608:
+    kind: def
+    id: 473
+    name: "broken_ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 478
+      params:
+        - id: 479
+          name: "broken_ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 483
+        opcode: size
+        args:
+          - kind: app
+            id: 484
+            opcode: filter
+            args:
+              - kind: app
+                id: 485
+                opcode: to
+                args:
+                  - kind: int
+                    id: 486
+                    value: 0
+                  - kind: name
+                    id: 487
+                    name: "broken_ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 488
+                params:
+                  - id: 489
+                    name: "broken_ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 490
+                  opcode: "broken_ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 491
+                      name: "broken_ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 492
+                      name: "broken_ewd426::self_stabilization::i_130"
+  151:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130
+  340:
+    id: 319
+    name: "ewd426::self_stabilization::nodes_78"
+  529:
+    id: 520
+    name: "broken_ewd426::self_stabilization::nodes_78"
+  206:
+    kind: def
+    id: 206
+    name: "q::init"
+    qualifier: action
+    expr:
+      kind: name
+      id: 205
+      name: "ewd426::self_stabilization::init"
+  395:
+    kind: def
+    id: 272
+    name: "ewd426::self_stabilization::count_tokens"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 277
+      params:
+        - id: 278
+          name: "ewd426::self_stabilization::nodes_133"
+      expr:
+        kind: app
+        id: 282
+        opcode: size
+        args:
+          - kind: app
+            id: 283
+            opcode: filter
+            args:
+              - kind: app
+                id: 284
+                opcode: to
+                args:
+                  - kind: int
+                    id: 285
+                    value: 0
+                  - kind: name
+                    id: 286
+                    name: "ewd426::self_stabilization::N"
+              - kind: lambda
+                id: 287
+                params:
+                  - id: 288
+                    name: "ewd426::self_stabilization::i_130"
+                expr:
+                  kind: app
+                  id: 289
+                  opcode: "ewd426::self_stabilization::has_token"
+                  args:
+                    - kind: name
+                      id: 290
+                      name: "ewd426::self_stabilization::nodes_133"
+                    - kind: name
+                      id: 291
+                      name: "ewd426::self_stabilization::i_130"
+  72:
+    id: 52
+    name: index_78
+  450:
+    id: 430
+    name: "broken_ewd426::self_stabilization::index_45"
+  127:
+    id: 121
+    name: nodes_133
+  182:
+    id: 178
+    name: nodes_190
+  560:
+    kind: def
+    id: 422
+    name: "broken_ewd426::self_stabilization::has_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 428
+      params:
+        - id: 429
+          name: "broken_ewd426::self_stabilization::nodes_45"
+        - id: 430
+          name: "broken_ewd426::self_stabilization::index_45"
+      expr:
+        kind: app
+        id: 435
+        opcode: ite
+        args:
+          - kind: app
+            id: 436
+            opcode: eq
+            args:
+              - kind: name
+                id: 437
+                name: "broken_ewd426::self_stabilization::index_45"
+              - kind: name
+                id: 438
+                name: "broken_ewd426::self_stabilization::bottom"
+          - kind: app
+            id: 439
+            opcode: eq
+            args:
+              - kind: app
+                id: 440
+                opcode: get
+                args:
+                  - kind: name
+                    id: 441
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 442
+                    name: "broken_ewd426::self_stabilization::bottom"
+              - kind: app
+                id: 443
+                opcode: get
+                args:
+                  - kind: name
+                    id: 444
+                    name: "broken_ewd426::self_stabilization::nodes_45"
+                  - kind: name
+                    id: 445
+                    name: "broken_ewd426::self_stabilization::top"
+          - kind: app
+            id: 446
+            opcode: not
+            args:
+              - kind: app
+                id: 447
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 448
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 449
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: name
+                        id: 450
+                        name: "broken_ewd426::self_stabilization::index_45"
+                  - kind: app
+                    id: 451
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 452
+                        name: "broken_ewd426::self_stabilization::nodes_45"
+                      - kind: app
+                        id: 453
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 454
+                            name: "broken_ewd426::self_stabilization::index_45"
+                          - kind: int
+                            id: 455
+                            value: 1
+  237:
+    kind: def
+    id: 209
+    name: "ewd426::self_stabilization::bottom"
+    qualifier: val
+    expr:
+      kind: int
+      id: 210
+      value: 0
+  103:
+    kind: def
+    id: 46
+    name: has_token
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 45
+      params:
+        - id: 20
+          name: nodes_45
+        - id: 22
+          name: index_45
+      expr:
+        kind: app
+        id: 44
+        opcode: ite
+        args:
+          - kind: app
+            id: 26
+            opcode: eq
+            args:
+              - kind: name
+                id: 24
+                name: index_45
+              - kind: name
+                id: 25
+                name: bottom
+          - kind: app
+            id: 33
+            opcode: eq
+            args:
+              - kind: app
+                id: 29
+                opcode: get
+                args:
+                  - kind: name
+                    id: 27
+                    name: nodes_45
+                  - kind: name
+                    id: 28
+                    name: bottom
+              - kind: app
+                id: 32
+                opcode: get
+                args:
+                  - kind: name
+                    id: 30
+                    name: nodes_45
+                  - kind: name
+                    id: 31
+                    name: top
+          - kind: app
+            id: 43
+            opcode: not
+            args:
+              - kind: app
+                id: 42
+                opcode: eq
+                args:
+                  - kind: app
+                    id: 36
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 34
+                        name: nodes_45
+                      - kind: name
+                        id: 35
+                        name: index_45
+                  - kind: app
+                    id: 41
+                    opcode: get
+                    args:
+                      - kind: name
+                        id: 37
+                        name: nodes_45
+                      - kind: app
+                        id: 40
+                        opcode: isub
+                        args:
+                          - kind: name
+                            id: 38
+                            name: index_45
+                          - kind: int
+                            id: 39
+                            value: 1
+  292:
+    kind: def
+    id: 292
+    name: "ewd426::self_stabilization::show_token"
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 299
+      params:
+        - id: 300
+          name: "ewd426::self_stabilization::nodes_190"
+      expr:
+        kind: app
+        id: 304
+        opcode: mapBy
+        args:
+          - kind: app
+            id: 305
+            opcode: keys
+            args:
+              - kind: name
+                id: 306
+                name: "ewd426::self_stabilization::nodes_190"
+          - kind: lambda
+            id: 307
+            params:
+              - id: 308
+                name: "ewd426::self_stabilization::i_188"
+            expr:
+              kind: app
+              id: 309
+              opcode: "ewd426::self_stabilization::has_token"
+              args:
+                - kind: name
+                  id: 310
+                  name: "ewd426::self_stabilization::nodes_190"
+                - kind: name
+                  id: 311
+                  name: "ewd426::self_stabilization::i_188"
+  158:
+    kind: def
+    id: 117
+    name: step
+    qualifier: action
+    expr:
+      kind: let
+      id: 116
+      opdef:
+        id: 107
+        name: node
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 106
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 105
+              opcode: filter
+              args:
+                - kind: app
+                  id: 99
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 97
+                      value: 0
+                    - kind: name
+                      id: 98
+                      name: N
+                - kind: lambda
+                  id: 104
+                  params:
+                    - id: 100
+                      name: i_104
+                  expr:
+                    kind: app
+                    id: 103
+                    opcode: has_token
+                    args:
+                      - kind: name
+                        id: 101
+                        name: system
+                      - kind: name
+                        id: 102
+                        name: i_104
+      expr:
+        kind: app
+        id: 115
+        opcode: assign
+        args:
+          - kind: name
+            id: 114
+            name: system
+          - kind: app
+            id: 113
+            opcode: set
+            args:
+              - kind: name
+                id: 108
+                name: system
+              - kind: name
+                id: 109
+                name: node
+              - kind: app
+                id: 112
+                opcode: state_transition
+                args:
+                  - kind: name
+                    id: 110
+                    name: system
+                  - kind: name
+                    id: 111
+                    name: node
+  347:
+    id: 320
+    name: "ewd426::self_stabilization::index_78"
+  536:
+    id: 521
+    name: "broken_ewd426::self_stabilization::index_78"
+  24:
+    id: 22
+    name: index_45
+  79:
+    kind: def
+    id: 79
+    name: state_transition
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 78
+      params:
+        - id: 50
+          name: nodes_78
+        - id: 52
+          name: index_78
+      expr:
+        kind: app
+        id: 77
+        opcode: ite
+        args:
+          - kind: app
+            id: 57
+            opcode: not
+            args:
+              - kind: app
+                id: 56
+                opcode: has_token
+                args:
+                  - kind: name
+                    id: 54
+                    name: nodes_78
+                  - kind: name
+                    id: 55
+                    name: index_78
+          - kind: app
+            id: 60
+            opcode: get
+            args:
+              - kind: name
+                id: 58
+                name: nodes_78
+              - kind: name
+                id: 59
+                name: index_78
+          - kind: app
+            id: 76
+            opcode: ite
+            args:
+              - kind: app
+                id: 63
+                opcode: eq
+                args:
+                  - kind: name
+                    id: 61
+                    name: index_78
+                  - kind: name
+                    id: 62
+                    name: bottom
+              - kind: app
+                id: 70
+                opcode: imod
+                args:
+                  - kind: app
+                    id: 68
+                    opcode: iadd
+                    args:
+                      - kind: app
+                        id: 66
+                        opcode: get
+                        args:
+                          - kind: name
+                            id: 64
+                            name: nodes_78
+                          - kind: name
+                            id: 65
+                            name: bottom
+                      - kind: int
+                        id: 67
+                        value: 1
+                  - kind: name
+                    id: 69
+                    name: K
+              - kind: app
+                id: 75
+                opcode: get
+                args:
+                  - kind: name
+                    id: 71
+                    name: nodes_78
+                  - kind: app
+                    id: 74
+                    opcode: isub
+                    args:
+                      - kind: name
+                        id: 72
+                        name: index_78
+                      - kind: int
+                        id: 73
+                        value: 1
+  591:
+    kind: def
+    id: 550
+    name: "broken_ewd426::self_stabilization::step"
+    qualifier: action
+    expr:
+      kind: let
+      id: 551
+      opdef:
+        id: 552
+        name: "broken_ewd426::self_stabilization::node"
+        qualifier: nondet
+        expr:
+          kind: app
+          id: 553
+          opcode: oneOf
+          args:
+            - kind: app
+              id: 554
+              opcode: filter
+              args:
+                - kind: app
+                  id: 555
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 556
+                      value: 0
+                    - kind: name
+                      id: 557
+                      name: "broken_ewd426::self_stabilization::N"
+                - kind: lambda
+                  id: 558
+                  params:
+                    - id: 559
+                      name: "broken_ewd426::self_stabilization::i_104"
+                  expr:
+                    kind: app
+                    id: 560
+                    opcode: "broken_ewd426::self_stabilization::has_token"
+                    args:
+                      - kind: name
+                        id: 561
+                        name: "broken_ewd426::self_stabilization::system"
+                      - kind: name
+                        id: 562
+                        name: "broken_ewd426::self_stabilization::i_104"
+      expr:
+        kind: app
+        id: 563
+        opcode: assign
+        args:
+          - kind: name
+            id: 564
+            name: "broken_ewd426::self_stabilization::system"
+          - kind: app
+            id: 565
+            opcode: set
+            args:
+              - kind: name
+                id: 566
+                name: "broken_ewd426::self_stabilization::system"
+              - kind: name
+                id: 567
+                name: "broken_ewd426::self_stabilization::node"
+              - kind: app
+                id: 568
+                opcode: "broken_ewd426::self_stabilization::state_transition"
+                args:
+                  - kind: name
+                    id: 569
+                    name: "broken_ewd426::self_stabilization::system"
+                  - kind: name
+                    id: 570
+                    name: "broken_ewd426::self_stabilization::node"
+  134:
+    kind: def
+    id: 134
+    name: count_tokens
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 133
+      params:
+        - id: 121
+          name: nodes_133
+      expr:
+        kind: app
+        id: 132
+        opcode: size
+        args:
+          - kind: app
+            id: 131
+            opcode: filter
+            args:
+              - kind: app
+                id: 125
+                opcode: to
+                args:
+                  - kind: int
+                    id: 123
+                    value: 0
+                  - kind: name
+                    id: 124
+                    name: N
+              - kind: lambda
+                id: 130
+                params:
+                  - id: 126
+                    name: i_130
+                expr:
+                  kind: app
+                  id: 129
+                  opcode: has_token
+                  args:
+                    - kind: name
+                      id: 127
+                      name: nodes_133
+                    - kind: name
+                      id: 128
+                      name: i_130

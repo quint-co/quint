@@ -50,7 +50,19 @@ pub enum QuintDef {
     QuintAssume {
         id: QuintId,
         name: String,
-        expr: QuintEx,
+        assumption: QuintEx,
+    },
+
+    #[serde(rename = "typedef")]
+    QuintTypeDef {
+        id: QuintId,
+        // We don't care about the type definition
+    },
+
+    #[serde(rename = "const")]
+    QuintConst {
+        id: QuintId,
+        // We don't care about the constant definition
     },
 }
 
@@ -106,8 +118,8 @@ pub enum QuintEx {
     #[serde(rename = "let")]
     QuintLet {
         id: QuintId,
-        opdef: Vec<OpDef>,
-        body: Box<QuintEx>,
+        opdef: Box<OpDef>,
+        expr: Box<QuintEx>,
     },
 }
 
