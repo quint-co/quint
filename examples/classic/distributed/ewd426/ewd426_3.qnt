@@ -65,10 +65,18 @@ module self_stabilization_three_state {
     system' = initial
   }
 
-  /// Action for the three-state machine
+  /// Pick a single active node non-deterministically and update its state
   action step = {
     nondet node = 0.to(N).filter(i => has_token(system, i)).oneOf()
     system' = system.set(node, state_transition(system, node))
+  }
+
+  /// Pick several active nodes non-deterministically and update their state.
+  /// Closer to the distributed demon is discussed in EWD 391. We are not
+  /// considering interleaving in the execution of state_transition here
+  action distributed_step = {
+    nondet nodes = 0.to(N).filter(i => has_token(system, i)).powerset().exclude(Set()).oneOf()
+    system' = nodes.fold(system, (s, x) => s.set(x, state_transition(system, x)))
   }
 
   // Pure function to count how many tokens exist
