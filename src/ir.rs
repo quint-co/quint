@@ -1,5 +1,5 @@
+use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 type QuintId = u64;
 
@@ -9,7 +9,7 @@ pub struct QuintOutput {
     table: LookupTable,
 }
 
-type LookupTable = HashMap<QuintId, LookupDefinition>;
+type LookupTable = FxHashMap<QuintId, LookupDefinition>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
