@@ -1,6 +1,7 @@
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 
 pub type EvalResult<'a> = Result<Value<'a>, QuintError>;
@@ -23,6 +24,12 @@ impl<'a> CompiledExpr<'a> {
 
     pub fn execute(&self, env: &mut Env) -> EvalResult<'a> {
         self.0(env)
+    }
+}
+
+impl<'a> fmt::Debug for CompiledExpr<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<CompiledExpr>")
     }
 }
 

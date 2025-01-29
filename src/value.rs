@@ -6,7 +6,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Value<'a> {
     Int(i64),
     Bool(bool),
@@ -95,14 +95,14 @@ impl fmt::Display for Value<'_> {
             Value::Int(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
             Value::Set(set) => {
-                write!(f, "{{")?;
+                write!(f, "Set(")?;
                 for (i, elem) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
                     write!(f, "{:#}", elem)?;
                 }
-                write!(f, "}}")
+                write!(f, ")")
             }
             Value::Lambda(_, _) => write!(f, "<lambda>"),
         }
