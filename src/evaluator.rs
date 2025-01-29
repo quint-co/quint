@@ -1,4 +1,4 @@
-use crate::{ir::*, value::*};
+use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -8,6 +8,14 @@ pub type EvalResult<'a> = Result<Value<'a>, String>;
 #[derive(Clone)]
 pub struct CompiledExpr<'a>(Rc<dyn Fn(&mut Env) -> EvalResult<'a> + 'a>);
 
+#[derive(Clone)]
+pub struct CompiledExprWithArgs<'a>(Rc<dyn Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'a>);
+
+#[derive(Clone)]
+pub struct CompiledExprWithLazyArgs<'a>(
+    Rc<dyn Fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a> + 'a>,
+);
+
 impl<'a> CompiledExpr<'a> {
     pub fn new(closure: impl 'a + Fn(&mut Env) -> EvalResult<'a>) -> Self {
         CompiledExpr(Rc::new(closure))
@@ -15,6 +23,26 @@ impl<'a> CompiledExpr<'a> {
 
     pub fn execute(&self, env: &mut Env) -> EvalResult<'a> {
         self.0(env)
+    }
+}
+
+impl<'a> CompiledExprWithArgs<'a> {
+    pub fn new(closure: impl 'a + Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a>) -> Self {
+        CompiledExprWithArgs(Rc::new(closure))
+    }
+
+    pub fn execute(&self, env: &mut Env, args: Vec<Value<'a>>) -> EvalResult<'a> {
+        self.0(env, args)
+    }
+}
+
+impl<'a> CompiledExprWithLazyArgs<'a> {
+    pub fn new(closure: impl 'a + Fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a>) -> Self {
+        CompiledExprWithLazyArgs(Rc::new(closure))
+    }
+
+    pub fn execute(&self, env: &mut Env, args: &Vec<CompiledExpr<'a>>) -> EvalResult<'a> {
+        self.0(env, args)
     }
 }
 
@@ -128,35 +156,51 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| Ok(lambda.clone()))
             }
 
-            QuintEx::QuintApp { id, opcode, args } => match opcode.as_str() {
-                "iadd" => {
-                    // TODO: generalize argument compilation for eager operators
-                    let lhs = self.compile(&args[0]);
-                    let rhs = self.compile(&args[1]);
+            QuintEx::QuintApp { id, opcode, args } => {
+                let compiled_args = args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
+                if LAZY_OPS.contains(&opcode.as_str()) {
+                    // Lazy operator, compile the arguments and give their
+                    // closures to the operator so it decides when to eval
                     CompiledExpr::new(move |env| {
-                        let lhs = lhs.execute(env)?;
-                        let rhs = rhs.execute(env)?;
-                        Ok(Value::Int(lhs.as_int()? + rhs.as_int()?))
+                        let op = compile_lazy_op(opcode);
+                        op.execute(env, &compiled_args)
                     })
-                }
-                _ => {
-                    // User-defined operator, lookup the definition and compile it
-                    let op = self.table.get(id).map(|def| self.compile_def(def)).unwrap();
-                    let compiled_args =
-                        args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
+                } else {
+                    // Otherwise, this is either a normal (eager) builtin, or an user-defined operator.
+                    // For both, we first evaluate the arguments and then apply the operator.
+                    let compiled_op = self.compile_op(*id, opcode.clone());
                     CompiledExpr::new(move |env| {
-                        let lambda = op.execute(env)?;
-                        let closure = lambda.as_closure()?;
-                        let arg_values = compiled_args
+                        let evaluated_args = compiled_args
                             .iter()
                             .map(|arg| arg.execute(env))
                             .collect::<Result<Vec<_>, _>>()?;
-                        closure(env, arg_values)
+                        compiled_op.execute(env, evaluated_args)
                     })
                 }
-            },
-
+            }
             _ => CompiledExpr::new(move |_| Err(format!("expr not implemented: %{:#?}", expr))),
+        }
+    }
+
+    pub fn compile_op(&mut self, id: QuintId, op: String) -> CompiledExprWithArgs<'a> {
+        match op.as_str() {
+            "iadd" => CompiledExprWithArgs::new(move |_env, args| {
+                Ok(Value::Int(args[0].as_int()? + args[1].as_int()?))
+            }),
+            _ => {
+                // User-defined operator, lookup the definition and compile it
+                let op = self
+                    .table
+                    .get(&id)
+                    .map(|def| self.compile_def(def))
+                    .unwrap();
+
+                CompiledExprWithArgs::new(move |env, args| {
+                    let lambda = op.execute(env)?;
+                    let closure = lambda.as_closure()?;
+                    closure(env, args)
+                })
+            }
         }
     }
 
