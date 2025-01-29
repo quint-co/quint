@@ -168,7 +168,7 @@ impl<'a> Interpreter<'a> {
                 } else {
                     // Otherwise, this is either a normal (eager) builtin, or an user-defined operator.
                     // For both, we first evaluate the arguments and then apply the operator.
-                    let compiled_op = self.compile_op(*id, opcode.clone());
+                    let compiled_op = self.compile_op(*id, opcode.as_str());
                     CompiledExpr::new(move |env| {
                         let evaluated_args = compiled_args
                             .iter()
@@ -182,25 +182,17 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    pub fn compile_op(&mut self, id: QuintId, op: String) -> CompiledExprWithArgs<'a> {
-        match op.as_str() {
-            "iadd" => CompiledExprWithArgs::new(move |_env, args| {
-                Ok(Value::Int(args[0].as_int()? + args[1].as_int()?))
-            }),
-            _ => {
-                // User-defined operator, lookup the definition and compile it
-                let op = self
-                    .table
-                    .get(&id)
-                    .map(|def| self.compile_def(def))
-                    .unwrap();
-
+    pub fn compile_op(&mut self, id: QuintId, op: &'a str) -> CompiledExprWithArgs<'a> {
+        match self.table.get(&id) {
+            Some(def) => {
+                let op = self.compile_def(def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure()?;
                     closure(env, args)
                 })
             }
+            None => compile_eager_op(op),
         }
     }
 
