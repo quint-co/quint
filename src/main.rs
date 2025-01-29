@@ -13,7 +13,7 @@ fn main() {
         let value = run(&parsed.table, &def.expr);
         match value {
             Ok(value) => println!("{:#}", value),
-            Err(err) => println!("Error: {:#}", err),
+            Err(err) => println!("Error: {:#?}", err),
         }
     };
 }

@@ -3,6 +3,31 @@ use serde::{Deserialize, Serialize};
 
 pub type QuintId = u64;
 
+#[derive(Debug, Clone)]
+pub struct QuintError {
+    pub code: String,
+    pub message: String,
+    pub reference: Option<QuintId>,
+}
+
+impl QuintError {
+    pub fn new(code: &str, message: &str) -> Self {
+        QuintError {
+            code: code.to_string(),
+            message: message.to_string(),
+            reference: None,
+        }
+    }
+
+    pub fn with_reference(code: &str, message: &str, reference: QuintId) -> Self {
+        QuintError {
+            code: code.to_string(),
+            message: message.to_string(),
+            reference: Some(reference),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintOutput {
     pub modules: Vec<QuintModule>,

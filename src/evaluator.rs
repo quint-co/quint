@@ -3,7 +3,7 @@ use fxhash::FxHashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub type EvalResult<'a> = Result<Value<'a>, String>;
+pub type EvalResult<'a> = Result<Value<'a>, QuintError>;
 
 #[derive(Clone)]
 pub struct CompiledExpr<'a>(Rc<dyn Fn(&mut Env) -> EvalResult<'a> + 'a>);
@@ -80,7 +80,7 @@ fn builtin_value<'e>(name: String) -> CompiledExpr<'e> {
     match name.as_str() {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
-        _ => CompiledExpr::new(move |_| Err(format!("Undefined builtin value: {name}"))),
+        _ => unimplemented!(),
     }
 }
 
@@ -91,7 +91,10 @@ impl<'a> Interpreter<'a> {
         for (_key, value) in table.iter() {
             if let LookupDefinition::Param(p) = value {
                 // Create the heap-allocated error
-                let error = Rc::new(RefCell::new(Err(format!("Undefined parameter: {:#?}", p))));
+                let error = Rc::new(RefCell::new(Err(QuintError::new(
+                    "QNT501",
+                    format!("Param {} not set", p.name).as_str(),
+                ))));
 
                 // Insert the reference into the param_registry
                 param_registry.insert(p.id, error);
@@ -111,7 +114,7 @@ impl<'a> Interpreter<'a> {
                 let register = self.param_registry.get(&p.id).unwrap().clone();
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
-            _ => CompiledExpr::new(move |_| Err(format!("def not implemented: %{:#?}", def))),
+            _ => unimplemented!(),
         }
     }
 
@@ -178,7 +181,7 @@ impl<'a> Interpreter<'a> {
                     })
                 }
             }
-            _ => CompiledExpr::new(move |_| Err(format!("expr not implemented: %{:#?}", expr))),
+            _ => unimplemented!(),
         }
     }
 
@@ -201,7 +204,7 @@ impl<'a> Interpreter<'a> {
     }
 }
 
-pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, String> {
+pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new();
 
