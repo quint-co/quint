@@ -48,8 +48,8 @@ pub struct Interpreter<'a> {
     // varStorage: VarStorage
 }
 
-fn builtin_value<'e>(name: String) -> CompiledExpr<'e> {
-    match name.as_str() {
+fn builtin_value(name: &str) -> CompiledExpr {
+    match name {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
         _ => CompiledExpr::new(move |_| Err(format!("Undefined builtin value: {name}"))),
@@ -116,7 +116,7 @@ impl<'a> Interpreter<'a> {
                 .table
                 .get(id)
                 .map(|def| self.compile_def(def))
-                .unwrap_or_else(|| builtin_value(name.to_string())),
+                .unwrap_or_else(|| builtin_value(name)),
 
             QuintEx::QuintLambda {
                 id: _,
