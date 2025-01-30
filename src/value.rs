@@ -1,10 +1,12 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::QuintError;
-use fxhash::FxHashSet;
+use indexmap::IndexSet;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+
+type FxHashSet<T> = IndexSet<T, fxhash::FxBuildHasher>;
 
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
