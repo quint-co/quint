@@ -32,7 +32,7 @@ fn ints_and_sets() -> Result<(), Box<dyn std::error::Error>> {
             Value::Set(
                 vec![4, 6, 7, 8]
                     .into_iter()
-                    .map(|i| Value::Int(i))
+                    .map(Value::Int)
                     .collect()
             )
         );

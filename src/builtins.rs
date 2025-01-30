@@ -18,7 +18,7 @@ pub const LAZY_OPS: [&str; 13] = [
     "expect",
 ];
 
-pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
+pub fn compile_lazy_op(_op: &str) -> CompiledExprWithLazyArgs {
     unimplemented!();
 }
 

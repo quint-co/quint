@@ -27,7 +27,7 @@ impl<'a> CompiledExpr<'a> {
     }
 }
 
-impl<'a> fmt::Debug for CompiledExpr<'a> {
+impl fmt::Debug for CompiledExpr<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "<CompiledExpr>")
     }
