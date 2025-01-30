@@ -3,6 +3,7 @@
     "type": "separator",
     "title": "Introduction"
   },
+  "why": "Why?",
   "getting-started": "Getting Started",
   "quint-basics": "Quint Basics",
   "language-basics": "Language Basics",
@@ -16,16 +17,16 @@
     "type": "separator",
     "title": "Using specifications"
   },
-  "properties": "Checking properties",
+  "checking-properties": "Checking properties",
   "repl": "Interacting with REPL",
   "literate": "Literate Specifications",
-  "model-based-testing": "Model-based Testing",
+  "model-based-testing": "Model-Based Testing",
   "-- How the tools work": {
     "type": "separator",
     "title": "How the tools work"
   },
   "model-checkers": "Model Checkers",
-  "understanding-the-simulator": "Understanding the Simulator",
+  "simulator": "Understanding the Simulator",
   "-- Reference Documentation": {
     "type": "separator",
     "title": "Reference Documentation"
