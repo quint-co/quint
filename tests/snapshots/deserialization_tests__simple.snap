@@ -55,53 +55,9 @@ modules:
           id: 13
           value: true
 table:
-  8:
-    kind: def
-    id: 6
-    name: f
-    qualifier: puredef
-    expr:
-      kind: lambda
-      id: 5
-      params:
-        - id: 1
-          name: x_5
-      expr:
-        kind: app
-        id: 4
-        opcode: iadd
-        args:
-          - kind: name
-            id: 2
-            name: x_5
-          - kind: int
-            id: 3
-            value: 1
   2:
     id: 1
     name: x_5
-  12:
-    kind: def
-    id: 12
-    name: "q::init"
-    qualifier: action
-    expr:
-      kind: bool
-      id: 11
-      value: true
-  9:
-    kind: def
-    id: 9
-    name: a
-    qualifier: pureval
-    expr:
-      kind: app
-      id: 8
-      opcode: f
-      args:
-        - kind: int
-          id: 7
-          value: 1
   6:
     kind: def
     id: 6
@@ -124,6 +80,50 @@ table:
           - kind: int
             id: 3
             value: 1
+  8:
+    kind: def
+    id: 6
+    name: f
+    qualifier: puredef
+    expr:
+      kind: lambda
+      id: 5
+      params:
+        - id: 1
+          name: x_5
+      expr:
+        kind: app
+        id: 4
+        opcode: iadd
+        args:
+          - kind: name
+            id: 2
+            name: x_5
+          - kind: int
+            id: 3
+            value: 1
+  9:
+    kind: def
+    id: 9
+    name: a
+    qualifier: pureval
+    expr:
+      kind: app
+      id: 8
+      opcode: f
+      args:
+        - kind: int
+          id: 7
+          value: 1
+  12:
+    kind: def
+    id: 12
+    name: "q::init"
+    qualifier: action
+    expr:
+      kind: bool
+      id: 11
+      value: true
   14:
     kind: def
     id: 14

@@ -1,5 +1,8 @@
-use fxhash::FxHashMap;
+use fxhash::FxBuildHasher;
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+
+type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
 pub type QuintId = u64;
 
