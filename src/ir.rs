@@ -4,37 +4,37 @@ use serde::{Deserialize, Serialize};
 
 type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
-type QuintId = u64;
+pub type QuintId = u64;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintOutput {
-    modules: Vec<QuintModule>,
-    table: LookupTable,
+    pub modules: Vec<QuintModule>,
+    pub table: LookupTable,
 }
 
-type LookupTable = FxHashMap<QuintId, LookupDefinition>;
+pub type LookupTable = FxHashMap<QuintId, LookupDefinition>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
-enum LookupDefinition {
+pub enum LookupDefinition {
     Definition(QuintDef),
     Param(QuintLambdaParameter),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintModule {
-    name: String,
+    pub name: String,
     // We can use QuintDef instead of QuintDeclaration as flattening removes all
     // non-defs (imports, instances and exports)
-    declarations: Vec<QuintDef>,
+    pub declarations: Vec<QuintDef>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpDef {
-    id: QuintId,
-    name: String,
-    qualifier: OpQualifier,
-    expr: QuintEx,
+    pub id: QuintId,
+    pub name: String,
+    pub qualifier: OpQualifier,
+    pub expr: QuintEx,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -126,8 +126,8 @@ pub enum QuintEx {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuintLambdaParameter {
-    id: QuintId,
-    name: String,
+    pub id: QuintId,
+    pub name: String,
 }

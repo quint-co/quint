@@ -4,16 +4,16 @@ use quint_simulator::{
 };
 use std::fs::File;
 
-fn main() {
+#[test]
+fn simple() -> Result<(), Box<dyn std::error::Error>> {
     let file = File::open("fixtures/simple.json").unwrap();
     let parsed: QuintOutput = serde_json::from_reader(file).unwrap();
-    println!("{:?}", parsed);
 
+    // Evaluate the expression inside the second declaration
     if let QuintDef::QuintOpDef(def) = &parsed.modules[0].declarations[1] {
-        let value = run(&parsed.table, &def.expr);
-        match value {
-            Ok(value) => println!("{:#}", value),
-            Err(err) => println!("Error: {:#}", err),
-        }
+        let value = run(&parsed.table, &def.expr)?;
+        assert_eq!(value.to_string(), "2");
     };
+
+    Ok(())
 }
