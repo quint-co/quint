@@ -27,6 +27,16 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "Set" => {
             CompiledExprWithArgs::new(move |_env, args| Ok(Value::Set(args.into_iter().collect())))
         }
+        "Rec" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(Value::Record(
+                args.chunks_exact(2)
+                    .map(|chunk| (chunk[0].as_str(), chunk[1].clone()))
+                    .collect(),
+            ))
+        }),
+        "Tup" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(Value::Tuple(args.into_iter().collect()))
+        }),
         // TODO: Add other constructors
         "not" => CompiledExprWithArgs::new(move |_env, args| Ok(Value::Bool(!args[0].as_bool()))),
         "iff" => CompiledExprWithArgs::new(move |_env, args| {
@@ -71,7 +81,36 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(Value::Bool(args[0].as_int() >= args[1].as_int()))
         }),
 
-        // TODO: Add tuple and list ops
+        "item" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(args[0].as_list()[args[1].as_int() as usize - 1].clone())
+        }),
+
+        // TODO: tuples with cross prod
+        "field" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(args[0]
+                .as_record_map()
+                .get(&args[1].as_str())
+                .unwrap()
+                .clone())
+        }),
+
+        "fieldNames" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(Value::Set(
+                args[0]
+                    .as_record_map()
+                    .keys()
+                    .map(|s| Value::Str(s.clone()))
+                    .collect(),
+            ))
+        }),
+
+        "with" => CompiledExprWithArgs::new(move |_env, args| {
+            let mut record = args[0].as_record_map().clone();
+            record.insert(args[1].as_str().to_string(), args[2].clone());
+            Ok(Value::Record(record))
+        }),
+
+        // TODO: Add list ops
         // TODO: powerset
         "contains" => CompiledExprWithArgs::new(move |_env, args| {
             Ok(Value::Bool(args[0].as_set().contains(&args[1])))
@@ -105,7 +144,15 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                     .collect(),
             ))
         }),
-        // TODO: size, isFinite
+
+        "size" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(Value::Int(args[0].cardinality().into()))
+        }),
+
+        "isFinite" => CompiledExprWithArgs::new(move |_env, _args| {
+            // at the moment, we support only finite sets, so just return true
+            Ok(Value::Bool(true))
+        }),
         "to" => CompiledExprWithArgs::new(move |_env, args| {
             Ok(Value::Set(
                 (args[0].as_int()..=args[1].as_int())
