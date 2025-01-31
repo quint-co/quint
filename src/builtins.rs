@@ -1,6 +1,6 @@
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::QuintError;
-use crate::value::Value;
+use crate::value::{FxHashSet, Value};
 
 pub const LAZY_OPS: [&str; 13] = [
     "assign",
@@ -161,9 +161,111 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             ))
         }),
 
+        "fold" => CompiledExprWithArgs::new(move |env, args| {
+            apply_lambda(
+                FoldOrder::Forward,
+                args[0].as_set().iter().cloned(),
+                args[1].clone(),
+                |arg| args[2].as_closure()(env, arg.to_vec()),
+            )
+        }),
+
+        "foldl" => CompiledExprWithArgs::new(move |env, args| {
+            apply_lambda(
+                FoldOrder::Forward,
+                args[0].as_list().iter().cloned(),
+                args[1].clone(),
+                |arg| args[2].as_closure()(env, arg.to_vec()),
+            )
+        }),
+
+        "foldr" => CompiledExprWithArgs::new(move |env, args| {
+            apply_lambda(
+                FoldOrder::Backward,
+                args[0].as_list().iter().cloned(),
+                args[1].clone(),
+                |arg| args[2].as_closure()(env, arg.to_vec()),
+            )
+        }),
+
+        // TODO: Map operators
+        "exists" => CompiledExprWithArgs::new(move |env, args| {
+            for v in args[0].as_set() {
+                let result = args[1].as_closure()(env, vec![v.clone()])?;
+                if result.as_bool() {
+                    return Ok(Value::Bool(true));
+                }
+            }
+            Ok(Value::Bool(false))
+        }),
+
+        "forall" => CompiledExprWithArgs::new(move |env, args| {
+            for v in args[0].as_set() {
+                let result = args[1].as_closure()(env, vec![v.clone()])?;
+                if !result.as_bool() {
+                    return Ok(Value::Bool(false));
+                }
+            }
+            Ok(Value::Bool(true))
+        }),
+
+        "map" => CompiledExprWithArgs::new(move |env, args| {
+            Ok(Value::Set(
+                args[0]
+                    .as_set()
+                    .iter()
+                    .map(|v| args[1].as_closure()(env, vec![v.clone()]))
+                    .collect::<Result<_, _>>()?,
+            ))
+        }),
+
+        "filter" => CompiledExprWithArgs::new(move |env, args| {
+            Ok(Value::Set(args[0].as_set().iter().try_fold(
+                FxHashSet::default(),
+                |mut acc, v| {
+                    if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
+                        acc.insert(v.clone());
+                    }
+                    Ok(acc)
+                },
+            )?))
+        }),
+
         // TODO, fold, maps, and extra ops
+        "flatten" => CompiledExprWithArgs::new(move |_env, args| {
+            Ok(Value::Set(
+                args[0].as_set().iter().flat_map(|v| v.as_set()).collect(),
+            ))
+        }),
         _ => {
             panic!("Unknown eager op");
         }
+    }
+}
+
+enum FoldOrder {
+    Forward,
+    Backward,
+}
+
+fn apply_lambda<'a, T: Iterator<Item = Value<'a>>>(
+    order: FoldOrder,
+    iterable: T,
+    initial: Value<'a>,
+    mut closure: impl FnMut(&[Value<'a>]) -> Result<Value<'a>, QuintError>,
+) -> Result<Value<'a>, QuintError>
+where
+    T: DoubleEndedIterator,
+{
+    let reducer = |acc: Result<Value<'a>, QuintError>, elem: Value<'a>| {
+        acc.and_then(|acc| match order {
+            FoldOrder::Forward => closure(&[acc, elem]),
+            FoldOrder::Backward => closure(&[elem, acc]),
+        })
+    };
+
+    match order {
+        FoldOrder::Forward => iterable.fold(Ok(initial), reducer),
+        FoldOrder::Backward => iterable.rev().fold(Ok(initial), reducer),
     }
 }

@@ -150,6 +150,10 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| Ok(Value::Bool(*value)))
             }
 
+            QuintEx::QuintStr { id: _, value } => {
+                CompiledExpr::new(move |_| Ok(Value::Str(value.clone())))
+            }
+
             QuintEx::QuintName { id, name } => self
                 .table
                 .get(id)
@@ -188,7 +192,7 @@ impl<'a> Interpreter<'a> {
                     })
                 }
             }
-            _ => unimplemented!(),
+            _ => unimplemented!("{:?}", expr),
         }
     }
 
@@ -198,7 +202,7 @@ impl<'a> Interpreter<'a> {
                 let op = self.compile_def(def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
-                    let closure = lambda.as_closure()?;
+                    let closure = lambda.as_closure();
                     closure(env, args)
                 })
             }

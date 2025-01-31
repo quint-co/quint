@@ -6,7 +6,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-type FxHashSet<T> = IndexSet<T, fxhash::FxBuildHasher>;
+pub type FxHashSet<T> = IndexSet<T, fxhash::FxBuildHasher>;
 
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
@@ -124,11 +124,9 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_closure<'b>(
-        &'b self,
-    ) -> Result<impl Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'b, QuintError> {
+    pub fn as_closure<'b>(&'b self) -> impl Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'b {
         match self {
-            Value::Lambda(registers, body) => Ok(move |env: &mut Env, args: Vec<Value<'a>>| {
+            Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value<'a>>| {
                 // TODO: Check number of arguments
 
                 args.iter().enumerate().for_each(|(i, arg)| {
@@ -137,7 +135,7 @@ impl<'a> Value<'a> {
 
                 body.execute(env)
                 // TODO: restore previous values
-            }),
+            },
             _ => panic!("Expected lambda"),
         }
     }
