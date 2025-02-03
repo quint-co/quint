@@ -10,10 +10,12 @@ pub type EvalResult<'a> = Result<Value<'a>, QuintError>;
 pub struct CompiledExpr<'a>(Rc<dyn Fn(&mut Env) -> EvalResult<'a> + 'a>);
 
 #[derive(Clone)]
+#[allow(clippy::type_complexity)]
 pub struct CompiledExprWithArgs<'a>(Rc<dyn Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'a>);
 
 #[derive(Clone)]
 pub struct CompiledExprWithLazyArgs<'a>(
+    #[allow(clippy::type_complexity)]
     Rc<dyn Fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a> + 'a>,
 );
 
