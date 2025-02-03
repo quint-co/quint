@@ -29,12 +29,7 @@ fn ints_and_sets() -> Result<(), Box<dyn std::error::Error>> {
         let value = run(&parsed.table, &def.expr).unwrap();
         assert_eq!(
             value,
-            Value::Set(
-                vec![4, 6, 7, 8]
-                    .into_iter()
-                    .map(Value::Int)
-                    .collect()
-            )
+            Value::Set(vec![4, 6, 7, 8].into_iter().map(Value::Int).collect())
         );
     };
 
