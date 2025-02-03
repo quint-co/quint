@@ -1,5 +1,5 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::{FxHashMap, QuintError};
+use crate::ir::FxHashMap;
 use indexmap::IndexSet;
 use std::cell::RefCell;
 use std::fmt;

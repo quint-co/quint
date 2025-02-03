@@ -146,7 +146,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         }),
 
         "size" => CompiledExprWithArgs::new(move |_env, args| {
-            Ok(Value::Int(args[0].cardinality().into()))
+            Ok(Value::Int(args[0].cardinality()))
         }),
 
         "isFinite" => CompiledExprWithArgs::new(move |_env, _args| {
