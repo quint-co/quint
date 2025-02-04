@@ -215,7 +215,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             ))
         },
         _ => {
-            panic!("Unknown eager op");
+            panic!("Unknown eager op: {op}");
         }
     })
 }
