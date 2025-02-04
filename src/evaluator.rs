@@ -40,6 +40,10 @@ impl<'a> CompiledExprWithArgs<'a> {
         CompiledExprWithArgs(Rc::new(closure))
     }
 
+    pub fn from_fn(function: fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a>) -> Self {
+        CompiledExprWithArgs(Rc::new(function))
+    }
+
     pub fn execute(&self, env: &mut Env, args: Vec<Value<'a>>) -> EvalResult<'a> {
         self.0(env, args)
     }
