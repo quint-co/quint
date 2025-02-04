@@ -168,14 +168,14 @@ impl fmt::Display for Value<'_> {
                 write!(f, ")")
             }
             Value::Record(fields) => {
-                write!(f, "{{")?;
+                write!(f, "{{ ")?;
                 for (i, (name, value)) in fields.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
                     write!(f, "{}: {:#}", name, value)?;
                 }
-                write!(f, "}}")
+                write!(f, " }}")
             }
             Value::Lambda(_, _) => write!(f, "<lambda>"),
         }

@@ -48,7 +48,6 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         })
         .unwrap();
 
-    println!("{:?}", def);
     let value = run(&parsed.table, &def.expr);
     match value {
         Ok(v) => assert_eq!(v.to_string(), expected),
@@ -608,3 +607,42 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
     //    2.to(4).fold(1, prod)";
     // assert_from_string(input, "24")
 }
+
+// TODO powerset tests
+// TODO builtin values tests
+// TODO tuple tests
+// TODO list tests
+
+#[test]
+fn record_constructors() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Rec(\"a\", 2, \"b\", true)", "{ a: 2, b: true }")?;
+    assert_from_string("{ a: 2, b: true }", "{ a: 2, b: true }")?;
+    assert_from_string("{ a: 2, b: true, }", "{ a: 2, b: true }")
+}
+
+#[test]
+fn record_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("{ a: 2 + 3, b: true } == { a: 5, b: true }", "true")?;
+    assert_from_string("{ a: 3, b: true } == { b: true, a: 3 }", "true")?;
+    assert_from_string("{ a: 2 + 3, b: true } == { a: 1, b: false }", "false")
+}
+
+#[test]
+fn record_field_access() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("{ a: 2, b: true }.a", "2")?;
+    assert_from_string("{ a: 2, b: true }.b", "true")
+}
+
+#[test]
+fn record_field_names() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("{ a: 2, b: true }.fieldNames()", "Set(\"a\", \"b\")")
+}
+
+#[test]
+fn record_field_update() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("{ a: 2, b: true }.with(\"a\", 3)", "{ a: 3, b: true }")
+}
+
+// TODO variants/match tests
+// TODO Map tests
+// TODO Runs and special ops tests
