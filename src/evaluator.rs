@@ -124,7 +124,7 @@ impl<'a> Interpreter<'a> {
         match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
             LookupDefinition::Param(p) => {
-                let register = self.get_or_create_param(&p);
+                let register = self.get_or_create_param(p);
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
             _ => unimplemented!(),
