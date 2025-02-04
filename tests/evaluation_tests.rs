@@ -610,7 +610,67 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
 
 // TODO powerset tests
 // TODO builtin values tests
-// TODO tuple tests
+
+#[test]
+fn tuple_constructors() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Tup(1, 2, 3)", "(1, 2, 3)")?;
+    assert_from_string("(1, 2, 3)", "(1, 2, 3)")?;
+    assert_from_string("(1, 2, 3,)", "(1, 2, 3)")
+}
+
+#[test]
+fn tuple_access() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("(4, 5, 6)._1", "4")?;
+    assert_from_string("(4, 5, 6)._2", "5")?;
+    assert_from_string("(4, 5, 6)._3", "6")
+}
+
+#[test]
+fn tuple_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("(4, 5, 6) == (5 - 1, 5, 6)", "true")?;
+    assert_from_string("(4, 5, 6) == (5, 5, 6)", "false")
+}
+
+#[ignore]
+#[test]
+fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("tuples(Set(), Set(), Set())", "Set()")?;
+    assert_from_string("tuples(Set(), 2.to(3))", "Set()")?;
+    assert_from_string("tuples(2.to(3), Set(), 3.to(5))", "Set()")?;
+    assert_from_string(
+        "tuples(1.to(2), 2.to(3))",
+        "Set((1, 2), (2, 2), (1, 3), (2, 3))",
+    )?;
+    assert_from_string("tuples(1.to(1), 1.to(1), 1.to(1))", "Set((1, 1, 1))")?;
+    assert_from_string(
+        "tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 - 1))",
+        "true",
+    )?;
+    assert_from_string(
+        "tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 + 1))",
+        "false",
+    )?;
+    assert_from_string(
+        "tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1))",
+        "true",
+    )?;
+    assert_from_string(
+        "tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5))",
+        "false",
+    )?;
+    assert_from_string(
+        "Set(tuples(1.to(2), 2.to(3))",
+        "Set(Set((1, 2), (1, 3), (2, 2), (2, 3)))",
+    )
+}
+
+#[ignore]
+#[test]
+fn cross_product_cardinality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("tuples(1.to(4), 2.to(4)).size()", "12")?;
+    assert_from_string("tuples(Set(), 2.to(4)).size()", "0")
+}
+
 // TODO list tests
 
 #[test]
