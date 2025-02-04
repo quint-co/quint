@@ -39,11 +39,11 @@ export default {
         <meta httpEquiv="Content-Language" content="en" />
         <meta
           name="description"
-          content="A modern and exectuable specification language"
+          content="A modern and executable specification language"
         />
         <meta
           name="og:description"
-          content="A modern and exectuable specification language"
+          content="A modern and executable specification language"
         />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="/og.png" />
