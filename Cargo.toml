@@ -11,3 +11,4 @@ indexmap = { version = "2.7", features = ["serde"] }
 
 [dev-dependencies]
 insta = {version = "1.22.0", features = ["yaml"]}
+tempfile = "3.16.0"

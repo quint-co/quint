@@ -50,7 +50,18 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(Value::Int(args[0].as_int() / divisor))
         },
         "imod" => |_env, args| Ok(Value::Int(args[0].as_int() % args[1].as_int())),
-        "ipow" => |_env, args| Ok(Value::Int(args[0].as_int().pow(args[1].as_int() as u32))),
+        "ipow" => |_env, args| {
+            let base = args[0].as_int();
+            let exp = args[1].as_int();
+            if base == 0 && exp == 0 {
+                return Err(QuintError::new("QNT503", "0^0 is undefined"));
+            }
+            if exp < 0 {
+                return Err(QuintError::new("QNT503", "i^j is undefined for j < 0"));
+            }
+
+            Ok(Value::Int(base.pow(exp as u32)))
+        },
         "iuminus" => |_env, args| Ok(Value::Int(-args[0].as_int())),
         "ilt" => |_env, args| Ok(Value::Bool(args[0].as_int() < args[1].as_int())),
         "ilte" => |_env, args| Ok(Value::Bool(args[0].as_int() <= args[1].as_int())),
@@ -214,14 +225,14 @@ enum FoldOrder {
     Backward,
 }
 
-fn apply_lambda<'a, T: Iterator<Item = Value<'a>>>(
+fn apply_lambda<'a, T>(
     order: FoldOrder,
     iterable: T,
     initial: Value<'a>,
     mut closure: impl FnMut(&[Value<'a>]) -> Result<Value<'a>, QuintError>,
 ) -> Result<Value<'a>, QuintError>
 where
-    T: DoubleEndedIterator,
+    T: Iterator<Item = Value<'a>> + DoubleEndedIterator,
 {
     let reducer = |acc: Result<Value<'a>, QuintError>, elem: Value<'a>| {
         acc.and_then(|acc| match order {
