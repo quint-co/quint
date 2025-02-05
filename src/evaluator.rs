@@ -99,46 +99,50 @@ fn builtin_value(name: &str) -> CompiledExpr {
 
 impl<'a> Interpreter<'a> {
     pub fn new(table: &'a LookupTable) -> Self {
-        let mut param_registry = FxHashMap::default();
-
-        for (_key, value) in table.iter() {
-            if let LookupDefinition::Param(p) = value {
-                // Create the heap-allocated error
-                let error = Rc::new(RefCell::new(Err(QuintError::new(
-                    "QNT501",
-                    format!("Param {} not set", p.name).as_str(),
-                ))));
-
-                // Insert the reference into the param_registry
-                param_registry.insert(p.id, error);
-            }
-        }
-
         Self {
             table,
-            param_registry,
+            param_registry: FxHashMap::default(),
         }
+    }
+
+    pub fn get_or_create_param(
+        &mut self,
+        param: &QuintLambdaParameter,
+    ) -> Rc<RefCell<EvalResult<'a>>> {
+        self.param_registry
+            .entry(param.id)
+            .or_insert_with(|| {
+                Rc::new(RefCell::new(Err(QuintError::new(
+                    "QNT500",
+                    format!("Param {} not set", param.name).as_str(),
+                ))))
+            })
+            .clone()
     }
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
         match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
             LookupDefinition::Param(p) => {
-                let register = self.param_registry.get(&p.id).unwrap().clone();
+                let register = self.get_or_create_param(p);
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
             _ => unimplemented!(),
         }
     }
 
-    fn mk_lambda<'e>(&self, params: Vec<QuintLambdaParameter>, body: CompiledExpr<'a>) -> Value<'a>
+    fn mk_lambda<'e>(
+        &mut self,
+        params: Vec<QuintLambdaParameter>,
+        body: CompiledExpr<'a>,
+    ) -> Value<'a>
     where
         'a: 'e,
     {
         let registers = params
             .into_iter()
             .map(|param| {
-                let register = self.param_registry.get(&param.id).unwrap().clone();
+                let register = self.get_or_create_param(&param);
                 Rc::clone(&register)
             })
             .collect::<Vec<_>>();
@@ -154,6 +158,10 @@ impl<'a> Interpreter<'a> {
 
             QuintEx::QuintBool { id: _, value } => {
                 CompiledExpr::new(move |_| Ok(Value::Bool(*value)))
+            }
+
+            QuintEx::QuintStr { id: _, value } => {
+                CompiledExpr::new(move |_| Ok(Value::Str(value.clone())))
             }
 
             QuintEx::QuintName { id, name } => self
@@ -194,7 +202,7 @@ impl<'a> Interpreter<'a> {
                     })
                 }
             }
-            _ => unimplemented!(),
+            _ => unimplemented!("{:?}", expr),
         }
     }
 
@@ -204,7 +212,7 @@ impl<'a> Interpreter<'a> {
                 let op = self.compile_def(def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
-                    let closure = lambda.as_closure()?;
+                    let closure = lambda.as_closure();
                     closure(env, args)
                 })
             }
