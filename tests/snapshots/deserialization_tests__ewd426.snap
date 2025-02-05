@@ -13,6 +13,7 @@ modules:
           kind: int
           id: 193
           value: 5
+        depth: 0
       - kind: def
         id: 196
         name: "ewd426::self_stabilization::K"
@@ -21,6 +22,7 @@ modules:
           kind: int
           id: 194
           value: 7
+        depth: 0
       - kind: var
         id: 211
         name: "ewd426::self_stabilization::system"
@@ -75,6 +77,7 @@ modules:
                                 - kind: int
                                   id: 268
                                   value: 1
+                depth: ~
               expr:
                 kind: app
                 id: 269
@@ -86,6 +89,7 @@ modules:
                   - kind: name
                     id: 271
                     name: "ewd426::self_stabilization::initial"
+        depth: 0
       - kind: def
         id: 206
         name: "q::init"
@@ -94,6 +98,7 @@ modules:
           kind: name
           id: 205
           name: "ewd426::self_stabilization::init"
+        depth: ~
       - kind: def
         id: 209
         name: "ewd426::self_stabilization::bottom"
@@ -102,6 +107,7 @@ modules:
           kind: int
           id: 210
           value: 0
+        depth: 0
       - kind: def
         id: 215
         name: "ewd426::self_stabilization::top"
@@ -110,6 +116,7 @@ modules:
           kind: name
           id: 216
           name: "ewd426::self_stabilization::N"
+        depth: 0
       - kind: def
         id: 221
         name: "ewd426::self_stabilization::has_token"
@@ -196,6 +203,7 @@ modules:
                               - kind: int
                                 id: 254
                                 value: 1
+        depth: 0
       - kind: def
         id: 312
         name: "ewd426::self_stabilization::state_transition"
@@ -292,6 +300,7 @@ modules:
                           - kind: int
                             id: 348
                             value: 1
+        depth: 0
       - kind: def
         id: 349
         name: "ewd426::self_stabilization::step"
@@ -338,6 +347,7 @@ modules:
                           - kind: name
                             id: 361
                             name: "ewd426::self_stabilization::i_104"
+            depth: ~
           expr:
             kind: app
             id: 362
@@ -366,6 +376,7 @@ modules:
                       - kind: name
                         id: 369
                         name: "ewd426::self_stabilization::node"
+        depth: 0
       - kind: def
         id: 208
         name: "q::step"
@@ -374,6 +385,7 @@ modules:
           kind: name
           id: 207
           name: "ewd426::self_stabilization::step"
+        depth: ~
 table:
   5:
     kind: const
@@ -390,6 +402,7 @@ table:
       kind: int
       id: 9
       value: 0
+    depth: 0
   11:
     kind: const
     id: 2
@@ -402,6 +415,7 @@ table:
       kind: name
       id: 11
       name: N
+    depth: 0
   24:
     id: 22
     name: index_45
@@ -414,6 +428,7 @@ table:
       kind: int
       id: 9
       value: 0
+    depth: 0
   27:
     id: 20
     name: nodes_45
@@ -426,6 +441,7 @@ table:
       kind: int
       id: 9
       value: 0
+    depth: 0
   30:
     id: 20
     name: nodes_45
@@ -438,6 +454,7 @@ table:
       kind: name
       id: 11
       name: N
+    depth: 0
   34:
     id: 20
     name: nodes_45
@@ -537,6 +554,7 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    depth: 0
   54:
     id: 50
     name: nodes_78
@@ -630,6 +648,7 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    depth: 0
   58:
     id: 50
     name: nodes_78
@@ -648,6 +667,7 @@ table:
       kind: int
       id: 9
       value: 0
+    depth: 0
   64:
     id: 50
     name: nodes_78
@@ -660,6 +680,7 @@ table:
       kind: int
       id: 9
       value: 0
+    depth: 0
   69:
     kind: const
     id: 4
@@ -766,6 +787,7 @@ table:
                       - kind: int
                         id: 73
                         value: 1
+    depth: 0
   81:
     kind: const
     id: 2
@@ -813,6 +835,7 @@ table:
                     - kind: int
                       id: 85
                       value: 1
+    depth: 2
   91:
     kind: def
     id: 90
@@ -854,6 +877,7 @@ table:
                     - kind: int
                       id: 85
                       value: 1
+    depth: 2
   92:
     kind: var
     id: 16
@@ -910,6 +934,7 @@ table:
                             - kind: int
                               id: 85
                               value: 1
+            depth: ~
           expr:
             kind: app
             id: 93
@@ -921,6 +946,7 @@ table:
               - kind: name
                 id: 91
                 name: initial
+    depth: 0
   98:
     kind: const
     id: 2
@@ -1018,6 +1044,7 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    depth: 0
   107:
     kind: def
     id: 107
@@ -1058,6 +1085,7 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    depth: 2
   108:
     kind: var
     id: 16
@@ -1102,6 +1130,7 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    depth: 2
   110:
     kind: var
     id: 16
@@ -1146,6 +1175,7 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    depth: 2
   112:
     kind: def
     id: 79
@@ -1243,6 +1273,7 @@ table:
                       - kind: int
                         id: 73
                         value: 1
+    depth: 0
   114:
     kind: var
     id: 16
@@ -1294,6 +1325,7 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        depth: ~
       expr:
         kind: app
         id: 115
@@ -1322,6 +1354,7 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    depth: 0
   124:
     kind: const
     id: 2
@@ -1418,6 +1451,7 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    depth: 0
   134:
     kind: def
     id: 134
@@ -1464,6 +1498,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   135:
     kind: def
     id: 117
@@ -1511,6 +1546,7 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        depth: ~
       expr:
         kind: app
         id: 115
@@ -1539,6 +1575,7 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    depth: 0
   136:
     kind: var
     id: 16
@@ -1593,6 +1630,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   145:
     kind: def
     id: 145
@@ -1635,6 +1673,7 @@ table:
                 - kind: int
                   id: 141
                   value: 1
+    depth: 0
   146:
     kind: var
     id: 16
@@ -1685,6 +1724,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   150:
     kind: var
     id: 16
@@ -1735,6 +1775,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   157:
     kind: def
     id: 157
@@ -1781,6 +1822,7 @@ table:
                     - kind: int
                       id: 152
                       value: 1
+    depth: 0
   158:
     kind: def
     id: 117
@@ -1828,6 +1870,7 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        depth: ~
       expr:
         kind: app
         id: 115
@@ -1856,6 +1899,7 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    depth: 0
   159:
     kind: var
     id: 16
@@ -1910,6 +1954,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   169:
     kind: def
     id: 169
@@ -1956,6 +2001,7 @@ table:
                     - kind: int
                       id: 164
                       value: 1
+    depth: 0
   170:
     kind: var
     id: 16
@@ -2006,6 +2052,7 @@ table:
                     - kind: name
                       id: 128
                       name: i_130
+    depth: 0
   174:
     kind: def
     id: 174
@@ -2026,6 +2073,7 @@ table:
         - kind: int
           id: 172
           value: 0
+    depth: 0
   182:
     id: 178
     name: nodes_190
@@ -2122,6 +2170,7 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    depth: 0
   191:
     kind: def
     id: 191
@@ -2161,6 +2210,7 @@ table:
                 - kind: name
                   id: 186
                   name: i_188
+    depth: 0
   195:
     kind: def
     id: 195
@@ -2170,6 +2220,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   196:
     kind: def
     id: 196
@@ -2179,6 +2230,7 @@ table:
       kind: int
       id: 194
       value: 7
+    depth: 0
   201:
     kind: def
     id: 201
@@ -2188,6 +2240,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   202:
     kind: def
     id: 202
@@ -2197,6 +2250,7 @@ table:
       kind: int
       id: 200
       value: 2
+    depth: 0
   205:
     kind: def
     id: 255
@@ -2249,6 +2303,7 @@ table:
                             - kind: int
                               id: 268
                               value: 1
+            depth: ~
           expr:
             kind: app
             id: 269
@@ -2260,6 +2315,7 @@ table:
               - kind: name
                 id: 271
                 name: "ewd426::self_stabilization::initial"
+    depth: 0
   206:
     kind: def
     id: 206
@@ -2269,6 +2325,7 @@ table:
       kind: name
       id: 205
       name: "ewd426::self_stabilization::init"
+    depth: 0
   207:
     kind: def
     id: 349
@@ -2316,6 +2373,7 @@ table:
                       - kind: name
                         id: 361
                         name: "ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 362
@@ -2344,6 +2402,7 @@ table:
                   - kind: name
                     id: 369
                     name: "ewd426::self_stabilization::node"
+    depth: 0
   208:
     kind: def
     id: 208
@@ -2353,6 +2412,7 @@ table:
       kind: name
       id: 207
       name: "ewd426::self_stabilization::step"
+    depth: 0
   209:
     kind: def
     id: 209
@@ -2362,6 +2422,7 @@ table:
       kind: int
       id: 210
       value: 0
+    depth: 0
   215:
     kind: def
     id: 215
@@ -2371,6 +2432,7 @@ table:
       kind: name
       id: 216
       name: "ewd426::self_stabilization::N"
+    depth: 0
   216:
     kind: def
     id: 195
@@ -2380,6 +2442,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   219:
     kind: def
     id: 196
@@ -2389,6 +2452,7 @@ table:
       kind: int
       id: 194
       value: 7
+    depth: 0
   220:
     kind: def
     id: 195
@@ -2398,6 +2462,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   221:
     kind: def
     id: 221
@@ -2485,6 +2550,7 @@ table:
                           - kind: int
                             id: 254
                             value: 1
+    depth: 0
   236:
     id: 229
     name: "ewd426::self_stabilization::index_45"
@@ -2497,6 +2563,7 @@ table:
       kind: int
       id: 210
       value: 0
+    depth: 0
   240:
     id: 228
     name: "ewd426::self_stabilization::nodes_45"
@@ -2509,6 +2576,7 @@ table:
       kind: int
       id: 210
       value: 0
+    depth: 0
   243:
     id: 228
     name: "ewd426::self_stabilization::nodes_45"
@@ -2521,6 +2589,7 @@ table:
       kind: name
       id: 216
       name: "ewd426::self_stabilization::N"
+    depth: 0
   248:
     id: 228
     name: "ewd426::self_stabilization::nodes_45"
@@ -2585,6 +2654,7 @@ table:
                             - kind: int
                               id: 268
                               value: 1
+            depth: ~
           expr:
             kind: app
             id: 269
@@ -2596,6 +2666,7 @@ table:
               - kind: name
                 id: 271
                 name: "ewd426::self_stabilization::initial"
+    depth: 0
   258:
     kind: def
     id: 258
@@ -2637,6 +2708,7 @@ table:
                     - kind: int
                       id: 268
                       value: 1
+    depth: 2
   263:
     kind: def
     id: 195
@@ -2646,6 +2718,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   267:
     kind: def
     id: 196
@@ -2655,6 +2728,7 @@ table:
       kind: int
       id: 194
       value: 7
+    depth: 0
   270:
     kind: var
     id: 211
@@ -2700,6 +2774,7 @@ table:
                     - kind: int
                       id: 268
                       value: 1
+    depth: 2
   272:
     kind: def
     id: 272
@@ -2746,6 +2821,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   286:
     kind: def
     id: 195
@@ -2755,6 +2831,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   289:
     kind: def
     id: 221
@@ -2842,6 +2919,7 @@ table:
                           - kind: int
                             id: 254
                             value: 1
+    depth: 0
   290:
     id: 278
     name: "ewd426::self_stabilization::nodes_133"
@@ -2887,6 +2965,7 @@ table:
                 - kind: name
                   id: 311
                   name: "ewd426::self_stabilization::i_188"
+    depth: 0
   306:
     id: 300
     name: "ewd426::self_stabilization::nodes_190"
@@ -2977,6 +3056,7 @@ table:
                           - kind: int
                             id: 254
                             value: 1
+    depth: 0
   310:
     id: 300
     name: "ewd426::self_stabilization::nodes_190"
@@ -3080,6 +3160,7 @@ table:
                       - kind: int
                         id: 348
                         value: 1
+    depth: 0
   327:
     kind: def
     id: 221
@@ -3167,6 +3248,7 @@ table:
                           - kind: int
                             id: 254
                             value: 1
+    depth: 0
   328:
     id: 319
     name: "ewd426::self_stabilization::nodes_78"
@@ -3191,6 +3273,7 @@ table:
       kind: int
       id: 210
       value: 0
+    depth: 0
   340:
     id: 319
     name: "ewd426::self_stabilization::nodes_78"
@@ -3203,6 +3286,7 @@ table:
       kind: int
       id: 210
       value: 0
+    depth: 0
   343:
     kind: def
     id: 196
@@ -3212,6 +3296,7 @@ table:
       kind: int
       id: 194
       value: 7
+    depth: 0
   345:
     id: 319
     name: "ewd426::self_stabilization::nodes_78"
@@ -3265,6 +3350,7 @@ table:
                       - kind: name
                         id: 361
                         name: "ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 362
@@ -3293,6 +3379,7 @@ table:
                   - kind: name
                     id: 369
                     name: "ewd426::self_stabilization::node"
+    depth: 0
   351:
     kind: def
     id: 351
@@ -3333,6 +3420,7 @@ table:
                   - kind: name
                     id: 361
                     name: "ewd426::self_stabilization::i_104"
+    depth: 2
   356:
     kind: def
     id: 195
@@ -3342,6 +3430,7 @@ table:
       kind: int
       id: 193
       value: 5
+    depth: 0
   359:
     kind: def
     id: 221
@@ -3429,6 +3518,7 @@ table:
                           - kind: int
                             id: 254
                             value: 1
+    depth: 0
   360:
     kind: var
     id: 211
@@ -3484,6 +3574,7 @@ table:
                   - kind: name
                     id: 361
                     name: "ewd426::self_stabilization::i_104"
+    depth: 2
   367:
     kind: def
     id: 312
@@ -3581,6 +3672,7 @@ table:
                       - kind: int
                         id: 348
                         value: 1
+    depth: 0
   368:
     kind: var
     id: 211
@@ -3625,6 +3717,7 @@ table:
                   - kind: name
                     id: 361
                     name: "ewd426::self_stabilization::i_104"
+    depth: 2
   370:
     kind: def
     id: 370
@@ -3671,6 +3764,7 @@ table:
                     - kind: int
                       id: 381
                       value: 1
+    depth: 0
   374:
     kind: def
     id: 272
@@ -3717,6 +3811,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   375:
     kind: var
     id: 211
@@ -3767,6 +3862,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   380:
     kind: var
     id: 211
@@ -3791,6 +3887,7 @@ table:
         - kind: int
           id: 386
           value: 0
+    depth: 0
   384:
     kind: def
     id: 272
@@ -3837,6 +3934,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   385:
     kind: var
     id: 211
@@ -3883,6 +3981,7 @@ table:
                 - kind: int
                   id: 397
                   value: 1
+    depth: 0
   390:
     kind: def
     id: 349
@@ -3930,6 +4029,7 @@ table:
                       - kind: name
                         id: 361
                         name: "ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 362
@@ -3958,6 +4058,7 @@ table:
                   - kind: name
                     id: 369
                     name: "ewd426::self_stabilization::node"
+    depth: 0
   392:
     kind: var
     id: 211
@@ -4008,6 +4109,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   396:
     kind: var
     id: 211
@@ -4058,6 +4160,7 @@ table:
                     - kind: int
                       id: 409
                       value: 1
+    depth: 0
   401:
     kind: def
     id: 349
@@ -4105,6 +4208,7 @@ table:
                       - kind: name
                         id: 361
                         name: "ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 362
@@ -4133,6 +4237,7 @@ table:
                   - kind: name
                     id: 369
                     name: "ewd426::self_stabilization::node"
+    depth: 0
   403:
     kind: var
     id: 211
@@ -4183,6 +4288,7 @@ table:
                     - kind: name
                       id: 291
                       name: "ewd426::self_stabilization::i_130"
+    depth: 0
   408:
     kind: var
     id: 211
@@ -4196,6 +4302,7 @@ table:
       kind: int
       id: 411
       value: 0
+    depth: 0
   416:
     kind: def
     id: 416
@@ -4205,6 +4312,7 @@ table:
       kind: name
       id: 417
       name: "broken_ewd426::self_stabilization::N"
+    depth: 0
   417:
     kind: def
     id: 201
@@ -4214,6 +4322,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   420:
     kind: def
     id: 202
@@ -4223,6 +4332,7 @@ table:
       kind: int
       id: 200
       value: 2
+    depth: 0
   421:
     kind: def
     id: 201
@@ -4232,6 +4342,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   422:
     kind: def
     id: 422
@@ -4319,6 +4430,7 @@ table:
                           - kind: int
                             id: 455
                             value: 1
+    depth: 0
   437:
     id: 430
     name: "broken_ewd426::self_stabilization::index_45"
@@ -4331,6 +4443,7 @@ table:
       kind: int
       id: 411
       value: 0
+    depth: 0
   441:
     id: 429
     name: "broken_ewd426::self_stabilization::nodes_45"
@@ -4343,6 +4456,7 @@ table:
       kind: int
       id: 411
       value: 0
+    depth: 0
   444:
     id: 429
     name: "broken_ewd426::self_stabilization::nodes_45"
@@ -4355,6 +4469,7 @@ table:
       kind: name
       id: 417
       name: "broken_ewd426::self_stabilization::N"
+    depth: 0
   449:
     id: 429
     name: "broken_ewd426::self_stabilization::nodes_45"
@@ -4419,6 +4534,7 @@ table:
                             - kind: int
                               id: 469
                               value: 1
+            depth: ~
           expr:
             kind: app
             id: 470
@@ -4430,6 +4546,7 @@ table:
               - kind: name
                 id: 472
                 name: "broken_ewd426::self_stabilization::initial"
+    depth: 0
   459:
     kind: def
     id: 459
@@ -4471,6 +4588,7 @@ table:
                     - kind: int
                       id: 469
                       value: 1
+    depth: 2
   464:
     kind: def
     id: 201
@@ -4480,6 +4598,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   468:
     kind: def
     id: 202
@@ -4489,6 +4608,7 @@ table:
       kind: int
       id: 200
       value: 2
+    depth: 0
   471:
     kind: var
     id: 412
@@ -4534,6 +4654,7 @@ table:
                     - kind: int
                       id: 469
                       value: 1
+    depth: 2
   473:
     kind: def
     id: 473
@@ -4580,6 +4701,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   487:
     kind: def
     id: 201
@@ -4589,6 +4711,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   490:
     kind: def
     id: 422
@@ -4676,6 +4799,7 @@ table:
                           - kind: int
                             id: 455
                             value: 1
+    depth: 0
   491:
     id: 479
     name: "broken_ewd426::self_stabilization::nodes_133"
@@ -4721,6 +4845,7 @@ table:
                 - kind: name
                   id: 512
                   name: "broken_ewd426::self_stabilization::i_188"
+    depth: 0
   507:
     id: 501
     name: "broken_ewd426::self_stabilization::nodes_190"
@@ -4811,6 +4936,7 @@ table:
                           - kind: int
                             id: 455
                             value: 1
+    depth: 0
   511:
     id: 501
     name: "broken_ewd426::self_stabilization::nodes_190"
@@ -4914,6 +5040,7 @@ table:
                       - kind: int
                         id: 549
                         value: 1
+    depth: 0
   528:
     kind: def
     id: 422
@@ -5001,6 +5128,7 @@ table:
                           - kind: int
                             id: 455
                             value: 1
+    depth: 0
   529:
     id: 520
     name: "broken_ewd426::self_stabilization::nodes_78"
@@ -5025,6 +5153,7 @@ table:
       kind: int
       id: 411
       value: 0
+    depth: 0
   541:
     id: 520
     name: "broken_ewd426::self_stabilization::nodes_78"
@@ -5037,6 +5166,7 @@ table:
       kind: int
       id: 411
       value: 0
+    depth: 0
   544:
     kind: def
     id: 202
@@ -5046,6 +5176,7 @@ table:
       kind: int
       id: 200
       value: 2
+    depth: 0
   546:
     id: 520
     name: "broken_ewd426::self_stabilization::nodes_78"
@@ -5099,6 +5230,7 @@ table:
                       - kind: name
                         id: 562
                         name: "broken_ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 563
@@ -5127,6 +5259,7 @@ table:
                   - kind: name
                     id: 570
                     name: "broken_ewd426::self_stabilization::node"
+    depth: 0
   552:
     kind: def
     id: 552
@@ -5167,6 +5300,7 @@ table:
                   - kind: name
                     id: 562
                     name: "broken_ewd426::self_stabilization::i_104"
+    depth: 2
   557:
     kind: def
     id: 201
@@ -5176,6 +5310,7 @@ table:
       kind: int
       id: 199
       value: 3
+    depth: 0
   560:
     kind: def
     id: 422
@@ -5263,6 +5398,7 @@ table:
                           - kind: int
                             id: 455
                             value: 1
+    depth: 0
   561:
     kind: var
     id: 412
@@ -5318,6 +5454,7 @@ table:
                   - kind: name
                     id: 562
                     name: "broken_ewd426::self_stabilization::i_104"
+    depth: 2
   568:
     kind: def
     id: 513
@@ -5415,6 +5552,7 @@ table:
                       - kind: int
                         id: 549
                         value: 1
+    depth: 0
   569:
     kind: var
     id: 412
@@ -5459,6 +5597,7 @@ table:
                   - kind: name
                     id: 562
                     name: "broken_ewd426::self_stabilization::i_104"
+    depth: 2
   571:
     kind: def
     id: 571
@@ -5505,6 +5644,7 @@ table:
                     - kind: int
                       id: 582
                       value: 1
+    depth: 0
   575:
     kind: def
     id: 473
@@ -5551,6 +5691,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   576:
     kind: var
     id: 412
@@ -5601,6 +5742,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   581:
     kind: var
     id: 412
@@ -5625,6 +5767,7 @@ table:
         - kind: int
           id: 587
           value: 0
+    depth: 0
   585:
     kind: def
     id: 473
@@ -5671,6 +5814,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   586:
     kind: var
     id: 412
@@ -5717,6 +5861,7 @@ table:
                 - kind: int
                   id: 598
                   value: 1
+    depth: 0
   591:
     kind: def
     id: 550
@@ -5764,6 +5909,7 @@ table:
                       - kind: name
                         id: 562
                         name: "broken_ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 563
@@ -5792,6 +5938,7 @@ table:
                   - kind: name
                     id: 570
                     name: "broken_ewd426::self_stabilization::node"
+    depth: 0
   593:
     kind: var
     id: 412
@@ -5842,6 +5989,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   597:
     kind: var
     id: 412
@@ -5892,6 +6040,7 @@ table:
                     - kind: int
                       id: 610
                       value: 1
+    depth: 0
   602:
     kind: def
     id: 550
@@ -5939,6 +6088,7 @@ table:
                       - kind: name
                         id: 562
                         name: "broken_ewd426::self_stabilization::i_104"
+        depth: ~
       expr:
         kind: app
         id: 563
@@ -5967,6 +6117,7 @@ table:
                   - kind: name
                     id: 570
                     name: "broken_ewd426::self_stabilization::node"
+    depth: 0
   604:
     kind: var
     id: 412
@@ -6017,6 +6168,7 @@ table:
                     - kind: name
                       id: 492
                       name: "broken_ewd426::self_stabilization::i_130"
+    depth: 0
   609:
     kind: var
     id: 412

@@ -79,6 +79,7 @@ impl Env {
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
+    scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult<'a>>>>>,
     // Other params from Typescript implementation, for future reference:
     // constRegistry: Map<bigint, Register> = new Map()
     // scopedCachedValues: Map<bigint, CachedValue> = new Map()
@@ -102,6 +103,7 @@ impl<'a> Interpreter<'a> {
         Self {
             table,
             param_registry: FxHashMap::default(),
+            scoped_cached_values: FxHashMap::default(),
         }
     }
 
@@ -122,7 +124,35 @@ impl<'a> Interpreter<'a> {
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
         match def {
-            LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => self.compile(&op.expr),
+            LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => {
+                if matches!(op.expr, QuintEx::QuintLambda { .. })
+                    || op.depth.is_none()
+                    || op.depth.unwrap() == 0
+                {
+                    // We need to avoid scoped caching in lambdas or top-level expressions
+                    // We still have memoization. This caching is special for scoped defs (let-ins)
+                    // TODO: We don't really have memoization in rust yet
+                    return self.compile(&op.expr);
+                }
+
+                let cached_value = {
+                    let cached = self.scoped_cached_values.get(&op.id).unwrap();
+                    Rc::clone(cached)
+                };
+
+                let compiled_expr = self.compile(&op.expr);
+                CompiledExpr::new(move |env| {
+                    let mut cached = cached_value.borrow_mut();
+                    if let Some(value) = cached.as_ref() {
+                        // If the value is already cached, return it
+                        value.clone()
+                    } else {
+                        let result = compiled_expr.execute(env);
+                        *cached = Some(result.clone());
+                        result
+                    }
+                })
+            }
             LookupDefinition::Param(p) => {
                 let register = self.get_or_create_param(p);
                 CompiledExpr::new(move |_| register.borrow().clone())
@@ -202,7 +232,27 @@ impl<'a> Interpreter<'a> {
                     })
                 }
             }
-            _ => unimplemented!("{:?}", expr),
+
+            QuintEx::QuintLet { id: _, opdef, expr } => {
+                // First, we create a cached value (a register with optional value) for the definition in this let expression
+                let cached_value = {
+                    let cached = self
+                        .scoped_cached_values
+                        .entry(opdef.id)
+                        .or_insert_with(|| Rc::new(RefCell::new(None)));
+                    Rc::clone(cached)
+                };
+                // Then, we build the expression for the let body. It will use the lookup table and, every time it needs the value
+                // for the definition under the let, it will use the cached value (or eval a new value and store it).
+                let compiled_expr = self.compile(expr);
+                CompiledExpr::new(move |env| {
+                    let result = compiled_expr.execute(env);
+                    // After evaluating the whole let expression, we clear the cached value, as it is no longer in scope.
+                    // The next time the whole let expression is evaluated, the definition will be re-evaluated.
+                    cached_value.replace(None);
+                    result
+                })
+            }
         }
     }
 
