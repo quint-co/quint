@@ -69,8 +69,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
 
         "item" => |_env, args| Ok(args[0].as_list()[args[1].as_int() as usize - 1].clone()),
-
-        // TODO: tuples with cross prod
+        "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
         "field" => |_env, args| {
             Ok(args[0]
                 .as_record_map()
