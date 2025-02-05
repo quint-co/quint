@@ -60,6 +60,7 @@ pub struct OpDef {
     pub name: String,
     pub qualifier: OpQualifier,
     pub expr: QuintEx,
+    pub depth: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

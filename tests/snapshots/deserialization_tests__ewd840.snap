@@ -27,6 +27,7 @@ modules:
             - kind: str
               id: 31
               value: black
+        depth: ~
       - kind: var
         id: 15
         name: active
@@ -51,6 +52,7 @@ modules:
             - kind: str
               id: 252
               value: black
+        depth: ~
       - kind: def
         id: 29
         name: Nodes
@@ -73,6 +75,7 @@ modules:
                 - kind: int
                   id: 26
                   value: 1
+        depth: ~
       - kind: assume
         id: 9
         name: NAssumption
@@ -205,6 +208,7 @@ modules:
                 - kind: name
                   id: 108
                   name: active
+        depth: ~
       - kind: def
         id: 156
         name: PassToken
@@ -356,6 +360,7 @@ modules:
                   - kind: name
                     id: 151
                     name: active
+        depth: ~
       - kind: def
         id: 230
         name: Deactivate
@@ -431,6 +436,7 @@ modules:
                   - kind: name
                     id: 225
                     name: tcolor
+        depth: ~
       - kind: def
         id: 250
         name: vars
@@ -452,6 +458,7 @@ modules:
             - kind: name
               id: 248
               name: tcolor
+        depth: ~
       - kind: def
         id: 280
         name: terminationDetected
@@ -520,6 +527,7 @@ modules:
                         - kind: int
                           id: 275
                           value: 0
+        depth: ~
       - kind: def
         id: 353
         name: Inv
@@ -638,6 +646,7 @@ modules:
                 - kind: str
                   id: 350
                   value: black
+        depth: ~
       - kind: def
         id: 51
         name: TypeOK
@@ -701,6 +710,7 @@ modules:
                 - kind: name
                   id: 48
                   name: Color
+        depth: ~
       - kind: def
         id: 168
         name: System
@@ -738,6 +748,7 @@ modules:
                             - kind: int
                               id: 159
                               value: 0
+                depth: ~
               expr:
                 kind: app
                 id: 165
@@ -746,6 +757,7 @@ modules:
                   - kind: name
                     id: 164
                     name: i
+        depth: ~
       - kind: def
         id: 208
         name: SendMsg
@@ -796,6 +808,7 @@ modules:
                               - kind: name
                                 id: 174
                                 name: i_207
+                  depth: ~
                 expr:
                   kind: app
                   id: 204
@@ -884,6 +897,7 @@ modules:
                         - kind: name
                           id: 201
                           name: tcolor
+        depth: ~
       - kind: def
         id: 261
         name: NeverChangeColor
@@ -910,6 +924,7 @@ modules:
                 - kind: name
                   id: 258
                   name: vars
+        depth: ~
       - kind: def
         id: 291
         name: TerminationDetection
@@ -949,6 +964,7 @@ modules:
                           - kind: name
                             id: 285
                             name: i_288
+        depth: ~
       - kind: def
         id: 304
         name: Liveness
@@ -996,6 +1012,7 @@ modules:
                     - kind: name
                       id: 300
                       name: terminationDetected
+        depth: ~
       - kind: def
         id: 319
         name: FalseLiveness
@@ -1051,6 +1068,7 @@ modules:
                     - kind: name
                       id: 315
                       name: terminationDetected
+        depth: ~
       - kind: def
         id: 81
         name: init
@@ -1081,6 +1099,7 @@ modules:
                         - kind: name
                           id: 53
                           name: Bool
+                depth: ~
               expr:
                 kind: app
                 id: 59
@@ -1113,6 +1132,7 @@ modules:
                         - kind: name
                           id: 62
                           name: Color
+                depth: ~
               expr:
                 kind: app
                 id: 68
@@ -1138,6 +1158,7 @@ modules:
                     - kind: name
                       id: 70
                       name: Nodes
+                depth: ~
               expr:
                 kind: app
                 id: 75
@@ -1159,6 +1180,7 @@ modules:
                 - kind: str
                   id: 77
                   value: black
+        depth: ~
       - kind: def
         id: 240
         name: Environment
@@ -1178,6 +1200,7 @@ modules:
                 - kind: name
                   id: 231
                   name: Nodes
+            depth: ~
           expr:
             kind: app
             id: 238
@@ -1197,6 +1220,7 @@ modules:
                   - kind: name
                     id: 236
                     name: i
+        depth: ~
       - kind: def
         id: 244
         name: step
@@ -1212,6 +1236,7 @@ modules:
             - kind: name
               id: 242
               name: Environment
+        depth: ~
       - kind: def
         id: 361
         name: CheckInductiveSpec
@@ -1241,6 +1266,7 @@ modules:
                     - kind: name
                       id: 357
                       name: vars
+        depth: ~
       - kind: def
         id: 368
         name: "q::init"
@@ -1249,6 +1275,7 @@ modules:
           kind: name
           id: 367
           name: init
+        depth: ~
       - kind: def
         id: 370
         name: "q::step"
@@ -1257,6 +1284,7 @@ modules:
           kind: name
           id: 369
           name: step
+        depth: ~
 table:
   3:
     kind: const
@@ -1287,6 +1315,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   33:
     kind: def
     id: 33
@@ -1303,6 +1332,7 @@ table:
         - kind: str
           id: 31
           value: black
+    depth: 0
   34:
     kind: var
     id: 15
@@ -1330,6 +1360,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   39:
     kind: var
     id: 19
@@ -1357,6 +1388,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   41:
     kind: def
     id: 33
@@ -1373,6 +1405,7 @@ table:
         - kind: str
           id: 31
           value: black
+    depth: 0
   44:
     kind: var
     id: 21
@@ -1400,6 +1433,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   47:
     kind: var
     id: 23
@@ -1420,6 +1454,7 @@ table:
         - kind: str
           id: 31
           value: black
+    depth: 0
   51:
     kind: def
     id: 51
@@ -1484,6 +1519,7 @@ table:
             - kind: name
               id: 48
               name: Color
+    depth: 0
   52:
     kind: def
     id: 29
@@ -1507,6 +1543,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   56:
     kind: def
     id: 56
@@ -1527,6 +1564,7 @@ table:
             - kind: name
               id: 53
               name: Bool
+    depth: 2
   57:
     kind: def
     id: 56
@@ -1547,6 +1585,7 @@ table:
             - kind: name
               id: 53
               name: Bool
+    depth: 2
   58:
     kind: var
     id: 15
@@ -1574,6 +1613,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   62:
     kind: def
     id: 33
@@ -1590,6 +1630,7 @@ table:
         - kind: str
           id: 31
           value: black
+    depth: 0
   65:
     kind: def
     id: 65
@@ -1610,6 +1651,7 @@ table:
             - kind: name
               id: 62
               name: Color
+    depth: 2
   66:
     kind: def
     id: 65
@@ -1630,6 +1672,7 @@ table:
             - kind: name
               id: 62
               name: Color
+    depth: 2
   67:
     kind: var
     id: 19
@@ -1657,6 +1700,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   72:
     kind: def
     id: 72
@@ -1670,6 +1714,7 @@ table:
         - kind: name
           id: 70
           name: Nodes
+    depth: 2
   73:
     kind: def
     id: 72
@@ -1683,6 +1728,7 @@ table:
         - kind: name
           id: 70
           name: Nodes
+    depth: 2
   74:
     kind: var
     id: 21
@@ -1722,6 +1768,7 @@ table:
                     - kind: name
                       id: 53
                       name: Bool
+            depth: ~
           expr:
             kind: app
             id: 59
@@ -1754,6 +1801,7 @@ table:
                     - kind: name
                       id: 62
                       name: Color
+            depth: ~
           expr:
             kind: app
             id: 68
@@ -1779,6 +1827,7 @@ table:
                 - kind: name
                   id: 70
                   name: Nodes
+            depth: ~
           expr:
             kind: app
             id: 75
@@ -1800,6 +1849,7 @@ table:
             - kind: str
               id: 77
               value: black
+    depth: 0
   82:
     kind: var
     id: 21
@@ -1947,6 +1997,7 @@ table:
             - kind: name
               id: 108
               name: active
+    depth: 0
   114:
     kind: var
     id: 21
@@ -2165,6 +2216,7 @@ table:
               - kind: name
                 id: 151
                 name: active
+    depth: 0
   157:
     kind: def
     id: 112
@@ -2273,6 +2325,7 @@ table:
             - kind: name
               id: 108
               name: active
+    depth: 0
   158:
     kind: def
     id: 29
@@ -2296,6 +2349,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   163:
     kind: def
     id: 163
@@ -2320,6 +2374,7 @@ table:
                 - kind: int
                   id: 159
                   value: 0
+    depth: 2
   164:
     kind: def
     id: 163
@@ -2344,6 +2399,7 @@ table:
                 - kind: int
                   id: 159
                   value: 0
+    depth: 2
   165:
     kind: def
     id: 156
@@ -2496,6 +2552,7 @@ table:
               - kind: name
                 id: 151
                 name: active
+    depth: 0
   168:
     kind: def
     id: 168
@@ -2534,6 +2591,7 @@ table:
                         - kind: int
                           id: 159
                           value: 0
+            depth: ~
           expr:
             kind: app
             id: 165
@@ -2542,6 +2600,7 @@ table:
               - kind: name
                 id: 164
                 name: i
+    depth: 0
   170:
     kind: var
     id: 15
@@ -2572,6 +2631,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   174:
     id: 169
     name: i_207
@@ -2599,6 +2659,7 @@ table:
                 - kind: name
                   id: 174
                   name: i_207
+    depth: 3
   179:
     kind: var
     id: 15
@@ -2627,6 +2688,7 @@ table:
                 - kind: name
                   id: 174
                   name: i_207
+    depth: 3
   183:
     kind: var
     id: 15
@@ -2662,6 +2724,7 @@ table:
                 - kind: name
                   id: 174
                   name: i_207
+    depth: 3
   189:
     id: 169
     name: i_207
@@ -2739,6 +2802,7 @@ table:
                           - kind: name
                             id: 174
                             name: i_207
+              depth: ~
             expr:
               kind: app
               id: 204
@@ -2827,6 +2891,7 @@ table:
                     - kind: name
                       id: 201
                       name: tcolor
+    depth: 0
   210:
     kind: var
     id: 15
@@ -2945,6 +3010,7 @@ table:
               - kind: name
                 id: 225
                 name: tcolor
+    depth: 0
   231:
     kind: def
     id: 29
@@ -2968,6 +3034,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   233:
     kind: def
     id: 233
@@ -2981,6 +3048,7 @@ table:
         - kind: name
           id: 231
           name: Nodes
+    depth: 2
   234:
     kind: def
     id: 233
@@ -2994,6 +3062,7 @@ table:
         - kind: name
           id: 231
           name: Nodes
+    depth: 2
   235:
     kind: def
     id: 208
@@ -3045,6 +3114,7 @@ table:
                           - kind: name
                             id: 174
                             name: i_207
+              depth: ~
             expr:
               kind: app
               id: 204
@@ -3133,6 +3203,7 @@ table:
                     - kind: name
                       id: 201
                       name: tcolor
+    depth: 0
   236:
     kind: def
     id: 233
@@ -3146,6 +3217,7 @@ table:
         - kind: name
           id: 231
           name: Nodes
+    depth: 2
   237:
     kind: def
     id: 230
@@ -3222,6 +3294,7 @@ table:
               - kind: name
                 id: 225
                 name: tcolor
+    depth: 0
   240:
     kind: def
     id: 240
@@ -3242,6 +3315,7 @@ table:
             - kind: name
               id: 231
               name: Nodes
+        depth: ~
       expr:
         kind: app
         id: 238
@@ -3261,6 +3335,7 @@ table:
               - kind: name
                 id: 236
                 name: i
+    depth: 0
   241:
     kind: def
     id: 168
@@ -3299,6 +3374,7 @@ table:
                         - kind: int
                           id: 159
                           value: 0
+            depth: ~
           expr:
             kind: app
             id: 165
@@ -3307,6 +3383,7 @@ table:
               - kind: name
                 id: 164
                 name: i
+    depth: 0
   242:
     kind: def
     id: 240
@@ -3327,6 +3404,7 @@ table:
             - kind: name
               id: 231
               name: Nodes
+        depth: ~
       expr:
         kind: app
         id: 238
@@ -3346,6 +3424,7 @@ table:
               - kind: name
                 id: 236
                 name: i
+    depth: 0
   244:
     kind: def
     id: 244
@@ -3362,6 +3441,7 @@ table:
         - kind: name
           id: 242
           name: Environment
+    depth: 0
   245:
     kind: var
     id: 15
@@ -3400,6 +3480,7 @@ table:
         - kind: name
           id: 248
           name: tcolor
+    depth: 0
   251:
     kind: var
     id: 23
@@ -3420,6 +3501,7 @@ table:
         - kind: str
           id: 252
           value: black
+    depth: 0
   255:
     kind: var
     id: 19
@@ -3450,6 +3532,7 @@ table:
         - kind: name
           id: 248
           name: tcolor
+    depth: 0
   261:
     kind: def
     id: 261
@@ -3477,6 +3560,7 @@ table:
             - kind: name
               id: 258
               name: vars
+    depth: 0
   262:
     kind: var
     id: 21
@@ -3562,6 +3646,7 @@ table:
                     - kind: int
                       id: 275
                       value: 0
+    depth: 0
   281:
     kind: def
     id: 280
@@ -3631,6 +3716,7 @@ table:
                     - kind: int
                       id: 275
                       value: 0
+    depth: 0
   282:
     kind: def
     id: 29
@@ -3654,6 +3740,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   284:
     kind: var
     id: 15
@@ -3701,6 +3788,7 @@ table:
                       - kind: name
                         id: 285
                         name: i_288
+    depth: 0
   292:
     kind: def
     id: 29
@@ -3724,6 +3812,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   294:
     kind: var
     id: 15
@@ -3800,6 +3889,7 @@ table:
                     - kind: int
                       id: 275
                       value: 0
+    depth: 0
   304:
     kind: def
     id: 304
@@ -3848,6 +3938,7 @@ table:
                 - kind: name
                   id: 300
                   name: terminationDetected
+    depth: 0
   305:
     kind: def
     id: 29
@@ -3871,6 +3962,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   307:
     kind: var
     id: 15
@@ -3947,6 +4039,7 @@ table:
                     - kind: int
                       id: 275
                       value: 0
+    depth: 0
   319:
     kind: def
     id: 319
@@ -4003,6 +4096,7 @@ table:
                 - kind: name
                   id: 315
                   name: terminationDetected
+    depth: 0
   320:
     kind: def
     id: 29
@@ -4026,6 +4120,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   322:
     kind: var
     id: 21
@@ -4063,6 +4158,7 @@ table:
             - kind: int
               id: 26
               value: 1
+    depth: 0
   335:
     id: 333
     name: j_347
@@ -4203,6 +4299,7 @@ table:
             - kind: str
               id: 350
               value: black
+    depth: 0
   354:
     kind: def
     id: 51
@@ -4267,6 +4364,7 @@ table:
             - kind: name
               id: 48
               name: Color
+    depth: 0
   355:
     kind: def
     id: 353
@@ -4386,6 +4484,7 @@ table:
             - kind: str
               id: 350
               value: black
+    depth: 0
   356:
     kind: def
     id: 244
@@ -4402,6 +4501,7 @@ table:
         - kind: name
           id: 242
           name: Environment
+    depth: 0
   357:
     kind: def
     id: 250
@@ -4424,6 +4524,7 @@ table:
         - kind: name
           id: 248
           name: tcolor
+    depth: 0
   361:
     kind: def
     id: 361
@@ -4454,6 +4555,7 @@ table:
                 - kind: name
                   id: 357
                   name: vars
+    depth: 0
   364:
     kind: def
     id: 364
@@ -4463,6 +4565,7 @@ table:
       kind: int
       id: 363
       value: 3
+    depth: 0
   367:
     kind: def
     id: 81
@@ -4494,6 +4597,7 @@ table:
                     - kind: name
                       id: 53
                       name: Bool
+            depth: ~
           expr:
             kind: app
             id: 59
@@ -4526,6 +4630,7 @@ table:
                     - kind: name
                       id: 62
                       name: Color
+            depth: ~
           expr:
             kind: app
             id: 68
@@ -4551,6 +4656,7 @@ table:
                 - kind: name
                   id: 70
                   name: Nodes
+            depth: ~
           expr:
             kind: app
             id: 75
@@ -4572,6 +4678,7 @@ table:
             - kind: str
               id: 77
               value: black
+    depth: 0
   368:
     kind: def
     id: 368
@@ -4581,6 +4688,7 @@ table:
       kind: name
       id: 367
       name: init
+    depth: 0
   369:
     kind: def
     id: 244
@@ -4597,6 +4705,7 @@ table:
         - kind: name
           id: 242
           name: Environment
+    depth: 0
   370:
     kind: def
     id: 370
@@ -4606,6 +4715,7 @@ table:
       kind: name
       id: 369
       name: step
+    depth: 0
   375:
     kind: def
     id: 375
@@ -4622,6 +4732,7 @@ table:
         - kind: str
           id: 378
           value: black
+    depth: 0
   389:
     kind: def
     id: 389
@@ -4638,6 +4749,7 @@ table:
         - kind: str
           id: 392
           value: black
+    depth: 0
   391:
     kind: var
     id: 373
@@ -4665,6 +4777,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   397:
     kind: def
     id: 364
@@ -4674,6 +4787,7 @@ table:
       kind: int
       id: 363
       value: 3
+    depth: 0
   401:
     kind: def
     id: 364
@@ -4683,6 +4797,7 @@ table:
       kind: int
       id: 363
       value: 3
+    depth: 0
   406:
     kind: def
     id: 406
@@ -4791,6 +4906,7 @@ table:
             - kind: name
               id: 436
               name: "ewd840_3::ewd840::active"
+    depth: 0
   409:
     kind: var
     id: 387
@@ -4816,6 +4932,7 @@ table:
       kind: int
       id: 363
       value: 3
+    depth: 0
   426:
     kind: var
     id: 373
@@ -4988,6 +5105,7 @@ table:
               - kind: name
                 id: 480
                 name: "ewd840_3::ewd840::active"
+    depth: 0
   442:
     kind: var
     id: 387
@@ -5130,6 +5248,7 @@ table:
               - kind: name
                 id: 502
                 name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   486:
     kind: var
     id: 379
@@ -5194,6 +5313,7 @@ table:
         - kind: name
           id: 508
           name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   505:
     kind: var
     id: 379
@@ -5279,6 +5399,7 @@ table:
                     - kind: int
                       id: 527
                       value: 0
+    depth: 0
   513:
     kind: var
     id: 387
@@ -5414,6 +5535,7 @@ table:
             - kind: str
               id: 561
               value: black
+    depth: 0
   531:
     kind: def
     id: 393
@@ -5437,6 +5559,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   536:
     kind: var
     id: 387
@@ -5474,6 +5597,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   550:
     id: 545
     name: "ewd840_3::ewd840::j_347"
@@ -5559,6 +5683,7 @@ table:
             - kind: name
               id: 579
               name: "ewd840_3::ewd840::Color"
+    depth: 0
   565:
     kind: var
     id: 379
@@ -5586,6 +5711,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   570:
     kind: var
     id: 383
@@ -5613,6 +5739,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   573:
     kind: def
     id: 375
@@ -5629,6 +5756,7 @@ table:
         - kind: str
           id: 378
           value: black
+    depth: 0
   575:
     kind: var
     id: 387
@@ -5656,6 +5784,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   578:
     kind: var
     id: 373
@@ -5676,6 +5805,7 @@ table:
         - kind: str
           id: 378
           value: black
+    depth: 0
   580:
     kind: def
     id: 580
@@ -5714,6 +5844,7 @@ table:
                         - kind: int
                           id: 589
                           value: 0
+            depth: ~
           expr:
             kind: app
             id: 590
@@ -5722,6 +5853,7 @@ table:
               - kind: name
                 id: 591
                 name: "ewd840_3::ewd840::i"
+    depth: 0
   582:
     kind: def
     id: 406
@@ -5830,6 +5962,7 @@ table:
             - kind: name
               id: 436
               name: "ewd840_3::ewd840::active"
+    depth: 0
   584:
     kind: def
     id: 584
@@ -5854,6 +5987,7 @@ table:
                 - kind: int
                   id: 589
                   value: 0
+    depth: 2
   587:
     kind: def
     id: 393
@@ -5877,6 +6011,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   590:
     kind: def
     id: 437
@@ -6029,6 +6164,7 @@ table:
               - kind: name
                 id: 480
                 name: "ewd840_3::ewd840::active"
+    depth: 0
   591:
     kind: def
     id: 584
@@ -6053,6 +6189,7 @@ table:
                 - kind: int
                   id: 589
                   value: 0
+    depth: 2
   592:
     kind: def
     id: 592
@@ -6104,6 +6241,7 @@ table:
                           - kind: name
                             id: 605
                             name: "ewd840_3::ewd840::i_207"
+              depth: ~
             expr:
               kind: app
               id: 606
@@ -6192,6 +6330,7 @@ table:
                     - kind: name
                       id: 631
                       name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   597:
     kind: var
     id: 379
@@ -6223,6 +6362,7 @@ table:
                 - kind: name
                   id: 605
                   name: "ewd840_3::ewd840::i_207"
+    depth: 3
   603:
     kind: def
     id: 393
@@ -6246,6 +6386,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   605:
     id: 594
     name: "ewd840_3::ewd840::i_207"
@@ -6281,6 +6422,7 @@ table:
                 - kind: name
                   id: 605
                   name: "ewd840_3::ewd840::i_207"
+    depth: 3
   614:
     kind: var
     id: 383
@@ -6316,6 +6458,7 @@ table:
                 - kind: name
                   id: 605
                   name: "ewd840_3::ewd840::i_207"
+    depth: 3
   623:
     id: 594
     name: "ewd840_3::ewd840::i_207"
@@ -6365,6 +6508,7 @@ table:
             - kind: name
               id: 638
               name: "ewd840_3::ewd840::vars"
+    depth: 0
   636:
     kind: var
     id: 383
@@ -6395,6 +6539,7 @@ table:
         - kind: name
           id: 508
           name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   639:
     kind: def
     id: 639
@@ -6435,6 +6580,7 @@ table:
                       - kind: name
                         id: 649
                         name: "ewd840_3::ewd840::i_288"
+    depth: 0
   641:
     kind: def
     id: 509
@@ -6504,6 +6650,7 @@ table:
                     - kind: int
                       id: 527
                       value: 0
+    depth: 0
   643:
     kind: def
     id: 393
@@ -6527,6 +6674,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   648:
     kind: var
     id: 379
@@ -6582,6 +6730,7 @@ table:
                 - kind: name
                   id: 662
                   name: "ewd840_3::ewd840::terminationDetected"
+    depth: 0
   654:
     kind: def
     id: 393
@@ -6605,6 +6754,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   659:
     kind: var
     id: 379
@@ -6681,6 +6831,7 @@ table:
                     - kind: int
                       id: 527
                       value: 0
+    depth: 0
   663:
     kind: def
     id: 663
@@ -6737,6 +6888,7 @@ table:
                 - kind: name
                   id: 677
                   name: "ewd840_3::ewd840::terminationDetected"
+    depth: 0
   667:
     kind: def
     id: 393
@@ -6760,6 +6912,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   674:
     kind: var
     id: 379
@@ -6836,6 +6989,7 @@ table:
                     - kind: int
                       id: 527
                       value: 0
+    depth: 0
   678:
     kind: def
     id: 678
@@ -6867,6 +7021,7 @@ table:
                     - kind: name
                       id: 685
                       name: Bool
+            depth: ~
           expr:
             kind: app
             id: 686
@@ -6899,6 +7054,7 @@ table:
                     - kind: name
                       id: 694
                       name: "ewd840_3::ewd840::Color"
+            depth: ~
           expr:
             kind: app
             id: 695
@@ -6924,6 +7080,7 @@ table:
                 - kind: name
                   id: 701
                   name: "ewd840_3::ewd840::Nodes"
+            depth: ~
           expr:
             kind: app
             id: 702
@@ -6945,6 +7102,7 @@ table:
             - kind: str
               id: 707
               value: black
+    depth: 0
   681:
     kind: def
     id: 681
@@ -6965,6 +7123,7 @@ table:
             - kind: name
               id: 685
               name: Bool
+    depth: 2
   684:
     kind: def
     id: 393
@@ -6988,6 +7147,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   687:
     kind: var
     id: 379
@@ -7012,6 +7172,7 @@ table:
             - kind: name
               id: 685
               name: Bool
+    depth: 2
   690:
     kind: def
     id: 690
@@ -7032,6 +7193,7 @@ table:
             - kind: name
               id: 694
               name: "ewd840_3::ewd840::Color"
+    depth: 2
   693:
     kind: def
     id: 393
@@ -7055,6 +7217,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   694:
     kind: def
     id: 375
@@ -7071,6 +7234,7 @@ table:
         - kind: str
           id: 378
           value: black
+    depth: 0
   696:
     kind: var
     id: 383
@@ -7095,6 +7259,7 @@ table:
             - kind: name
               id: 694
               name: "ewd840_3::ewd840::Color"
+    depth: 2
   699:
     kind: def
     id: 699
@@ -7108,6 +7273,7 @@ table:
         - kind: name
           id: 701
           name: "ewd840_3::ewd840::Nodes"
+    depth: 2
   701:
     kind: def
     id: 393
@@ -7131,6 +7297,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   703:
     kind: var
     id: 387
@@ -7148,6 +7315,7 @@ table:
         - kind: name
           id: 701
           name: "ewd840_3::ewd840::Nodes"
+    depth: 2
   706:
     kind: var
     id: 373
@@ -7172,6 +7340,7 @@ table:
             - kind: name
               id: 712
               name: "ewd840_3::ewd840::Nodes"
+        depth: ~
       expr:
         kind: app
         id: 713
@@ -7191,6 +7360,7 @@ table:
               - kind: name
                 id: 717
                 name: "ewd840_3::ewd840::i"
+    depth: 0
   710:
     kind: def
     id: 710
@@ -7204,6 +7374,7 @@ table:
         - kind: name
           id: 712
           name: "ewd840_3::ewd840::Nodes"
+    depth: 2
   712:
     kind: def
     id: 393
@@ -7227,6 +7398,7 @@ table:
             - kind: int
               id: 398
               value: 1
+    depth: 0
   714:
     kind: def
     id: 592
@@ -7278,6 +7450,7 @@ table:
                           - kind: name
                             id: 605
                             name: "ewd840_3::ewd840::i_207"
+              depth: ~
             expr:
               kind: app
               id: 606
@@ -7366,6 +7539,7 @@ table:
                     - kind: name
                       id: 631
                       name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   715:
     kind: def
     id: 710
@@ -7379,6 +7553,7 @@ table:
         - kind: name
           id: 712
           name: "ewd840_3::ewd840::Nodes"
+    depth: 2
   716:
     kind: def
     id: 481
@@ -7455,6 +7630,7 @@ table:
               - kind: name
                 id: 502
                 name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   717:
     kind: def
     id: 710
@@ -7468,6 +7644,7 @@ table:
         - kind: name
           id: 712
           name: "ewd840_3::ewd840::Nodes"
+    depth: 2
   718:
     kind: def
     id: 718
@@ -7484,6 +7661,7 @@ table:
         - kind: name
           id: 721
           name: "ewd840_3::ewd840::Environment"
+    depth: 0
   720:
     kind: def
     id: 580
@@ -7522,6 +7700,7 @@ table:
                         - kind: int
                           id: 589
                           value: 0
+            depth: ~
           expr:
             kind: app
             id: 590
@@ -7530,6 +7709,7 @@ table:
               - kind: name
                 id: 591
                 name: "ewd840_3::ewd840::i"
+    depth: 0
   721:
     kind: def
     id: 708
@@ -7550,6 +7730,7 @@ table:
             - kind: name
               id: 712
               name: "ewd840_3::ewd840::Nodes"
+        depth: ~
       expr:
         kind: app
         id: 713
@@ -7569,6 +7750,7 @@ table:
               - kind: name
                 id: 717
                 name: "ewd840_3::ewd840::i"
+    depth: 0
   722:
     kind: def
     id: 722
@@ -7599,6 +7781,7 @@ table:
                 - kind: name
                   id: 729
                   name: "ewd840_3::ewd840::vars"
+    depth: 0
   724:
     kind: def
     id: 562
@@ -7663,6 +7846,7 @@ table:
             - kind: name
               id: 579
               name: "ewd840_3::ewd840::Color"
+    depth: 0
   725:
     kind: def
     id: 528
@@ -7782,6 +7966,7 @@ table:
             - kind: str
               id: 561
               value: black
+    depth: 0
   728:
     kind: def
     id: 718
@@ -7798,6 +7983,7 @@ table:
         - kind: name
           id: 721
           name: "ewd840_3::ewd840::Environment"
+    depth: 0
   729:
     kind: def
     id: 503
@@ -7820,6 +8006,7 @@ table:
         - kind: name
           id: 508
           name: "ewd840_3::ewd840::tcolor"
+    depth: 0
   730:
     kind: def
     id: 730
@@ -7829,6 +8016,7 @@ table:
       kind: name
       id: 731
       name: "ewd840_3::ewd840::init"
+    depth: 0
   731:
     kind: def
     id: 678
@@ -7860,6 +8048,7 @@ table:
                     - kind: name
                       id: 685
                       name: Bool
+            depth: ~
           expr:
             kind: app
             id: 686
@@ -7892,6 +8081,7 @@ table:
                     - kind: name
                       id: 694
                       name: "ewd840_3::ewd840::Color"
+            depth: ~
           expr:
             kind: app
             id: 695
@@ -7917,6 +8107,7 @@ table:
                 - kind: name
                   id: 701
                   name: "ewd840_3::ewd840::Nodes"
+            depth: ~
           expr:
             kind: app
             id: 702
@@ -7938,6 +8129,7 @@ table:
             - kind: str
               id: 707
               value: black
+    depth: 0
   732:
     kind: def
     id: 732
@@ -7947,6 +8139,7 @@ table:
       kind: name
       id: 733
       name: "ewd840_3::ewd840::step"
+    depth: 0
   733:
     kind: def
     id: 718
@@ -7963,3 +8156,4 @@ table:
         - kind: name
           id: 721
           name: "ewd840_3::ewd840::Environment"
+    depth: 0

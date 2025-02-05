@@ -286,6 +286,7 @@ modules:
                     - kind: int
                       id: 120
                       value: 3
+        depth: ~
       - kind: def
         id: 138
         name: corners
@@ -335,6 +336,7 @@ modules:
                 - kind: int
                   id: 135
                   value: 3
+        depth: ~
       - kind: typedef
         id: 3
       - kind: def
@@ -366,6 +368,7 @@ modules:
                 - kind: int
                   id: 39
                   value: 3
+        depth: ~
       - kind: def
         id: 12
         name: O
@@ -382,6 +385,7 @@ modules:
               id: 10
               opcode: Tup
               args: []
+        depth: ~
       - kind: typedef
         id: 15
       - kind: var
@@ -403,6 +407,7 @@ modules:
               id: 6
               opcode: Tup
               args: []
+        depth: ~
       - kind: def
         id: 22
         name: Occupied
@@ -424,6 +429,7 @@ modules:
               - kind: name
                 id: 19
                 name: __OccupiedParam_21
+        depth: ~
       - kind: def
         id: 26
         name: Empty
@@ -440,6 +446,7 @@ modules:
               id: 24
               opcode: Tup
               args: []
+        depth: ~
       - kind: var
         id: 32
         name: board
@@ -485,6 +492,7 @@ modules:
                   - kind: int
                     id: 150
                     value: 2
+        depth: ~
       - kind: def
         id: 475
         name: init
@@ -554,6 +562,7 @@ modules:
                               kind: name
                               id: 467
                               name: Empty
+        depth: ~
       - kind: def
         id: 171
         name: hasPlayer
@@ -609,6 +618,7 @@ modules:
                     - kind: name
                       id: 161
                       name: p_168
+        depth: ~
       - kind: def
         id: 185
         name: isEmpty
@@ -655,6 +665,7 @@ modules:
                   kind: bool
                   id: 176
                   value: false
+        depth: ~
       - kind: def
         id: 189
         name: boardEmpty
@@ -670,6 +681,7 @@ modules:
             - kind: name
               id: 187
               name: isEmpty
+        depth: ~
       - kind: def
         id: 203
         name: won
@@ -717,6 +729,7 @@ modules:
                           - kind: name
                             id: 196
                             name: player_202
+        depth: ~
       - kind: def
         id: 208
         name: boardFull
@@ -736,6 +749,7 @@ modules:
                 - kind: name
                   id: 205
                   name: isEmpty
+        depth: ~
       - kind: def
         id: 249
         name: canWinWithPattern
@@ -816,6 +830,7 @@ modules:
                   - kind: int
                     id: 245
                     value: 1
+        depth: ~
       - kind: def
         id: 272
         name: canBlockWithPattern
@@ -896,6 +911,7 @@ modules:
                   - kind: int
                     id: 268
                     value: 1
+        depth: ~
       - kind: def
         id: 295
         name: canSetupWinWithPattern
@@ -976,6 +992,7 @@ modules:
                   - kind: int
                     id: 291
                     value: 2
+        depth: ~
       - kind: def
         id: 308
         name: canTakeCenter
@@ -995,6 +1012,7 @@ modules:
                 - kind: int
                   id: 305
                   value: 2
+        depth: ~
       - kind: def
         id: 335
         name: Move
@@ -1073,6 +1091,7 @@ modules:
                                 - kind: name
                                   id: 326
                                   name: player_334
+        depth: ~
       - kind: def
         id: 218
         name: stalemate
@@ -1111,6 +1130,7 @@ modules:
                     - kind: name
                       id: 214
                       name: O
+        depth: ~
       - kind: def
         id: 226
         name: gameOver
@@ -1141,6 +1161,7 @@ modules:
             - kind: name
               id: 224
               name: boardFull
+        depth: ~
       - kind: def
         id: 299
         name: canWin
@@ -1156,6 +1177,7 @@ modules:
             - kind: name
               id: 297
               name: canWinWithPattern
+        depth: ~
       - kind: def
         id: 303
         name: canBlock
@@ -1171,6 +1193,7 @@ modules:
             - kind: name
               id: 301
               name: canBlockWithPattern
+        depth: ~
       - kind: def
         id: 312
         name: canSetupWin
@@ -1186,6 +1209,7 @@ modules:
             - kind: name
               id: 310
               name: canSetupWinWithPattern
+        depth: ~
       - kind: def
         id: 377
         name: TakeCenter
@@ -1208,6 +1232,7 @@ modules:
                 - kind: int
                   id: 374
                   value: 2
+        depth: ~
       - kind: def
         id: 406
         name: MoveToEmpty
@@ -1240,6 +1265,7 @@ modules:
                       - kind: name
                         id: 397
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 403
@@ -1251,6 +1277,7 @@ modules:
                 - kind: name
                   id: 402
                   name: coordinate
+        depth: ~
       - kind: def
         id: 414
         name: StartInCorner
@@ -1270,6 +1297,7 @@ modules:
                 - kind: name
                   id: 407
                   name: corners
+            depth: ~
           expr:
             kind: app
             id: 412
@@ -1281,6 +1309,7 @@ modules:
               - kind: name
                 id: 411
                 name: corner
+        depth: ~
       - kind: def
         id: 491
         name: XHasNotWon
@@ -1297,6 +1326,7 @@ modules:
                 - kind: name
                   id: 488
                   name: X
+        depth: ~
       - kind: def
         id: 495
         name: OHasNotWon
@@ -1313,6 +1343,7 @@ modules:
                 - kind: name
                   id: 492
                   name: O
+        depth: ~
       - kind: def
         id: 504
         name: XMustEventuallyWin
@@ -1329,6 +1360,7 @@ modules:
                 - kind: name
                   id: 501
                   name: X
+        depth: ~
       - kind: def
         id: 455
         name: MoveO
@@ -1376,6 +1408,7 @@ modules:
                 - kind: name
                   id: 451
                   name: X
+        depth: ~
       - kind: def
         id: 498
         name: NotStalemate
@@ -1388,6 +1421,7 @@ modules:
             - kind: name
               id: 496
               name: stalemate
+        depth: ~
       - kind: def
         id: 500
         name: inv
@@ -1396,6 +1430,7 @@ modules:
           kind: name
           id: 499
           name: OHasNotWon
+        depth: ~
       - kind: def
         id: 353
         name: Win
@@ -1429,6 +1464,7 @@ modules:
                         - kind: name
                           id: 338
                           name: canWinWithPattern
+                depth: ~
               expr:
                 kind: let
                 id: 350
@@ -1451,6 +1487,7 @@ modules:
                           - kind: name
                             id: 343
                             name: isEmpty
+                  depth: ~
                 expr:
                   kind: app
                   id: 349
@@ -1462,6 +1499,7 @@ modules:
                     - kind: name
                       id: 348
                       name: coordinate
+        depth: ~
       - kind: def
         id: 371
         name: Block
@@ -1495,6 +1533,7 @@ modules:
                         - kind: name
                           id: 356
                           name: canBlockWithPattern
+                depth: ~
               expr:
                 kind: let
                 id: 368
@@ -1517,6 +1556,7 @@ modules:
                           - kind: name
                             id: 361
                             name: isEmpty
+                  depth: ~
                 expr:
                   kind: app
                   id: 367
@@ -1528,6 +1568,7 @@ modules:
                     - kind: name
                       id: 366
                       name: coordinate
+        depth: ~
       - kind: def
         id: 394
         name: SetupWin
@@ -1558,6 +1599,7 @@ modules:
                         - kind: name
                           id: 379
                           name: canSetupWinWithPattern
+                depth: ~
               expr:
                 kind: let
                 id: 391
@@ -1580,6 +1622,7 @@ modules:
                           - kind: name
                             id: 384
                             name: isEmpty
+                  depth: ~
                 expr:
                   kind: app
                   id: 390
@@ -1591,6 +1634,7 @@ modules:
                     - kind: name
                       id: 389
                       name: coordinate
+        depth: ~
       - kind: def
         id: 442
         name: MoveX
@@ -1688,6 +1732,7 @@ modules:
                 - kind: name
                   id: 438
                   name: O
+        depth: ~
       - kind: def
         id: 487
         name: step
@@ -1730,6 +1775,7 @@ modules:
                     - kind: name
                       id: 482
                       name: nextTurn
+        depth: ~
       - kind: def
         id: 507
         name: "q::init"
@@ -1738,6 +1784,7 @@ modules:
           kind: name
           id: 506
           name: init
+        depth: ~
       - kind: def
         id: 509
         name: "q::step"
@@ -1746,6 +1793,7 @@ modules:
           kind: name
           id: 508
           name: step
+        depth: ~
 table:
   8:
     kind: def
@@ -1764,6 +1812,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   12:
     kind: def
     id: 12
@@ -1781,6 +1830,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   19:
     id: 18
     name: __OccupiedParam_21
@@ -1806,6 +1856,7 @@ table:
           - kind: name
             id: 19
             name: __OccupiedParam_21
+    depth: 0
   26:
     kind: def
     id: 26
@@ -1823,6 +1874,7 @@ table:
           id: 24
           opcode: Tup
           args: []
+    depth: 0
   42:
     kind: def
     id: 42
@@ -1853,6 +1905,7 @@ table:
             - kind: int
               id: 39
               value: 3
+    depth: 0
   124:
     kind: def
     id: 124
@@ -2135,6 +2188,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   138:
     kind: def
     id: 138
@@ -2185,6 +2239,7 @@ table:
             - kind: int
               id: 135
               value: 3
+    depth: 0
   144:
     kind: var
     id: 32
@@ -2238,6 +2293,7 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    depth: 0
   157:
     id: 155
     name: coordinate_170
@@ -2284,6 +2340,7 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    depth: 0
   160:
     id: 156
     name: player_170
@@ -2346,6 +2403,7 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    depth: 0
   173:
     id: 172
     name: coordinate_184
@@ -2392,6 +2450,7 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    depth: 0
   185:
     kind: def
     id: 185
@@ -2439,6 +2498,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   186:
     kind: def
     id: 42
@@ -2469,6 +2529,7 @@ table:
             - kind: int
               id: 39
               value: 3
+    depth: 0
   187:
     kind: def
     id: 185
@@ -2516,6 +2577,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   189:
     kind: def
     id: 189
@@ -2532,6 +2594,7 @@ table:
         - kind: name
           id: 187
           name: isEmpty
+    depth: 0
   191:
     kind: def
     id: 124
@@ -2814,6 +2877,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   193:
     id: 192
     name: pattern_200
@@ -2879,6 +2943,7 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    depth: 0
   203:
     kind: def
     id: 203
@@ -2927,6 +2992,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   204:
     kind: def
     id: 42
@@ -2957,6 +3023,7 @@ table:
             - kind: int
               id: 39
               value: 3
+    depth: 0
   205:
     kind: def
     id: 185
@@ -3004,6 +3071,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   208:
     kind: def
     id: 208
@@ -3024,6 +3092,7 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    depth: 0
   209:
     kind: def
     id: 208
@@ -3044,6 +3113,7 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    depth: 0
   210:
     kind: def
     id: 8
@@ -3061,6 +3131,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   211:
     kind: def
     id: 203
@@ -3109,6 +3180,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   214:
     kind: def
     id: 12
@@ -3126,6 +3198,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   215:
     kind: def
     id: 203
@@ -3174,6 +3247,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   218:
     kind: def
     id: 218
@@ -3213,6 +3287,7 @@ table:
                 - kind: name
                   id: 214
                   name: O
+    depth: 0
   219:
     kind: def
     id: 8
@@ -3230,6 +3305,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   220:
     kind: def
     id: 203
@@ -3278,6 +3354,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   221:
     kind: def
     id: 12
@@ -3295,6 +3372,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   222:
     kind: def
     id: 203
@@ -3343,6 +3421,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   224:
     kind: def
     id: 208
@@ -3363,6 +3442,7 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    depth: 0
   226:
     kind: def
     id: 226
@@ -3394,6 +3474,7 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    depth: 0
   228:
     id: 227
     name: pattern_248
@@ -3417,6 +3498,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   232:
     kind: def
     id: 171
@@ -3473,6 +3555,7 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    depth: 0
   238:
     id: 227
     name: pattern_248
@@ -3526,6 +3609,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   249:
     kind: def
     id: 249
@@ -3607,6 +3691,7 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    depth: 0
   251:
     id: 250
     name: pattern_271
@@ -3630,6 +3715,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   255:
     kind: def
     id: 171
@@ -3686,6 +3772,7 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    depth: 0
   261:
     id: 250
     name: pattern_271
@@ -3739,6 +3826,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   272:
     kind: def
     id: 272
@@ -3820,6 +3908,7 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    depth: 0
   274:
     id: 273
     name: pattern_294
@@ -3843,6 +3932,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   278:
     kind: def
     id: 171
@@ -3899,6 +3989,7 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    depth: 0
   284:
     id: 273
     name: pattern_294
@@ -3952,6 +4043,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   295:
     kind: def
     id: 295
@@ -4033,6 +4125,7 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    depth: 0
   296:
     kind: def
     id: 124
@@ -4315,6 +4408,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   297:
     kind: def
     id: 249
@@ -4396,6 +4490,7 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    depth: 0
   299:
     kind: def
     id: 299
@@ -4412,6 +4507,7 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    depth: 0
   300:
     kind: def
     id: 124
@@ -4694,6 +4790,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   301:
     kind: def
     id: 272
@@ -4775,6 +4872,7 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    depth: 0
   303:
     kind: def
     id: 303
@@ -4791,6 +4889,7 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    depth: 0
   307:
     kind: def
     id: 185
@@ -4838,6 +4937,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   308:
     kind: def
     id: 308
@@ -4858,6 +4958,7 @@ table:
             - kind: int
               id: 305
               value: 2
+    depth: 0
   309:
     kind: def
     id: 124
@@ -5140,6 +5241,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   310:
     kind: def
     id: 295
@@ -5221,6 +5323,7 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    depth: 0
   312:
     kind: def
     id: 312
@@ -5237,6 +5340,7 @@ table:
         - kind: name
           id: 310
           name: canSetupWinWithPattern
+    depth: 0
   315:
     id: 314
     name: coordinate_334
@@ -5287,6 +5391,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   317:
     kind: var
     id: 32
@@ -5325,6 +5430,7 @@ table:
           - kind: name
             id: 19
             name: __OccupiedParam_21
+    depth: 0
   331:
     kind: var
     id: 32
@@ -5408,6 +5514,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   336:
     kind: def
     id: 299
@@ -5424,6 +5531,7 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    depth: 0
   337:
     kind: def
     id: 124
@@ -5706,6 +5814,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   338:
     kind: def
     id: 249
@@ -5787,6 +5896,7 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    depth: 0
   341:
     kind: def
     id: 341
@@ -5807,6 +5917,7 @@ table:
             - kind: name
               id: 338
               name: canWinWithPattern
+    depth: 2
   342:
     kind: def
     id: 341
@@ -5827,6 +5938,7 @@ table:
             - kind: name
               id: 338
               name: canWinWithPattern
+    depth: 2
   343:
     kind: def
     id: 185
@@ -5874,6 +5986,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   346:
     kind: def
     id: 346
@@ -5894,6 +6007,7 @@ table:
             - kind: name
               id: 343
               name: isEmpty
+    depth: 3
   347:
     kind: def
     id: 8
@@ -5911,6 +6025,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   348:
     kind: def
     id: 346
@@ -5931,6 +6046,7 @@ table:
             - kind: name
               id: 343
               name: isEmpty
+    depth: 3
   349:
     kind: def
     id: 335
@@ -6010,6 +6126,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   353:
     kind: def
     id: 353
@@ -6044,6 +6161,7 @@ table:
                     - kind: name
                       id: 338
                       name: canWinWithPattern
+            depth: ~
           expr:
             kind: let
             id: 350
@@ -6066,6 +6184,7 @@ table:
                       - kind: name
                         id: 343
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 349
@@ -6077,6 +6196,7 @@ table:
                 - kind: name
                   id: 348
                   name: coordinate
+    depth: 0
   354:
     kind: def
     id: 303
@@ -6093,6 +6213,7 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    depth: 0
   355:
     kind: def
     id: 124
@@ -6375,6 +6496,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   356:
     kind: def
     id: 272
@@ -6456,6 +6578,7 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    depth: 0
   359:
     kind: def
     id: 359
@@ -6476,6 +6599,7 @@ table:
             - kind: name
               id: 356
               name: canBlockWithPattern
+    depth: 2
   360:
     kind: def
     id: 359
@@ -6496,6 +6620,7 @@ table:
             - kind: name
               id: 356
               name: canBlockWithPattern
+    depth: 2
   361:
     kind: def
     id: 185
@@ -6543,6 +6668,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   364:
     kind: def
     id: 364
@@ -6563,6 +6689,7 @@ table:
             - kind: name
               id: 361
               name: isEmpty
+    depth: 3
   365:
     kind: def
     id: 8
@@ -6580,6 +6707,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   366:
     kind: def
     id: 364
@@ -6600,6 +6728,7 @@ table:
             - kind: name
               id: 361
               name: isEmpty
+    depth: 3
   367:
     kind: def
     id: 335
@@ -6679,6 +6808,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   371:
     kind: def
     id: 371
@@ -6713,6 +6843,7 @@ table:
                     - kind: name
                       id: 356
                       name: canBlockWithPattern
+            depth: ~
           expr:
             kind: let
             id: 368
@@ -6735,6 +6866,7 @@ table:
                       - kind: name
                         id: 361
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 367
@@ -6746,6 +6878,7 @@ table:
                 - kind: name
                   id: 366
                   name: coordinate
+    depth: 0
   372:
     kind: def
     id: 8
@@ -6763,6 +6896,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   376:
     kind: def
     id: 335
@@ -6842,6 +6976,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   377:
     kind: def
     id: 377
@@ -6865,6 +7000,7 @@ table:
             - kind: int
               id: 374
               value: 2
+    depth: 0
   378:
     kind: def
     id: 124
@@ -7147,6 +7283,7 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    depth: 0
   379:
     kind: def
     id: 295
@@ -7228,6 +7365,7 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    depth: 0
   382:
     kind: def
     id: 382
@@ -7248,6 +7386,7 @@ table:
             - kind: name
               id: 379
               name: canSetupWinWithPattern
+    depth: 2
   383:
     kind: def
     id: 382
@@ -7268,6 +7407,7 @@ table:
             - kind: name
               id: 379
               name: canSetupWinWithPattern
+    depth: 2
   384:
     kind: def
     id: 185
@@ -7315,6 +7455,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   387:
     kind: def
     id: 387
@@ -7335,6 +7476,7 @@ table:
             - kind: name
               id: 384
               name: isEmpty
+    depth: 3
   388:
     kind: def
     id: 8
@@ -7352,6 +7494,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   389:
     kind: def
     id: 387
@@ -7372,6 +7515,7 @@ table:
             - kind: name
               id: 384
               name: isEmpty
+    depth: 3
   390:
     kind: def
     id: 335
@@ -7451,6 +7595,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   394:
     kind: def
     id: 394
@@ -7482,6 +7627,7 @@ table:
                     - kind: name
                       id: 379
                       name: canSetupWinWithPattern
+            depth: ~
           expr:
             kind: let
             id: 391
@@ -7504,6 +7650,7 @@ table:
                       - kind: name
                         id: 384
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 390
@@ -7515,6 +7662,7 @@ table:
                 - kind: name
                   id: 389
                   name: coordinate
+    depth: 0
   396:
     kind: def
     id: 42
@@ -7545,6 +7693,7 @@ table:
             - kind: int
               id: 39
               value: 3
+    depth: 0
   397:
     kind: def
     id: 185
@@ -7592,6 +7741,7 @@ table:
               kind: bool
               id: 176
               value: false
+    depth: 0
   400:
     kind: def
     id: 400
@@ -7612,6 +7762,7 @@ table:
             - kind: name
               id: 397
               name: isEmpty
+    depth: 3
   401:
     id: 395
     name: player_405
@@ -7635,6 +7786,7 @@ table:
             - kind: name
               id: 397
               name: isEmpty
+    depth: 3
   403:
     kind: def
     id: 335
@@ -7714,6 +7866,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   406:
     kind: def
     id: 406
@@ -7747,6 +7900,7 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          depth: ~
         expr:
           kind: app
           id: 403
@@ -7758,6 +7912,7 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    depth: 0
   407:
     kind: def
     id: 138
@@ -7808,6 +7963,7 @@ table:
             - kind: int
               id: 135
               value: 3
+    depth: 0
   409:
     kind: def
     id: 409
@@ -7821,6 +7977,7 @@ table:
         - kind: name
           id: 407
           name: corners
+    depth: 2
   410:
     kind: def
     id: 8
@@ -7838,6 +7995,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   411:
     kind: def
     id: 409
@@ -7851,6 +8009,7 @@ table:
         - kind: name
           id: 407
           name: corners
+    depth: 2
   412:
     kind: def
     id: 335
@@ -7930,6 +8089,7 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    depth: 0
   414:
     kind: def
     id: 414
@@ -7950,6 +8110,7 @@ table:
             - kind: name
               id: 407
               name: corners
+        depth: ~
       expr:
         kind: app
         id: 412
@@ -7961,6 +8122,7 @@ table:
           - kind: name
             id: 411
             name: corner
+    depth: 0
   415:
     kind: var
     id: 34
@@ -7982,6 +8144,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   418:
     kind: def
     id: 12
@@ -7999,6 +8162,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   419:
     kind: def
     id: 203
@@ -8047,6 +8211,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   421:
     kind: def
     id: 189
@@ -8063,6 +8228,7 @@ table:
         - kind: name
           id: 187
           name: isEmpty
+    depth: 0
   422:
     kind: def
     id: 414
@@ -8083,6 +8249,7 @@ table:
             - kind: name
               id: 407
               name: corners
+        depth: ~
       expr:
         kind: app
         id: 412
@@ -8094,6 +8261,7 @@ table:
           - kind: name
             id: 411
             name: corner
+    depth: 0
   423:
     kind: def
     id: 299
@@ -8110,6 +8278,7 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    depth: 0
   424:
     kind: def
     id: 353
@@ -8144,6 +8313,7 @@ table:
                     - kind: name
                       id: 338
                       name: canWinWithPattern
+            depth: ~
           expr:
             kind: let
             id: 350
@@ -8166,6 +8336,7 @@ table:
                       - kind: name
                         id: 343
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 349
@@ -8177,6 +8348,7 @@ table:
                 - kind: name
                   id: 348
                   name: coordinate
+    depth: 0
   425:
     kind: def
     id: 303
@@ -8193,6 +8365,7 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    depth: 0
   426:
     kind: def
     id: 371
@@ -8227,6 +8400,7 @@ table:
                     - kind: name
                       id: 356
                       name: canBlockWithPattern
+            depth: ~
           expr:
             kind: let
             id: 368
@@ -8249,6 +8423,7 @@ table:
                       - kind: name
                         id: 361
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 367
@@ -8260,6 +8435,7 @@ table:
                 - kind: name
                   id: 366
                   name: coordinate
+    depth: 0
   427:
     kind: def
     id: 308
@@ -8280,6 +8456,7 @@ table:
             - kind: int
               id: 305
               value: 2
+    depth: 0
   428:
     kind: def
     id: 377
@@ -8303,6 +8480,7 @@ table:
             - kind: int
               id: 374
               value: 2
+    depth: 0
   429:
     kind: def
     id: 312
@@ -8319,6 +8497,7 @@ table:
         - kind: name
           id: 310
           name: canSetupWinWithPattern
+    depth: 0
   430:
     kind: def
     id: 394
@@ -8350,6 +8529,7 @@ table:
                     - kind: name
                       id: 379
                       name: canSetupWinWithPattern
+            depth: ~
           expr:
             kind: let
             id: 391
@@ -8372,6 +8552,7 @@ table:
                       - kind: name
                         id: 384
                         name: isEmpty
+              depth: ~
             expr:
               kind: app
               id: 390
@@ -8383,6 +8564,7 @@ table:
                 - kind: name
                   id: 389
                   name: coordinate
+    depth: 0
   431:
     kind: def
     id: 8
@@ -8400,6 +8582,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   432:
     kind: def
     id: 406
@@ -8433,6 +8616,7 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          depth: ~
         expr:
           kind: app
           id: 403
@@ -8444,6 +8628,7 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    depth: 0
   438:
     kind: def
     id: 12
@@ -8461,6 +8646,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   439:
     kind: var
     id: 34
@@ -8563,6 +8749,7 @@ table:
             - kind: name
               id: 438
               name: O
+    depth: 0
   443:
     kind: var
     id: 34
@@ -8584,6 +8771,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   446:
     kind: def
     id: 8
@@ -8601,6 +8789,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   447:
     kind: def
     id: 203
@@ -8649,6 +8838,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   449:
     kind: def
     id: 12
@@ -8666,6 +8856,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   450:
     kind: def
     id: 406
@@ -8699,6 +8890,7 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          depth: ~
         expr:
           kind: app
           id: 403
@@ -8710,6 +8902,7 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    depth: 0
   451:
     kind: def
     id: 8
@@ -8727,6 +8920,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   452:
     kind: var
     id: 34
@@ -8779,6 +8973,7 @@ table:
             - kind: name
               id: 451
               name: X
+    depth: 0
   456:
     kind: def
     id: 8
@@ -8796,6 +8991,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   457:
     kind: var
     id: 34
@@ -8817,6 +9013,7 @@ table:
           id: 24
           opcode: Tup
           args: []
+    depth: 0
   472:
     kind: var
     id: 32
@@ -8891,6 +9088,7 @@ table:
                           kind: name
                           id: 467
                           name: Empty
+    depth: 0
   476:
     kind: def
     id: 442
@@ -8989,6 +9187,7 @@ table:
             - kind: name
               id: 438
               name: O
+    depth: 0
   477:
     kind: def
     id: 455
@@ -9037,6 +9236,7 @@ table:
             - kind: name
               id: 451
               name: X
+    depth: 0
   478:
     kind: def
     id: 226
@@ -9068,6 +9268,7 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    depth: 0
   479:
     kind: var
     id: 32
@@ -9127,6 +9328,7 @@ table:
                 - kind: name
                   id: 482
                   name: nextTurn
+    depth: 0
   488:
     kind: def
     id: 8
@@ -9144,6 +9346,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   489:
     kind: def
     id: 203
@@ -9192,6 +9395,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   491:
     kind: def
     id: 491
@@ -9209,6 +9413,7 @@ table:
             - kind: name
               id: 488
               name: X
+    depth: 0
   492:
     kind: def
     id: 12
@@ -9226,6 +9431,7 @@ table:
           id: 10
           opcode: Tup
           args: []
+    depth: 0
   493:
     kind: def
     id: 203
@@ -9274,6 +9480,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   495:
     kind: def
     id: 495
@@ -9291,6 +9498,7 @@ table:
             - kind: name
               id: 492
               name: O
+    depth: 0
   496:
     kind: def
     id: 218
@@ -9330,6 +9538,7 @@ table:
                 - kind: name
                   id: 214
                   name: O
+    depth: 0
   498:
     kind: def
     id: 498
@@ -9343,6 +9552,7 @@ table:
         - kind: name
           id: 496
           name: stalemate
+    depth: 0
   499:
     kind: def
     id: 495
@@ -9360,6 +9570,7 @@ table:
             - kind: name
               id: 492
               name: O
+    depth: 0
   500:
     kind: def
     id: 500
@@ -9369,6 +9580,7 @@ table:
       kind: name
       id: 499
       name: OHasNotWon
+    depth: 0
   501:
     kind: def
     id: 8
@@ -9386,6 +9598,7 @@ table:
           id: 6
           opcode: Tup
           args: []
+    depth: 0
   502:
     kind: def
     id: 203
@@ -9434,6 +9647,7 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    depth: 0
   504:
     kind: def
     id: 504
@@ -9451,6 +9665,7 @@ table:
             - kind: name
               id: 501
               name: X
+    depth: 0
   506:
     kind: def
     id: 475
@@ -9521,6 +9736,7 @@ table:
                           kind: name
                           id: 467
                           name: Empty
+    depth: 0
   507:
     kind: def
     id: 507
@@ -9530,6 +9746,7 @@ table:
       kind: name
       id: 506
       name: init
+    depth: 0
   508:
     kind: def
     id: 487
@@ -9573,6 +9790,7 @@ table:
                 - kind: name
                   id: 482
                   name: nextTurn
+    depth: 0
   509:
     kind: def
     id: 509
@@ -9582,3 +9800,4 @@ table:
       kind: name
       id: 508
       name: step
+    depth: 0

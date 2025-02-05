@@ -253,7 +253,6 @@ fn if_then_else() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("if (5 > 3) 1 else 2", "1")
 }
 
-#[ignore]
 #[test]
 fn value_definitions() -> Result<(), Box<dyn std::error::Error>> {
     let input = "val x = 3 + 4
@@ -262,7 +261,6 @@ fn value_definitions() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(input, "7")
 }
 
-#[ignore]
 #[test]
 fn multi_arg_definitions() -> Result<(), Box<dyn std::error::Error>> {
     let input = "def mult(x, y) = (x * y)
@@ -270,7 +268,6 @@ fn multi_arg_definitions() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(input, "24")
 }
 
-#[ignore]
 #[test]
 fn named_def_used_instead_of_lambda() -> Result<(), Box<dyn std::error::Error>> {
     let input = "def positive(x) = x > 0
@@ -278,7 +275,6 @@ fn named_def_used_instead_of_lambda() -> Result<(), Box<dyn std::error::Error>> 
     assert_from_string(input, "Set(1, 2, 3)")
 }
 
-#[ignore]
 #[test]
 fn higher_order_operators_with_lambda() -> Result<(), Box<dyn std::error::Error>> {
     let input = "def ho(lo, n) = lo(n)
@@ -286,7 +282,6 @@ fn higher_order_operators_with_lambda() -> Result<(), Box<dyn std::error::Error>
     assert_from_string(input, "6")
 }
 
-#[ignore]
 #[test]
 fn higher_order_operators_in_folds() -> Result<(), Box<dyn std::error::Error>> {
     let input = "def plus(i, j) = i + j
