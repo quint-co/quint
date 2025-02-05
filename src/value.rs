@@ -19,6 +19,7 @@ pub enum Value<'a> {
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     CrossProduct(Vec<Value<'a>>),
+    PowerSet(Box<Value<'a>>),
 }
 
 impl Hash for Value<'_> {
@@ -54,6 +55,9 @@ impl Hash for Value<'_> {
                     value.hash(state);
                 }
             }
+            Value::PowerSet(value) => {
+                value.hash(state);
+            }
         }
     }
 }
@@ -69,6 +73,8 @@ impl PartialEq for Value<'_> {
             (Value::Record(a), Value::Record(b)) => *a == *b,
             (Value::Lambda(_, _), Value::Lambda(_, _)) => panic!("Cannot compare lambdas"),
             (Value::CrossProduct(a), Value::CrossProduct(b)) => *a == *b,
+            (Value::PowerSet(a), Value::PowerSet(b)) => *a == *b,
+            (a, b) if a.is_set() && b.is_set() => a.as_set() == b.as_set(),
             _ => false,
         }
     }
@@ -87,6 +93,7 @@ impl<'a> Value<'a> {
             Value::Record(fields) => fields.len().try_into().unwrap(),
             Value::Lambda(_, _) => 0,
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
+            Value::PowerSet(value) => 2_i64.pow(value.cardinality().try_into().unwrap()),
         }
     }
 
@@ -109,6 +116,13 @@ impl<'a> Value<'a> {
             Value::Str(s) => s.to_string(),
             _ => panic!("Expected string"),
         }
+    }
+
+    pub fn is_set(&self) -> bool {
+        matches!(
+            self,
+            Value::Set(_) | Value::CrossProduct(_) | Value::PowerSet(_)
+        )
     }
 
     pub fn as_set(&self) -> FxHashSet<Value<'a>> {
@@ -167,6 +181,28 @@ impl<'a> Value<'a> {
                         set.insert(Value::Tuple(next_elem));
                     }
                 }
+                set
+            }
+
+            Value::PowerSet(value) => {
+                let mut set = FxHashSet::default();
+                let base = value.as_set().clone();
+                let size = TryInto::<i64>::try_into(self.cardinality()).unwrap();
+
+                for i in 0..size {
+                    let mut elems = FxHashSet::default();
+                    let mut bits = i;
+                    for elem in &base {
+                        let is_mem = bits % 2 == 1;
+                        bits /= 2;
+                        if is_mem {
+                            elems.insert(elem.clone());
+                        }
+                    }
+
+                    set.insert(Value::Set(elems));
+                }
+
                 set
             }
             _ => panic!("Expected set"),
@@ -242,7 +278,7 @@ impl fmt::Display for Value<'_> {
                 write!(f, " }}")
             }
             Value::Lambda(_, _) => write!(f, "<lambda>"),
-            Value::CrossProduct(_) => {
+            Value::CrossProduct(_) | Value::PowerSet(_) => {
                 write!(f, "Set(")?;
                 for (i, set) in self.as_set().iter().enumerate() {
                     if i > 0 {

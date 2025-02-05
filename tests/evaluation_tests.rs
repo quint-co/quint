@@ -599,7 +599,42 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
     // assert_from_string(input, "24")
 }
 
-// TODO powerset tests
+#[test]
+fn set_powerset() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(4).powerset()",
+        "Set(Set(), Set(2), Set(3), Set(2, 3), Set(4), Set(2, 4), Set(3, 4), Set(2, 3, 4))",
+    )
+}
+
+#[test]
+fn set_powerset_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(3).powerset() == Set(Set(), Set(2), Set(3), Set(2, 3))",
+        "true",
+    )?;
+    assert_from_string("2.to(3).powerset() == Set(2, 3).powerset()", "true")?;
+    assert_from_string("2.to(4).powerset() == Set(2, 3).powerset()", "false")
+}
+
+#[test]
+fn set_powerset_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(3).powerset().contains(Set(2))", "true")?;
+    assert_from_string("2.to(3).powerset().contains(Set(2, 4))", "false")
+}
+
+#[test]
+fn set_powerset_subseteq() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(4).powerset().subseteq(1.to(5).powerset())", "true")
+}
+
+#[test]
+fn set_powerset_cardinality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Set().powerset().size()", "1")?;
+    assert_from_string("2.to(4).powerset().size()", "8")?;
+    assert_from_string("2.to(5).powerset().size()", "16")
+}
+
 // TODO builtin values tests
 
 #[test]
