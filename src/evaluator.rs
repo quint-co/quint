@@ -125,9 +125,7 @@ impl<'a> Interpreter<'a> {
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
         match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => {
-                if matches!(op.expr, QuintEx::QuintLambda { .. })
-                    || op.depth.is_none()
-                    || op.depth.unwrap() == 0
+                if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
