@@ -481,7 +481,6 @@ fn set_exists() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("Set(1, 2, 3).exists(x => x >= 5)", "false")
 }
 
-#[ignore]
 #[test]
 fn set_exists_with_tuples() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(
@@ -506,7 +505,6 @@ fn set_forall() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("Set(1, 2, 3).forall(x => x >= 0)", "true")
 }
 
-#[ignore]
 #[test]
 fn set_forall_with_tuples() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(
@@ -537,7 +535,6 @@ fn set_map() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("Set(1, 2, 3).map(x => x / 2)", "Set(0, 1)")
 }
 
-#[ignore]
 #[test]
 fn set_map_with_tuples() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(
@@ -561,12 +558,11 @@ fn set_filter() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("Set(1, 2, 3, 4).filter(x => x % 2 == 0)", "Set(2, 4)")
 }
 
-#[ignore]
 #[test]
 fn set_filter_with_tuples() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(
         "tuples(1.to(5), 2.to(3)).filter(((x, y)) => x < y)",
-        "Set((1, 2), (1, 3), (2, 3)",
+        "Set((1, 2), (1, 3), (2, 3))",
     )
 }
 
@@ -603,7 +599,42 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
     // assert_from_string(input, "24")
 }
 
-// TODO powerset tests
+#[test]
+fn set_powerset() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(4).powerset()",
+        "Set(Set(), Set(2), Set(3), Set(2, 3), Set(4), Set(2, 4), Set(3, 4), Set(2, 3, 4))",
+    )
+}
+
+#[test]
+fn set_powerset_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(3).powerset() == Set(Set(), Set(2), Set(3), Set(2, 3))",
+        "true",
+    )?;
+    assert_from_string("2.to(3).powerset() == Set(2, 3).powerset()", "true")?;
+    assert_from_string("2.to(4).powerset() == Set(2, 3).powerset()", "false")
+}
+
+#[test]
+fn set_powerset_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(3).powerset().contains(Set(2))", "true")?;
+    assert_from_string("2.to(3).powerset().contains(Set(2, 4))", "false")
+}
+
+#[test]
+fn set_powerset_subseteq() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(4).powerset().subseteq(1.to(5).powerset())", "true")
+}
+
+#[test]
+fn set_powerset_cardinality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Set().powerset().size()", "1")?;
+    assert_from_string("2.to(4).powerset().size()", "8")?;
+    assert_from_string("2.to(5).powerset().size()", "16")
+}
+
 // TODO builtin values tests
 
 #[test]
@@ -626,7 +657,6 @@ fn tuple_equality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("(4, 5, 6) == (5, 5, 6)", "false")
 }
 
-#[ignore]
 #[test]
 fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("tuples(Set(), Set(), Set())", "Set()")?;
@@ -646,20 +676,19 @@ fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
         "false",
     )?;
     assert_from_string(
-        "tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1))",
+        "tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1)))",
         "true",
     )?;
     assert_from_string(
-        "tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5))",
+        "tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5)))",
         "false",
     )?;
     assert_from_string(
-        "Set(tuples(1.to(2), 2.to(3))",
-        "Set(Set((1, 2), (1, 3), (2, 2), (2, 3)))",
+        "Set(tuples(1.to(2), 2.to(3)))",
+        "Set(Set((1, 2), (2, 2), (1, 3), (2, 3)))",
     )
 }
 
-#[ignore]
 #[test]
 fn cross_product_cardinality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("tuples(1.to(4), 2.to(4)).size()", "12")?;

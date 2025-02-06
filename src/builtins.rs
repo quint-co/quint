@@ -69,8 +69,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
 
         "item" => |_env, args| Ok(args[0].as_list()[args[1].as_int() as usize - 1].clone()),
-
-        // TODO: tuples with cross prod
+        "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
         "field" => |_env, args| {
             Ok(args[0]
                 .as_record_map()
@@ -96,7 +95,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
 
         // TODO: Add list ops
-        // TODO: powerset
+        "powerset" => |_env, args| Ok(Value::PowerSet(Box::new(args[0].clone()))),
         "contains" => |_env, args| Ok(Value::Bool(args[0].as_set().contains(&args[1]))),
         "in" => |_env, args| Ok(Value::Bool(args[1].as_set().contains(&args[0]))),
         "subseteq" => |_env, args| Ok(Value::Bool(args[0].as_set().is_subset(&args[1].as_set()))),
