@@ -98,7 +98,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "powerset" => |_env, args| Ok(Value::PowerSet(Box::new(args[0].clone()))),
         "contains" => |_env, args| Ok(Value::Bool(args[0].contains(args[1].clone()))),
         "in" => |_env, args| Ok(Value::Bool(args[1].contains(args[0].clone()))),
-        "subseteq" => |_env, args| Ok(Value::Bool(args[0].as_set().is_subset(&args[1].as_set()))),
+        "subseteq" => |_env, args| Ok(Value::Bool(args[0].subseteq(args[1].clone()))),
         "exclude" => |_env, args| {
             Ok(Value::Set(
                 args[0]

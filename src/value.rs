@@ -133,6 +133,21 @@ impl<'a> Value<'a> {
         }
     }
 
+    pub fn subseteq(&self, superset: Value<'a>) -> bool {
+        match (self, superset) {
+            (Value::Set(subset), Value::Set(superset)) => subset.is_subset(&superset),
+            (Value::CrossProduct(subsets), Value::CrossProduct(supersets)) => subsets
+                .iter()
+                .zip(supersets)
+                .all(|(subset, superset)| subset.subseteq(superset.clone())),
+            (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(*superset),
+            (subset, superset) => subset
+                .as_set()
+                .iter()
+                .all(|elem| superset.as_set().contains(elem)),
+        }
+    }
+
     pub fn as_int(&self) -> i64 {
         match self {
             Value::Int(n) => *n,
