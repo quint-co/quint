@@ -16,6 +16,7 @@ pub enum Value<'a> {
     Set(FxHashSet<Value<'a>>),
     Tuple(Vec<Value<'a>>),
     Record(FxHashMap<String, Value<'a>>),
+    Map(FxHashMap<Value<'a>, Value<'a>>),
     List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     // "Intermediate" values using during evaluation to avoid expensive computations
@@ -46,6 +47,12 @@ impl Hash for Value<'_> {
             Value::Record(fields) => {
                 for (name, value) in fields {
                     name.hash(state);
+                    value.hash(state);
+                }
+            }
+            Value::Map(map) => {
+                for (key, value) in map {
+                    key.hash(state);
                     value.hash(state);
                 }
             }
@@ -82,6 +89,7 @@ impl PartialEq for Value<'_> {
             (Value::Set(a), Value::Set(b)) => *a == *b,
             (Value::Tuple(a), Value::Tuple(b)) => *a == *b,
             (Value::Record(a), Value::Record(b)) => *a == *b,
+            (Value::Map(a), Value::Map(b)) => *a == *b,
             (Value::List(a), Value::List(b)) => *a == *b,
             (Value::Lambda(_, _), Value::Lambda(_, _)) => panic!("Cannot compare lambdas"),
             (Value::Interval(a_start, a_end), Value::Interval(b_start, b_end)) => {
@@ -106,6 +114,7 @@ impl<'a> Value<'a> {
             Value::Set(set) => set.len(),
             Value::Tuple(elems) => elems.len(),
             Value::Record(fields) => fields.len(),
+            Value::Map(map) => map.len(),
             Value::List(elems) => elems.len(),
             Value::Lambda(_, _) => 0,
             Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
@@ -252,6 +261,14 @@ impl<'a> Value<'a> {
         }
     }
 
+    // TODO: Review when we actually should clone. We're cloning twice when we need to mutate.
+    pub fn as_map(&self) -> FxHashMap<Value<'a>, Value<'a>> {
+        match self {
+            Value::Map(map) => map.clone(),
+            _ => panic!("Expected map"),
+        }
+    }
+
     pub fn as_list(&self) -> Vec<Value<'a>> {
         match self {
             Value::Tuple(elems) => elems.clone(),
@@ -280,6 +297,13 @@ impl<'a> Value<'a> {
                 // TODO: restore previous values
             },
             _ => panic!("Expected lambda"),
+        }
+    }
+
+    pub fn as_tuple2(&self) -> (Value<'a>, Value<'a>) {
+        match &self.as_list()[..] {
+            [a, b] => (a.clone(), b.clone()),
+            _ => panic!("Expected tuple of 2 elements"),
         }
     }
 }
@@ -319,6 +343,16 @@ impl fmt::Display for Value<'_> {
                     write!(f, "{}: {:#}", name, value)?;
                 }
                 write!(f, " }}")
+            }
+            Value::Map(map) => {
+                write!(f, "Map(")?;
+                for (i, (key, value)) in map.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "Tup({:#}, {:#})", key, value)?;
+                }
+                write!(f, ")")
             }
             Value::List(elems) => {
                 write!(f, "List(")?;

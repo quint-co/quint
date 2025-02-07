@@ -873,5 +873,121 @@ fn record_field_update() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // TODO variants/match tests
-// TODO Map tests
+
+#[test]
+fn map_by_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(4).mapBy(i => 2 * i)",
+        "Map(Tup(2, 4), Tup(3, 6), Tup(4, 8))",
+    )?;
+    assert_from_string(
+        "Set(2.to(4)).mapBy(s => s.size())",
+        "Map(Tup(Set(2, 3, 4), 3))",
+    )
+}
+
+#[test]
+fn set_to_map_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "setToMap(Set((3, 6), (4, 10 - 2), (5, 10)))",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))",
+    )
+}
+
+#[test]
+fn map_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "Map(3 -> 6, 4 -> 10 - 2, 5 -> 10)",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))",
+    )
+}
+
+#[test]
+fn map_get() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("3.to(5).mapBy(i => 2 * i).get(4)", "8")?;
+    assert_from_string("Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))", "3")
+}
+
+fn map_update() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).set(4, 20)",
+        "Map(Tup(3, 6), Tup(4, 20), Tup(5, 10))",
+    )?;
+    assert_from_string("3.to(5).mapBy(i => 2 * i).set(7, 20)", "undefined")
+}
+
+#[test]
+fn map_set_by() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).setBy(4, old => old + 1)",
+        "Map(Tup(3, 6), Tup(4, 9), Tup(5, 10))",
+    )?;
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).setBy(7, old => old + 1)",
+        "undefined",
+    )
+}
+
+#[test]
+fn map_put() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).put(10, 11)",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10), Tup(10, 11))",
+    )
+}
+
+#[test]
+fn map_keys() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Set(3, 5, 7).mapBy(i => 2 * i).keys()", "Set(3, 5, 7)")
+}
+
+#[test]
+fn map_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)",
+        "true",
+    )?;
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)",
+        "false",
+    )
+}
+
+#[test]
+fn set_of_maps() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(3).setOfMaps(5.to(6))",
+        "Set(Map(Tup(2, 5), Tup(3, 5)), Map(Tup(2, 6), Tup(3, 5)), Map(Tup(2, 5), Tup(3, 6)), Map(Tup(2, 6), Tup(3, 6)))"
+    )?;
+
+    assert_from_string("2.to(3).setOfMaps(5.to(6)) == Set(Map(2 -> 5, 3 -> 5), Map(2 -> 6, 3 -> 5), Map(2 -> 5, 3 -> 6), Map(2 -> 6, 3 -> 6))",
+        "true"
+    )?;
+
+    assert_from_string("Set().setOfMaps(Set(3, 5))", "Set(Map())")?;
+    assert_from_string("Set().setOfMaps(Set())", "Set(Map())")?;
+    assert_from_string("Set(1, 2).setOfMaps(Set())", "Set()")?;
+
+    assert_from_string(
+        "Set(2).setOfMaps(5.to(6))",
+        "Set(Map(Tup(2, 5)), Map(Tup(2, 6))",
+    )?;
+    assert_from_string("2.to(3).setOfMaps(Set(5))", "Set(Map(Tup(2, 5), Tup(3, 5))")?;
+    assert_from_string("2.to(4).setOfMaps(5.to(8)).size()", "64")?;
+    assert_from_string(
+        "2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))",
+        "true",
+    )?;
+    assert_from_string(
+        "2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))",
+        "false",
+    )?;
+    assert_from_string(
+        "2.to(3).setOfMaps(5.to(6)).contains(Map(2 -> 5, 3 -> 5))",
+        "true",
+    )?;
+    assert_from_string(
+        "2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))",
+        "true",
+    )
+}
 // TODO Runs and special ops tests

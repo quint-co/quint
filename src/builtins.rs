@@ -1,5 +1,5 @@
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
-use crate::ir::QuintError;
+use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
 
 pub const LAZY_OPS: [&str; 13] = [
@@ -34,7 +34,12 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
         "Tup" => |_env, args| Ok(Value::Tuple(args.into_iter().collect())),
         "List" => |_env, args| Ok(Value::List(args.into_iter().collect())),
-        // TODO: Add other constructors
+        "Map" => |_env, args| {
+            Ok(Value::Map(
+                args.into_iter().map(|kv| kv.as_tuple2()).collect(),
+            ))
+        },
+        // TODO: variant
         "not" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
         "iff" => |_env, args| Ok(Value::Bool(args[0].as_bool() == args[1].as_bool())),
         "eq" => |_env, args| Ok(Value::Bool(args[0] == args[1])),
@@ -258,7 +263,64 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             ))
         },
 
-        // TODO: Map operators
+        "get" => {
+            |_env, args| {
+                let map = args[0].as_map();
+                let key = args[1].clone();
+                match map.get(&key) {
+                    Some(value) => Ok(value.clone()),
+                    None => Err(QuintError::new(
+                        "QNT507",
+                        format!(
+                        "Called 'get' with a non-existing key. Key is {key}. Map has keys: {keys}",
+                        key = key,
+                        keys = map.keys().map(|k| k.to_string()).collect::<Vec<_>>().join(", ")
+                    )
+                        .as_str(),
+                    )),
+                }
+            }
+        }
+
+        "set" => |_env, args| {
+            let mut map = args[0].as_map().clone();
+            let key = args[1].clone();
+
+            if !map.contains_key(&key) {
+                return Err(QuintError::new(
+                    "QNT507",
+                    "Called 'set' with a non-existing key",
+                ));
+            }
+
+            map.insert(key, args[2].clone());
+            Ok(Value::Map(map))
+        },
+        "put" => |_env, args| {
+            let mut map = args[0].as_map().clone();
+            let key = args[1].clone();
+            let value = args[2].clone();
+            map.insert(key, value);
+            Ok(Value::Map(map))
+        },
+
+        "setBy" => |env, args| {
+            let mut map = args[0].as_map().clone();
+            let key = args[1].clone();
+            match map.get(&key) {
+                Some(value) => {
+                    let new_value = args[2].as_closure()(env, vec![value.clone()])?;
+                    map.insert(key, new_value);
+                    Ok(Value::Map(map))
+                }
+                None => Err(QuintError::new(
+                    "QNT507",
+                    format!("Called 'setBy' with a non- existing key {}", key).as_str(),
+                )),
+            }
+        },
+
+        "keys" => |_env, args| Ok(Value::Set(args[0].as_map().keys().cloned().collect())),
         "exists" => |env, args| {
             for v in args[0].as_set() {
                 let result = args[1].as_closure()(env, vec![v.clone()])?;
@@ -313,7 +375,33 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             )?))
         },
 
-        // TODO maps
+        "mapBy" => |env, args| {
+            let closure = args[1].as_closure();
+            let keys = args[0].as_set();
+            let size = keys.len();
+
+            Ok(Value::Map(keys.iter().try_fold(
+                FxHashMap::with_capacity_and_hasher(size, Default::default()),
+                |mut acc, key| {
+                    let value = closure(env, vec![key.clone()])?;
+                    acc.insert(key.clone(), value);
+                    Ok(acc)
+                },
+            )?))
+        },
+        "setToMap" => |_env, args| {
+            let set = args[0].as_set();
+            Ok(Value::Map(set.iter().map(|v| v.as_tuple2()).collect()))
+        },
+
+        //  case 'setOfMaps':
+        //    // A set of all possible maps with keys and values from the given sets.
+        //    return (_, args) => right(rv.mkMapSet(args[0], args[1]))
+        //
+        "setOfMaps" => |_env, args| {
+            unimplemented!()
+        }
+
         // TODO fail, assert
         "allListsUpTo" => |_env, args| {
             let set = args[0].as_set();
