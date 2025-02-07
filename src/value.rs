@@ -16,6 +16,7 @@ pub enum Value<'a> {
     Set(FxHashSet<Value<'a>>),
     Tuple(Vec<Value<'a>>),
     Record(FxHashMap<String, Value<'a>>),
+    List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
@@ -48,6 +49,11 @@ impl Hash for Value<'_> {
                     value.hash(state);
                 }
             }
+            Value::List(elems) => {
+                for elem in elems {
+                    elem.hash(state);
+                }
+            }
             Value::Lambda(_, _) => {
                 panic!("Cannot hash lambda");
             }
@@ -76,6 +82,7 @@ impl PartialEq for Value<'_> {
             (Value::Set(a), Value::Set(b)) => *a == *b,
             (Value::Tuple(a), Value::Tuple(b)) => *a == *b,
             (Value::Record(a), Value::Record(b)) => *a == *b,
+            (Value::List(a), Value::List(b)) => *a == *b,
             (Value::Lambda(_, _), Value::Lambda(_, _)) => panic!("Cannot compare lambdas"),
             (Value::Interval(a_start, a_end), Value::Interval(b_start, b_end)) => {
                 a_start == b_start && a_end == b_end
@@ -96,9 +103,10 @@ impl<'a> Value<'a> {
             Value::Int(_) => 0,
             Value::Bool(_) => 0,
             Value::Str(_) => 0,
-            Value::Set(set) => set.len().try_into().unwrap(),
-            Value::Tuple(elems) => elems.len().try_into().unwrap(),
-            Value::Record(fields) => fields.len().try_into().unwrap(),
+            Value::Set(set) => set.len(),
+            Value::Tuple(elems) => elems.len(),
+            Value::Record(fields) => fields.len(),
+            Value::List(elems) => elems.len(),
             Value::Lambda(_, _) => 0,
             Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
@@ -247,7 +255,7 @@ impl<'a> Value<'a> {
     pub fn as_list(&self) -> Vec<Value<'a>> {
         match self {
             Value::Tuple(elems) => elems.clone(),
-            // TODO: Value::List
+            Value::List(elems) => elems.clone(),
             _ => panic!("Expected list, got {:?}", self),
         }
     }
@@ -311,6 +319,16 @@ impl fmt::Display for Value<'_> {
                     write!(f, "{}: {:#}", name, value)?;
                 }
                 write!(f, " }}")
+            }
+            Value::List(elems) => {
+                write!(f, "List(")?;
+                for (i, elem) in elems.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{:#}", elem)?;
+                }
+                write!(f, ")")
             }
             Value::Lambda(_, _) => write!(f, "<lambda>"),
         }
