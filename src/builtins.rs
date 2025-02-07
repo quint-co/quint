@@ -130,11 +130,13 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(Value::Bool(true))
         },
         "to" => |_env, args| {
-            Ok(Value::Set(
-                (args[0].as_int()..=args[1].as_int())
-                    .map(Value::Int)
-                    .collect(),
-            ))
+            let start = args[0].as_int();
+            let end = args[1].as_int();
+            if start > end {
+                // Avoid having different intervals that represent the same thing (empty set)
+                return Ok(Value::Set(FxHashSet::default()));
+            }
+            Ok(Value::Interval(start, end))
         },
 
         "fold" => |env, args| {

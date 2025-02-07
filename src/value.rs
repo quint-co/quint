@@ -138,10 +138,7 @@ impl<'a> Value<'a> {
                         .all(|(subset, superset)| subset.subseteq(superset))
             }
             (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(superset),
-            (subset, superset) => subset
-                .as_set()
-                .iter()
-                .all(|elem| superset.as_set().contains(elem)),
+            (subset, superset) => subset.as_set().is_subset(&superset.as_set()),
         }
     }
 
@@ -169,7 +166,7 @@ impl<'a> Value<'a> {
     pub fn is_set(&self) -> bool {
         matches!(
             self,
-            Value::Set(_) | Value::CrossProduct(_) | Value::PowerSet(_)
+            Value::Set(_) | Value::Interval(_, _) | Value::CrossProduct(_) | Value::PowerSet(_)
         )
     }
 
