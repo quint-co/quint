@@ -97,50 +97,33 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn contains(&self, v: Value<'a>) -> bool {
-        match self {
-            Value::Set(elems) => elems.contains(&v),
-            Value::CrossProduct(sets) => {
-                if let Value::Tuple(elems) = v {
-                    if sets.len() != elems.len() {
-                        return false;
-                    }
-                    for (i, elem) in elems.iter().enumerate() {
-                        if !sets[i].contains(elem.clone()) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                panic!("an element of a cross product needs to be a tuple")
+    pub fn contains(&self, elem: &Value<'a>) -> bool {
+        match (self, elem) {
+            (Value::Set(elems), _) => elems.contains(elem),
+            (Value::CrossProduct(sets), Value::Tuple(elems)) => {
+                sets.len() == elems.len()
+                    && sets.iter().zip(elems).all(|(set, elem)| set.contains(elem))
             }
-            Value::PowerSet(base) => {
-                if let Value::Set(elems) = v {
-                    let base_elems = base.as_set();
-                    if elems.len() > base_elems.len() {
-                        return false;
-                    }
-                    for elem in elems {
-                        if !base_elems.contains(&elem) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                panic!("an element of a power set needs to be a set")
+            (Value::PowerSet(base), Value::Set(elems)) => {
+                let base_elems = base.as_set();
+                elems.len() <= base_elems.len()
+                    && elems.iter().all(|elem| base_elems.contains(elem))
             }
             _ => panic!("contains not implemented for {:?}", self),
         }
     }
 
-    pub fn subseteq(&self, superset: Value<'a>) -> bool {
+    pub fn subseteq(&self, superset: &Value<'a>) -> bool {
         match (self, superset) {
-            (Value::Set(subset), Value::Set(superset)) => subset.is_subset(&superset),
-            (Value::CrossProduct(subsets), Value::CrossProduct(supersets)) => subsets
-                .iter()
-                .zip(supersets)
-                .all(|(subset, superset)| subset.subseteq(superset.clone())),
-            (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(*superset),
+            (Value::Set(subset), Value::Set(superset)) => subset.is_subset(superset),
+            (Value::CrossProduct(subsets), Value::CrossProduct(supersets)) => {
+                subsets.len() == supersets.len()
+                    && subsets
+                        .iter()
+                        .zip(supersets)
+                        .all(|(subset, superset)| subset.subseteq(superset))
+            }
+            (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(superset),
             (subset, superset) => subset
                 .as_set()
                 .iter()
