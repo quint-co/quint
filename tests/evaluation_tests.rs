@@ -50,8 +50,19 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
 
     let value = run(&parsed.table, &def.expr);
     match value {
-        Ok(v) => assert_eq!(v.to_string(), expected),
-        Err(_) => assert_eq!(expected, "undefined"),
+        Ok(v) => assert_eq!(
+            v.to_string(),
+            expected,
+            "expression: {}, expected: {}, got: {}",
+            input,
+            expected,
+            v
+        ),
+        Err(_) => assert_eq!(
+            "undefined", expected,
+            "expression: {}, expected: {}, got: error",
+            input, expected
+        ),
     };
 
     Ok(())
