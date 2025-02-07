@@ -173,13 +173,7 @@ impl<'a> Value<'a> {
     pub fn as_set(&self) -> FxHashSet<Value<'a>> {
         match self {
             Value::Set(set) => set.clone(),
-            Value::Interval(start, end) => {
-                let mut set = FxHashSet::default();
-                for i in *start..=*end {
-                    set.insert(Value::Int(i));
-                }
-                set
-            }
+            Value::Interval(start, end) => (*start..=*end).map(Value::Int).collect(),
             Value::CrossProduct(sets) => {
                 // convert every set-like value to a vec
                 let vecs: Vec<Vec<Value<'a>>> = sets
