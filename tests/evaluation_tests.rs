@@ -601,13 +601,11 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
     // flatten
     let input = "Set(1.to(3), 4.to(5), 6.to(7)).fold(Set(0), (a, s) => a.union(s))";
     assert_from_string(input, "Set(0, 1, 2, 3, 4, 5, 6, 7)")?;
-    assert_from_string("Set().fold(Set(), (a, s) => a.union(s))", "Set()")
+    assert_from_string("Set().fold(Set(), (a, s) => a.union(s))", "Set()")?;
     // product by using a definition
-    //
-    // TODO: let in
-    // let input = "def prod(x, y) = x * y;
-    //    2.to(4).fold(1, prod)";
-    // assert_from_string(input, "24")
+    let input = "def prod(x, y) = x * y;
+       2.to(4).fold(1, prod)";
+    assert_from_string(input, "24")
 }
 
 #[test]
@@ -675,7 +673,7 @@ fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("tuples(2.to(3), Set(), 3.to(5))", "Set()")?;
     assert_from_string(
         "tuples(1.to(2), 2.to(3))",
-        "Set((1, 2), (2, 2), (1, 3), (2, 3))",
+        "Set((1, 2), (1, 3), (2, 2), (2, 3))",
     )?;
     assert_from_string("tuples(1.to(1), 1.to(1), 1.to(1))", "Set((1, 1, 1))")?;
     assert_from_string(
@@ -696,7 +694,7 @@ fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     assert_from_string(
         "Set(tuples(1.to(2), 2.to(3)))",
-        "Set(Set((1, 2), (2, 2), (1, 3), (2, 3)))",
+        "Set(Set((1, 2), (1, 3), (2, 2), (2, 3)))",
     )
 }
 

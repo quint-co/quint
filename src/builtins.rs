@@ -123,7 +123,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             ))
         },
 
-        "size" => |_env, args| Ok(Value::Int(args[0].cardinality())),
+        "size" => |_env, args| Ok(Value::Int(args[0].cardinality().try_into().unwrap())),
 
         "isFinite" => |_env, _args| {
             // at the moment, we support only finite sets, so just return true

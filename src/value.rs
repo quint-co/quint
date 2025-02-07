@@ -91,7 +91,7 @@ impl PartialEq for Value<'_> {
 impl Eq for Value<'_> {}
 
 impl<'a> Value<'a> {
-    pub fn cardinality(&self) -> i64 {
+    pub fn cardinality(&self) -> usize {
         match self {
             Value::Int(_) => 0,
             Value::Bool(_) => 0,
@@ -100,9 +100,9 @@ impl<'a> Value<'a> {
             Value::Tuple(elems) => elems.len().try_into().unwrap(),
             Value::Record(fields) => fields.len().try_into().unwrap(),
             Value::Lambda(_, _) => 0,
-            Value::Interval(start, end) => end - start + 1,
+            Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
-            Value::PowerSet(value) => 2_i64.pow(value.cardinality().try_into().unwrap()),
+            Value::PowerSet(value) => 2_usize.pow(value.cardinality().try_into().unwrap()),
         }
     }
 
@@ -175,77 +175,66 @@ impl<'a> Value<'a> {
             Value::Set(set) => set.clone(),
             Value::Interval(start, end) => (*start..=*end).map(Value::Int).collect(),
             Value::CrossProduct(sets) => {
-                // convert every set-like value to a vec
-                let vecs: Vec<Vec<Value<'a>>> = sets
-                    .iter()
-                    .map(|set| set.as_set().iter().cloned().collect())
-                    .collect();
-                let exists_empty_set = vecs.iter().any(|arr| arr.is_empty());
-
-                if exists_empty_set {
+                let size = self.cardinality();
+                if size == 0 {
                     // an empty set produces the empty product
                     return FxHashSet::default();
                 }
 
-                // Our iterator is a vec of indices.
-                // An ith index must be in the range [0, arrays[i].length).
-                let mut indices = vecs.iter().map(|_| 0).collect::<Vec<_>>();
-                indices[0] = usize::MAX;
-                let n_indices = vecs.len();
+                let vecs: Vec<Vec<Value<'a>>> = sets
+                    .iter()
+                    .map(|set| set.as_set().iter().cloned().collect())
+                    .collect();
+
+                let mut indices = vec![0; vecs.len()];
+                let mut result_set = FxHashSet::with_capacity_and_hasher(size, Default::default());
                 let mut done = false;
-                let mut set = FxHashSet::default();
+
                 while !done {
+                    let product: Vec<Value<'a>> = indices
+                        .iter()
+                        .enumerate()
+                        .map(|(i, &index)| vecs[i][index].clone())
+                        .collect();
+                    result_set.insert(Value::Tuple(product));
+
                     done = true;
-                    // try to increment one of the counters, starting with the first one
-                    for i in 0..n_indices {
-                        if i == 0 && indices[i] == usize::MAX {
-                            indices[i] = 0;
-                            done = false;
-                            break;
-                        }
-
-                        // similar to how we do increment in binary,
-                        // try to increase a position, wrapping to 0, if overfull
+                    // Update indices in an order such as this
+                    // Consider the product of two sets [a, b, c] x [0, 1]
+                    // indices | product
+                    // [0, 0] (a, 0)
+                    // [1, 0] (b, 0)
+                    // [2, 0] (c, 0)
+                    // [0, 1] (a, 1)
+                    // [1, 1] (b, 1)
+                    // [2, 1] (c, 1)
+                    for i in (0..indices.len()).rev() {
                         indices[i] += 1;
-                        if indices[i] >= vecs[i].len() {
-                            // wrap around and continue
-                            indices[i] = 0;
-                        } else {
-                            // increment worked, there is a next element
+                        if indices[i] < vecs[i].len() {
                             done = false;
                             break;
+                        } else {
+                            indices[i] = 0;
                         }
-                    }
-
-                    if !done {
-                        // yield a tuple that is produced with the counters
-                        let next_elem = indices
-                            .iter()
-                            .enumerate()
-                            .map(|(i, idx)| vecs[i][*idx].clone())
-                            .collect();
-                        set.insert(Value::Tuple(next_elem));
                     }
                 }
-                set
+
+                result_set
             }
 
             Value::PowerSet(value) => {
-                let mut set = FxHashSet::default();
-                let base = value.as_set().clone();
-                let size = TryInto::<i64>::try_into(self.cardinality()).unwrap();
+                let base = value.as_set();
+                let size = 1 << base.len(); // 2^n subsets for a set of size n
+                let mut set = FxHashSet::with_capacity_and_hasher(size, Default::default());
 
                 for i in 0..size {
                     let mut elems = FxHashSet::default();
-                    let mut bits = i;
-                    for elem in &base {
-                        let is_mem = bits % 2 == 1;
-                        bits /= 2;
-                        if is_mem {
+                    for (j, elem) in base.iter().enumerate() {
+                        // membership condition, numerical over the indexes i and j
+                        if (i & (1 << j)) != 0 {
                             elems.insert(elem.clone());
                         }
                     }
-
                     set.insert(Value::Set(elems));
                 }
 
