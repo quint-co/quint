@@ -908,6 +908,7 @@ fn map_get() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))", "3")
 }
 
+#[test]
 fn map_update() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(
         "3.to(5).mapBy(i => 2 * i).set(4, 20)",
@@ -969,9 +970,12 @@ fn set_of_maps() -> Result<(), Box<dyn std::error::Error>> {
 
     assert_from_string(
         "Set(2).setOfMaps(5.to(6))",
-        "Set(Map(Tup(2, 5)), Map(Tup(2, 6))",
+        "Set(Map(Tup(2, 5)), Map(Tup(2, 6)))",
     )?;
-    assert_from_string("2.to(3).setOfMaps(Set(5))", "Set(Map(Tup(2, 5), Tup(3, 5))")?;
+    assert_from_string(
+        "2.to(3).setOfMaps(Set(5))",
+        "Set(Map(Tup(2, 5), Tup(3, 5)))",
+    )?;
     assert_from_string("2.to(4).setOfMaps(5.to(8)).size()", "64")?;
     assert_from_string(
         "2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))",

@@ -23,6 +23,7 @@ pub enum Value<'a> {
     Interval(i64, i64),
     CrossProduct(Vec<Value<'a>>),
     PowerSet(Box<Value<'a>>),
+    MapSet(Box<Value<'a>>, Box<Value<'a>>),
 }
 
 impl Hash for Value<'_> {
@@ -76,6 +77,10 @@ impl Hash for Value<'_> {
             Value::PowerSet(value) => {
                 value.hash(state);
             }
+            Value::MapSet(a, b) => {
+                a.hash(state);
+                b.hash(state);
+            }
         }
     }
 }
@@ -97,6 +102,7 @@ impl PartialEq for Value<'_> {
             }
             (Value::CrossProduct(a), Value::CrossProduct(b)) => *a == *b,
             (Value::PowerSet(a), Value::PowerSet(b)) => *a == *b,
+            (Value::MapSet(a1, b1), Value::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
             (a, b) if a.is_set() && b.is_set() => a.as_set() == b.as_set(),
             _ => false,
         }
@@ -120,6 +126,9 @@ impl<'a> Value<'a> {
             Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
             Value::PowerSet(value) => 2_usize.pow(value.cardinality().try_into().unwrap()),
+            Value::MapSet(domain, range) => range
+                .cardinality()
+                .pow(domain.cardinality().try_into().unwrap()),
         }
     }
 
@@ -135,6 +144,11 @@ impl<'a> Value<'a> {
                 let base_elems = base.as_set();
                 elems.len() <= base_elems.len()
                     && elems.iter().all(|elem| base_elems.contains(elem))
+            }
+            (Value::MapSet(domain, range), Value::Map(map)) => {
+                let map_domain = Value::Set(map.keys().cloned().collect::<FxHashSet<_>>());
+                // Check if domains are equal and all map values are in the range set
+                map_domain == **domain && map.values().all(|v| range.contains(v))
             }
             _ => panic!("contains not implemented for {:?}", self),
         }
@@ -155,6 +169,10 @@ impl<'a> Value<'a> {
                         .all(|(subset, superset)| subset.subseteq(superset))
             }
             (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(superset),
+            (
+                Value::MapSet(subset_domain, subset_range),
+                Value::MapSet(superset_domain, superset_range),
+            ) => subset_domain == superset_domain && subset_range.subseteq(superset_range),
             (subset, superset) => subset.as_set().is_subset(&superset.as_set()),
         }
     }
@@ -183,7 +201,11 @@ impl<'a> Value<'a> {
     pub fn is_set(&self) -> bool {
         matches!(
             self,
-            Value::Set(_) | Value::Interval(_, _) | Value::CrossProduct(_) | Value::PowerSet(_)
+            Value::Set(_)
+                | Value::Interval(_, _)
+                | Value::CrossProduct(_)
+                | Value::PowerSet(_)
+                | Value::MapSet(_, _)
         )
     }
 
@@ -257,6 +279,39 @@ impl<'a> Value<'a> {
 
                 set
             }
+
+            Value::MapSet(domain, range) => {
+                if domain.cardinality() == 0 {
+                    // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
+                    return std::iter::once(Value::Map(FxHashMap::default())).collect();
+                }
+
+                if range.cardinality() == 0 {
+                    // To reflect the behaviour of TLC, an empty range needs to give Set()
+                    return FxHashSet::default();
+                }
+                let domain_vec = domain.as_set().iter().cloned().collect::<Vec<_>>();
+                let range_vec = range.as_set().iter().cloned().collect::<Vec<_>>();
+
+                let nindices = domain_vec.len();
+                let nvalues = range_vec.len();
+
+                let nmaps = nvalues.pow(nindices.try_into().unwrap());
+
+                let mut result_set = FxHashSet::with_capacity_and_hasher(nmaps, Default::default());
+
+                for i in 0..nmaps {
+                    let mut pairs = Vec::with_capacity(nindices);
+                    let mut index = i;
+                    for key in domain_vec.iter() {
+                        pairs.push((key.clone(), range_vec[index % nvalues].clone()));
+                        index /= nvalues;
+                    }
+                    result_set.insert(Value::Map(FxHashMap::from_iter(pairs)));
+                }
+
+                result_set
+            }
             _ => panic!("Expected set"),
         }
     }
@@ -314,7 +369,11 @@ impl fmt::Display for Value<'_> {
             Value::Int(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
             Value::Str(s) => write!(f, "{:?}", s),
-            Value::Set(_) | Value::Interval(_, _) | Value::CrossProduct(_) | Value::PowerSet(_) => {
+            Value::Set(_)
+            | Value::Interval(_, _)
+            | Value::CrossProduct(_)
+            | Value::PowerSet(_)
+            | Value::MapSet(_, _) => {
                 write!(f, "Set(")?;
                 for (i, set) in self.as_set().iter().enumerate() {
                     if i > 0 {

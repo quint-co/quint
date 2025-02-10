@@ -399,8 +399,11 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         //    return (_, args) => right(rv.mkMapSet(args[0], args[1]))
         //
         "setOfMaps" => |_env, args| {
-            unimplemented!()
-        }
+            Ok(Value::MapSet(
+                Box::new(args[0].clone()),
+                Box::new(args[1].clone()),
+            ))
+        },
 
         // TODO fail, assert
         "allListsUpTo" => |_env, args| {
