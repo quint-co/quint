@@ -316,18 +316,17 @@ impl<'a> Value<'a> {
         }
     }
 
-    // TODO: Review when we actually should clone. We're cloning twice when we need to mutate.
-    pub fn as_map(&self) -> FxHashMap<Value<'a>, Value<'a>> {
+    pub fn as_map(&self) -> &FxHashMap<Value<'a>, Value<'a>> {
         match self {
-            Value::Map(map) => map.clone(),
+            Value::Map(map) => map,
             _ => panic!("Expected map"),
         }
     }
 
-    pub fn as_list(&self) -> Vec<Value<'a>> {
+    pub fn as_list(&self) -> &Vec<Value<'a>> {
         match self {
-            Value::Tuple(elems) => elems.clone(),
-            Value::List(elems) => elems.clone(),
+            Value::Tuple(elems) => elems,
+            Value::List(elems) => elems,
             _ => panic!("Expected list, got {:?}", self),
         }
     }
