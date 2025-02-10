@@ -393,11 +393,6 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             let set = args[0].as_set();
             Ok(Value::Map(set.iter().map(|v| v.as_tuple2()).collect()))
         },
-
-        //  case 'setOfMaps':
-        //    // A set of all possible maps with keys and values from the given sets.
-        //    return (_, args) => right(rv.mkMapSet(args[0], args[1]))
-        //
         "setOfMaps" => |_env, args| {
             Ok(Value::MapSet(
                 Box::new(args[0].clone()),
