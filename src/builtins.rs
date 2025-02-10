@@ -92,7 +92,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                 return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
             }
 
-            Ok(list[index as usize].clone()) // Is this cast safe after the check above?
+            Ok(list[index as usize].clone())
         },
         "replaceAt" => |_env, args| {
             let mut list = args[0].as_list().clone();
