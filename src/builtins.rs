@@ -1,6 +1,7 @@
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
+use itertools::Itertools;
 
 pub const LAZY_OPS: [&str; 13] = [
     "assign",
@@ -263,24 +264,22 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             ))
         },
 
-        "get" => {
-            |_env, args| {
-                let map = args[0].as_map();
-                let key = args[1].clone();
-                match map.get(&key) {
-                    Some(value) => Ok(value.clone()),
-                    None => Err(QuintError::new(
-                        "QNT507",
-                        format!(
+        "get" => |_env, args| {
+            let map = args[0].as_map();
+            let key = args[1].clone();
+            match map.get(&key) {
+                Some(value) => Ok(value.clone()),
+                None => Err(QuintError::new(
+                    "QNT507",
+                    format!(
                         "Called 'get' with a non-existing key. Key is {key}. Map has keys: {keys}",
                         key = key,
-                        keys = map.keys().map(|k| k.to_string()).collect::<Vec<_>>().join(", ")
+                        keys = map.keys().map(|k| k.to_string()).join(", ")
                     )
-                        .as_str(),
-                    )),
-                }
+                    .as_str(),
+                )),
             }
-        }
+        },
 
         "set" => |_env, args| {
             let mut map = args[0].as_map().clone();
