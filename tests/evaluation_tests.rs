@@ -9,6 +9,7 @@ use tempfile::NamedTempFile;
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
+          type T = Some(int) | None
           val input = {input}
           val init = true
           val step = true
@@ -872,7 +873,22 @@ fn record_field_update() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("{ a: 2, b: true }.with(\"a\", 3)", "{ a: 3, b: true }")
 }
 
-// TODO variants/match tests
+#[test]
+fn variant_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Some(40 + 2)", "Some(42)")?;
+    assert_from_string("None", "None")
+}
+
+#[test]
+fn variant_match() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("match Some(40 + 2) { Some(x) => x | None => 0 }", "42")?;
+    assert_from_string("match None { Some(x) => x | None => 0 }", "0")
+}
+
+#[test]
+fn variant_match_default() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("match None { Some(x) => x | _ => 3 }", "3")
+}
 
 #[test]
 fn map_by_constructor() -> Result<(), Box<dyn std::error::Error>> {

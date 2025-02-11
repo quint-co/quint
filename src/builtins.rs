@@ -40,7 +40,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                 args.into_iter().map(|kv| kv.as_tuple2()).collect(),
             ))
         },
-        // TODO: variant
+        "variant" => |_env, args| Ok(Value::Variant(args[0].as_str(), Box::new(args[1].clone()))),
         "not" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
         "iff" => |_env, args| Ok(Value::Bool(args[0].as_bool() == args[1].as_bool())),
         "eq" => |_env, args| Ok(Value::Bool(args[0] == args[1])),

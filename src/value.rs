@@ -19,6 +19,7 @@ pub enum Value<'a> {
     Map(FxHashMap<Value<'a>, Value<'a>>),
     List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
+    Variant(String, Box<Value<'a>>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
     CrossProduct(Vec<Value<'a>>),
@@ -65,6 +66,10 @@ impl Hash for Value<'_> {
             Value::Lambda(_, _) => {
                 panic!("Cannot hash lambda");
             }
+            Value::Variant(label, value) => {
+                label.hash(state);
+                value.hash(state);
+            }
             Value::Interval(start, end) => {
                 start.hash(state);
                 end.hash(state);
@@ -97,6 +102,9 @@ impl PartialEq for Value<'_> {
             (Value::Map(a), Value::Map(b)) => *a == *b,
             (Value::List(a), Value::List(b)) => *a == *b,
             (Value::Lambda(_, _), Value::Lambda(_, _)) => panic!("Cannot compare lambdas"),
+            (Value::Variant(a_label, a_value), Value::Variant(b_label, b_value)) => {
+                a_label == b_label && a_value == b_value
+            }
             (Value::Interval(a_start, a_end), Value::Interval(b_start, b_end)) => {
                 a_start == b_start && a_end == b_end
             }
@@ -114,21 +122,18 @@ impl Eq for Value<'_> {}
 impl<'a> Value<'a> {
     pub fn cardinality(&self) -> usize {
         match self {
-            Value::Int(_) => 0,
-            Value::Bool(_) => 0,
-            Value::Str(_) => 0,
             Value::Set(set) => set.len(),
             Value::Tuple(elems) => elems.len(),
             Value::Record(fields) => fields.len(),
             Value::Map(map) => map.len(),
             Value::List(elems) => elems.len(),
-            Value::Lambda(_, _) => 0,
             Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
             Value::PowerSet(value) => 2_usize.pow(value.cardinality().try_into().unwrap()),
             Value::MapSet(domain, range) => range
                 .cardinality()
                 .pow(domain.cardinality().try_into().unwrap()),
+            _ => panic!("Cardinality not implemented for {:?}", self),
         }
     }
 
@@ -354,6 +359,13 @@ impl<'a> Value<'a> {
         }
     }
 
+    pub fn as_variant(&self) -> (&str, &Value<'a>) {
+        match self {
+            Value::Variant(label, value) => (label, value),
+            _ => panic!("Expected variant"),
+        }
+    }
+
     pub fn as_tuple2(&self) -> (Value<'a>, Value<'a>) {
         match &self.as_list()[..] {
             [a, b] => (a.clone(), b.clone()),
@@ -423,6 +435,14 @@ impl fmt::Display for Value<'_> {
                 write!(f, ")")
             }
             Value::Lambda(_, _) => write!(f, "<lambda>"),
+            Value::Variant(label, value) => {
+                if let Value::Tuple(elems) = &**value {
+                  if elems.is_empty() {
+                    return write!(f, "{}", label);
+                  }
+                }
+                write!(f, "{}({:#})", label, value)
+            }
         }
     }
 }
