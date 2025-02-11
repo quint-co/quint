@@ -601,13 +601,11 @@ fn set_fold() -> Result<(), Box<dyn std::error::Error>> {
     // flatten
     let input = "Set(1.to(3), 4.to(5), 6.to(7)).fold(Set(0), (a, s) => a.union(s))";
     assert_from_string(input, "Set(0, 1, 2, 3, 4, 5, 6, 7)")?;
-    assert_from_string("Set().fold(Set(), (a, s) => a.union(s))", "Set()")
+    assert_from_string("Set().fold(Set(), (a, s) => a.union(s))", "Set()")?;
     // product by using a definition
-    //
-    // TODO: let in
-    // let input = "def prod(x, y) = x * y;
-    //    2.to(4).fold(1, prod)";
-    // assert_from_string(input, "24")
+    let input = "def prod(x, y) = x * y;
+       2.to(4).fold(1, prod)";
+    assert_from_string(input, "24")
 }
 
 #[test]
@@ -675,7 +673,7 @@ fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("tuples(2.to(3), Set(), 3.to(5))", "Set()")?;
     assert_from_string(
         "tuples(1.to(2), 2.to(3))",
-        "Set((1, 2), (2, 2), (1, 3), (2, 3))",
+        "Set((1, 2), (1, 3), (2, 2), (2, 3))",
     )?;
     assert_from_string("tuples(1.to(1), 1.to(1), 1.to(1))", "Set((1, 1, 1))")?;
     assert_from_string(
@@ -696,7 +694,7 @@ fn cross_products() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     assert_from_string(
         "Set(tuples(1.to(2), 2.to(3)))",
-        "Set(Set((1, 2), (2, 2), (1, 3), (2, 3)))",
+        "Set(Set((1, 2), (1, 3), (2, 2), (2, 3)))",
     )
 }
 
@@ -706,7 +704,143 @@ fn cross_product_cardinality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("tuples(Set(), 2.to(4)).size()", "0")
 }
 
-// TODO list tests
+#[test]
+fn list_constructors() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 2, 3]", "List(4, 2, 3)")?;
+    assert_from_string("[4, 2, 3, ]", "List(4, 2, 3)")?;
+    assert_from_string("List(4, 2, 3)", "List(4, 2, 3)")
+}
+
+#[test]
+fn list_range() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("range(3, 7)", "List(3, 4, 5, 6)")?;
+    assert_from_string("range(4, 5)", "List(4)")?;
+    assert_from_string("range(3, 3)", "List()")
+}
+
+#[test]
+fn list_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6] == [5 - 1, 5, 6]", "true")?;
+    assert_from_string("[4, 5, 6] == [5, 5, 6]", "false")
+}
+
+#[test]
+fn list_access() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].nth(0)", "4")?;
+    assert_from_string("[4, 5, 6].nth(2)", "6")?;
+    assert_from_string("[4, 5, 6].nth(-1)", "undefined")?;
+    assert_from_string("[4, 5, 6].nth(3)", "undefined")
+}
+
+#[test]
+fn list_length() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].length()", "3")?;
+    assert_from_string("[].length()", "0")
+}
+
+#[test]
+fn list_indices() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].indices()", "Set(0, 1, 2)")?;
+    assert_from_string("[].indices()", "Set()")
+}
+
+#[test]
+fn list_append() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 2, 3].append(5)", "List(4, 2, 3, 5)")?;
+    assert_from_string("[].append(3)", "List(3)")
+}
+
+#[test]
+fn list_concat() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 2, 3].concat([5, 6])", "List(4, 2, 3, 5, 6)")?;
+    assert_from_string("[].concat([3, 4])", "List(3, 4)")?;
+    assert_from_string("[3, 4].concat([])", "List(3, 4)")?;
+    assert_from_string("[].concat([])", "List()")
+}
+
+#[test]
+fn list_head() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].head()", "4")?;
+    assert_from_string("[].head()", "undefined")
+}
+
+#[test]
+fn list_tail() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].tail()", "List(5, 6)")?;
+    assert_from_string("[4].tail()", "List()")?;
+    assert_from_string("[].tail()", "undefined")
+}
+
+#[test]
+fn list_slice() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6, 7].slice(1, 3)", "List(5, 6)")?;
+    assert_from_string("[4, 5, 6, 7].slice(0, 4)", "List(4, 5, 6, 7)")?;
+    assert_from_string("[4, 5, 6, 7].slice(1, 7)", "undefined")?;
+    assert_from_string("[4, 5, 6, 7].slice(-1, 3)", "undefined")?;
+    assert_from_string("[1, 2].slice(1, 2)", "List(2)")?;
+    assert_from_string("[1, 2].slice(1, 1)", "List()")?;
+    assert_from_string("[1, 2].slice(2, 2)", "List()")?;
+    assert_from_string("[1, 2].slice(2, 1)", "undefined")?;
+    assert_from_string("[].slice(0, 0)", "List()")?;
+    assert_from_string("[].slice(1, 0)", "undefined")?;
+    assert_from_string("[].slice(1, 1)", "undefined")?;
+    assert_from_string("[].slice(0, -1)", "undefined")
+}
+
+#[test]
+fn list_replace_at() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[4, 5, 6].replaceAt(0, 10)", "List(10, 5, 6)")?;
+    assert_from_string("[4, 5, 6].replaceAt(2, 10)", "List(4, 5, 10)")?;
+    assert_from_string("[4, 5, 6].replaceAt(4, 10)", "undefined")?;
+    assert_from_string("[4, 5, 6].replaceAt(-1, 10)", "undefined")
+}
+
+#[test]
+fn list_foldl() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[].foldl(3, (i, e) => i + e)", "3")?;
+    assert_from_string("[4, 5, 6, 7].foldl(1, (i, e) => i + e)", "23")?;
+    assert_from_string(
+        "[4, 5, 6, 7].foldl([], (l, e) => l.append(e))",
+        "List(4, 5, 6, 7)",
+    )
+}
+
+#[test]
+fn list_foldr() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[].foldr(3, (e, i) => e + i)", "3")?;
+    assert_from_string("[4, 5, 6, 7].foldr(1, (e, i) => e + i)", "23")?;
+    assert_from_string(
+        "[4, 5, 6, 7].foldr([], (e, l) => l.append(e))",
+        "List(7, 6, 5, 4)",
+    )
+}
+
+#[test]
+fn list_select() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("[].select(e => e % 2 == 0)", "List()")?;
+    assert_from_string("[4, 5, 6].select(e => e % 2 == 0)", "List(4, 6)")
+}
+
+#[test]
+fn all_lists_up_to() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "Set(1, 2, 3).allListsUpTo(2)",
+        "Set(List(), List(1), List(2), List(3), List(1, 1), List(2, 1), List(3, 1), List(1, 2), List(2, 2), List(3, 2), List(1, 3), List(2, 3), List(3, 3))"
+    )?;
+    assert_from_string(
+        "Set(1).allListsUpTo(3)",
+        "Set(List(), List(1), List(1, 1), List(1, 1, 1))",
+    )?;
+    assert_from_string("Set().allListsUpTo(3)", "Set(List())")?;
+    assert_from_string("Set(1).allListsUpTo(0)", "Set(List())")
+}
+
+#[test]
+fn set_get_only_element() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Set(5).getOnlyElement()", "5")?;
+    assert_from_string("Set().getOnlyElement()", "undefined")?;
+    assert_from_string("Set(1, 2).getOnlyElement()", "undefined")
+}
 
 #[test]
 fn record_constructors() -> Result<(), Box<dyn std::error::Error>> {
@@ -739,5 +873,125 @@ fn record_field_update() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // TODO variants/match tests
-// TODO Map tests
+
+#[test]
+fn map_by_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "2.to(4).mapBy(i => 2 * i)",
+        "Map(Tup(2, 4), Tup(3, 6), Tup(4, 8))",
+    )?;
+    assert_from_string(
+        "Set(2.to(4)).mapBy(s => s.size())",
+        "Map(Tup(Set(2, 3, 4), 3))",
+    )
+}
+
+#[test]
+fn set_to_map_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "setToMap(Set((3, 6), (4, 10 - 2), (5, 10)))",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))",
+    )
+}
+
+#[test]
+fn map_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "Map(3 -> 6, 4 -> 10 - 2, 5 -> 10)",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))",
+    )
+}
+
+#[test]
+fn map_get() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("3.to(5).mapBy(i => 2 * i).get(4)", "8")?;
+    assert_from_string("Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))", "3")
+}
+
+#[test]
+fn map_update() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).set(4, 20)",
+        "Map(Tup(3, 6), Tup(4, 20), Tup(5, 10))",
+    )?;
+    assert_from_string("3.to(5).mapBy(i => 2 * i).set(7, 20)", "undefined")
+}
+
+#[test]
+fn map_set_by() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).setBy(4, old => old + 1)",
+        "Map(Tup(3, 6), Tup(4, 9), Tup(5, 10))",
+    )?;
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).setBy(7, old => old + 1)",
+        "undefined",
+    )
+}
+
+#[test]
+fn map_put() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i).put(10, 11)",
+        "Map(Tup(3, 6), Tup(4, 8), Tup(5, 10), Tup(10, 11))",
+    )
+}
+
+#[test]
+fn map_keys() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Set(3, 5, 7).mapBy(i => 2 * i).keys()", "Set(3, 5, 7)")
+}
+
+#[test]
+fn map_equality() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)",
+        "true",
+    )?;
+    assert_from_string(
+        "3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)",
+        "false",
+    )
+}
+
+#[test]
+fn set_of_maps() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("2.to(3).setOfMaps(5.to(6))",
+        "Set(Map(Tup(2, 5), Tup(3, 5)), Map(Tup(2, 6), Tup(3, 5)), Map(Tup(2, 5), Tup(3, 6)), Map(Tup(2, 6), Tup(3, 6)))"
+    )?;
+
+    assert_from_string("2.to(3).setOfMaps(5.to(6)) == Set(Map(2 -> 5, 3 -> 5), Map(2 -> 6, 3 -> 5), Map(2 -> 5, 3 -> 6), Map(2 -> 6, 3 -> 6))",
+        "true"
+    )?;
+
+    assert_from_string("Set().setOfMaps(Set(3, 5))", "Set(Map())")?;
+    assert_from_string("Set().setOfMaps(Set())", "Set(Map())")?;
+    assert_from_string("Set(1, 2).setOfMaps(Set())", "Set()")?;
+
+    assert_from_string(
+        "Set(2).setOfMaps(5.to(6))",
+        "Set(Map(Tup(2, 5)), Map(Tup(2, 6)))",
+    )?;
+    assert_from_string(
+        "2.to(3).setOfMaps(Set(5))",
+        "Set(Map(Tup(2, 5), Tup(3, 5)))",
+    )?;
+    assert_from_string("2.to(4).setOfMaps(5.to(8)).size()", "64")?;
+    assert_from_string(
+        "2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))",
+        "true",
+    )?;
+    assert_from_string(
+        "2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))",
+        "false",
+    )?;
+    assert_from_string(
+        "2.to(3).setOfMaps(5.to(6)).contains(Map(2 -> 5, 3 -> 5))",
+        "true",
+    )?;
+    assert_from_string(
+        "2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))",
+        "true",
+    )
+}
 // TODO Runs and special ops tests
