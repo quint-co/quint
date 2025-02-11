@@ -1,3 +1,4 @@
+use crate::storage::{Storage, VariableValue};
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
@@ -64,26 +65,19 @@ impl<'a> CompiledExprWithLazyArgs<'a> {
 }
 
 #[derive(Default)]
-pub struct Env {
+pub struct Env<'a> {
+    pub var_storage: Storage<'a>,
     // Other params from Typescript implementation, for future reference:
     // rand
     // recorder
     // trace
-    // varStorage
-}
-
-impl Env {
-    pub fn new() -> Self {
-        Self {
-            // TODO
-        }
-    }
 }
 
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
     scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult<'a>>>>>,
+    pub var_storage: Storage<'a>,
     // Other params from Typescript implementation, for future reference:
     // constRegistry: Map<bigint, Register> = new Map()
     // scopedCachedValues: Map<bigint, CachedValue> = new Map()
@@ -108,6 +102,7 @@ impl<'a> Interpreter<'a> {
             table,
             param_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
+            var_storage: Storage::default(),
         }
     }
 
@@ -124,6 +119,38 @@ impl<'a> Interpreter<'a> {
                 ))))
             })
             .clone()
+    }
+
+    pub fn create_var(&mut self, id: QuintId, name: &str) {
+        let key = format!("{}", id); // TODO: include namespaces in the key
+        if self.var_storage.vars.contains_key(&key) {
+            return;
+        }
+
+        // TODO: handle namespaces (already using String as we'll need it later)
+        let var_name = name.to_string();
+        let register_for_current = RefCell::new(VariableValue {
+            name: var_name.clone(),
+            value: None,
+        });
+
+        let register_for_next = RefCell::new(VariableValue {
+            name: var_name,
+            value: None,
+        });
+
+        self.var_storage
+            .vars
+            .insert(key.clone(), register_for_current);
+        self.var_storage.next_vars.insert(key, register_for_next);
+    }
+
+    pub fn get_or_create_var(&mut self, id: QuintId, name: &str) -> &RefCell<VariableValue<'a>> {
+        let key = format!("{}", id); // TODO: include namespaces in the key
+        if !self.var_storage.vars.contains_key(&key) {
+            self.create_var(id, name);
+        }
+        self.var_storage.vars.get(&key).unwrap()
     }
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
@@ -279,7 +306,7 @@ impl<'a> Interpreter<'a> {
 
 pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
     let mut interpreter = Interpreter::new(table);
-    let mut env = Env::new();
+    let mut env = Env::default();
 
     interpreter.eval(&mut env, expr)
 }
