@@ -48,7 +48,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 return Ok(Value::Bool(true));
             }
 
-            return args[1].execute(env);
+            args[1].execute(env)
         },
         "ite" => |env, args| {
             let cond = args[0].execute(env).map(|c| c.as_bool())?;
@@ -94,7 +94,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
     // To be used at `item` and `nth` which share the same behavior
-    fn at_index<'b>(args: Vec<Value<'b>>) -> Result<Value<'b>, QuintError> {
+    fn at_index(args: Vec<Value<'_>>) -> Result<Value<'_>, QuintError> {
         let list = args[0].as_list();
         let index = args[1].as_int();
 

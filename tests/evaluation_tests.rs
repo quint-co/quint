@@ -166,7 +166,6 @@ fn integer_inequality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("4 != 4", "false")
 }
 
-// Booleans
 #[test]
 fn boolean_literals() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false", "false")?;
