@@ -1,5 +1,3 @@
-use std::array::from_ref;
-
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
@@ -95,6 +93,18 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 }
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
+    // To be used at `item` and `nth` which share the same behavior
+    fn at_index<'b>(args: Vec<Value<'b>>) -> Result<Value<'b>, QuintError> {
+        let list = args[0].as_list();
+        let index = args[1].as_int();
+
+        if index < 0 || index >= list.len().try_into().unwrap() {
+            return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
+        }
+
+        Ok(list[index as usize].clone())
+    }
+
     CompiledExprWithArgs::from_fn(match op {
         "Set" => |_env, args| Ok(Value::Set(args.into_iter().collect())),
         "Rec" => |_env, args| {
@@ -146,7 +156,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "igt" => |_env, args| Ok(Value::Bool(args[0].as_int() > args[1].as_int())),
         "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
 
-        "item" => |_env, args| Ok(args[0].as_list()[args[1].as_int() as usize - 1].clone()),
+        "item" => |_env, args| at_index(args),
         "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
 
         "range" => |_env, args| {
@@ -154,17 +164,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             let end = args[1].as_int();
             Ok(Value::List((start..end).map(Value::Int).collect()))
         },
-        "nth" => |_env, args| {
-            let list = args[0].as_list();
-            let index = args[1].as_int();
-
-            // TODO: extract into function to use it in `item` as well
-            if index < 0 || index >= list.len().try_into().unwrap() {
-                return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
-            }
-
-            Ok(list[index as usize].clone())
-        },
+        "nth" => |_env, args| at_index(args),
         "replaceAt" => |_env, args| {
             let mut list = args[0].as_list().clone();
             let index = args[1].as_int();
