@@ -179,7 +179,6 @@ fn not() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("not(true)", "false")
 }
 
-#[ignore]
 #[test]
 fn and() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false and false", "false")?;
@@ -190,14 +189,12 @@ fn and() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("and(true, true, true)", "true")
 }
 
-#[ignore]
 #[test]
 fn and_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false and (1/0 == 0)", "false")?;
     assert_from_string("true and (1/0 == 0)", "undefined")
 }
 
-#[ignore]
 #[test]
 fn or() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false or false", "false")?;
@@ -209,14 +206,12 @@ fn or() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("or(false, false, false)", "false")
 }
 
-#[ignore]
 #[test]
 fn or_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false or (1/0 == 0)", "undefined")?;
     assert_from_string("true or (1/0 == 0)", "true")
 }
 
-#[ignore]
 #[test]
 fn implies() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false implies false", "true")?;
@@ -225,7 +220,6 @@ fn implies() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("true implies true", "true")
 }
 
-#[ignore]
 #[test]
 fn implies_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false implies (1/0 == 0)", "true")?;

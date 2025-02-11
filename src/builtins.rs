@@ -1,3 +1,5 @@
+use std::array::from_ref;
+
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
@@ -21,6 +23,35 @@ pub const LAZY_OPS: [&str; 13] = [
 
 pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
     CompiledExprWithLazyArgs::from_fn(match op {
+        "and" => |env, args| {
+            // Short-circuit logical AND
+            for arg in args {
+                let result = arg.execute(env)?;
+                if !result.as_bool() {
+                    return Ok(Value::Bool(false));
+                }
+            }
+            Ok(Value::Bool(true))
+        },
+        "or" => |env, args| {
+            // Short-circuit logical OR
+            for arg in args {
+                let result = arg.execute(env)?;
+                if result.as_bool() {
+                    return Ok(Value::Bool(true));
+                }
+            }
+            Ok(Value::Bool(false))
+        },
+        "implies" => |env, args| {
+            // Short-circuit logical implication
+            let lhs = args[0].execute(env)?;
+            if !lhs.as_bool() {
+                return Ok(Value::Bool(true));
+            }
+
+            return args[1].execute(env);
+        },
         "ite" => |env, args| {
             let cond = args[0].execute(env).map(|c| c.as_bool())?;
             if cond {
