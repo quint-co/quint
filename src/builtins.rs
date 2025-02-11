@@ -94,10 +94,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
     // To be used at `item` and `nth` which share the same behavior
-    fn at_index(args: Vec<Value<'_>>) -> Result<Value<'_>, QuintError> {
-        let list = args[0].as_list();
-        let index = args[1].as_int();
-
+    fn at_index<'b>(list: &[Value<'b>], index: i64) -> Result<Value<'b>, QuintError> {
         if index < 0 || index >= list.len().try_into().unwrap() {
             return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
         }
@@ -156,7 +153,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "igt" => |_env, args| Ok(Value::Bool(args[0].as_int() > args[1].as_int())),
         "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
 
-        "item" => |_env, args| at_index(args),
+        "item" => |_env, args| at_index(args[0].as_list(), args[1].as_int() - 1),
         "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
 
         "range" => |_env, args| {
@@ -164,7 +161,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             let end = args[1].as_int();
             Ok(Value::List((start..end).map(Value::Int).collect()))
         },
-        "nth" => |_env, args| at_index(args),
+        "nth" => |_env, args| at_index(args[0].as_list(), args[1].as_int()),
         "replaceAt" => |_env, args| {
             let mut list = args[0].as_list().clone();
             let index = args[1].as_int();

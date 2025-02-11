@@ -437,9 +437,9 @@ impl fmt::Display for Value<'_> {
             Value::Lambda(_, _) => write!(f, "<lambda>"),
             Value::Variant(label, value) => {
                 if let Value::Tuple(elems) = &**value {
-                  if elems.is_empty() {
-                    return write!(f, "{}", label);
-                  }
+                    if elems.is_empty() {
+                        return write!(f, "{}", label);
+                    }
                 }
                 write!(f, "{}({:#})", label, value)
             }
