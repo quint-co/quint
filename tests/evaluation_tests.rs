@@ -256,7 +256,6 @@ fn boolean_inequality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("true  != false", "true")
 }
 
-#[ignore]
 #[test]
 fn if_then_else() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("if (false) false else true", "true")?;

@@ -19,8 +19,48 @@ pub const LAZY_OPS: [&str; 13] = [
     "expect",
 ];
 
-pub fn compile_lazy_op(_op: &str) -> CompiledExprWithLazyArgs {
-    unimplemented!();
+pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
+    CompiledExprWithLazyArgs::from_fn(match op {
+        "ite" => |env, args| {
+            let cond = args[0].execute(env).map(|c| c.as_bool())?;
+            if cond {
+                args[1].execute(env)
+            } else {
+                args[2].execute(env)
+            }
+        },
+        "matchVariant" => |env, args| {
+            let matched_expr = args[0].execute(env)?;
+            let (variant_label, variant_value) = matched_expr.as_variant();
+            let cases = &args[1..];
+
+            let matching_case = cases.chunks_exact(2).find_map(|chunk| match chunk {
+                [case_label_expr, case_elim_expr] => {
+                    let case_label = case_label_expr.execute(env).ok()?;
+                    if case_label.as_str() == variant_label || case_label.as_str() == "_" {
+                        Some(case_elim_expr)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            });
+
+            match matching_case {
+                Some(case_elim_expr) => {
+                    let case_elim = case_elim_expr.execute(env)?;
+                    case_elim.clone().as_closure()(env, vec![variant_value.clone()])
+                }
+                None => Err(QuintError::new(
+                    "QNT505",
+                    &format!("No match for variant {}", variant_label),
+                )),
+            }
+        },
+        _ => {
+            panic!("Unknown lazy op: {op}")
+        }
+    })
 }
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
@@ -442,7 +482,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
         // TODO: extra ops, (q::debug ...)
         _ => {
-            panic!("Unknown eager op: {op}");
+            panic!("Unknown eager op: {op}")
         }
     })
 }

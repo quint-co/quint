@@ -54,6 +54,10 @@ impl<'a> CompiledExprWithLazyArgs<'a> {
         CompiledExprWithLazyArgs(Rc::new(closure))
     }
 
+    pub fn from_fn(function: fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a>) -> Self {
+        CompiledExprWithLazyArgs(Rc::new(function))
+    }
+
     pub fn execute(&self, env: &mut Env, args: &Vec<CompiledExpr<'a>>) -> EvalResult<'a> {
         self.0(env, args)
     }
