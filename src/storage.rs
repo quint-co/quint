@@ -1,19 +1,20 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::value::Value;
+use crate::{ir::QuintError, value::Value};
 
+#[derive(Clone)]
 pub struct VariableValue<'a> {
     pub name: String,
     pub value: Option<Value<'a>>,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Storage<'a> {
-    pub vars: HashMap<String, RefCell<VariableValue<'a>>>,
-    pub next_vars: HashMap<String, RefCell<VariableValue<'a>>>,
+    pub vars: HashMap<String, Rc<RefCell<VariableValue<'a>>>>,
+    pub next_vars: HashMap<String, Rc<RefCell<VariableValue<'a>>>>,
 }
 
-impl Storage<'_> {
+impl<'a> Storage<'a> {
     pub fn shift_vars(&mut self) {
         for (key, register_for_current) in self.vars.iter() {
             if let Some(register_for_next) = self.next_vars.get(key) {
@@ -24,3 +25,10 @@ impl Storage<'_> {
         }
     }
 }
+
+// pub fn initial_register_value(name: &str) -> Result<Value, QuintError> {
+//     Rc::new(RefCell::new(Err(QuintError::new(
+//         "QNT502",
+//         format!("Variable {} not  bset", name).as_str(),
+//     ))))
+// }

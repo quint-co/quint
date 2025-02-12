@@ -46,6 +46,22 @@ pub enum LookupDefinition {
     Param(QuintLambdaParameter),
 }
 
+impl LookupDefinition {
+    pub fn id(&self) -> QuintId {
+        match self {
+            LookupDefinition::Definition(def) => def.id(),
+            LookupDefinition::Param(param) => param.id,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        match self {
+            LookupDefinition::Definition(def) => def.name(),
+            LookupDefinition::Param(param) => param.name.as_str(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintModule {
     pub name: String,
@@ -91,8 +107,39 @@ pub enum QuintDef {
     #[serde(rename = "const")]
     QuintConst {
         id: QuintId,
+        name: String,
         // We don't care about the constant definition
     },
+}
+
+impl QuintDef {
+    pub fn id(&self) -> QuintId {
+        match self {
+            Self::QuintOpDef(def) => def.id,
+            Self::QuintVar { id, name: _ } => *id,
+            Self::QuintAssume {
+                id,
+                name: _,
+                assumption: _,
+            } => *id,
+            Self::QuintTypeDef { id } => *id,
+            Self::QuintConst { id, name: _ } => *id,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        match self {
+            Self::QuintOpDef(def) => def.name.as_str(),
+            Self::QuintVar { id: _, name } => name.as_str(),
+            Self::QuintAssume {
+                id: _,
+                name,
+                assumption: _,
+            } => name.as_str(),
+            Self::QuintTypeDef { id: _ } => panic!("There shouldn't be any typedefs here"),
+            Self::QuintConst { id: _, name } => name.as_str(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -150,6 +197,32 @@ pub enum QuintEx {
         opdef: Box<OpDef>,
         expr: Box<QuintEx>,
     },
+}
+
+impl QuintEx {
+    pub fn id(&self) -> QuintId {
+        match self {
+            Self::QuintName { id, name: _ } => *id,
+            Self::QuintBool { id, value: _ } => *id,
+            Self::QuintInt { id, value: _ } => *id,
+            Self::QuintStr { id, value: _ } => *id,
+            Self::QuintApp {
+                id,
+                opcode: _,
+                args: _,
+            } => *id,
+            Self::QuintLambda {
+                id,
+                params: _,
+                expr: _,
+            } => *id,
+            Self::QuintLet {
+                id,
+                opdef: _,
+                expr: _,
+            } => *id,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

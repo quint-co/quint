@@ -64,13 +64,18 @@ impl<'a> CompiledExprWithLazyArgs<'a> {
     }
 }
 
-#[derive(Default)]
 pub struct Env<'a> {
     pub var_storage: Storage<'a>,
     // Other params from Typescript implementation, for future reference:
     // rand
     // recorder
     // trace
+}
+
+impl<'a> Env<'a> {
+    pub fn new(var_storage: Storage<'a>) -> Self {
+        Self { var_storage }
+    }
 }
 
 pub struct Interpreter<'a> {
@@ -85,7 +90,6 @@ pub struct Interpreter<'a> {
     // memo: Map<bigint, EvalFunction> = new Map()
     // memoByInstance: Map<bigint, Map<bigint, EvalFunction>> = new Map()
     // namespaces: List<string> = List()
-    // varStorage: VarStorage
 }
 
 fn builtin_value(name: &str) -> CompiledExpr {
@@ -121,7 +125,7 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    pub fn create_var(&mut self, id: QuintId, name: &str) {
+    pub fn create_var(&mut self, id: &QuintId, name: &str) {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if self.var_storage.vars.contains_key(&key) {
             return;
@@ -129,15 +133,15 @@ impl<'a> Interpreter<'a> {
 
         // TODO: handle namespaces (already using String as we'll need it later)
         let var_name = name.to_string();
-        let register_for_current = RefCell::new(VariableValue {
+        let register_for_current = Rc::new(RefCell::new(VariableValue {
             name: var_name.clone(),
             value: None,
-        });
+        }));
 
-        let register_for_next = RefCell::new(VariableValue {
+        let register_for_next = Rc::new(RefCell::new(VariableValue {
             name: var_name,
             value: None,
-        });
+        }));
 
         self.var_storage
             .vars
@@ -145,12 +149,28 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    pub fn get_or_create_var(&mut self, id: QuintId, name: &str) -> &RefCell<VariableValue<'a>> {
+    pub fn get_or_create_var(
+        &mut self,
+        id: &QuintId,
+        name: &str,
+    ) -> Rc<RefCell<VariableValue<'a>>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if !self.var_storage.vars.contains_key(&key) {
             self.create_var(id, name);
         }
-        self.var_storage.vars.get(&key).unwrap()
+        self.var_storage
+            .vars
+            .entry(key)
+            .or_insert(Rc::new(RefCell::new(VariableValue {
+                name: name.to_string(),
+                value: None,
+            })))
+            .clone()
+    }
+
+    pub fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableValue<'a>>> {
+        let key = format!("{}", id); // TODO: include namespaces in the key
+        self.var_storage.next_vars.get(&key).unwrap().clone()
     }
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
@@ -180,6 +200,15 @@ impl<'a> Interpreter<'a> {
                         *cached = Some(result.clone());
                         result
                     }
+                })
+            }
+            LookupDefinition::Definition(QuintDef::QuintVar { id, name }) => {
+                let register = self.get_or_create_var(id, name);
+                CompiledExpr::new(move |_| {
+                    register.borrow().clone().value.ok_or(QuintError::new(
+                        "QNT502",
+                        format!("Variable {} not set", name).as_str(),
+                    ))
                 })
             }
             LookupDefinition::Param(p) => {
@@ -241,6 +270,24 @@ impl<'a> Interpreter<'a> {
 
             QuintEx::QuintApp { id, opcode, args } => {
                 let compiled_args = args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
+
+                if opcode == "assign" {
+                    // Assign is too special, so we handle it separately.
+                    // We need to build things under the context of the variable being assigned,
+                    // as it may come from an instance, and that changed everything
+                    // TODO: deal with context (namespaces)
+                    let var_def = self.table.get(&args[0].id()).unwrap();
+                    self.create_var(&var_def.id(), var_def.name());
+                    let register = self.get_next_var(&var_def.id());
+                    let expr = self.compile(&args[1]);
+
+                    return CompiledExpr::new(move |env| {
+                        let value = expr.execute(env)?;
+                        register.borrow_mut().value = Some(value.clone());
+                        Ok(Value::Bool(true))
+                    });
+                }
+
                 if LAZY_OPS.contains(&opcode.as_str()) {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
@@ -306,7 +353,7 @@ impl<'a> Interpreter<'a> {
 
 pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
     let mut interpreter = Interpreter::new(table);
-    let mut env = Env::default();
+    let mut env = Env::new(interpreter.var_storage.clone());
 
     interpreter.eval(&mut env, expr)
 }

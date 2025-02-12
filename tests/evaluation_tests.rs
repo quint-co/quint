@@ -1,10 +1,6 @@
-use quint_simulator::{
-    evaluator::run,
-    ir::{QuintDef, QuintOutput},
-};
-use std::io::Write;
-use std::process::Command;
-use tempfile::NamedTempFile;
+use quint_simulator::evaluator::run;
+
+mod helpers;
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
@@ -16,40 +12,11 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         }}"
     );
 
-    // A unique filename so multiple tests can run in parallel
-    let mut file = NamedTempFile::new()?;
+    let parsed = helpers::parse(quint_content)?;
+    let input_def = helpers::find_definition_by_name(&parsed, "input")?;
 
-    file.write_all(quint_content.as_bytes())?;
-
-    let output = Command::new("quint")
-        .arg("compile")
-        .arg(file.path())
-        .stdout(std::process::Stdio::piped())
-        .output()
-        .unwrap();
-
-    let serialized_quint = String::from_utf8(output.stdout).unwrap();
-
-    let parsed: QuintOutput = serde_json::from_str(serialized_quint.as_str()).unwrap();
-
-    // Evaluate the expression inside the second declaration
-    let def = parsed.modules[0]
-        .declarations
-        .iter()
-        .find_map(|d| {
-            if let QuintDef::QuintOpDef(def) = d {
-                if def.name == "input" {
-                    Some(def)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .unwrap();
-
-    let value = run(&parsed.table, &def.expr);
+    // Evaluate the expression inside the 'input' declaration
+    let value = run(&parsed.table, &input_def.expr);
     match value {
         Ok(v) => assert_eq!(
             v.to_string(),

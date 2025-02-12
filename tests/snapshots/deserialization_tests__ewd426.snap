@@ -390,9 +390,11 @@ table:
   5:
     kind: const
     id: 4
+    name: K
   6:
     kind: const
     id: 2
+    name: N
   10:
     kind: def
     id: 10
@@ -406,6 +408,7 @@ table:
   11:
     kind: const
     id: 2
+    name: N
   12:
     kind: def
     id: 12
@@ -684,6 +687,7 @@ table:
   69:
     kind: const
     id: 4
+    name: K
   71:
     id: 50
     name: nodes_78
@@ -791,9 +795,11 @@ table:
   81:
     kind: const
     id: 2
+    name: N
   84:
     kind: const
     id: 4
+    name: K
   90:
     kind: def
     id: 90
@@ -950,6 +956,7 @@ table:
   98:
     kind: const
     id: 2
+    name: N
   101:
     kind: var
     id: 16
@@ -1358,6 +1365,7 @@ table:
   124:
     kind: const
     id: 2
+    name: N
   127:
     id: 121
     name: nodes_133
