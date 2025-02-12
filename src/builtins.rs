@@ -50,6 +50,18 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
             args[1].execute(env)
         },
+        "actionAll" => move |env, args| {
+            let next_vars_snapshot = env.var_storage.clone().take_snapshot();
+
+            for action in args {
+                let result = action.execute(env)?;
+                if !result.as_bool() {
+                    env.var_storage.restore(next_vars_snapshot);
+                    return Ok(Value::Bool(false));
+                }
+            }
+            Ok(Value::Bool(true))
+        },
         "ite" => |env, args| {
             let cond = args[0].execute(env).map(|c| c.as_bool())?;
             if cond {
