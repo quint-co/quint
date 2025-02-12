@@ -13,6 +13,15 @@
     "title": "Writing specifications"
   },
   "lessons": "Interactive lessons",
+  "blogposts": "Blog Posts",
+  "cheatsheet-link": {
+    "title": "Cheatsheet ↵",
+    "href": "/quint-cheatsheet.pdf"
+  },
+  "examples-link": {
+    "title": "Examples ↵",
+    "href": "https://github.com/informalsystems/quint/tree/main/examples"
+  },
   "-- Using specifications": {
     "type": "separator",
     "title": "Using specifications"
@@ -39,9 +48,5 @@
     "title": "Design & Development"
   },
   "design-principles": "",
-  "architecture-decision-records": "Architecture Decision Records (ADRs)",
-  "rfcs": "Requests for Comments (RFCs)",
-  "stories": "User Stories",
-  "previews": "Tool previews",
-  "blogposts": "Blog Posts"
+  "development-docs": "Development Docs"
 }
