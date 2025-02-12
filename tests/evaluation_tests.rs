@@ -9,6 +9,7 @@ use tempfile::NamedTempFile;
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
+          type T = Some(int) | None
           val input = {input}
           val init = true
           val step = true
@@ -165,7 +166,6 @@ fn integer_inequality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("4 != 4", "false")
 }
 
-// Booleans
 #[test]
 fn boolean_literals() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false", "false")?;
@@ -178,7 +178,6 @@ fn not() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("not(true)", "false")
 }
 
-#[ignore]
 #[test]
 fn and() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false and false", "false")?;
@@ -189,14 +188,12 @@ fn and() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("and(true, true, true)", "true")
 }
 
-#[ignore]
 #[test]
 fn and_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false and (1/0 == 0)", "false")?;
     assert_from_string("true and (1/0 == 0)", "undefined")
 }
 
-#[ignore]
 #[test]
 fn or() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false or false", "false")?;
@@ -208,14 +205,12 @@ fn or() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("or(false, false, false)", "false")
 }
 
-#[ignore]
 #[test]
 fn or_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false or (1/0 == 0)", "undefined")?;
     assert_from_string("true or (1/0 == 0)", "true")
 }
 
-#[ignore]
 #[test]
 fn implies() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false implies false", "true")?;
@@ -224,7 +219,6 @@ fn implies() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("true implies true", "true")
 }
 
-#[ignore]
 #[test]
 fn implies_short_circuit() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("false implies (1/0 == 0)", "true")?;
@@ -255,7 +249,6 @@ fn boolean_inequality() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("true  != false", "true")
 }
 
-#[ignore]
 #[test]
 fn if_then_else() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("if (false) false else true", "true")?;
@@ -872,7 +865,22 @@ fn record_field_update() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string("{ a: 2, b: true }.with(\"a\", 3)", "{ a: 3, b: true }")
 }
 
-// TODO variants/match tests
+#[test]
+fn variant_constructor() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Some(40 + 2)", "Some(42)")?;
+    assert_from_string("None", "None")
+}
+
+#[test]
+fn variant_match() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("match Some(40 + 2) { Some(x) => x | None => 0 }", "42")?;
+    assert_from_string("match None { Some(x) => x | None => 0 }", "0")
+}
+
+#[test]
+fn variant_match_default() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("match None { Some(x) => x | _ => 3 }", "3")
+}
 
 #[test]
 fn map_by_constructor() -> Result<(), Box<dyn std::error::Error>> {

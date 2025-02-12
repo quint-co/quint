@@ -19,11 +19,89 @@ pub const LAZY_OPS: [&str; 13] = [
     "expect",
 ];
 
-pub fn compile_lazy_op(_op: &str) -> CompiledExprWithLazyArgs {
-    unimplemented!();
+pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
+    CompiledExprWithLazyArgs::from_fn(match op {
+        "and" => |env, args| {
+            // Short-circuit logical AND
+            for arg in args {
+                let result = arg.execute(env)?;
+                if !result.as_bool() {
+                    return Ok(Value::Bool(false));
+                }
+            }
+            Ok(Value::Bool(true))
+        },
+        "or" => |env, args| {
+            // Short-circuit logical OR
+            for arg in args {
+                let result = arg.execute(env)?;
+                if result.as_bool() {
+                    return Ok(Value::Bool(true));
+                }
+            }
+            Ok(Value::Bool(false))
+        },
+        "implies" => |env, args| {
+            // Short-circuit logical implication
+            let lhs = args[0].execute(env)?;
+            if !lhs.as_bool() {
+                return Ok(Value::Bool(true));
+            }
+
+            args[1].execute(env)
+        },
+        "ite" => |env, args| {
+            let cond = args[0].execute(env).map(|c| c.as_bool())?;
+            if cond {
+                args[1].execute(env)
+            } else {
+                args[2].execute(env)
+            }
+        },
+        "matchVariant" => |env, args| {
+            let matched_expr = args[0].execute(env)?;
+            let (variant_label, variant_value) = matched_expr.as_variant();
+            let cases = &args[1..];
+
+            let matching_case = cases.chunks_exact(2).find_map(|chunk| match chunk {
+                [case_label_expr, case_elim_expr] => {
+                    let case_label = case_label_expr.execute(env).ok()?;
+                    if case_label.as_str() == variant_label || case_label.as_str() == "_" {
+                        Some(case_elim_expr)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            });
+
+            match matching_case {
+                Some(case_elim_expr) => {
+                    let case_elim = case_elim_expr.execute(env)?;
+                    case_elim.clone().as_closure()(env, vec![variant_value.clone()])
+                }
+                None => Err(QuintError::new(
+                    "QNT505",
+                    &format!("No match for variant {}", variant_label),
+                )),
+            }
+        },
+        _ => {
+            panic!("Unknown lazy op: {op}")
+        }
+    })
 }
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
+    // To be used at `item` and `nth` which share the same behavior
+    fn at_index<'b>(list: &[Value<'b>], index: i64) -> Result<Value<'b>, QuintError> {
+        if index < 0 || index >= list.len().try_into().unwrap() {
+            return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
+        }
+
+        Ok(list[index as usize].clone())
+    }
+
     CompiledExprWithArgs::from_fn(match op {
         "Set" => |_env, args| Ok(Value::Set(args.into_iter().collect())),
         "Rec" => |_env, args| {
@@ -40,7 +118,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                 args.into_iter().map(|kv| kv.as_tuple2()).collect(),
             ))
         },
-        // TODO: variant
+        "variant" => |_env, args| Ok(Value::Variant(args[0].as_str(), Box::new(args[1].clone()))),
         "not" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
         "iff" => |_env, args| Ok(Value::Bool(args[0].as_bool() == args[1].as_bool())),
         "eq" => |_env, args| Ok(Value::Bool(args[0] == args[1])),
@@ -75,7 +153,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "igt" => |_env, args| Ok(Value::Bool(args[0].as_int() > args[1].as_int())),
         "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
 
-        "item" => |_env, args| Ok(args[0].as_list()[args[1].as_int() as usize - 1].clone()),
+        "item" => |_env, args| at_index(args[0].as_list(), args[1].as_int() - 1),
         "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
 
         "range" => |_env, args| {
@@ -83,17 +161,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             let end = args[1].as_int();
             Ok(Value::List((start..end).map(Value::Int).collect()))
         },
-        "nth" => |_env, args| {
-            let list = args[0].as_list();
-            let index = args[1].as_int();
-
-            // TODO: extract into function to use it in `item` as well
-            if index < 0 || index >= list.len().try_into().unwrap() {
-                return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
-            }
-
-            Ok(list[index as usize].clone())
-        },
+        "nth" => |_env, args| at_index(args[0].as_list(), args[1].as_int()),
         "replaceAt" => |_env, args| {
             let mut list = args[0].as_list().clone();
             let index = args[1].as_int();
@@ -442,7 +510,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
         // TODO: extra ops, (q::debug ...)
         _ => {
-            panic!("Unknown eager op: {op}");
+            panic!("Unknown eager op: {op}")
         }
     })
 }
