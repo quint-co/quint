@@ -89,3 +89,48 @@ fn action_all_test() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
+    let quint_content = "module main {
+          var x: int
+          val input = x < 3
+          action init = any {
+            x' = 1,
+            x' = 2,
+          }
+          action step = any {
+            x' = x * 3,
+            x' = x * 4,
+          }
+        }"
+    .to_string();
+
+    let parsed = helpers::parse(quint_content)?;
+    let init_def = helpers::find_definition_by_name(&parsed, "init")?;
+    let step_def = helpers::find_definition_by_name(&parsed, "step")?;
+    let input_def = helpers::find_definition_by_name(&parsed, "input")?;
+
+    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut env = Env::new(interpreter.var_storage.clone());
+
+    let init = interpreter.eval(&mut env, &init_def.expr);
+    assert_eq!(init.unwrap(), Value::Bool(true));
+
+    interpreter.shift();
+
+    // After shifting, the value of x < 3 should be true
+    let input = interpreter.eval(&mut env, &input_def.expr);
+    assert_eq!(input.unwrap(), Value::Bool(true));
+
+    let step = interpreter.eval(&mut env, &step_def.expr);
+    assert_eq!(step.unwrap(), Value::Bool(true));
+
+    interpreter.shift();
+
+    // After shifting, the value of x < 3 should be false
+    let input = interpreter.eval(&mut env, &input_def.expr);
+    assert_eq!(input.unwrap(), Value::Bool(false));
+
+    Ok(())
+}
