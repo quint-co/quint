@@ -1,9 +1,5 @@
 # REPL: Read-eval-print loop for Quint
 
-| Revision | Date       | Author           |
-| -------: | :--------: | :--------------- |
-| 4        | 07.03.2022 | Igor Konnov      |
-
 <!-- 
 This ADR is written as a literate programming document, preprocessed by:
 
