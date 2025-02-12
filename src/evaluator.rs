@@ -1,4 +1,4 @@
-use crate::storage::{Storage, VariableValue};
+use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
@@ -134,12 +134,12 @@ impl<'a> Interpreter<'a> {
 
         // TODO: handle namespaces (already using String as we'll need it later)
         let var_name = name.to_string();
-        let register_for_current = Rc::new(RefCell::new(VariableValue {
+        let register_for_current = Rc::new(RefCell::new(VariableRegister {
             name: var_name.clone(),
             value: None,
         }));
 
-        let register_for_next = Rc::new(RefCell::new(VariableValue {
+        let register_for_next = Rc::new(RefCell::new(VariableRegister {
             name: var_name,
             value: None,
         }));
@@ -150,7 +150,7 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    fn get_or_create_var(&mut self, id: &QuintId, name: &str) -> Rc<RefCell<VariableValue<'a>>> {
+    fn get_or_create_var(&mut self, id: &QuintId, name: &str) -> Rc<RefCell<VariableRegister<'a>>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if !self.var_storage.vars.contains_key(&key) {
             self.create_var(id, name);
@@ -158,14 +158,14 @@ impl<'a> Interpreter<'a> {
         self.var_storage
             .vars
             .entry(key)
-            .or_insert(Rc::new(RefCell::new(VariableValue {
+            .or_insert(Rc::new(RefCell::new(VariableRegister {
                 name: name.to_string(),
                 value: None,
             })))
             .clone()
     }
 
-    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableValue<'a>>> {
+    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableRegister<'a>>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         self.var_storage.next_vars.get(&key).unwrap().clone()
     }

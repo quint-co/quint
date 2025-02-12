@@ -3,15 +3,15 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::value::Value;
 
 #[derive(Clone)]
-pub struct VariableValue<'a> {
+pub struct VariableRegister<'a> {
     pub name: String,
     pub value: Option<Value<'a>>,
 }
 
 #[derive(Default, Clone)]
 pub struct Storage<'a> {
-    pub vars: HashMap<String, Rc<RefCell<VariableValue<'a>>>>,
-    pub next_vars: HashMap<String, Rc<RefCell<VariableValue<'a>>>>,
+    pub vars: HashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub next_vars: HashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
 }
 
 impl Storage<'_> {
