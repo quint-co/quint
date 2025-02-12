@@ -12,7 +12,8 @@ fn assign_test() -> Result<(), Box<dyn std::error::Error>> {
           val input = x 
           action init = x' = 0
           action step = x' = x + 1
-        }".to_string();
+        }"
+    .to_string();
 
     let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
