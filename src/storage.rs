@@ -25,10 +25,3 @@ impl Storage<'_> {
         }
     }
 }
-
-// pub fn initial_register_value(name: &str) -> Result<Value, QuintError> {
-//     Rc::new(RefCell::new(Err(QuintError::new(
-//         "QNT502",
-//         format!("Variable {} not  bset", name).as_str(),
-//     ))))
-// }
