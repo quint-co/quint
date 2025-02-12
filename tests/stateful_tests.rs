@@ -6,15 +6,13 @@ use quint_simulator::{
 mod helpers;
 
 #[test]
-fn stateful_test() -> Result<(), Box<dyn std::error::Error>> {
-    let quint_content = format!(
-        "module main {{
+fn assign_test() -> Result<(), Box<dyn std::error::Error>> {
+    let quint_content = "module main {
           var x: int
           val input = x 
           action init = x' = 0
           action step = x' = x + 1
-        }}"
-    );
+        }".to_string();
 
     let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
@@ -23,9 +21,24 @@ fn stateful_test() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut interpreter = Interpreter::new(&parsed.table);
     let mut env = Env::new(interpreter.var_storage.clone());
-    let v = interpreter.eval(&mut env, &init_def.expr);
 
-    assert_eq!(v.unwrap(), Value::Bool(true));
+    let init = interpreter.eval(&mut env, &init_def.expr);
+    assert_eq!(init.unwrap(), Value::Bool(true));
+
+    interpreter.shift();
+
+    // After shifting, the value of x should be 0
+    let input = interpreter.eval(&mut env, &input_def.expr);
+    assert_eq!(input.unwrap(), Value::Int(0));
+
+    let step = interpreter.eval(&mut env, &step_def.expr);
+    assert_eq!(step.unwrap(), Value::Bool(true));
+
+    interpreter.shift();
+
+    // After shifting, the value of x should be 1
+    let input = interpreter.eval(&mut env, &input_def.expr);
+    assert_eq!(input.unwrap(), Value::Int(1));
 
     Ok(())
 }

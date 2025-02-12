@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{ir::QuintError, value::Value};
+use crate::value::Value;
 
 #[derive(Clone)]
 pub struct VariableValue<'a> {
@@ -14,7 +14,7 @@ pub struct Storage<'a> {
     pub next_vars: HashMap<String, Rc<RefCell<VariableValue<'a>>>>,
 }
 
-impl<'a> Storage<'a> {
+impl Storage<'_> {
     pub fn shift_vars(&mut self) {
         for (key, register_for_current) in self.vars.iter() {
             if let Some(register_for_next) = self.next_vars.get(key) {

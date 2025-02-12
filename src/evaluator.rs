@@ -110,10 +110,11 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    pub fn get_or_create_param(
-        &mut self,
-        param: &QuintLambdaParameter,
-    ) -> Rc<RefCell<EvalResult<'a>>> {
+    pub fn shift(&mut self) {
+        self.var_storage.shift_vars();
+    }
+
+    fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult<'a>>> {
         self.param_registry
             .entry(param.id)
             .or_insert_with(|| {
@@ -125,7 +126,7 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    pub fn create_var(&mut self, id: &QuintId, name: &str) {
+    fn create_var(&mut self, id: &QuintId, name: &str) {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if self.var_storage.vars.contains_key(&key) {
             return;
@@ -149,11 +150,7 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    pub fn get_or_create_var(
-        &mut self,
-        id: &QuintId,
-        name: &str,
-    ) -> Rc<RefCell<VariableValue<'a>>> {
+    fn get_or_create_var(&mut self, id: &QuintId, name: &str) -> Rc<RefCell<VariableValue<'a>>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if !self.var_storage.vars.contains_key(&key) {
             self.create_var(id, name);
@@ -168,7 +165,7 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    pub fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableValue<'a>>> {
+    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableValue<'a>>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         self.var_storage.next_vars.get(&key).unwrap().clone()
     }
