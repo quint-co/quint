@@ -1,6 +1,6 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use crate::value::Value;
+use crate::{ir::FxHashMap, value::Value};
 
 #[derive(Clone)]
 pub struct VariableRegister<'a> {
@@ -10,15 +10,15 @@ pub struct VariableRegister<'a> {
 
 #[derive(Clone)]
 pub struct Snapshot<'a> {
-    pub next_vars: HashMap<String, VariableRegister<'a>>,
+    pub next_vars: FxHashMap<String, VariableRegister<'a>>,
     // nondet_picks
     // action_taken
 }
 
 #[derive(Default, Clone)]
 pub struct Storage<'a> {
-    pub vars: HashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
-    pub next_vars: HashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub next_vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
 }
 
 impl<'a> Storage<'a> {
