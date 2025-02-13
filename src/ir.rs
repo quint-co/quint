@@ -116,28 +116,20 @@ impl QuintDef {
     pub fn id(&self) -> QuintId {
         match self {
             Self::QuintOpDef(def) => def.id,
-            Self::QuintVar { id, name: _ } => *id,
-            Self::QuintAssume {
-                id,
-                name: _,
-                assumption: _,
-            } => *id,
+            Self::QuintVar { id, .. } => *id,
+            Self::QuintAssume { id, .. } => *id,
             Self::QuintTypeDef { id } => *id,
-            Self::QuintConst { id, name: _ } => *id,
+            Self::QuintConst { id, .. } => *id,
         }
     }
 
     pub fn name(&self) -> &str {
         match self {
             Self::QuintOpDef(def) => def.name.as_str(),
-            Self::QuintVar { id: _, name } => name.as_str(),
-            Self::QuintAssume {
-                id: _,
-                name,
-                assumption: _,
-            } => name.as_str(),
-            Self::QuintTypeDef { id: _ } => panic!("There shouldn't be any typedefs here"),
-            Self::QuintConst { id: _, name } => name.as_str(),
+            Self::QuintVar { name, .. } => name.as_str(),
+            Self::QuintAssume { name, .. } => name.as_str(),
+            Self::QuintTypeDef { .. } => panic!("There shouldn't be any typedefs here"),
+            Self::QuintConst { name, .. } => name.as_str(),
         }
     }
 }
@@ -202,25 +194,13 @@ pub enum QuintEx {
 impl QuintEx {
     pub fn id(&self) -> QuintId {
         match self {
-            Self::QuintName { id, name: _ } => *id,
-            Self::QuintBool { id, value: _ } => *id,
-            Self::QuintInt { id, value: _ } => *id,
-            Self::QuintStr { id, value: _ } => *id,
-            Self::QuintApp {
-                id,
-                opcode: _,
-                args: _,
-            } => *id,
-            Self::QuintLambda {
-                id,
-                params: _,
-                expr: _,
-            } => *id,
-            Self::QuintLet {
-                id,
-                opdef: _,
-                expr: _,
-            } => *id,
+            Self::QuintName { id, .. }
+            | Self::QuintBool { id, .. }
+            | Self::QuintInt { id, .. }
+            | Self::QuintStr { id, .. }
+            | Self::QuintApp { id, .. }
+            | Self::QuintLambda { id, .. }
+            | Self::QuintLet { id, .. } => *id,
         }
     }
 }
