@@ -9,6 +9,7 @@ modules:
         id: 11
       - kind: const
         id: 2
+        name: N
       - kind: var
         id: 23
         name: tcolor
@@ -1289,9 +1290,11 @@ table:
   3:
     kind: const
     id: 2
+    name: N
   25:
     kind: const
     id: 2
+    name: N
   29:
     kind: def
     id: 29
@@ -1865,6 +1868,7 @@ table:
   94:
     kind: const
     id: 2
+    name: N
   97:
     kind: var
     id: 21
