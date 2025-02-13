@@ -13,6 +13,9 @@ macro_rules! run_test {
         let mut interpreter = Interpreter::new(&parsed.table);
         let mut env = Env::new(interpreter.var_storage.clone());
 
+        // Set a specific seed so different runs generate the same result
+        env.rand.set_state((123_456, 0));
+
         let init = interpreter.eval(&mut env, &init_def.expr);
         assert_eq!(init.unwrap(), Value::Bool(true));
 
@@ -66,7 +69,7 @@ fn action_all_test() -> Result<(), Box<dyn std::error::Error>> {
 fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = "module main {
           var x: int
-          val input = x < 3
+          val input = x
           action init = any {
             x' = 1,
             x' = 2,
@@ -77,5 +80,8 @@ fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
           }
         }";
 
-    run_test!(quint_content, [Value::Bool(true), Value::Bool(false)])
+    run_test!(
+        quint_content,
+        [Value::Int(2), Value::Int(8), Value::Int(24)]
+    )
 }

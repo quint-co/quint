@@ -1,3 +1,4 @@
+use crate::rand::Rand;
 use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
@@ -66,15 +67,18 @@ impl<'a> CompiledExprWithLazyArgs<'a> {
 
 pub struct Env<'a> {
     pub var_storage: Storage<'a>,
+    pub rand: Rand,
     // Other params from Typescript implementation, for future reference:
-    // rand
     // recorder
     // trace
 }
 
 impl<'a> Env<'a> {
     pub fn new(var_storage: Storage<'a>) -> Self {
-        Self { var_storage }
+        Self {
+            var_storage,
+            rand: Rand::new(),
+        }
     }
 }
 

@@ -3,8 +3,6 @@ use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
 use itertools::Itertools;
 
-use rand::seq::SliceRandom;
-
 pub const LAZY_OPS: [&str; 13] = [
     "assign",
     "actionAny",
@@ -54,11 +52,17 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         },
         "actionAny" => |env, args| {
             let next_vars_snapshot = env.var_storage.clone().take_snapshot();
-            // TODO: use squares rng from env
-            let mut rng = rand::rng();
 
             let mut indices: Vec<usize> = (0..args.len()).collect();
-            indices.shuffle(&mut rng);
+            // Fisher-Yates shuffle algorithm using our randomizer
+            for i in (0..indices.len()).rev() {
+                let j: usize = env
+                    .rand
+                    .next((i + 1).try_into().unwrap())
+                    .try_into()
+                    .unwrap();
+                indices.swap(i, j);
+            }
 
             for i in indices {
                 let result = args[i].execute(env)?;
