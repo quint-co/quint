@@ -29,16 +29,9 @@ pub fn find_definition_by_name<'a>(
     let input_def = parsed.modules[0]
         .declarations
         .iter()
-        .find_map(|d| {
-            if let QuintDef::QuintOpDef(def) = d {
-                if def.name == name {
-                    Some(def)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
+        .find_map(|d| match d {
+            QuintDef::QuintOpDef(def) if def.name == name => Some(def),
+            _ => None,
         })
         .ok_or("Input definition not found")?;
     Ok(input_def)
