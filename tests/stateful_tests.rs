@@ -9,11 +9,10 @@ mod helpers;
 fn assign_test() -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = "module main {
           var x: int
-          val input = x 
+          val input = x
           action init = x' = 0
           action step = x' = x + 1
-        }"
-    .to_string();
+        }";
 
     let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
@@ -58,8 +57,7 @@ fn action_all_test() -> Result<(), Box<dyn std::error::Error>> {
             x' = x + 1,
             y' = y * 2,
           }
-        }"
-    .to_string();
+        }";
 
     let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
@@ -103,8 +101,7 @@ fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
             x' = x * 3,
             x' = x * 4,
           }
-        }"
-    .to_string();
+        }";
 
     let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
