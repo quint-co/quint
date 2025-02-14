@@ -1,12 +1,12 @@
 use crate::value::Value;
 
 pub trait Picker<'a> {
-    fn pick<T: Iterator<Item = usize>>(self, indexes: T) -> Value<'a>;
-    fn bounds(self) -> Vec<usize>;
+    fn pick<T: Iterator<Item = usize>>(&self, indexes: T) -> Value<'a>;
+    fn bounds(&self) -> Vec<usize>;
 }
 
 impl<'a> Picker<'a> for Value<'a> {
-    fn pick<T: Iterator<Item = usize>>(self, mut indexes: T) -> Value<'a> {
+    fn pick<T: Iterator<Item = usize>>(&self, mut indexes: T) -> Value<'a> {
         let index = indexes
             .next()
             .expect("Internal error: too few positions. Report a bug");
@@ -21,7 +21,7 @@ impl<'a> Picker<'a> for Value<'a> {
         }
     }
 
-    fn bounds(self) -> Vec<usize> {
+    fn bounds(&self) -> Vec<usize> {
         match self {
             Value::Set(set) => vec![set.len()],
             Value::Interval(_, _) => vec![self.cardinality()],
