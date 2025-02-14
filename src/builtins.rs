@@ -3,6 +3,8 @@ use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
 use itertools::Itertools;
 
+use rand::seq::SliceRandom;
+
 pub const LAZY_OPS: [&str; 13] = [
     "assign",
     "actionAny",
@@ -49,6 +51,39 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             }
 
             args[1].execute(env)
+        },
+        "actionAny" => |env, args| {
+            let next_vars_snapshot = env.var_storage.clone().take_snapshot();
+            // TODO: use squares rng from env
+            let mut rng = rand::rng();
+
+            let mut indices: Vec<usize> = (0..args.len()).collect();
+            indices.shuffle(&mut rng);
+
+            for i in indices {
+                let result = args[i].execute(env)?;
+
+                if result.as_bool() {
+                    // Found an enabled action - record it and return true
+                    // TODO record
+                    return Ok(Value::Bool(true));
+                }
+
+                env.var_storage.restore(next_vars_snapshot.clone());
+            }
+            Ok(Value::Bool(false))
+        },
+        "actionAll" => |env, args| {
+            let next_vars_snapshot = env.var_storage.clone().take_snapshot();
+
+            for action in args {
+                let result = action.execute(env)?;
+                if !result.as_bool() {
+                    env.var_storage.restore(next_vars_snapshot);
+                    return Ok(Value::Bool(false));
+                }
+            }
+            Ok(Value::Bool(true))
         },
         "ite" => |env, args| {
             let cond = args[0].execute(env).map(|c| c.as_bool())?;
