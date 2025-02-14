@@ -32,7 +32,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn take_snapshot(self) -> Snapshot<'a> {
+    pub fn take_snapshot(&self) -> Snapshot<'a> {
         Snapshot {
             next_vars: self
                 .next_vars

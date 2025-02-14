@@ -17,7 +17,7 @@ fn set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x
         }";
 
-    let parsed = helpers::parse(&quint_content)?;
+    let parsed = helpers::parse(quint_content)?;
     let init_def = helpers::find_definition_by_name(&parsed, "init")?;
     let input_def = helpers::find_definition_by_name(&parsed, "input")?;
 
