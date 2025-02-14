@@ -1,5 +1,6 @@
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
+use crate::picker::Picker;
 use crate::value::{FxHashSet, Value};
 use itertools::Itertools;
 
@@ -124,6 +125,23 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     &format!("No match for variant {}", variant_label),
                 )),
             }
+        },
+        "oneOf" => |env, args| {
+            // TODO: too much cloning here, we can probably do better
+            let set = args[0].execute(env)?;
+            let bounds = set.clone().bounds();
+            let mut positions = Vec::with_capacity(bounds.len());
+            for bound in bounds {
+                if bound == 0 {
+                    return Err(QuintError::new("QNT509", "Applied oneOf on an empty set"));
+                }
+
+                // TODO: The old simulator generates a limited bound for infinite sets
+
+                positions.push(env.rand.next(bound.try_into().unwrap()).try_into().unwrap())
+            }
+
+            Ok(set.pick(positions.iter().cloned()))
         },
         _ => {
             panic!("Unknown lazy op: {op}")

@@ -14,7 +14,7 @@ macro_rules! run_test {
         let mut env = Env::new(interpreter.var_storage.clone());
 
         // Set a specific seed so different runs generate the same result
-        env.rand.set_state((123_456, 0));
+        env.rand.set_state(123_456);
 
         let init = interpreter.eval(&mut env, &init_def.expr);
         assert_eq!(init.unwrap(), Value::Bool(true));
@@ -82,6 +82,6 @@ fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
 
     run_test!(
         quint_content,
-        [Value::Int(2), Value::Int(8), Value::Int(24)]
+        [Value::Int(2), Value::Int(8), Value::Int(32)]
     )
 }

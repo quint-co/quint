@@ -15,23 +15,22 @@ impl Default for Rand {
 impl Rand {
     pub fn new() -> Self {
         Self {
-            counter: 0,
-            key: rand::rng().random(),
+            counter: rand::rng().random(),
+            key: squares_rnd::KEY,
         }
     }
 
     pub fn next(&mut self, bound: u64) -> u64 {
         let number = rand64(self.key, self.counter);
-        self.counter += 1;
+        self.counter = self.counter.saturating_add(1);
         number % bound
     }
 
-    pub fn get_state(&self) -> (u64, u64) {
-        (self.key, self.counter)
+    pub fn get_state(&self) -> u64 {
+        self.counter
     }
 
-    pub fn set_state(&mut self, (key, counter): (u64, u64)) {
-        self.key = key;
+    pub fn set_state(&mut self, counter: u64) {
         self.counter = counter;
     }
 }
