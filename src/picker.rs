@@ -1,4 +1,5 @@
 use crate::value::Value;
+use std::convert::TryInto;
 
 pub trait Picker<'a> {
     fn pick<T: Iterator<Item = usize>>(&self, indexes: T) -> Value<'a>;
@@ -13,7 +14,7 @@ impl<'a> Picker<'a> for Value<'a> {
         match self {
             Value::Set(set) => set.iter().collect::<Vec<_>>()[index].clone(),
             Value::Interval(start, end) => {
-                let idx: i64 = index.try_into().unwrap();
+                let idx: i64 = <usize as TryInto<i64>>::try_into(index).unwrap();
                 assert!(idx <= end - start);
                 Value::Int(start + idx)
             }

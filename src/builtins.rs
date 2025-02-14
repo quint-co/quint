@@ -123,9 +123,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             }
         },
         "oneOf" => |env, args| {
-            // TODO: too much cloning here, we can probably do better
             let set = args[0].execute(env)?;
-            let bounds = set.clone().bounds();
+            let bounds = set.bounds();
             let mut positions = Vec::with_capacity(bounds.len());
             for bound in bounds {
                 if bound == 0 {
@@ -137,7 +136,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 positions.push(env.rand.next(bound))
             }
 
-            Ok(set.pick(positions.iter().cloned()))
+            Ok(set.pick(positions.into_iter()))
         },
         _ => {
             panic!("Unknown lazy op: {op}")
