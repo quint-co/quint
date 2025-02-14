@@ -3,7 +3,7 @@ use std::process::Command;
 use std::{error::Error, io::Write};
 use tempfile::NamedTempFile;
 
-pub fn parse(quint_content: String) -> Result<QuintOutput, Box<dyn Error>> {
+pub fn parse(quint_content: &str) -> Result<QuintOutput, Box<dyn Error>> {
     let mut temp_file = NamedTempFile::new()?;
     temp_file.write_all(quint_content.as_bytes())?;
     let output = Command::new("quint")
