@@ -57,11 +57,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let mut indices: Vec<usize> = (0..args.len()).collect();
             // Fisher-Yates shuffle algorithm using our randomizer
             for i in (0..indices.len()).rev() {
-                let j: usize = env
-                    .rand
-                    .next((i + 1).try_into().unwrap())
-                    .try_into()
-                    .unwrap();
+                let j: usize = env.rand.next(i + 1);
                 indices.swap(i, j);
             }
 
@@ -138,7 +134,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
                 // TODO: The old simulator generates a limited bound for infinite sets
 
-                positions.push(env.rand.next(bound.try_into().unwrap()).try_into().unwrap())
+                positions.push(env.rand.next(bound))
             }
 
             Ok(set.pick(positions.iter().cloned()))

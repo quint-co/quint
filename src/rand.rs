@@ -20,10 +20,12 @@ impl Rand {
         }
     }
 
-    pub fn next(&mut self, bound: u64) -> u64 {
+    pub fn next(&mut self, bound: usize) -> usize {
+        let bound64: u64 = bound.try_into().unwrap();
         let number = rand64(self.key, self.counter);
         self.counter = self.counter.saturating_add(1);
-        number % bound
+
+        (number % bound64).try_into().unwrap()
     }
 
     pub fn get_state(&self) -> u64 {
