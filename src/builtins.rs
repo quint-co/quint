@@ -3,8 +3,6 @@ use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
 use itertools::Itertools;
 
-use rand::seq::SliceRandom;
-
 pub const LAZY_OPS: [&str; 13] = [
     "assign",
     "actionAny",
@@ -54,11 +52,13 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         },
         "actionAny" => |env, args| {
             let next_vars_snapshot = env.var_storage.clone().take_snapshot();
-            // TODO: use squares rng from env
-            let mut rng = rand::rng();
 
             let mut indices: Vec<usize> = (0..args.len()).collect();
-            indices.shuffle(&mut rng);
+            // Fisher-Yates shuffle algorithm using our randomizer
+            for i in (0..indices.len()).rev() {
+                let j: usize = env.rand.next(i + 1);
+                indices.swap(i, j);
+            }
 
             for i in indices {
                 let result = args[i].execute(env)?;
@@ -120,6 +120,22 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     &format!("No match for variant {}", variant_label),
                 )),
             }
+        },
+        "oneOf" => |env, args| {
+            let set = args[0].execute(env)?;
+            let bounds = set.bounds();
+            let mut positions = Vec::with_capacity(bounds.len());
+            for bound in bounds {
+                if bound == 0 {
+                    return Err(QuintError::new("QNT509", "Applied oneOf on an empty set"));
+                }
+
+                // TODO: The old simulator generates a limited bound for infinite sets
+
+                positions.push(env.rand.next(bound))
+            }
+
+            Ok(set.pick(positions.into_iter()))
         },
         _ => {
             panic!("Unknown lazy op: {op}")
