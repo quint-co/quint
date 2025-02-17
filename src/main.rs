@@ -1,19 +1,14 @@
-use quint_simulator::{
-    evaluator::run,
-    ir::{QuintDef, QuintOutput},
-};
-use std::fs::File;
+use quint_simulator::helpers;
+use std::{env, path::Path};
 
 fn main() {
-    let file = File::open("fixtures/simple.json").unwrap();
-    let parsed: QuintOutput = serde_json::from_reader(file).unwrap();
-    println!("{:?}", parsed);
+    let args: Vec<String> = env::args().collect();
 
-    if let QuintDef::QuintOpDef(def) = &parsed.modules[0].declarations[1] {
-        let value = run(&parsed.table, &def.expr);
-        match value {
-            Ok(value) => println!("{:#}", value),
-            Err(err) => println!("Error: {:#?}", err),
-        }
-    };
+    let file_path: &Path = Path::new(&args[1]);
+
+    println!("Parsing file: {:?}", file_path);
+    let parsed = helpers::parse_from_path(file_path).unwrap();
+    println!("Starting simulation");
+    let result = parsed.simulate("init", "step", "inv", 10, 10_000);
+    println!("{:?}", result)
 }

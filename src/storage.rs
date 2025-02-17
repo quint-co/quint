@@ -19,6 +19,7 @@ pub struct Snapshot<'a> {
 pub struct Storage<'a> {
     pub vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
     pub next_vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub caches_to_clear: Vec<Rc<RefCell<Option<Value<'a>>>>>,
 }
 
 impl<'a> Storage<'a> {
@@ -30,6 +31,7 @@ impl<'a> Storage<'a> {
                 current.value = next.value.take();
             }
         }
+        self.clear_caches();
     }
 
     pub fn take_snapshot(&self) -> Snapshot<'a> {
@@ -48,5 +50,11 @@ impl<'a> Storage<'a> {
                 v.borrow_mut().value = next.value.clone();
             }
         });
+    }
+
+    pub fn clear_caches(&mut self) {
+        for cache in self.caches_to_clear.iter() {
+            *cache.borrow_mut() = None;
+        }
     }
 }

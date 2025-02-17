@@ -94,11 +94,10 @@ pub struct Interpreter<'a> {
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
     scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult<'a>>>>>,
     pub var_storage: Storage<'a>,
+    memo: FxHashMap<QuintId, CompiledExpr<'a>>,
     // Other params from Typescript implementation, for future reference:
     // constRegistry: Map<bigint, Register> = new Map()
-    // scopedCachedValues: Map<bigint, CachedValue> = new Map()
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
-    // memo: Map<bigint, EvalFunction> = new Map()
     // memoByInstance: Map<bigint, Map<bigint, EvalFunction>> = new Map()
     // namespaces: List<string> = List()
 }
@@ -118,6 +117,7 @@ impl<'a> Interpreter<'a> {
             param_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
             var_storage: Storage::default(),
+            memo: FxHashMap::default(),
         }
     }
 
@@ -182,33 +182,36 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
-        match def {
+        if self.memo.contains_key(&def.id()) {
+            return self.memo.get(&def.id()).unwrap().clone();
+        }
+        let compiled_def = match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => {
                 if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
                     // TODO: We don't really have memoization in rust yet
-                    return self.compile(&op.expr);
+                    self.compile(&op.expr)
+                } else {
+                    let cached_value = {
+                        let cached = self.scoped_cached_values.get(&op.id).unwrap();
+                        Rc::clone(cached)
+                    };
+
+                    let compiled_expr = self.compile(&op.expr);
+                    CompiledExpr::new(move |env| {
+                        let mut cached = cached_value.borrow_mut();
+                        if let Some(value) = cached.as_ref() {
+                            // If the value is already cached, return it
+                            value.clone()
+                        } else {
+                            let result = compiled_expr.execute(env);
+                            *cached = Some(result.clone());
+                            result
+                        }
+                    })
                 }
-
-                let cached_value = {
-                    let cached = self.scoped_cached_values.get(&op.id).unwrap();
-                    Rc::clone(cached)
-                };
-
-                let compiled_expr = self.compile(&op.expr);
-                CompiledExpr::new(move |env| {
-                    let mut cached = cached_value.borrow_mut();
-                    if let Some(value) = cached.as_ref() {
-                        // If the value is already cached, return it
-                        value.clone()
-                    } else {
-                        let result = compiled_expr.execute(env);
-                        *cached = Some(result.clone());
-                        result
-                    }
-                })
             }
             LookupDefinition::Definition(QuintDef::QuintVar { id, name }) => {
                 let register = self.get_or_create_var(id, name);
@@ -224,6 +227,36 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
             _ => unimplemented!(),
+        };
+
+        // For top-level value definitions, we can cache the resulting value,
+        // as long as we are careful with state changes.
+        match can_cache(def) {
+            Cache::None => {
+                self.memo.insert(def.id(), compiled_def.clone());
+                compiled_def
+            }
+            cache => {
+                let cached_value = Rc::new(RefCell::new(None));
+                if cache == Cache::ForState {
+                    // This definition may use variables, so we need to clear the cache when they change
+                    self.var_storage.caches_to_clear.push(cached_value.clone());
+                }
+                // Wrap the evaluation function with caching
+                let wrapped_expr = CompiledExpr::new(move |env| {
+                    let mut cached = cached_value.borrow_mut();
+                    if let Some(value) = cached.as_ref() {
+                        // If the value is already cached, return it
+                        Ok(value.clone())
+                    } else {
+                        let result = compiled_def.execute(env)?;
+                        *cached = Some(result.clone());
+                        Ok(result)
+                    }
+                });
+                self.memo.insert(def.id(), wrapped_expr.clone());
+                wrapped_expr
+            }
         }
     }
 
@@ -357,6 +390,26 @@ impl<'a> Interpreter<'a> {
     pub fn eval(&mut self, env: &mut Env, expr: &'a QuintEx) -> EvalResult<'a> {
         self.compile(expr).execute(env)
     }
+}
+
+#[derive(Debug, PartialEq)]
+enum Cache {
+    None,
+    ForState,
+    Forever,
+}
+
+fn can_cache(def: &LookupDefinition) -> Cache {
+    if let LookupDefinition::Definition(QuintDef::QuintOpDef(d)) = def {
+        if d.qualifier == OpQualifier::Val && d.depth.is_none_or(|x| x == 0) {
+            return Cache::ForState;
+        }
+        if d.qualifier == OpQualifier::PureVal && d.depth.is_none_or(|x| x == 0) {
+            return Cache::Forever;
+        }
+    }
+
+    Cache::None
 }
 
 pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
