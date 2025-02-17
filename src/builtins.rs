@@ -1,6 +1,5 @@
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
-use crate::picker::Picker;
 use crate::value::{FxHashSet, Value};
 use itertools::Itertools;
 

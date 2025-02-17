@@ -1,13 +1,8 @@
 use crate::value::Value;
 use std::convert::TryInto;
 
-pub trait Picker<'a> {
-    fn pick<T: Iterator<Item = usize>>(&self, indexes: T) -> Value<'a>;
-    fn bounds(&self) -> Vec<usize>;
-}
-
-impl<'a> Picker<'a> for Value<'a> {
-    fn pick<T: Iterator<Item = usize>>(&self, mut indexes: T) -> Value<'a> {
+impl<'a> Value<'a> {
+    pub fn pick<T: Iterator<Item = usize>>(&self, mut indexes: T) -> Value<'a> {
         let index = indexes
             .next()
             .expect("Internal error: too few positions. Report a bug");
@@ -22,7 +17,7 @@ impl<'a> Picker<'a> for Value<'a> {
         }
     }
 
-    fn bounds(&self) -> Vec<usize> {
+    pub fn bounds(&self) -> Vec<usize> {
         match self {
             Value::Set(set) => vec![set.len()],
             Value::Interval(_, _) => vec![self.cardinality()],
