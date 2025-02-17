@@ -8,7 +8,7 @@ use std::process::Command;
 use std::process::Stdio;
 use tempfile::NamedTempFile;
 
-fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn run_in_rust(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
@@ -53,13 +53,13 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     let value = run(&parsed.table, &def.expr);
     match value {
         Ok(v) => assert!(v.to_string().contains("Set")),
-        Err(_) => assert_eq!(expected, "undefined"),
+        Err(_) => assert!(false),
     };
 
     Ok(())
 }
 
-fn assert_with_quint(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn run_in_quint_repl(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
@@ -90,10 +90,6 @@ fn assert_with_quint(input: &str, expected: &str) -> Result<(), Box<dyn std::err
     let output = quint.wait_with_output().unwrap();
     let result = std::str::from_utf8(&output.stdout).unwrap();
     assert!(result.contains("Set"));
-    // match value {
-    //     Ok(v) => assert_eq!(v.to_string(), expected),
-    //     Err(_) => assert_eq!(expected, "undefined"),
-    // };
 
     Ok(())
 }
@@ -102,11 +98,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("tuples");
     group.sample_size(10);
     let tuples_expression = "tuples(1.to(100), 1.to(100), 1.to(100)).map(((a, b, c)) => a + b)";
-    group.bench_function("rust", |b| {
-        b.iter(|| assert_from_string(tuples_expression, "Set()"))
-    });
+    group.bench_function("rust", |b| b.iter(|| run_in_rust(tuples_expression)));
     group.bench_function("typescript", |b| {
-        b.iter(|| assert_with_quint(tuples_expression, "Set()"))
+        b.iter(|| run_in_quint_repl(tuples_expression))
     });
     group.finish();
 }

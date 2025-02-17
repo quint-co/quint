@@ -16,7 +16,12 @@ itertools = "0.14.0"
 insta = {version = "1.22.0", features = ["yaml"]}
 tempfile = "3.16.0"
 criterion = "0.5"
+serde_path_to_error = "0.1"
 
 [[bench]]
 name = "tuples"
+harness = false
+
+[[bench]]
+name = "simulation"
 harness = false

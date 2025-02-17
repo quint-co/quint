@@ -1,4 +1,4 @@
-use quint_simulator::ir::{OpDef, QuintDef, QuintOutput};
+use quint_simulator::ir::QuintOutput;
 use std::process::Command;
 use std::{error::Error, io::Write};
 use tempfile::NamedTempFile;
@@ -20,19 +20,4 @@ pub fn parse(quint_content: &str) -> Result<QuintOutput, Box<dyn Error>> {
     let serialized_quint = String::from_utf8(output.stdout)?;
     let parsed: QuintOutput = serde_json::from_str(&serialized_quint)?;
     Ok(parsed)
-}
-
-pub fn find_definition_by_name<'a>(
-    parsed: &'a QuintOutput,
-    name: &'a str,
-) -> Result<&'a OpDef, Box<dyn Error>> {
-    let input_def = parsed.modules[0]
-        .declarations
-        .iter()
-        .find_map(|d| match d {
-            QuintDef::QuintOpDef(def) if def.name == name => Some(def),
-            _ => None,
-        })
-        .ok_or("Input definition not found")?;
-    Ok(input_def)
 }
