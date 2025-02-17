@@ -20,6 +20,13 @@ impl Rand {
         }
     }
 
+    pub fn with_state(state: u64) -> Self {
+        Self {
+            counter: state,
+            key: squares_rnd::KEY,
+        }
+    }
+
     pub fn next(&mut self, bound: usize) -> usize {
         let bound64: u64 = bound.try_into().unwrap();
         let number = rand64(self.key, self.counter);
@@ -30,9 +37,5 @@ impl Rand {
 
     pub fn get_state(&self) -> u64 {
         self.counter
-    }
-
-    pub fn set_state(&mut self, counter: u64) {
-        self.counter = counter;
     }
 }

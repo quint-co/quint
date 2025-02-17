@@ -80,6 +80,13 @@ impl<'a> Env<'a> {
             rand: Rand::new(),
         }
     }
+
+    pub fn with_rand_state(var_storage: Storage<'a>, state: u64) -> Self {
+        Self {
+            var_storage,
+            rand: Rand::with_state(state),
+        }
+    }
 }
 
 pub struct Interpreter<'a> {

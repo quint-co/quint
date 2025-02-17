@@ -11,10 +11,8 @@ macro_rules! run_test {
         let init_def = helpers::find_definition_by_name(&parsed, "init")?;
 
         let mut interpreter = Interpreter::new(&parsed.table);
-        let mut env = Env::new(interpreter.var_storage.clone());
-
         // Set a specific seed so different runs generate the same result
-        env.rand.set_state(123_456);
+        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 123_456);
 
         let init = interpreter.eval(&mut env, &init_def.expr);
         assert_eq!(init.unwrap(), Value::Bool(true));
