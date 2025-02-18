@@ -4,14 +4,14 @@
     "title": "Introduction"
   },
   "why": "Why?",
+  "what-does-quint-do": "What does Quint do?",
   "getting-started": "Getting Started",
-  "quint-basics": "Quint Basics",
-  "language-basics": "Language Basics",
   "faq": "FAQ",
   "-- Writing specifications": {
     "type": "separator",
     "title": "Writing specifications"
   },
+  "language-basics": "Language Basics",
   "lessons": "Interactive lessons",
   "blogposts": "Blog Posts",
   "cheatsheet-link": {
