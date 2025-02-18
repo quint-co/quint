@@ -23,7 +23,9 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
       - name: Install cargo-critertion
-        uses: taiki-e/install-action@cargo-criterion
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-criterion
 
       - name: Build benchmarks
         run: cargo build --release --benches
