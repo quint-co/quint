@@ -3,12 +3,14 @@ use std::error::Error;
 use fxhash::FxBuildHasher;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
 pub type QuintId = u64;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
+#[error("[{code}] {message}")]
 pub struct QuintError {
     pub code: String,
     pub message: String,
