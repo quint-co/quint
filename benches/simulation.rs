@@ -21,10 +21,10 @@ fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 fn run_in_quint(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let quint = Command::new("quint")
         .arg("run")
+        .arg(file_path)
         .args(["--max-samples", "1000"])
         .args(["--max-steps", "10"])
         .args(["--invariant", "inv"])
-        .arg(file_path)
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
