@@ -1,7 +1,10 @@
+use std::path::Path;
+use std::process::Command;
+use std::process::Stdio;
+use std::time::Duration;
+
 use criterion::{criterion_group, criterion_main, Criterion};
 use quint_simulator::helpers;
-use std::process::Command;
-use std::{path::Path, process::Stdio};
 
 fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse_from_path(file_path)?;
@@ -33,6 +36,9 @@ fn run_in_quint(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("tictactoe");
     group.sample_size(10);
+    group.measurement_time(Duration::from_secs(180));
+    group.warm_up_time(Duration::from_secs(30));
+
     let path = Path::new("fixtures/tictactoe.qnt");
     group.bench_function("rust", |b| b.iter(|| run_in_rust(path)));
     group.bench_function("typescript", |b| b.iter(|| run_in_quint(path)));
