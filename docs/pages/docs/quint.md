@@ -1,8 +1,4 @@
-# quint: Tool for the Quint specification language
-
-| Revision | Date       | Author                  |
-|---------:|:----------:|:------------------------|
-|        9 | 2024-06-26 | Igor Konnov, Shon Feder, Gabriela Moreira |
+# Quint CLI: Tool for the Quint specification language
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
