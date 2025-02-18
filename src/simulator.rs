@@ -19,13 +19,14 @@ impl QuintOutput {
         invariant_name: &str,
         steps: usize,
         samples: usize,
+        seed: u64,
     ) -> Result<SimulationResult, QuintError> {
         let init_def = self.find_definition_by_name(init_name).unwrap();
         let step_def = self.find_definition_by_name(step_name).unwrap();
         let invariant_def = self.find_definition_by_name(invariant_name).unwrap();
 
         let mut interpreter = Interpreter::new(&self.table);
-        let mut env = Env::new(interpreter.var_storage.clone());
+        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
 
         let init = interpreter.compile(&init_def.expr);
         let step = interpreter.compile(&step_def.expr);
