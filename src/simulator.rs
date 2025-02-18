@@ -31,12 +31,12 @@ impl QuintOutput {
         let step = interpreter.compile(&step_def.expr);
         let invariant = interpreter.compile(&invariant_def.expr);
 
-        for _sample_number in 1..samples {
+        for _sample_number in 1..=samples {
             if !init.execute(&mut env)?.as_bool() {
                 return Ok(SimulationResult { result: false });
             }
 
-            for _step_number in 1..steps {
+            for _step_number in 1..=steps {
                 interpreter.shift();
                 if !invariant.execute(&mut env)?.as_bool() {
                     return Ok(SimulationResult { result: false });
