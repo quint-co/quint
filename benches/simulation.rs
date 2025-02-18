@@ -8,7 +8,7 @@ use quint_simulator::helpers;
 
 fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse_from_path(file_path)?;
-    let result = parsed.simulate("init", "step", "inv", 10, 100, 123456);
+    let result = parsed.simulate("init", "step", "inv", 10, 100);
 
     match result {
         Ok(r) => assert!(r.result),
@@ -23,7 +23,6 @@ fn run_in_quint(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
         .arg("run")
         .args(["--max-samples", "100"])
         .args(["--max-steps", "10"])
-        .args(["--seed", "123456"])
         .arg(file_path)
         .stdout(Stdio::piped())
         .spawn()
