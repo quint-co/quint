@@ -53,7 +53,7 @@ fn run_in_rust(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let value = run(&parsed.table, &def.expr);
     match value {
         Ok(v) => assert!(v.to_string().contains("Set")),
-        Err(_) => assert!(false),
+        Err(e) => panic!("Error in simulation: {e}"),
     };
 
     Ok(())

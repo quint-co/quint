@@ -9,7 +9,7 @@ fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     match result {
         Ok(r) => assert!(r.result),
-        Err(_) => assert!(false),
+        Err(e) => panic!("Error in simulation: {e}"),
     }
 
     Ok(())
