@@ -23,6 +23,7 @@ fn run_in_quint(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
         .arg("run")
         .args(["--max-samples", "1000"])
         .args(["--max-steps", "10"])
+        .args(["--invariant", "inv"])
         .arg(file_path)
         .stdout(Stdio::piped())
         .spawn()
