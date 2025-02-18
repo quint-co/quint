@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-node@v3
 
       - name: Install Quint (using npm)
-        run: npm install @informalsystems/quint -g
+        run: npm install -g @informalsystems/quint@0.23.0
 
       - name: Build benchmarks
         run: cargo build --release --benches
