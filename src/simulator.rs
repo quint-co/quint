@@ -47,6 +47,6 @@ impl QuintOutput {
                 }
             }
         }
-        return Ok(SimulationResult { result: true });
+        Ok(SimulationResult { result: true })
     }
 }

@@ -8,7 +8,7 @@ fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let result = parsed.simulate("init", "step", "inv", 10, 10_000);
 
     match result {
-        Ok(r) => assert_eq!(r.result, true),
+        Ok(r) => assert!(r.result),
         Err(_) => assert!(false),
     }
 
@@ -34,8 +34,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("tictactoe");
     group.sample_size(10);
     let path = Path::new("fixtures/tictactoe.qnt");
-    group.bench_function("rust", |b| b.iter(|| run_in_rust(&path)));
-    group.bench_function("typescript", |b| b.iter(|| run_in_quint(&path)));
+    group.bench_function("rust", |b| b.iter(|| run_in_rust(path)));
+    group.bench_function("typescript", |b| b.iter(|| run_in_quint(path)));
     group.finish();
 }
 
