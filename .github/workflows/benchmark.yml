@@ -33,6 +33,12 @@ jobs:
         with:
           tool: cargo-criterion
 
+      - name: Install node
+        uses: actions/setup-node@v3
+
+      - name: Install Quint (using npm)
+        run: npm install @informalsystems/quint -g
+
       - name: Build benchmarks
         run: cargo build --release --benches
 
