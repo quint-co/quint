@@ -11,7 +11,7 @@ on:
 
 jobs:
   benchmark:
-    name: Run Criterion.rs benchmarks
+    name: Run benchmarks
     runs-on: ubuntu-latest
 
     steps:
