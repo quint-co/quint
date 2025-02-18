@@ -12,7 +12,9 @@ As a result, this document produces two checkable artifacts:
 -->
 
 A [REPL][] is a read-eval-print loop. A REPL is usually a good way to start
-learning a language.
+learning a language. In Quint a REPL is also a good way to interact and
+understand a specification, and thus very helpful in designing and specifying
+systems (see [Section 5](#5-describing-a-state-machine) for an example how).
 
 Most likely, you have seen a REPL before. If you had not, here is a simple
 state machine that describes how it works from the user's point of view:
