@@ -1,12 +1,16 @@
+use std::error::Error;
+
 use fxhash::FxBuildHasher;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
 pub type QuintId = u64;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
+#[error("[{code}] {message}")]
 pub struct QuintError {
     pub code: String,
     pub message: String,
@@ -209,4 +213,21 @@ impl QuintEx {
 pub struct QuintLambdaParameter {
     pub id: QuintId,
     pub name: String,
+}
+
+impl QuintOutput {
+    pub fn find_definition_by_name<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> Result<&'a OpDef, Box<dyn Error>> {
+        let input_def = self.modules[0]
+            .declarations
+            .iter()
+            .find_map(|d| match d {
+                QuintDef::QuintOpDef(def) if def.name == name => Some(def),
+                _ => None,
+            })
+            .ok_or("Input definition not found")?;
+        Ok(input_def)
+    }
 }

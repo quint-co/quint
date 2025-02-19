@@ -1,6 +1,4 @@
-use quint_simulator::evaluator::run;
-
-mod helpers;
+use quint_simulator::{evaluator::run, helpers};
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
@@ -13,7 +11,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     );
 
     let parsed = helpers::parse(&quint_content)?;
-    let input_def = helpers::find_definition_by_name(&parsed, "input")?;
+    let input_def = parsed.find_definition_by_name("input")?;
 
     // Evaluate the expression inside the 'input' declaration
     let value = run(&parsed.table, &input_def.expr);

@@ -1,14 +1,13 @@
 use quint_simulator::{
     evaluator::{Env, Interpreter},
+    helpers,
     value::Value,
 };
-
-mod helpers;
 
 macro_rules! run_test {
     ($content:expr, $expected_value:expr) => {{
         let parsed = helpers::parse($content)?;
-        let init_def = helpers::find_definition_by_name(&parsed, "init")?;
+        let init_def = parsed.find_definition_by_name("init")?;
 
         let mut interpreter = Interpreter::new(&parsed.table);
         // Set a specific seed so different runs generate the same result
@@ -19,7 +18,7 @@ macro_rules! run_test {
 
         interpreter.shift();
 
-        let input_def = helpers::find_definition_by_name(&parsed, "input")?;
+        let input_def = parsed.find_definition_by_name("input")?;
         let input = interpreter.eval(&mut env, &input_def.expr);
         assert_eq!(input.unwrap(), $expected_value);
 
