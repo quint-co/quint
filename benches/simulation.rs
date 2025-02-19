@@ -39,8 +39,8 @@ fn run_in_quint(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("tictactoe");
     group.sample_size(10);
-    group.measurement_time(Duration::from_secs(180));
-    group.warm_up_time(Duration::from_secs(30));
+    group.measurement_time(Duration::from_secs(60));
+    group.warm_up_time(Duration::from_secs(10));
 
     let path = Path::new("fixtures/tictactoe.qnt");
     group.bench_function("rust", |b| b.iter(|| run_in_rust(path)));
