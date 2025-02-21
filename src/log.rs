@@ -22,7 +22,17 @@ const _: () = {
         }
         i += 1;
     }
-    assert!(max == 10);
+
+    // If this assertion fails, it means that the headers will not be properly aligned.
+    // To fix this, update the assertion with the new maximum length,
+    // and update the `println!` invocation in the `log` funnction
+    // to pad the header by `max + 2` spaces.
+    if max != 10 {
+        panic!(
+            "Maximum header width is different than the expected value. \
+             Update the assertion and the `println!` invocation in the `log` function."
+        );
+    }
 };
 
 pub fn log(header: &str, message: &fmt::Arguments<'_>) {
