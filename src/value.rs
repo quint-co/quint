@@ -269,20 +269,7 @@ impl<'a> Value<'a> {
             Value::PowerSet(value) => {
                 let base = value.as_set();
                 let size = 1 << base.len(); // 2^n subsets for a set of size n
-                let mut set = FxHashSet::with_capacity_and_hasher(size, Default::default());
-
-                for i in 0..size {
-                    let mut elems = FxHashSet::default();
-                    for (j, elem) in base.iter().enumerate() {
-                        // membership condition, numerical over the indexes i and j
-                        if (i & (1 << j)) != 0 {
-                            elems.insert(elem.clone());
-                        }
-                    }
-                    set.insert(Value::Set(elems));
-                }
-
-                set
+                (0..size).map(|i| powerset_at_index(&base, i)).collect()
             }
 
             Value::MapSet(domain, range) => {
@@ -372,6 +359,20 @@ impl<'a> Value<'a> {
             _ => panic!("Expected tuple of 2 elements"),
         }
     }
+}
+
+pub fn powerset_at_index<'a>(
+    base: &IndexSet<Value<'a>, std::hash::BuildHasherDefault<fxhash::FxHasher>>,
+    i: usize,
+) -> Value<'a> {
+    let mut elems = FxHashSet::default();
+    for (j, elem) in base.iter().enumerate() {
+        // membership condition, numerical over the indexes i and j
+        if (i & (1 << j)) != 0 {
+            elems.insert(elem.clone());
+        }
+    }
+    Value::Set(elems)
 }
 
 impl fmt::Display for Value<'_> {
