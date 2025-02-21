@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_simulator::helpers;
+use quint_simulator::{helpers, log};
 
 #[derive(FromArgs)]
 #[argh(description = "Quint simulator")]
@@ -41,12 +41,12 @@ fn main() -> eyre::Result<()> {
         bail!("File not found: {}", args.file.display());
     }
 
-    println!("Parsing file: {}", args.file.display());
+    log!("Parsing", "Parsing file: {}", args.file.display());
     let parsed = helpers::parse_from_path(&args.file).unwrap();
 
     let start = Instant::now();
 
-    println!("Starting simulation");
+    log!("Simulation", "Starting simulation");
     let result = parsed.simulate(
         &args.init,
         &args.step,
@@ -58,11 +58,11 @@ fn main() -> eyre::Result<()> {
     let elapsed = start.elapsed();
 
     match result {
-        Ok(result) => println!("Result: {}", result.result),
-        Err(e) => println!("Simulation failed: {e}"),
+        Ok(result) => log!("Result", "{}", result.result),
+        Err(e) => log!("", "Simulation failed: {e}"),
     }
 
-    println!("Elapsed: {elapsed:.2?}");
+    log!("Elapsed", "{elapsed:.2?}");
 
     Ok(())
 }
