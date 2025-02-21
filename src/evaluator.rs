@@ -280,7 +280,10 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile(&mut self, expr: &'a QuintEx) -> CompiledExpr<'a> {
-        match expr {
+        if self.memo.contains_key(&expr.id()) {
+            return self.memo.get(&expr.id()).unwrap().clone();
+        }
+        let compiled_expr = match expr {
             QuintEx::QuintInt { id: _, value } => {
                 CompiledExpr::new(move |_| Ok(Value::Int(*value)))
             }
@@ -322,14 +325,12 @@ impl<'a> Interpreter<'a> {
                     let register = self.get_next_var(&var_def.id());
                     let expr = self.compile(&args[1]);
 
-                    return CompiledExpr::new(move |env| {
+                    CompiledExpr::new(move |env| {
                         let value = expr.execute(env)?;
                         register.borrow_mut().value = Some(value.clone());
                         Ok(Value::Bool(true))
-                    });
-                }
-
-                if LAZY_OPS.contains(&opcode.as_str()) {
+                    })
+                } else if LAZY_OPS.contains(&opcode.as_str()) {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
                     CompiledExpr::new(move |env| {
@@ -370,7 +371,10 @@ impl<'a> Interpreter<'a> {
                     result
                 })
             }
-        }
+        };
+
+        self.memo.insert(expr.id(), compiled_expr.clone());
+        compiled_expr
     }
 
     pub fn compile_op(&mut self, id: QuintId, op: &'a str) -> CompiledExprWithArgs<'a> {
