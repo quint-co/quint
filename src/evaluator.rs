@@ -225,7 +225,7 @@ impl<'a> Interpreter<'a> {
                 let register = self.get_or_create_param(p);
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
-            _ => unimplemented!(),
+            d => unimplemented!("{:#?}", d),
         };
 
         // For top-level value definitions, we can cache the resulting value,
