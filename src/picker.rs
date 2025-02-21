@@ -7,7 +7,7 @@ use crate::{
 use std::convert::TryInto;
 
 impl<'a> Value<'a> {
-    pub fn pick<T: Iterator<Item = usize>>(&self, mut indexes: T) -> Value<'a> {
+    pub fn pick<T: Iterator<Item = usize>>(&self, indexes: &mut T) -> Value<'a> {
         match self {
             Value::Set(set) => {
                 let index = indexes
@@ -24,7 +24,7 @@ impl<'a> Value<'a> {
                 Value::Int(start + idx)
             }
             Value::CrossProduct(sets) => {
-                Value::Tuple(sets.iter().map(|value| value.pick(&mut indexes)).collect())
+                Value::Tuple(sets.iter().map(|value| value.pick(indexes)).collect())
             }
             Value::PowerSet(base_set) => {
                 let index = indexes
@@ -45,7 +45,7 @@ impl<'a> Value<'a> {
 
                 let keys = domain.as_set();
                 let key_values = keys.iter().map(|key| {
-                    let value = range.pick(&mut indexes);
+                    let value = range.pick(indexes);
                     (key.clone(), value)
                 });
 
@@ -62,9 +62,8 @@ impl<'a> Value<'a> {
             Value::CrossProduct(sets) => sets.iter().map(|set| set.cardinality()).collect(),
             Value::PowerSet(base_set) => vec![base_set.cardinality()],
             Value::MapSet(domain, range) => {
-                let mut result = Vec::with_capacity(domain.cardinality());
-                result.fill(range.cardinality());
-                result
+                // Cardinality of range repeated domain times
+                vec![range.cardinality(); domain.cardinality()]
             }
             _ => panic!("Not a set"),
         }

@@ -135,7 +135,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 positions.push(env.rand.next(bound))
             }
 
-            Ok(set.pick(positions.into_iter()))
+            Ok(set.pick(&mut positions.into_iter()))
         },
         _ => {
             panic!("Unknown lazy op: {op}")
