@@ -32,10 +32,15 @@ struct Args {
     /// the maximum number of runs to attempt before giving up (default: 10_000)
     #[argh(option, default = "10000")]
     max_samples: usize,
+
+    /// enable JSON output
+    #[argh(switch)]
+    json: bool,
 }
 
 fn main() -> eyre::Result<()> {
     let args: Args = argh::from_env();
+    log::set_json(args.json);
 
     if !fs::exists(&args.file)? {
         bail!("File not found: {}", args.file.display());
