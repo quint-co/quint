@@ -56,9 +56,25 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     {
         let path = Path::new("fixtures/tictactoe.qnt");
-        let parsed = helpers::parse_from_path(path).unwrap();
+        let parsed = helpers::parse_from_path(path, "init", "step", Some("inv")).unwrap();
         group.bench_function("tictactoe", |b| {
             b.iter(|| run(black_box(&parsed), "init", "step", "inv").unwrap())
+        });
+    }
+
+    {
+        let path = Path::new("fixtures/jmt/apply_state_machine.qnt");
+        let parsed = helpers::parse_from_path(path).unwrap();
+        group.bench_function("JMT", |b| {
+            b.iter(|| run(black_box(&parsed), "init", "step_fancy", "allInvariants").unwrap())
+        });
+    }
+    {
+        let path = Path::new("fixtures/jmt/apply_state_machine.qnt");
+        let parsed =
+            helpers::parse_from_path(path, "init", "step_fancy", Some("allInvariants")).unwrap();
+        group.bench_function("JMT", |b| {
+            b.iter(|| run(black_box(&parsed), "init", "step_fancy", "allInvariants").unwrap())
         });
     }
 
