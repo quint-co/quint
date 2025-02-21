@@ -236,12 +236,10 @@ impl<'a> Interpreter<'a> {
                 self.memo.insert(def.id(), compiled_def.clone());
                 compiled_def
             }
-            cache => {
+            Cache::ForState => {
                 let cached_value = Rc::new(RefCell::new(None));
-                if cache == Cache::ForState {
-                    // This definition may use variables, so we need to clear the cache when they change
-                    self.var_storage.caches_to_clear.push(cached_value.clone());
-                }
+                // This definition may use variables, so we need to clear the cache when they change
+                self.var_storage.caches_to_clear.push(cached_value.clone());
                 // Wrap the evaluation function with caching
                 let wrapped_expr = CompiledExpr::new(move |env| {
                     let mut cached = cached_value.borrow_mut();
@@ -256,6 +254,11 @@ impl<'a> Interpreter<'a> {
                 });
                 self.memo.insert(def.id(), wrapped_expr.clone());
                 wrapped_expr
+            }
+            Cache::Forever => {
+                // A stateless expression, we don't even need the updated env
+                let value = compiled_def.execute(&mut Env::new(self.var_storage.clone()));
+                CompiledExpr::new(move |_| value.clone())
             }
         }
     }
