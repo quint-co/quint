@@ -21,6 +21,7 @@ pub fn parse(
         .args(["--init", init])
         .args(["--step", step])
         .args(["--invariant", inv.unwrap_or("true")])
+        .args(["--flatten", "false"])
         .output()?;
 
     if !output.status.success() {
@@ -55,6 +56,7 @@ pub fn parse_from_path(
         .args(["--init", init])
         .args(["--step", step])
         .args(["--invariant", inv.unwrap_or("true")])
+        .args(["--flatten", "false"])
         .stdout(file)
         .output()?;
 

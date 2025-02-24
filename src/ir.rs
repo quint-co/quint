@@ -46,7 +46,7 @@ pub type LookupTable = FxHashMap<QuintId, LookupDefinition>;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum LookupDefinition {
-    Definition(QuintDef),
+    Definition(QuintDeclaration),
     Param(QuintLambdaParameter),
 }
 
@@ -69,9 +69,7 @@ impl LookupDefinition {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintModule {
     pub name: String,
-    // We can use QuintDef instead of QuintDeclaration as flattening removes all
-    // non-defs (imports, instances and exports)
-    pub declarations: Vec<QuintDef>,
+    pub declarations: Vec<QuintDeclaration>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -85,7 +83,7 @@ pub struct OpDef {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "kind")]
-pub enum QuintDef {
+pub enum QuintDeclaration {
     // Constants should have been dropped in flattening
     // Type defs are not relevant for evaluation
     // We only care about def, var and assume
@@ -114,9 +112,16 @@ pub enum QuintDef {
         name: String,
         // We don't care about the constant definition
     },
+
+    #[serde(rename = "import")]
+    QuintImport {}, // Ignore
+    #[serde(rename = "instance")]
+    QuintInstance {}, // Ignore
+    #[serde(rename = "export")]
+    QuintExport {}, // Ignore
 }
 
-impl QuintDef {
+impl QuintDeclaration {
     pub fn id(&self) -> QuintId {
         match self {
             Self::QuintOpDef(def) => def.id,
@@ -124,6 +129,7 @@ impl QuintDef {
             Self::QuintAssume { id, .. } => *id,
             Self::QuintTypeDef { id } => *id,
             Self::QuintConst { id, .. } => *id,
+            _ => panic!("This import-like declaration doesn't have an id"),
         }
     }
 
@@ -134,6 +140,7 @@ impl QuintDef {
             Self::QuintAssume { name, .. } => name.as_str(),
             Self::QuintTypeDef { .. } => panic!("There shouldn't be any typedefs here"),
             Self::QuintConst { name, .. } => name.as_str(),
+            _ => panic!("This import-like declaration doesn't have a name"),
         }
     }
 }
@@ -224,7 +231,7 @@ impl QuintOutput {
             .declarations
             .iter()
             .find_map(|d| match d {
-                QuintDef::QuintOpDef(def) if def.name == name => Some(def),
+                QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
                 _ => None,
             })
             .ok_or("Input definition not found")?;

@@ -186,7 +186,7 @@ impl<'a> Interpreter<'a> {
             return cached.clone();
         }
         let compiled_def = match def {
-            LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => {
+            LookupDefinition::Definition(QuintDeclaration::QuintOpDef(op)) => {
                 if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
@@ -212,7 +212,7 @@ impl<'a> Interpreter<'a> {
                     })
                 }
             }
-            LookupDefinition::Definition(QuintDef::QuintVar { id, name }) => {
+            LookupDefinition::Definition(QuintDeclaration::QuintVar { id, name }) => {
                 let register = self.get_or_create_var(id, name);
                 CompiledExpr::new(move |_| {
                     register.borrow().clone().value.ok_or(QuintError::new(
@@ -406,7 +406,7 @@ enum Cache {
 }
 
 fn can_cache(def: &LookupDefinition) -> Cache {
-    if let LookupDefinition::Definition(QuintDef::QuintOpDef(d)) = def {
+    if let LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d)) = def {
         if d.qualifier == OpQualifier::Val && d.depth.is_none_or(|x| x == 0) {
             return Cache::ForState;
         }

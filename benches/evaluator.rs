@@ -64,13 +64,6 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     {
         let path = Path::new("fixtures/jmt/apply_state_machine.qnt");
-        let parsed = helpers::parse_from_path(path).unwrap();
-        group.bench_function("JMT", |b| {
-            b.iter(|| run(black_box(&parsed), "init", "step_fancy", "allInvariants").unwrap())
-        });
-    }
-    {
-        let path = Path::new("fixtures/jmt/apply_state_machine.qnt");
         let parsed =
             helpers::parse_from_path(path, "init", "step_fancy", Some("allInvariants")).unwrap();
         group.bench_function("JMT", |b| {
