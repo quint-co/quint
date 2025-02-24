@@ -182,8 +182,8 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
-        if self.memo.contains_key(&def.id()) {
-            return self.memo.get(&def.id()).unwrap().clone();
+        if let Some(cached) = self.memo.get(&def.id()) {
+            return cached.clone();
         }
         let compiled_def = match def {
             LookupDefinition::Definition(QuintDef::QuintOpDef(op)) => {
@@ -191,7 +191,6 @@ impl<'a> Interpreter<'a> {
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
-                    // TODO: We don't really have memoization in rust yet
                     self.compile(&op.expr)
                 } else {
                     let cached_value = {
@@ -283,8 +282,8 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile(&mut self, expr: &'a QuintEx) -> CompiledExpr<'a> {
-        if self.memo.contains_key(&expr.id()) {
-            return self.memo.get(&expr.id()).unwrap().clone();
+        if let Some(cached) = self.memo.get(&expr.id()) {
+            return cached.clone();
         }
         let compiled_expr = match expr {
             QuintEx::QuintInt { id: _, value } => {

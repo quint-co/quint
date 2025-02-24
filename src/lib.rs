@@ -2,6 +2,7 @@ pub mod builtins;
 pub mod evaluator;
 pub mod helpers;
 pub mod ir;
+pub mod log;
 pub mod picker;
 pub mod rand;
 pub mod simulator;
