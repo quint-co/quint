@@ -30,8 +30,14 @@ impl QuintOutput {
         let init = interpreter.compile(&init_def.expr);
         let step = interpreter.compile(&step_def.expr);
         let invariant = interpreter.compile(&invariant_def.expr);
+        let mut trace: Vec<Value<'_>> = vec![];
+
+        let mut trace: Vec<Value<'_>> = Vec::with_capacity(steps + 1);
 
         for _sample_number in 1..=samples {
+        for sample_number in 1..=samples {
+        for sample_number in 1..=samples {
+            trace.clear();
             if !init.execute(&mut env)?.as_bool() {
                 return Ok(SimulationResult { result: false });
             }
@@ -44,6 +50,22 @@ impl QuintOutput {
 
                 if !step.execute(&mut env)?.as_bool() {
                     return Ok(SimulationResult { result: false });
+                if !step.execute(&mut env)?.as_bool() {
+                    // The run cannot be extended. In some cases, this may indicate a deadlock.
+                    // Since we are doing random simulation, it is very likely
+                    // that we have not generated good values for extending
+                    // the run. Hence, do not report an error here, but simply
+                    // drop the run. Otherwise, we would have a lot of false
+                    // positives, which look like deadlocks but they are not.
+                    break;
+                if step_number != steps && !step.execute(&mut env)?.as_bool() {
+                    // The run cannot be extended. In some cases, this may indicate a deadlock.
+                    // Since we are doing random simulation, it is very likely
+                    // that we have not generated good values for extending
+                    // the run. Hence, do not report an error here, but simply
+                    // drop the run. Otherwise, we would have a lot of false
+                    // positives, which look like deadlocks but they are not.
+                    break;
                 }
             }
         }
