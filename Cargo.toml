@@ -29,3 +29,7 @@ harness = false
 [[bench]]
 name = "simulation"
 harness = false
+
+[[bench]]
+name = "evaluator"
+harness = false
