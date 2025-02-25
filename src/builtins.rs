@@ -381,7 +381,11 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "flatten" => |_env, args| {
             Ok(Value::Set(
-                args[0].as_set().iter().flat_map(|v| v.as_set()).collect(),
+                args[0]
+                    .as_set()
+                    .iter()
+                    .flat_map(|v| v.as_set().into_owned())
+                    .collect(),
             ))
         },
 
@@ -442,7 +446,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "keys" => |_env, args| Ok(Value::Set(args[0].as_map().keys().cloned().collect())),
         "exists" => |env, args| {
-            for v in args[0].as_set() {
+            for v in args[0].as_set().iter() {
                 let result = args[1].as_closure()(env, vec![v.clone()])?;
                 if result.as_bool() {
                     return Ok(Value::Bool(true));
@@ -452,7 +456,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
 
         "forall" => |env, args| {
-            for v in args[0].as_set() {
+            for v in args[0].as_set().iter() {
                 let result = args[1].as_closure()(env, vec![v.clone()])?;
                 if !result.as_bool() {
                     return Ok(Value::Bool(false));
@@ -545,22 +549,24 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
             Ok(Value::Set(lists.into_iter().map(Value::List).collect()))
         },
+
         "getOnlyElement" => |_env, args| {
             let set = args[0].as_set();
-            let mut iter = set.clone().into_iter();
-            match (iter.next(), iter.next()) {
-                (Some(v), None) => Ok(v),
-                (_, _) => Err(QuintError::new(
+            let size = set.len();
+            if size != 1 {
+                return Err(QuintError::new(
                     "QNT505",
                     format!(
-                        "Called 'getOnlyElement' on a set with {} elements.\
-                        Make sure the set has exactly one element.",
-                        set.clone().len()
+                        "Called 'getOnlyElement' on a set with {size} elements.\
+                        Make sure the set has exactly one element."
                     )
                     .as_str(),
-                )),
+                ));
             }
+
+            Ok(set.iter().next().cloned().unwrap())
         },
+
         // TODO: extra ops, (q::debug ...)
         _ => {
             panic!("Unknown eager op: {op}")
