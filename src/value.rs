@@ -19,12 +19,12 @@ pub enum Value<'a> {
     Map(FxHashMap<Value<'a>, Value<'a>>),
     List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
-    Variant(String, Box<Value<'a>>),
+    Variant(String, Rc<Value<'a>>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
     CrossProduct(Vec<Value<'a>>),
-    PowerSet(Box<Value<'a>>),
-    MapSet(Box<Value<'a>>, Box<Value<'a>>),
+    PowerSet(Rc<Value<'a>>),
+    MapSet(Rc<Value<'a>>, Rc<Value<'a>>),
 }
 
 impl Hash for Value<'_> {

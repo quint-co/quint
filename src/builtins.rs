@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
 use crate::value::{FxHashSet, Value};
@@ -169,7 +171,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                 args.into_iter().map(|kv| kv.as_tuple2()).collect(),
             ))
         },
-        "variant" => |_env, args| Ok(Value::Variant(args[0].as_str(), Box::new(args[1].clone()))),
+        "variant" => |_env, args| Ok(Value::Variant(args[0].as_str(), Rc::new(args[1].clone()))),
         "not" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
         "iff" => |_env, args| Ok(Value::Bool(args[0].as_bool() == args[1].as_bool())),
         "eq" => |_env, args| Ok(Value::Bool(args[0] == args[1])),
@@ -306,7 +308,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(Value::Record(record))
         },
 
-        "powerset" => |_env, args| Ok(Value::PowerSet(Box::new(args[0].clone()))),
+        "powerset" => |_env, args| Ok(Value::PowerSet(Rc::new(args[0].clone()))),
         "contains" => |_env, args| Ok(Value::Bool(args[0].contains(&args[1]))),
         "in" => |_env, args| Ok(Value::Bool(args[1].contains(&args[0]))),
         "subseteq" => |_env, args| Ok(Value::Bool(args[0].subseteq(&args[1]))),
@@ -513,8 +515,8 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
         "setOfMaps" => |_env, args| {
             Ok(Value::MapSet(
-                Box::new(args[0].clone()),
-                Box::new(args[1].clone()),
+                Rc::new(args[0].clone()),
+                Rc::new(args[1].clone()),
             ))
         },
 
