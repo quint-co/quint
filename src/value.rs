@@ -1,6 +1,7 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::FxHashMap;
 use indexmap::IndexSet;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -19,12 +20,12 @@ pub enum Value<'a> {
     Map(FxHashMap<Value<'a>, Value<'a>>),
     List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
-    Variant(String, Box<Value<'a>>),
+    Variant(String, Rc<Value<'a>>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
     CrossProduct(Vec<Value<'a>>),
-    PowerSet(Box<Value<'a>>),
-    MapSet(Box<Value<'a>>, Box<Value<'a>>),
+    PowerSet(Rc<Value<'a>>),
+    MapSet(Rc<Value<'a>>, Rc<Value<'a>>),
 }
 
 impl Hash for Value<'_> {
@@ -214,15 +215,15 @@ impl<'a> Value<'a> {
         )
     }
 
-    pub fn as_set(&self) -> FxHashSet<Value<'a>> {
+    pub fn as_set(&self) -> Cow<'_, FxHashSet<Value<'a>>> {
         match self {
-            Value::Set(set) => set.clone(),
-            Value::Interval(start, end) => (*start..=*end).map(Value::Int).collect(),
+            Value::Set(set) => Cow::Borrowed(set),
+            Value::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::Int).collect()),
             Value::CrossProduct(sets) => {
                 let size = self.cardinality();
                 if size == 0 {
                     // an empty set produces the empty product
-                    return FxHashSet::default();
+                    return Cow::Owned(FxHashSet::default());
                 }
 
                 let vecs: Vec<Vec<Value<'a>>> = sets
@@ -263,24 +264,24 @@ impl<'a> Value<'a> {
                     }
                 }
 
-                result_set
+                Cow::Owned(result_set)
             }
 
             Value::PowerSet(value) => {
                 let base = value.as_set();
                 let size = 1 << base.len(); // 2^n subsets for a set of size n
-                (0..size).map(|i| powerset_at_index(&base, i)).collect()
+                Cow::Owned((0..size).map(|i| powerset_at_index(&base, i)).collect())
             }
 
             Value::MapSet(domain, range) => {
                 if domain.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return std::iter::once(Value::Map(FxHashMap::default())).collect();
+                    return Cow::Owned(std::iter::once(Value::Map(FxHashMap::default())).collect());
                 }
 
                 if range.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty range needs to give Set()
-                    return FxHashSet::default();
+                    return Cow::Owned(FxHashSet::default());
                 }
                 let domain_vec = domain.as_set().iter().cloned().collect::<Vec<_>>();
                 let range_vec = range.as_set().iter().cloned().collect::<Vec<_>>();
@@ -302,7 +303,7 @@ impl<'a> Value<'a> {
                     result_set.insert(Value::Map(FxHashMap::from_iter(pairs)));
                 }
 
-                result_set
+                Cow::Owned(result_set)
             }
             _ => panic!("Expected set"),
         }
@@ -323,9 +324,9 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_record_map(&self) -> FxHashMap<String, Value<'a>> {
+    pub fn as_record_map(&self) -> &FxHashMap<String, Value<'a>> {
         match self {
-            Value::Record(fields) => fields.clone(),
+            Value::Record(fields) => fields,
             _ => panic!("Expected record"),
         }
     }
@@ -335,8 +336,8 @@ impl<'a> Value<'a> {
             Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value<'a>>| {
                 // TODO: Check number of arguments
 
-                args.iter().enumerate().for_each(|(i, arg)| {
-                    *registers[i].borrow_mut() = Ok(arg.clone());
+                args.into_iter().enumerate().for_each(|(i, arg)| {
+                    *registers[i].borrow_mut() = Ok(arg);
                 });
 
                 body.execute(env)
