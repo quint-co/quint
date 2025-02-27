@@ -118,6 +118,11 @@ const compileCmd = {
         }
         return target
       })
+      .option('flatten', {
+        desc: 'Whether or not to flatten the modules into one',
+        type: 'boolean',
+        default: true,
+      })
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',

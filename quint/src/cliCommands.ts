@@ -151,7 +151,7 @@ interface TypecheckedStage extends ParsedStage {
 }
 
 interface CompiledStage extends TypecheckedStage, AnalysisOutput {
-  mainModule: FlatModule
+  mainModule: QuintModule
 }
 
 interface TestedStage extends LoadedStage {
@@ -700,6 +700,14 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 
   typechecked.table = resolutionResult.table
   analyzeInc(typechecked, typechecked.table, extraDefs)
+
+  if (!args.flatten) {
+    return right({
+      ...typechecked,
+      mainModule: main,
+      stage: 'compiling',
+    })
+  }
 
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
