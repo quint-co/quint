@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{FxHashMap, QuintError};
-use crate::value::{FxHashSet, Value};
+use crate::value::{ImmutableSet, Value};
 use itertools::Itertools;
 
 pub const LAZY_OPS: [&str; 13] = [
@@ -316,23 +316,24 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(Value::Set(
                 args[0]
                     .as_set()
-                    .difference(&args[1].as_set())
-                    .cloned()
-                    .collect(),
+                    .into_owned()
+                    .relative_complement(args[1].as_set().into_owned()),
             ))
         },
         "union" => |_env, args| {
             Ok(Value::Set(
-                args[0].as_set().union(&args[1].as_set()).cloned().collect(),
+                args[0]
+                    .as_set()
+                    .into_owned()
+                    .union(args[1].as_set().into_owned()),
             ))
         },
         "intersect" => |_env, args| {
             Ok(Value::Set(
                 args[0]
                     .as_set()
-                    .intersection(&args[1].as_set())
-                    .cloned()
-                    .collect(),
+                    .into_owned()
+                    .intersection(args[1].as_set().into_owned()),
             ))
         },
 
@@ -347,7 +348,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             let end = args[1].as_int();
             if start > end {
                 // Avoid having different intervals that represent the same thing (empty set)
-                return Ok(Value::Set(FxHashSet::default()));
+                return Ok(Value::Set(ImmutableSet::default()));
             }
             Ok(Value::Interval(start, end))
         },
@@ -373,7 +374,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "foldr" => |env, args| {
             apply_lambda(
                 FoldOrder::Backward,
-                args[0].as_list().iter().cloned(),
+                args[0].as_list().iter().cloned().rev(),
                 args[1].clone(),
                 |arg| args[2].as_closure()(env, arg.to_vec()),
             )
@@ -477,7 +478,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "filter" => |env, args| {
             Ok(Value::Set(args[0].as_set().iter().try_fold(
-                FxHashSet::default(),
+                ImmutableSet::default(),
                 |mut acc, v| {
                     if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
                         acc.insert(v.clone());
@@ -528,12 +529,13 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "allListsUpTo" => |_env, args| {
             let set = args[0].as_set();
             let length = args[1].as_int();
-            let mut lists = FxHashSet::default();
-            let mut last_lists = FxHashSet::<Vec<Value>>::default();
+            // These should be mutable sets
+            let mut lists = ImmutableSet::default();
+            let mut last_lists = ImmutableSet::<Vec<Value>>::default();
             lists.insert(vec![]);
             last_lists.insert(vec![]);
             for _ in 0..length {
-                let new_lists: FxHashSet<Vec<Value>> = set
+                let new_lists: ImmutableSet<Vec<Value>> = set
                     .iter()
                     .flat_map(|value| {
                         last_lists.iter().map(move |list| {
@@ -590,7 +592,7 @@ fn apply_lambda<'a, T>(
     mut closure: impl FnMut(&[Value<'a>]) -> Result<Value<'a>, QuintError>,
 ) -> Result<Value<'a>, QuintError>
 where
-    T: Iterator<Item = Value<'a>> + DoubleEndedIterator,
+    T: Iterator<Item = Value<'a>>,
 {
     let reducer = |acc: Result<Value<'a>, QuintError>, elem: Value<'a>| {
         acc.and_then(|acc| match order {
@@ -599,8 +601,5 @@ where
         })
     };
 
-    match order {
-        FoldOrder::Forward => iterable.fold(Ok(initial), reducer),
-        FoldOrder::Backward => iterable.rev().fold(Ok(initial), reducer),
-    }
+    iterable.fold(Ok(initial), reducer)
 }

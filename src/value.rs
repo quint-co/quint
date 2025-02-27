@@ -1,20 +1,21 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::FxHashMap;
-use indexmap::IndexSet;
+use imbl::shared_ptr::RcK;
+use imbl::GenericHashSet;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-pub type FxHashSet<T> = IndexSet<T, fxhash::FxBuildHasher>;
+pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
 
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
     Int(i64),
     Bool(bool),
     Str(String),
-    Set(FxHashSet<Value<'a>>),
+    Set(ImmutableSet<Value<'a>>),
     Tuple(Vec<Value<'a>>),
     Record(FxHashMap<String, Value<'a>>),
     Map(FxHashMap<Value<'a>, Value<'a>>),
@@ -152,7 +153,7 @@ impl<'a> Value<'a> {
                     && elems.iter().all(|elem| base_elems.contains(elem))
             }
             (Value::MapSet(domain, range), Value::Map(map)) => {
-                let map_domain = Value::Set(map.keys().cloned().collect::<FxHashSet<_>>());
+                let map_domain = Value::Set(map.keys().cloned().collect::<ImmutableSet<_>>());
                 // Check if domains are equal and all map values are in the range set
                 map_domain == **domain && map.values().all(|v| range.contains(v))
             }
@@ -179,7 +180,7 @@ impl<'a> Value<'a> {
                 Value::MapSet(subset_domain, subset_range),
                 Value::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range),
-            (subset, superset) => subset.as_set().is_subset(&superset.as_set()),
+            (subset, superset) => subset.as_set().is_subset(superset.as_set().as_ref()),
         }
     }
 
@@ -215,7 +216,7 @@ impl<'a> Value<'a> {
         )
     }
 
-    pub fn as_set(&self) -> Cow<'_, FxHashSet<Value<'a>>> {
+    pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value<'a>>> {
         match self {
             Value::Set(set) => Cow::Borrowed(set),
             Value::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::Int).collect()),
@@ -223,7 +224,7 @@ impl<'a> Value<'a> {
                 let size = self.cardinality();
                 if size == 0 {
                     // an empty set produces the empty product
-                    return Cow::Owned(FxHashSet::default());
+                    return Cow::Owned(ImmutableSet::default());
                 }
 
                 let vecs: Vec<Vec<Value<'a>>> = sets
@@ -232,7 +233,7 @@ impl<'a> Value<'a> {
                     .collect();
 
                 let mut indices = vec![0; vecs.len()];
-                let mut result_set = FxHashSet::with_capacity_and_hasher(size, Default::default());
+                let mut result_set = ImmutableSet::new();
                 let mut done = false;
 
                 while !done {
@@ -270,7 +271,11 @@ impl<'a> Value<'a> {
             Value::PowerSet(value) => {
                 let base = value.as_set();
                 let size = 1 << base.len(); // 2^n subsets for a set of size n
-                Cow::Owned((0..size).map(|i| powerset_at_index(&base, i)).collect())
+                Cow::Owned(
+                    (0..size)
+                        .map(|i| powerset_at_index(base.as_ref(), i))
+                        .collect(),
+                )
             }
 
             Value::MapSet(domain, range) => {
@@ -281,7 +286,7 @@ impl<'a> Value<'a> {
 
                 if range.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty range needs to give Set()
-                    return Cow::Owned(FxHashSet::default());
+                    return Cow::Owned(ImmutableSet::default());
                 }
                 let domain_vec = domain.as_set().iter().cloned().collect::<Vec<_>>();
                 let range_vec = range.as_set().iter().cloned().collect::<Vec<_>>();
@@ -291,7 +296,7 @@ impl<'a> Value<'a> {
 
                 let nmaps = nvalues.pow(nindices.try_into().unwrap());
 
-                let mut result_set = FxHashSet::with_capacity_and_hasher(nmaps, Default::default());
+                let mut result_set = ImmutableSet::new();
 
                 for i in 0..nmaps {
                     let mut pairs = Vec::with_capacity(nindices);
@@ -362,11 +367,8 @@ impl<'a> Value<'a> {
     }
 }
 
-pub fn powerset_at_index<'a>(
-    base: &IndexSet<Value<'a>, std::hash::BuildHasherDefault<fxhash::FxHasher>>,
-    i: usize,
-) -> Value<'a> {
-    let mut elems = FxHashSet::default();
+pub fn powerset_at_index<'a>(base: &ImmutableSet<Value<'a>>, i: usize) -> Value<'a> {
+    let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
         // membership condition, numerical over the indexes i and j
         if (i & (1 << j)) != 0 {
