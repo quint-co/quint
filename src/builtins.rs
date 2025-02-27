@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::{ImmutableMap, QuintError};
-use crate::value::{ImmutableSet, Value};
+use crate::value::{ImmutableSet, ImmutableVec, Value};
+use fxhash::FxHashSet;
 use itertools::Itertools;
 
 pub const LAZY_OPS: [&str; 13] = [
@@ -147,7 +148,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
 pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
     // To be used at `item` and `nth` which share the same behavior
-    fn at_index<'b>(list: &[Value<'b>], index: i64) -> Result<Value<'b>, QuintError> {
+    fn at_index<'b>(list: &ImmutableVec<Value<'b>>, index: i64) -> Result<Value<'b>, QuintError> {
         if index < 0 || index >= list.len().try_into().unwrap() {
             return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
         }
@@ -233,7 +234,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "head" => |_env, args| {
             // Get the first element of a list. Not allowed in empty lists.
             let list = args[0].as_list();
-            match list.first() {
+            match list.head() {
                 Some(h) => Ok(h.clone()),
                 None => Err(QuintError::new("QNT505", "Called 'head' on an empty list")),
             }
@@ -242,20 +243,22 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "tail" => |_env, args| {
             // Get the tail (all elements but the head) of a list. Not allowed in empty lists.
             let list = args[0].as_list();
-            match list.get(1..) {
-                Some(t) => Ok(Value::List(t.to_vec())),
-                None => Err(QuintError::new("QNT505", "Called 'tail' on an empty list")),
+            if !list.is_empty() {
+                Ok(Value::List(list.iter().skip(1).cloned().collect()))
+            } else {
+                Err(QuintError::new("QNT505", "Called 'tail' on an empty list"))
             }
         },
 
         "slice" => |_env, args| {
             let list = args[0].as_list();
             let start = args[1].as_int();
-            let end = args[2].as_int();
+            let end = args[2].as_int() as usize;
 
-            match list.get(start as usize..end as usize) {
-                Some(s) if start >= 0 => Ok(Value::List(s.to_vec())),
-                _ => Err(QuintError::new(
+            if start >= 0 && end <= list.len() && start as usize <= end {
+                Ok(Value::List(list.clone().slice(start as usize..end)))
+            } else {
+                Err(QuintError::new(
                     "QNT506",
                     format!(
                         "slice(..., {start}, {end}) applied to a list of size {size}",
@@ -264,14 +267,14 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                         size = list.len()
                     )
                     .as_str(),
-                )),
+                ))
             }
         },
 
         "length" => |_env, args| Ok(Value::Int(args[0].cardinality().try_into().unwrap())),
         "append" => |_env, args| {
             let mut list = args[0].as_list().clone();
-            list.push(args[1].clone());
+            list.push_back(args[1].clone());
             Ok(Value::List(list))
         },
         "concat" => |_env, args| {
@@ -490,10 +493,10 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "select" => |env, args| {
             Ok(Value::List(args[0].as_list().iter().try_fold(
-                vec![],
+                ImmutableVec::new(),
                 |mut acc, v| {
                     if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
-                        acc.push(v.clone());
+                        acc.push_back(v.clone());
                     }
                     Ok(acc)
                 },
@@ -528,18 +531,17 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "allListsUpTo" => |_env, args| {
             let set = args[0].as_set();
             let length = args[1].as_int();
-            // These should be mutable sets
-            let mut lists = ImmutableSet::default();
-            let mut last_lists = ImmutableSet::<Vec<Value>>::default();
-            lists.insert(vec![]);
-            last_lists.insert(vec![]);
+            let mut lists = FxHashSet::default();
+            let mut last_lists = FxHashSet::<ImmutableVec<Value>>::default();
+            lists.insert(ImmutableVec::default());
+            last_lists.insert(ImmutableVec::default());
             for _ in 0..length {
-                let new_lists: ImmutableSet<Vec<Value>> = set
+                let new_lists: FxHashSet<ImmutableVec<Value>> = set
                     .iter()
                     .flat_map(|value| {
                         last_lists.iter().map(move |list| {
                             let mut new_list = list.clone();
-                            new_list.push(value.clone());
+                            new_list.push_back(value.clone());
                             new_list
                         })
                     })

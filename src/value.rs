@@ -1,7 +1,7 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::ImmutableMap;
 use imbl::shared_ptr::RcK;
-use imbl::GenericHashSet;
+use imbl::{GenericHashSet, GenericVector};
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -9,6 +9,7 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
+pub type ImmutableVec<T> = GenericVector<T, RcK>;
 
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
@@ -16,10 +17,10 @@ pub enum Value<'a> {
     Bool(bool),
     Str(String),
     Set(ImmutableSet<Value<'a>>),
-    Tuple(Vec<Value<'a>>),
+    Tuple(ImmutableVec<Value<'a>>),
     Record(ImmutableMap<String, Value<'a>>),
     Map(ImmutableMap<Value<'a>, Value<'a>>),
-    List(Vec<Value<'a>>),
+    List(ImmutableVec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     Variant(String, Rc<Value<'a>>),
     // "Intermediate" values using during evaluation to avoid expensive computations
@@ -237,7 +238,7 @@ impl<'a> Value<'a> {
                 let mut done = false;
 
                 while !done {
-                    let product: Vec<Value<'a>> = indices
+                    let product: ImmutableVec<Value<'a>> = indices
                         .iter()
                         .enumerate()
                         .map(|(i, &index)| vecs[i][index].clone())
@@ -323,7 +324,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_list(&self) -> &Vec<Value<'a>> {
+    pub fn as_list(&self) -> &ImmutableVec<Value<'a>> {
         match self {
             Value::Tuple(elems) => elems,
             Value::List(elems) => elems,
@@ -362,10 +363,8 @@ impl<'a> Value<'a> {
     }
 
     pub fn as_tuple2(&self) -> (Value<'a>, Value<'a>) {
-        match &self.as_list()[..] {
-            [a, b] => (a.clone(), b.clone()),
-            _ => panic!("Expected tuple of 2 elements"),
-        }
+        let mut elems = self.as_list().iter();
+        (elems.next().unwrap().clone(), elems.next().unwrap().clone())
     }
 }
 
