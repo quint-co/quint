@@ -42,8 +42,9 @@ fn run(
     init: &str,
     step: &str,
     inv: &str,
+    steps: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = simulate(parsed, init, step, inv, 10, 1);
+    let result = simulate(parsed, init, step, inv, steps, 1);
 
     match result {
         Ok(()) => Ok(()),
@@ -58,7 +59,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         let path = Path::new("fixtures/tictactoe.qnt");
         let parsed = helpers::parse_from_path(path, "init", "step", Some("inv")).unwrap();
         group.bench_function("tictactoe", |b| {
-            b.iter(|| run(black_box(&parsed), "init", "step", "inv").unwrap())
+            b.iter(|| run(black_box(&parsed), "init", "step", "inv", 10).unwrap())
         });
     }
 
@@ -67,7 +68,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         let parsed =
             helpers::parse_from_path(path, "init", "step_fancy", Some("allInvariants")).unwrap();
         group.bench_function("JMT", |b| {
-            b.iter(|| run(black_box(&parsed), "init", "step_fancy", "allInvariants").unwrap())
+            b.iter(|| run(black_box(&parsed), "init", "step_fancy", "allInvariants", 3).unwrap())
         });
     }
 
