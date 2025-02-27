@@ -1,5 +1,5 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::FxHashMap;
+use crate::ir::ImmutableMap;
 use imbl::shared_ptr::RcK;
 use imbl::GenericHashSet;
 use std::borrow::Cow;
@@ -17,8 +17,8 @@ pub enum Value<'a> {
     Str(String),
     Set(ImmutableSet<Value<'a>>),
     Tuple(Vec<Value<'a>>),
-    Record(FxHashMap<String, Value<'a>>),
-    Map(FxHashMap<Value<'a>, Value<'a>>),
+    Record(ImmutableMap<String, Value<'a>>),
+    Map(ImmutableMap<Value<'a>, Value<'a>>),
     List(Vec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     Variant(String, Rc<Value<'a>>),
@@ -281,7 +281,9 @@ impl<'a> Value<'a> {
             Value::MapSet(domain, range) => {
                 if domain.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return Cow::Owned(std::iter::once(Value::Map(FxHashMap::default())).collect());
+                    return Cow::Owned(
+                        std::iter::once(Value::Map(ImmutableMap::default())).collect(),
+                    );
                 }
 
                 if range.cardinality() == 0 {
@@ -305,7 +307,7 @@ impl<'a> Value<'a> {
                         pairs.push((key.clone(), range_vec[index % nvalues].clone()));
                         index /= nvalues;
                     }
-                    result_set.insert(Value::Map(FxHashMap::from_iter(pairs)));
+                    result_set.insert(Value::Map(ImmutableMap::from_iter(pairs)));
                 }
 
                 Cow::Owned(result_set)
@@ -314,7 +316,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_map(&self) -> &FxHashMap<Value<'a>, Value<'a>> {
+    pub fn as_map(&self) -> &ImmutableMap<Value<'a>, Value<'a>> {
         match self {
             Value::Map(map) => map,
             _ => panic!("Expected map"),
@@ -329,7 +331,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_record_map(&self) -> &FxHashMap<String, Value<'a>> {
+    pub fn as_record_map(&self) -> &ImmutableMap<String, Value<'a>> {
         match self {
             Value::Record(fields) => fields,
             _ => panic!("Expected record"),

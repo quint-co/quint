@@ -1,4 +1,4 @@
-use crate::{ir::FxHashMap, value::Value};
+use crate::{ir::ImmutableMap, value::Value};
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
@@ -9,15 +9,15 @@ pub struct VariableRegister<'a> {
 
 #[derive(Clone)]
 pub struct Snapshot<'a> {
-    pub next_vars: FxHashMap<String, VariableRegister<'a>>,
+    pub next_vars: ImmutableMap<String, VariableRegister<'a>>,
     // nondet_picks
     // action_taken
 }
 
 #[derive(Default, Clone)]
 pub struct Storage<'a> {
-    pub vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
-    pub next_vars: FxHashMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub vars: ImmutableMap<String, Rc<RefCell<VariableRegister<'a>>>>,
+    pub next_vars: ImmutableMap<String, Rc<RefCell<VariableRegister<'a>>>>,
     pub caches_to_clear: Vec<Rc<RefCell<Option<Value<'a>>>>>,
 }
 
@@ -40,7 +40,7 @@ impl<'a> Storage<'a> {
         });
 
         // TODO: add nondet picks and action taken
-        Value::Record(FxHashMap::from_iter(map))
+        Value::Record(ImmutableMap::from_iter(map))
     }
 
     pub fn take_snapshot(&self) -> Snapshot<'a> {

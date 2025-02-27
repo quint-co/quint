@@ -1,11 +1,11 @@
 use std::error::Error;
 
-use fxhash::FxBuildHasher;
-use indexmap::IndexMap;
+use fxhash::{FxBuildHasher, FxHashMap};
+use imbl::{shared_ptr::RcK, GenericHashMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
+pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 
 pub type QuintId = u64;
 

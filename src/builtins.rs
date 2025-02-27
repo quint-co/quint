@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
-use crate::ir::{FxHashMap, QuintError};
+use crate::ir::{ImmutableMap, QuintError};
 use crate::value::{ImmutableSet, Value};
 use itertools::Itertools;
 
@@ -503,10 +503,9 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         "mapBy" => |env, args| {
             let closure = args[1].as_closure();
             let keys = args[0].as_set();
-            let size = keys.len();
 
             Ok(Value::Map(keys.iter().try_fold(
-                FxHashMap::with_capacity_and_hasher(size, Default::default()),
+                ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
                     acc.insert(key.clone(), value);
