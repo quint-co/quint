@@ -106,7 +106,7 @@ fn builtin_value(name: &str) -> CompiledExpr {
     match name {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
-        _ => unimplemented!(),
+        _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }
 

@@ -1,35 +1,36 @@
 use quint_simulator::{evaluator::run, helpers};
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let quint_content = format!(
-        "module main {{
-          type T = Some(int) | None
-          val input = {input}
-          val init = true
-          val step = true
-        }}"
-    );
+    fn quint_content(expr: &str) -> String {
+        format!(
+            "module main {{
+              type T = Some(int) | None
+              val expr = {expr}
+              val init = true
+              val step = true
+            }}"
+        )
+    }
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None)?;
-    let input_def = parsed.find_definition_by_name("input")?;
-
-    // Evaluate the expression inside the 'input' declaration
+    let parsed = helpers::parse(&quint_content(input), "init", "step", None)?;
+    let input_def = parsed.find_definition_by_name("expr")?;
     let value = run(&parsed.table, &input_def.expr);
-    match value {
-        Ok(v) => assert_eq!(
-            v.to_string(),
-            expected,
-            "expression: {}, expected: {}, got: {}",
-            input,
-            expected,
-            v
-        ),
-        Err(_) => assert_eq!(
-            "undefined", expected,
-            "expression: {}, expected: {}, got: error",
-            input, expected
-        ),
-    };
+
+    if expected == "undefined" {
+        assert!(value.is_err(), "Expected error, got: {:?}", value);
+        return Ok(());
+    }
+
+    let parsed_expected = helpers::parse(&quint_content(expected), "init", "step", None)?;
+    let expected_def = parsed_expected.find_definition_by_name("expr")?;
+    let expected_value = run(&parsed_expected.table, &expected_def.expr);
+
+    let v = value.map(|v| v.normalize());
+    assert_eq!(
+        v, expected_value,
+        "expression: {}, expected: {:#?}, got: {:#?}",
+        input, expected, v
+    );
 
     Ok(())
 }
