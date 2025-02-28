@@ -2,6 +2,7 @@ use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::ImmutableMap;
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashSet, GenericVector};
+use itertools::Itertools;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -228,45 +229,18 @@ impl<'a> Value<'a> {
                     return Cow::Owned(ImmutableSet::default());
                 }
 
-                let vecs: Vec<Vec<Value<'a>>> = sets
-                    .iter()
+                let base_sets: Vec<Vec<Value>> = sets
+                    .into_iter()
                     .map(|set| set.as_set().iter().cloned().collect())
                     .collect();
 
-                let mut indices = vec![0; vecs.len()];
-                let mut result_set = ImmutableSet::new();
-                let mut done = false;
+                let product_sets: ImmutableSet<Value> = base_sets
+                    .into_iter()
+                    .multi_cartesian_product()
+                    .map(|product| Value::Tuple(ImmutableVec::from(product)))
+                    .collect();
 
-                while !done {
-                    let product: ImmutableVec<Value<'a>> = indices
-                        .iter()
-                        .enumerate()
-                        .map(|(i, &index)| vecs[i][index].clone())
-                        .collect();
-                    result_set.insert(Value::Tuple(product));
-
-                    done = true;
-                    // Update indices in an order such as this
-                    // Consider the product of two sets [a, b, c] x [0, 1]
-                    // indices | product
-                    // [0, 0] (a, 0)
-                    // [1, 0] (b, 0)
-                    // [2, 0] (c, 0)
-                    // [0, 1] (a, 1)
-                    // [1, 1] (b, 1)
-                    // [2, 1] (c, 1)
-                    for i in (0..indices.len()).rev() {
-                        indices[i] += 1;
-                        if indices[i] < vecs[i].len() {
-                            done = false;
-                            break;
-                        } else {
-                            indices[i] = 0;
-                        }
-                    }
-                }
-
-                Cow::Owned(result_set)
+                Cow::Owned(product_sets)
             }
 
             Value::PowerSet(value) => {
