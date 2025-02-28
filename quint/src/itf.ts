@@ -1,6 +1,6 @@
 /*
  * Support for the Informal Trace Format (ITF):
- * https://apalache.informal.systems/docs/adr/015adr-trace.html
+ * https://apalache-mc.org/docs/adr/015adr-trace.html
  *
  * Igor Konnov, Shon Feder, Informal Systems, 2023
  *
