@@ -37,8 +37,11 @@ jobs:
         uses: taiki-e/install-action@cargo-nextest
       - name: Install node
         uses: actions/setup-node@v3
-      - name: Install Quint (using npm)
-        run: npm install -g @informalsystems/quint@0.23.0
+      - name: Install Quint
+        run: |
+          git clone https://github.com/informalsystems/quint && cd quint/quint &&
+          git checkout gabriela/compile-optional-flattening &&
+          npm install && npm install -g
       - name: Run tests
         run: |
           cargo nextest run \
