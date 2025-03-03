@@ -268,6 +268,9 @@ module badValues {
     crashProcess(p).then(sendMessages).then(receiveMessage(s)).then(computeAction)
   }
 
+  /// If there is at most one fault (F = 1) two rounds should be enough to reach agreement. 
+  /// But in reality we have two faulty processes, 1 and 3, and they have different initial values.
+  /// Therefore, the agreement invariant is not satisfied.
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
     .then(stepHidePsMessagesFromS(1, Set(2)))

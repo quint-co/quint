@@ -45,12 +45,16 @@ module KSetBadValues {
 
   action crashProcessesFromConfig(hidingConfigs) = all {
     // Collect all processes that need to be crashed from all hiding configurations
-    newlyCrashed' = flatten(hidingConfigs.map(config => config.hiddenProcs)),
+    val nc = flatten(hidingConfigs.map(config => config.hiddenProcs))
+    all {
+    newlyCrashed' = nc,
+    crashed.intersect(nc).size() == 0, // Ensure no process is crashed twice
     crashed' = crashed,
     round' = round,
     procState' = procState,
     correctProcsMessages' = correctProcsMessages,
     crashedProcsMessages' = crashedProcsMessages
+    }
   }
 
   action receiveMessagesWithHiding(hidingConfigs) = all {
