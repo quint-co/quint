@@ -45,7 +45,7 @@ module ConsensusAlg {
     
     val newV = s.V.union(flatten(s.S))
     val newR = s.r + 1
-    val newY = if (newR == MAX_ROUNDS) Some(minValue(newV)) else s.y
+    val newY = if (s.r == MAX_ROUNDS) Some(minValue(newV)) else s.y
     
     {
         V: newV,
@@ -269,12 +269,13 @@ module badValues {
   }
 
   /// If there is at most one fault (F = 1) two rounds should be enough to reach agreement. 
-  /// But in reality we have two faulty processes, 1 and 3, and they have different initial values.
-  /// Therefore, the agreement invariant is not satisfied.
+  /// But in reality we have two faulty processes, 1 and 2. In the first round, process 1 crashes,
+  /// and process 2 receives messages from process 1. In the second round, process 2 crashes, and
+  /// some process see the 1 while others don't
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
-    .then(stepHidePsMessagesFromS(1, Set(2)))
-    .then(stepHidePsMessagesFromS(3, Set(4)))
+    .then(stepHidePsMessagesFromS(1, Set(3, 4, 5)))
+    .then(stepHidePsMessagesFromS(2, Set(4, 5)))
     .expect(not(agreement))
 
 }

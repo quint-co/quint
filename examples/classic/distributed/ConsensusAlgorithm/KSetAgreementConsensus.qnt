@@ -96,17 +96,30 @@ module KSetBadValues {
       .then(computeAction)
 
   // Test scenario where processes decide on different values:
-  // - Process 6 doesn't receive from 1,2 => decides 3
-  // - Process 5 doesn't receive from 1 => decides 2
-  // - Process 8 doesn't receive from 3 => decides 1
-  // - Process 7 doesn't receive from 1,2,3,4 => decides 5
+  // We need to execute two rounds, but because there are too many faults in each round 2 fail.
+  // In the first round, processes 1 and 2 crash:
+  // only process 3 sees process 1's value (the smallest), process 4 sees process 2's value (the second smallest),
+  // while all others consider 3 to be the smallest value. 
+  // In the second round, processes 3 and 4 crash:
+  // only process 5 sees all values, including process 3's value (the smallest), 
+  // process 6 sees process 4's value (the second smallest),
+  // process 7 doesn't see a new value and sticks to 3.
+  // Thus process 5, 6, and 7 decide on different values, although K=2 and only two different
+  // values are allowed.
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
-    .then((F/K + 1).reps(_ => stepWithMultipleHiding(Set(
-      { hiddenProcs: Set(1, 2), targetProc: 6 },
+    .then(stepWithMultipleHiding(Set(
+      { hiddenProcs: Set(1), targetProc: 4 },
       { hiddenProcs: Set(1), targetProc: 5 },
-      { hiddenProcs: Set(3), targetProc: 8 },
-      { hiddenProcs: Set(1, 2, 3, 4), targetProc: 7 }
-    ))))
+      { hiddenProcs: Set(1), targetProc: 6 },
+      { hiddenProcs: Set(1), targetProc: 7 },
+      { hiddenProcs: Set(2), targetProc: 5 },
+      { hiddenProcs: Set(2), targetProc: 6 },
+      { hiddenProcs: Set(2), targetProc: 7 },
+      )))
+    .then(stepWithMultipleHiding(Set(
+      { hiddenProcs: Set(3), targetProc: 6 },
+      { hiddenProcs: Set(3, 4), targetProc: 7 }) ))
     .expect(not(kSetAgreement))
+
 }
