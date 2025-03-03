@@ -567,6 +567,10 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
             Ok(set.iter().next().cloned().unwrap())
         },
 
+        "q::debug" => |_env, args| {
+            println!("> {} {}", args[0].as_str(), args[1]);
+            Ok(args[1].clone())
+        },
         // TODO: extra ops, (q::debug ...)
         _ => {
             panic!("Unknown eager op: {op}")

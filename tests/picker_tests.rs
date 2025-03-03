@@ -6,7 +6,7 @@ use quint_simulator::{
 
 macro_rules! run_test {
     ($content:expr, $expected_value:expr) => {{
-        let parsed = helpers::parse($content)?;
+        let parsed = helpers::parse($content, "init", "step", None)?;
         let init_def = parsed.find_definition_by_name("init")?;
 
         let mut interpreter = Interpreter::new(&parsed.table);

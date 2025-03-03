@@ -6,13 +6,22 @@ use std::process::Command;
 use std::{error::Error, io::Write};
 use tempfile::NamedTempFile;
 
-pub fn parse(quint_content: &str) -> Result<QuintOutput, Box<dyn Error>> {
+pub fn parse(
+    quint_content: &str,
+    init: &str,
+    step: &str,
+    inv: Option<&str>,
+) -> Result<QuintOutput, Box<dyn Error>> {
     let mut temp_file = NamedTempFile::new()?;
     temp_file.write_all(quint_content.as_bytes())?;
 
     let output = Command::new("quint")
         .arg("compile")
         .arg(temp_file.path())
+        .args(["--init", init])
+        .args(["--step", step])
+        .args(["--invariant", inv.unwrap_or("true")])
+        .args(["--flatten", "false"])
         .output()?;
 
     if !output.status.success() {
@@ -29,7 +38,12 @@ pub fn parse(quint_content: &str) -> Result<QuintOutput, Box<dyn Error>> {
     Ok(parsed)
 }
 
-pub fn parse_from_path(file_path: &Path) -> Result<QuintOutput, Box<dyn Error>> {
+pub fn parse_from_path(
+    file_path: &Path,
+    init: &str,
+    step: &str,
+    inv: Option<&str>,
+) -> Result<QuintOutput, Box<dyn Error>> {
     let dir = tempfile::tempdir()?;
     let file_name = dir.path().join("tictactoe.json");
     let file = File::create(file_name.clone()).expect("failed to open file");
@@ -39,6 +53,10 @@ pub fn parse_from_path(file_path: &Path) -> Result<QuintOutput, Box<dyn Error>> 
     let output = Command::new("quint")
         .arg("compile")
         .arg(file_path)
+        .args(["--init", init])
+        .args(["--step", step])
+        .args(["--invariant", inv.unwrap_or("true")])
+        .args(["--flatten", "false"])
         .stdout(file)
         .output()?;
 

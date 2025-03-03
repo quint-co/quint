@@ -1,6 +1,5 @@
-use std::{cell::RefCell, rc::Rc};
-
 use crate::{ir::FxHashMap, value::Value};
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
 pub struct VariableRegister<'a> {
@@ -32,6 +31,16 @@ impl<'a> Storage<'a> {
             }
         }
         self.clear_caches();
+    }
+
+    pub fn as_record(&self) -> Value<'a> {
+        let map = self.vars.values().filter_map(|register| {
+            let reg = register.borrow().clone();
+            reg.value.map(|v| (reg.name.clone(), v))
+        });
+
+        // TODO: add nondet picks and action taken
+        Value::Record(FxHashMap::from_iter(map))
     }
 
     pub fn take_snapshot(&self) -> Snapshot<'a> {

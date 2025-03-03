@@ -10,7 +10,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         }}"
     );
 
-    let parsed = helpers::parse(&quint_content)?;
+    let parsed = helpers::parse(&quint_content, "init", "step", None)?;
     let input_def = parsed.find_definition_by_name("input")?;
 
     // Evaluate the expression inside the 'input' declaration

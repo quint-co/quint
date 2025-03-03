@@ -22,8 +22,8 @@ struct Args {
     step: String,
 
     /// name of the invariant to check (default: "inv")
-    #[argh(option, default = "\"inv\".to_string()")]
-    inv: String,
+    #[argh(option)]
+    inv: Option<String>,
 
     /// the maximum on the number of steps in every trace (default: 10)
     #[argh(option, default = "10")]
@@ -47,15 +47,20 @@ fn main() -> eyre::Result<()> {
     }
 
     log!("Parsing", "Parsing file: {}", args.file.display());
-    let parsed = helpers::parse_from_path(&args.file).unwrap();
-
+    let parsed = helpers::parse_from_path(
+        &args.file,
+        args.init.as_str(),
+        args.step.as_str(),
+        args.inv.as_deref(),
+    )
+    .unwrap();
     let start = Instant::now();
 
     log!("Simulation", "Starting simulation");
     let result = parsed.simulate(
-        &args.init,
-        &args.step,
-        &args.inv,
+        "q::init",
+        "q::step",
+        "q::inv",
         args.max_steps,
         args.max_samples,
     );
