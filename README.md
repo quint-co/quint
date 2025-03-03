@@ -225,8 +225,7 @@ Cosmos in 2023.
 
 ## Documentation
 
-
-View the [Quint documentation](https://quint-lang.org/docs).
+View the [Quint documentation](https://quint-lang.org/docs/getting-started).
 
 We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share

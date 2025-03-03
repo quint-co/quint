@@ -17,6 +17,7 @@ import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { Map as ImmutableMap } from 'immutable'
 import { CachedValue, Register } from './Context'
+import { ACTION_TAKEN, NONDET_PICKS } from '../../itf'
 
 /**
  * A named pointer to a value, so we can use the same reference in multiple places, and just update the value.
@@ -125,8 +126,8 @@ export class VarStorage {
           return [name, valueVariant]
         })
       )
-      map.push(['nondet_picks', nondetPicksRecord])
-      map.push(['action_taken', rv.mkStr(this.actionTaken ?? '')])
+      map.push([NONDET_PICKS, nondetPicksRecord])
+      map.push([ACTION_TAKEN, rv.mkStr(this.actionTaken ?? '')])
     }
 
     return rv.mkRecord(map)
@@ -140,6 +141,12 @@ export class VarStorage {
   reset() {
     this.vars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
+    if (this.storeMetadata) {
+      this.actionTaken = undefined
+      this.nondetPicks.forEach((_, key) => {
+        this.nondetPicks.set(key, undefined)
+      })
+    }
   }
 
   /**

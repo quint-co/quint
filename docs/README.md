@@ -4,7 +4,7 @@
 
 - [Language tutorials](../tutorials/README.md)
 - [Syntax specification](./lang.md)
-- [Cheatsheet](./quint-cheatsheet.pdf)
+- [Cheatsheet](./public/quint-cheatsheet.pdf)
 - [API documentation for built-in operators](./builtin.md)
 
 ## Tooling

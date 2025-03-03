@@ -130,7 +130,7 @@ different kinds of "integers", when they are referred to via different type alia
 
 
 
-It often happens that a protocol requires auxilliary definitions that do not
+It often happens that a protocol requires auxiliary definitions that do not
 depend on the protocol state, but only on the values of their parameters.
 Such computations are often called "pure". In the above code, we define two
 pure definitions:
