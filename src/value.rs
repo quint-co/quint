@@ -229,16 +229,13 @@ impl<'a> Value<'a> {
                     return Cow::Owned(ImmutableSet::default());
                 }
 
-                let base_sets: Vec<Vec<Value>> = sets
-                    .into_iter()
-                    .map(|set| set.as_set().iter().cloned().collect())
-                    .collect();
-
-                let product_sets: ImmutableSet<Value> = base_sets
-                    .into_iter()
+                #[allow(clippy::unnecessary_to_owned)] // False positive
+                let product_sets = sets
+                    .iter()
+                    .map(|set| set.as_set().into_owned().into_iter().collect::<Vec<_>>())
                     .multi_cartesian_product()
                     .map(|product| Value::Tuple(ImmutableVec::from(product)))
-                    .collect();
+                    .collect::<ImmutableSet<_>>();
 
                 Cow::Owned(product_sets)
             }
