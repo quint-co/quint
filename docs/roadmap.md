@@ -87,6 +87,6 @@ completely implementing every pass.
 [Tutorials]: ./tutorials/README.md
 [Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
 [Quint discussions]: https://github.com/informalsystems/quint/discussions
-[ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[ITF traces]: https://apalache-mc.org/docs/adr/015adr-trace.html
 [ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
 [15 minute intro to Quint]: https://youtu.be/OZIX8rs-kOA

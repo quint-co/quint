@@ -959,7 +959,7 @@ function addItfHeader(source: string, status: string, traceInJson: any): any {
   return {
     '#meta': {
       format: 'ITF',
-      'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
+      'format-description': 'https://apalache-mc.org/docs/adr/015adr-trace.html',
       source,
       status,
       description: 'Created by Quint on ' + new Date(),
