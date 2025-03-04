@@ -55,13 +55,13 @@ action init = x' = 1
 action step = x' = x + 1
 ```
 
-You can see `init` and `step` as the entrypoint for the model, like the `main` function is the entrypoint for many programming language applications. All other defintions don't matter for the model, unless they are referred to by `init` or `step`.
+You can see `init` and `step` as the entrypoint for the model, like the `main` function is the entrypoint for many programming language applications. All other definitions don't matter for the model, unless they are referred to by `init` or `step`.
 
 ## Non-determinism
 
 If only a single path was possible in our model, it would be easy to table test it manually and Quint tools wouldn't be necessary. In the reality, most systems involve many possibilities through non-deterministic factors: user's input, random factors, processes that can execute in different orders, failures that may or may not happen, etc. In Quint models, we express all of these possibilities using `any` and `oneOf`.
 
-For example, there's non-determinism when a user get's to decide if they want to deposit or withdraw, so we use `any`:
+For example, there's non-determinism when a user gets to decide if they want to deposit or withdraw, so we use `any`:
 ```quint
 action step = any {
   deposit,
@@ -102,7 +102,7 @@ val process_at_x = PROCESSES[x]
 def plus_x(p) = p + x
 ```
 
-Definitions that use the prime operator (`'`) can only be of mode `action`. Actions are defintions that "modify" the state.
+Definitions that use the prime operator (`'`) can only be of mode `action`. Actions are definitions that "modify" the state.
 
 ```quint
 action increment = x' = x + 1
@@ -140,4 +140,4 @@ pure def factorial(n) = 1.to(n).fold(1, (acc, i) => acc * i)
 
 {/* TODO: Write page on how to rewrite recursion into folds and link it here */}
 
-The lack of recursion enables powerful analysis tools, and although it can be a burden sometimes, thinking about recursive algorithms in terms of folds can be a good exercise to find problems and optimization oportunities.
+The lack of recursion enables powerful analysis tools, and although it can be a burden sometimes, thinking about recursive algorithms in terms of folds can be a good exercise to find problems and optimization opportunities.
