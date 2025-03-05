@@ -395,7 +395,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "get" => |_env, args| {
             let map = args[0].as_map();
-            let key = args[1].clone();
+            let key = args[1].clone().normalize();
             match map.get(&key) {
                 Some(value) => Ok(value.clone()),
                 None => Err(QuintError::new(
@@ -412,7 +412,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "set" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone();
+            let key = args[1].clone().normalize();
 
             if !map.contains_key(&key) {
                 return Err(QuintError::new(
@@ -426,7 +426,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
         "put" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone();
+            let key = args[1].clone().normalize();
             let value = args[2].clone();
             map.insert(key, value);
             Ok(Value::Map(map))
@@ -434,7 +434,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
 
         "setBy" => |env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone();
+            let key = args[1].clone().normalize();
             match map.get(&key) {
                 Some(value) => {
                     let new_value = args[2].as_closure()(env, vec![value.clone()])?;
@@ -511,7 +511,7 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
                 ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
-                    acc.insert(key.clone(), value);
+                    acc.insert(key.clone().normalize(), value);
                     Ok(acc)
                 },
             )?))
