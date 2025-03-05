@@ -223,9 +223,12 @@ pub struct QuintLambdaParameter {
 }
 
 impl QuintOutput {
-    pub fn find_definition_by_name<'a>(&'a self, name: &str) -> Result<&'a OpDef, Box<dyn Error>> {
+    pub fn find_definition_by_name<'a>(
+        &'a self,
+        name: &'_ str,
+    ) -> Result<&'a OpDef, Box<dyn Error>> {
         self.modules
-            .get(0)
+            .first()
             .and_then(|module| {
                 module.declarations.iter().find_map(|d| match d {
                     QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
