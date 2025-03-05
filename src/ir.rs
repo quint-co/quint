@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use fxhash::{FxBuildHasher, FxHashMap};
+use fxhash::FxBuildHasher;
 use imbl::{shared_ptr::RcK, GenericHashMap};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -41,7 +42,7 @@ pub struct QuintOutput {
     pub table: LookupTable,
 }
 
-pub type LookupTable = FxHashMap<QuintId, LookupDefinition>;
+pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
