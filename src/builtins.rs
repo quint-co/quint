@@ -146,9 +146,9 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
     })
 }
 
-pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
+pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
     // To be used at `item` and `nth` which share the same behavior
-    fn at_index<'b>(list: &ImmutableVec<Value<'b>>, index: i64) -> Result<Value<'b>, QuintError> {
+    fn at_index(list: &ImmutableVec<Value>, index: i64) -> Result<Value, QuintError> {
         if index < 0 || index >= list.len().try_into().unwrap() {
             return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
         }
@@ -586,16 +586,16 @@ enum FoldOrder {
     Backward,
 }
 
-fn apply_lambda<'a, T>(
+fn apply_lambda<T>(
     order: FoldOrder,
     iterable: T,
-    initial: Value<'a>,
-    mut closure: impl FnMut(&[Value<'a>]) -> Result<Value<'a>, QuintError>,
-) -> Result<Value<'a>, QuintError>
+    initial: Value,
+    mut closure: impl FnMut(&[Value]) -> Result<Value, QuintError>,
+) -> Result<Value, QuintError>
 where
-    T: Iterator<Item = Value<'a>>,
+    T: Iterator<Item = Value>,
 {
-    let reducer = |acc: Result<Value<'a>, QuintError>, elem: Value<'a>| {
+    let reducer = |acc: Result<Value, QuintError>, elem: Value| {
         acc.and_then(|acc| match order {
             FoldOrder::Forward => closure(&[acc, elem]),
             FoldOrder::Backward => closure(&[elem, acc]),

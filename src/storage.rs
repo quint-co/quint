@@ -2,26 +2,26 @@ use crate::{ir::ImmutableMap, value::Value};
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
-pub struct VariableRegister<'a> {
+pub struct VariableRegister {
     pub name: String,
-    pub value: Option<Value<'a>>,
+    pub value: Option<Value>,
 }
 
 #[derive(Clone)]
-pub struct Snapshot<'a> {
-    pub next_vars: ImmutableMap<String, VariableRegister<'a>>,
+pub struct Snapshot {
+    pub next_vars: ImmutableMap<String, VariableRegister>,
     // nondet_picks
     // action_taken
 }
 
 #[derive(Default, Clone)]
-pub struct Storage<'a> {
-    pub vars: ImmutableMap<String, Rc<RefCell<VariableRegister<'a>>>>,
-    pub next_vars: ImmutableMap<String, Rc<RefCell<VariableRegister<'a>>>>,
-    pub caches_to_clear: Vec<Rc<RefCell<Option<Value<'a>>>>>,
+pub struct Storage {
+    pub vars: ImmutableMap<String, Rc<RefCell<VariableRegister>>>,
+    pub next_vars: ImmutableMap<String, Rc<RefCell<VariableRegister>>>,
+    pub caches_to_clear: Vec<Rc<RefCell<Option<Value>>>>,
 }
 
-impl<'a> Storage<'a> {
+impl Storage {
     pub fn shift_vars(&mut self) {
         for (key, register_for_current) in self.vars.iter() {
             if let Some(register_for_next) = self.next_vars.get(key) {
@@ -33,7 +33,7 @@ impl<'a> Storage<'a> {
         self.clear_caches();
     }
 
-    pub fn as_record(&self) -> Value<'a> {
+    pub fn as_record(&self) -> Value {
         let map = self.vars.values().filter_map(|register| {
             let reg = register.borrow().clone();
             reg.value.map(|v| (reg.name.clone(), v))
@@ -43,7 +43,7 @@ impl<'a> Storage<'a> {
         Value::Record(ImmutableMap::from_iter(map))
     }
 
-    pub fn take_snapshot(&self) -> Snapshot<'a> {
+    pub fn take_snapshot(&self) -> Snapshot {
         Snapshot {
             next_vars: self
                 .next_vars
@@ -53,7 +53,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn restore(&mut self, snapshot: Snapshot<'a>) {
+    pub fn restore(&mut self, snapshot: Snapshot) {
         self.next_vars.iter().for_each(|(k, v)| {
             if let Some(next) = snapshot.next_vars.get(k.as_str()) {
                 v.borrow_mut().value = next.value.clone();

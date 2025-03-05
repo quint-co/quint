@@ -1,8 +1,8 @@
 use crate::value::Value;
 
-impl<'a> Value<'a> {
+impl Value {
     #[allow(clippy::unnecessary_to_owned)]
-    pub fn normalize(self) -> Value<'a> {
+    pub fn normalize(self) -> Value {
         if self.is_set() {
             Value::Set(
                 self.as_set()

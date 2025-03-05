@@ -1,9 +1,4 @@
-use quint_simulator::value::Value;
 use quint_simulator::{evaluator::run, helpers};
-
-fn extend_lifetime<'b>(a: Value<'_>) -> Value<'b> {
-    unsafe { std::mem::transmute(a) }
-}
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = |expr: &str| {
@@ -30,7 +25,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     let expected_def = parsed_expected.find_definition_by_name("expr")?;
     let expected_value = run(&parsed_expected.table, &expected_def.expr);
 
-    let value = value.map(|v| extend_lifetime(v.normalize()));
+    let value = value.map(|v| v.normalize());
 
     assert_eq!(
         value, expected_value,
