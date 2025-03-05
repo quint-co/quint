@@ -106,7 +106,7 @@ fn builtin_value(name: &str) -> CompiledExpr {
     match name {
         "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
         "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
-        _ => unimplemented!(),
+        _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }
 
@@ -418,7 +418,10 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
-pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
+pub fn run<'a, 'b>(table: &'b LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError>
+where
+    'b: 'a,
+{
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new(interpreter.var_storage.clone());
 

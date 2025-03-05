@@ -1,24 +1,27 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::FxHashMap;
-use indexmap::IndexSet;
+use crate::ir::ImmutableMap;
+use imbl::shared_ptr::RcK;
+use imbl::{GenericHashSet, GenericVector};
+use itertools::Itertools;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-pub type FxHashSet<T> = IndexSet<T, fxhash::FxBuildHasher>;
+pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
+pub type ImmutableVec<T> = GenericVector<T, RcK>;
 
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
     Int(i64),
     Bool(bool),
     Str(String),
-    Set(FxHashSet<Value<'a>>),
-    Tuple(Vec<Value<'a>>),
-    Record(FxHashMap<String, Value<'a>>),
-    Map(FxHashMap<Value<'a>, Value<'a>>),
-    List(Vec<Value<'a>>),
+    Set(ImmutableSet<Value<'a>>),
+    Tuple(ImmutableVec<Value<'a>>),
+    Record(ImmutableMap<String, Value<'a>>),
+    Map(ImmutableMap<Value<'a>, Value<'a>>),
+    List(ImmutableVec<Value<'a>>),
     Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
     Variant(String, Rc<Value<'a>>),
     // "Intermediate" values using during evaluation to avoid expensive computations
@@ -152,7 +155,7 @@ impl<'a> Value<'a> {
                     && elems.iter().all(|elem| base_elems.contains(elem))
             }
             (Value::MapSet(domain, range), Value::Map(map)) => {
-                let map_domain = Value::Set(map.keys().cloned().collect::<FxHashSet<_>>());
+                let map_domain = Value::Set(map.keys().cloned().collect::<ImmutableSet<_>>());
                 // Check if domains are equal and all map values are in the range set
                 map_domain == **domain && map.values().all(|v| range.contains(v))
             }
@@ -179,7 +182,7 @@ impl<'a> Value<'a> {
                 Value::MapSet(subset_domain, subset_range),
                 Value::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range),
-            (subset, superset) => subset.as_set().is_subset(&superset.as_set()),
+            (subset, superset) => subset.as_set().is_subset(superset.as_set().as_ref()),
         }
     }
 
@@ -215,7 +218,7 @@ impl<'a> Value<'a> {
         )
     }
 
-    pub fn as_set(&self) -> Cow<'_, FxHashSet<Value<'a>>> {
+    pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value<'a>>> {
         match self {
             Value::Set(set) => Cow::Borrowed(set),
             Value::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::Int).collect()),
@@ -223,65 +226,41 @@ impl<'a> Value<'a> {
                 let size = self.cardinality();
                 if size == 0 {
                     // an empty set produces the empty product
-                    return Cow::Owned(FxHashSet::default());
+                    return Cow::Owned(ImmutableSet::default());
                 }
 
-                let vecs: Vec<Vec<Value<'a>>> = sets
+                #[allow(clippy::unnecessary_to_owned)] // False positive
+                let product_sets = sets
                     .iter()
-                    .map(|set| set.as_set().iter().cloned().collect())
-                    .collect();
+                    .map(|set| set.as_set().into_owned().into_iter().collect::<Vec<_>>())
+                    .multi_cartesian_product()
+                    .map(|product| Value::Tuple(ImmutableVec::from(product)))
+                    .collect::<ImmutableSet<_>>();
 
-                let mut indices = vec![0; vecs.len()];
-                let mut result_set = FxHashSet::with_capacity_and_hasher(size, Default::default());
-                let mut done = false;
-
-                while !done {
-                    let product: Vec<Value<'a>> = indices
-                        .iter()
-                        .enumerate()
-                        .map(|(i, &index)| vecs[i][index].clone())
-                        .collect();
-                    result_set.insert(Value::Tuple(product));
-
-                    done = true;
-                    // Update indices in an order such as this
-                    // Consider the product of two sets [a, b, c] x [0, 1]
-                    // indices | product
-                    // [0, 0] (a, 0)
-                    // [1, 0] (b, 0)
-                    // [2, 0] (c, 0)
-                    // [0, 1] (a, 1)
-                    // [1, 1] (b, 1)
-                    // [2, 1] (c, 1)
-                    for i in (0..indices.len()).rev() {
-                        indices[i] += 1;
-                        if indices[i] < vecs[i].len() {
-                            done = false;
-                            break;
-                        } else {
-                            indices[i] = 0;
-                        }
-                    }
-                }
-
-                Cow::Owned(result_set)
+                Cow::Owned(product_sets)
             }
 
             Value::PowerSet(value) => {
                 let base = value.as_set();
                 let size = 1 << base.len(); // 2^n subsets for a set of size n
-                Cow::Owned((0..size).map(|i| powerset_at_index(&base, i)).collect())
+                Cow::Owned(
+                    (0..size)
+                        .map(|i| powerset_at_index(base.as_ref(), i))
+                        .collect(),
+                )
             }
 
             Value::MapSet(domain, range) => {
                 if domain.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return Cow::Owned(std::iter::once(Value::Map(FxHashMap::default())).collect());
+                    return Cow::Owned(
+                        std::iter::once(Value::Map(ImmutableMap::default())).collect(),
+                    );
                 }
 
                 if range.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty range needs to give Set()
-                    return Cow::Owned(FxHashSet::default());
+                    return Cow::Owned(ImmutableSet::default());
                 }
                 let domain_vec = domain.as_set().iter().cloned().collect::<Vec<_>>();
                 let range_vec = range.as_set().iter().cloned().collect::<Vec<_>>();
@@ -291,7 +270,7 @@ impl<'a> Value<'a> {
 
                 let nmaps = nvalues.pow(nindices.try_into().unwrap());
 
-                let mut result_set = FxHashSet::with_capacity_and_hasher(nmaps, Default::default());
+                let mut result_set = ImmutableSet::new();
 
                 for i in 0..nmaps {
                     let mut pairs = Vec::with_capacity(nindices);
@@ -300,7 +279,7 @@ impl<'a> Value<'a> {
                         pairs.push((key.clone(), range_vec[index % nvalues].clone()));
                         index /= nvalues;
                     }
-                    result_set.insert(Value::Map(FxHashMap::from_iter(pairs)));
+                    result_set.insert(Value::Map(ImmutableMap::from_iter(pairs)));
                 }
 
                 Cow::Owned(result_set)
@@ -309,14 +288,14 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_map(&self) -> &FxHashMap<Value<'a>, Value<'a>> {
+    pub fn as_map(&self) -> &ImmutableMap<Value<'a>, Value<'a>> {
         match self {
             Value::Map(map) => map,
             _ => panic!("Expected map"),
         }
     }
 
-    pub fn as_list(&self) -> &Vec<Value<'a>> {
+    pub fn as_list(&self) -> &ImmutableVec<Value<'a>> {
         match self {
             Value::Tuple(elems) => elems,
             Value::List(elems) => elems,
@@ -324,7 +303,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_record_map(&self) -> &FxHashMap<String, Value<'a>> {
+    pub fn as_record_map(&self) -> &ImmutableMap<String, Value<'a>> {
         match self {
             Value::Record(fields) => fields,
             _ => panic!("Expected record"),
@@ -355,18 +334,13 @@ impl<'a> Value<'a> {
     }
 
     pub fn as_tuple2(&self) -> (Value<'a>, Value<'a>) {
-        match &self.as_list()[..] {
-            [a, b] => (a.clone(), b.clone()),
-            _ => panic!("Expected tuple of 2 elements"),
-        }
+        let mut elems = self.as_list().iter();
+        (elems.next().unwrap().clone(), elems.next().unwrap().clone())
     }
 }
 
-pub fn powerset_at_index<'a>(
-    base: &IndexSet<Value<'a>, std::hash::BuildHasherDefault<fxhash::FxHasher>>,
-    i: usize,
-) -> Value<'a> {
-    let mut elems = FxHashSet::default();
+pub fn powerset_at_index<'a>(base: &ImmutableSet<Value<'a>>, i: usize) -> Value<'a> {
+    let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
         // membership condition, numerical over the indexes i and j
         if (i & (1 << j)) != 0 {

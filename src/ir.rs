@@ -1,15 +1,16 @@
 use std::error::Error;
 
 use fxhash::FxBuildHasher;
+use imbl::{shared_ptr::RcK, GenericHashMap};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub type FxHashMap<K, V> = IndexMap<K, V, FxBuildHasher>;
+pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 
 pub type QuintId = u64;
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, Error, PartialEq)]
 #[error("[{code}] {message}")]
 pub struct QuintError {
     pub code: String,
@@ -41,7 +42,7 @@ pub struct QuintOutput {
     pub table: LookupTable,
 }
 
-pub type LookupTable = FxHashMap<QuintId, LookupDefinition>;
+pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -225,16 +226,16 @@ pub struct QuintLambdaParameter {
 impl QuintOutput {
     pub fn find_definition_by_name<'a>(
         &'a self,
-        name: &'a str,
+        name: &'_ str,
     ) -> Result<&'a OpDef, Box<dyn Error>> {
-        let input_def = self.modules[0]
-            .declarations
-            .iter()
-            .find_map(|d| match d {
-                QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
-                _ => None,
+        self.modules
+            .first()
+            .and_then(|module| {
+                module.declarations.iter().find_map(|d| match d {
+                    QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
+                    _ => None,
+                })
             })
-            .ok_or("Input definition not found")?;
-        Ok(input_def)
+            .ok_or_else(|| "Input definition not found".into())
     }
 }

@@ -1,7 +1,5 @@
-use indexmap::IndexMap;
-
 use crate::{
-    ir::FxHashMap,
+    ir::ImmutableMap,
     value::{powerset_at_index, Value},
 };
 use std::convert::TryInto;
@@ -38,7 +36,7 @@ impl<'a> Value<'a> {
 
                 if domain_size == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return Value::Map(IndexMap::default());
+                    return Value::Map(ImmutableMap::default());
                 }
 
                 assert!(range_size > 0, "Range can't be zero");
@@ -49,7 +47,7 @@ impl<'a> Value<'a> {
                     (key.clone(), value)
                 });
 
-                Value::Map(FxHashMap::from_iter(key_values))
+                Value::Map(ImmutableMap::from_iter(key_values))
             }
             _ => panic!("Not a set"),
         }
