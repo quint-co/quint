@@ -28,3 +28,10 @@ fn ewd426() {
     let parsed: QuintOutput = serde_json::from_reader(file).unwrap();
     insta::assert_yaml_snapshot!(parsed);
 }
+
+#[test]
+fn jmt() {
+    let file = File::open("fixtures/jmt.json").unwrap();
+    let parsed: QuintOutput = serde_json::from_reader(file).unwrap();
+    insta::assert_yaml_snapshot!(parsed);
+}
