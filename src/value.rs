@@ -13,25 +13,25 @@ pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
 pub type ImmutableVec<T> = GenericVector<T, RcK>;
 
 #[derive(Clone, Debug)]
-pub enum Value<'a> {
+pub enum Value {
     Int(i64),
     Bool(bool),
     Str(String),
-    Set(ImmutableSet<Value<'a>>),
-    Tuple(ImmutableVec<Value<'a>>),
-    Record(ImmutableMap<String, Value<'a>>),
-    Map(ImmutableMap<Value<'a>, Value<'a>>),
-    List(ImmutableVec<Value<'a>>),
-    Lambda(Vec<Rc<RefCell<EvalResult<'a>>>>, CompiledExpr<'a>),
-    Variant(String, Rc<Value<'a>>),
+    Set(ImmutableSet<Value>),
+    Tuple(ImmutableVec<Value>),
+    Record(ImmutableMap<String, Value>),
+    Map(ImmutableMap<Value, Value>),
+    List(ImmutableVec<Value>),
+    Lambda(Vec<Rc<RefCell<EvalResult>>>, CompiledExpr),
+    Variant(String, Rc<Value>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
-    CrossProduct(Vec<Value<'a>>),
-    PowerSet(Rc<Value<'a>>),
-    MapSet(Rc<Value<'a>>, Rc<Value<'a>>),
+    CrossProduct(Vec<Value>),
+    PowerSet(Rc<Value>),
+    MapSet(Rc<Value>, Rc<Value>),
 }
 
-impl Hash for Value<'_> {
+impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let discr = core::mem::discriminant(self);
         discr.hash(state);
@@ -94,7 +94,7 @@ impl Hash for Value<'_> {
     }
 }
 
-impl PartialEq for Value<'_> {
+impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Value::Int(a), Value::Int(b)) => a == b,
@@ -121,9 +121,9 @@ impl PartialEq for Value<'_> {
     }
 }
 
-impl Eq for Value<'_> {}
+impl Eq for Value {}
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn cardinality(&self) -> usize {
         match self {
             Value::Set(set) => set.len(),
@@ -141,7 +141,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn contains(&self, elem: &Value<'a>) -> bool {
+    pub fn contains(&self, elem: &Value) -> bool {
         match (self, elem) {
             (Value::Set(elems), _) => elems.contains(elem),
             (Value::Interval(start, end), Value::Int(n)) => start <= n && n <= end,
@@ -163,7 +163,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn subseteq(&self, superset: &Value<'a>) -> bool {
+    pub fn subseteq(&self, superset: &Value) -> bool {
         match (self, superset) {
             (Value::Set(subset), Value::Set(superset)) => subset.is_subset(superset),
             (
@@ -218,7 +218,7 @@ impl<'a> Value<'a> {
         )
     }
 
-    pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value<'a>>> {
+    pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value>> {
         match self {
             Value::Set(set) => Cow::Borrowed(set),
             Value::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::Int).collect()),
@@ -288,14 +288,14 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_map(&self) -> &ImmutableMap<Value<'a>, Value<'a>> {
+    pub fn as_map(&self) -> &ImmutableMap<Value, Value> {
         match self {
             Value::Map(map) => map,
             _ => panic!("Expected map"),
         }
     }
 
-    pub fn as_list(&self) -> &ImmutableVec<Value<'a>> {
+    pub fn as_list(&self) -> &ImmutableVec<Value> {
         match self {
             Value::Tuple(elems) => elems,
             Value::List(elems) => elems,
@@ -303,16 +303,16 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_record_map(&self) -> &ImmutableMap<String, Value<'a>> {
+    pub fn as_record_map(&self) -> &ImmutableMap<String, Value> {
         match self {
             Value::Record(fields) => fields,
             _ => panic!("Expected record"),
         }
     }
 
-    pub fn as_closure<'b>(&'b self) -> impl Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'b {
+    pub fn as_closure(&self) -> impl Fn(&mut Env, Vec<Value>) -> EvalResult + '_ {
         match self {
-            Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value<'a>>| {
+            Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value>| {
                 // TODO: Check number of arguments
 
                 args.into_iter().enumerate().for_each(|(i, arg)| {
@@ -326,20 +326,20 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_variant(&self) -> (&str, &Value<'a>) {
+    pub fn as_variant(&self) -> (&str, &Value) {
         match self {
             Value::Variant(label, value) => (label, value),
             _ => panic!("Expected variant"),
         }
     }
 
-    pub fn as_tuple2(&self) -> (Value<'a>, Value<'a>) {
+    pub fn as_tuple2(&self) -> (Value, Value) {
         let mut elems = self.as_list().iter();
         (elems.next().unwrap().clone(), elems.next().unwrap().clone())
     }
 }
 
-pub fn powerset_at_index<'a>(base: &ImmutableSet<Value<'a>>, i: usize) -> Value<'a> {
+pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
         // membership condition, numerical over the indexes i and j
@@ -350,7 +350,7 @@ pub fn powerset_at_index<'a>(base: &ImmutableSet<Value<'a>>, i: usize) -> Value<
     Value::Set(elems)
 }
 
-impl fmt::Display for Value<'_> {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Int(n) => write!(f, "{}", n),

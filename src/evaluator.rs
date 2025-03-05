@@ -6,82 +6,81 @@ use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
-pub type EvalResult<'a> = Result<Value<'a>, QuintError>;
+pub type EvalResult = Result<Value, QuintError>;
 
 #[derive(Clone)]
-pub struct CompiledExpr<'a>(Rc<dyn Fn(&mut Env) -> EvalResult<'a> + 'a>);
+pub struct CompiledExpr(Rc<dyn Fn(&mut Env) -> EvalResult>);
 
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
-pub struct CompiledExprWithArgs<'a>(Rc<dyn Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a> + 'a>);
+pub struct CompiledExprWithArgs(Rc<dyn Fn(&mut Env, Vec<Value>) -> EvalResult>);
 
 #[derive(Clone)]
-pub struct CompiledExprWithLazyArgs<'a>(
-    #[allow(clippy::type_complexity)]
-    Rc<dyn Fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a> + 'a>,
+pub struct CompiledExprWithLazyArgs(
+    #[allow(clippy::type_complexity)] Rc<dyn Fn(&mut Env, &Vec<CompiledExpr>) -> EvalResult>,
 );
 
-impl<'a> CompiledExpr<'a> {
-    pub fn new(closure: impl 'a + Fn(&mut Env) -> EvalResult<'a>) -> Self {
+impl CompiledExpr {
+    pub fn new(closure: impl Fn(&mut Env) -> EvalResult + 'static) -> Self {
         CompiledExpr(Rc::new(closure))
     }
 
-    pub fn execute(&self, env: &mut Env) -> EvalResult<'a> {
+    pub fn execute(&self, env: &mut Env) -> EvalResult {
         self.0(env)
     }
 }
 
-impl fmt::Debug for CompiledExpr<'_> {
+impl fmt::Debug for CompiledExpr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "<CompiledExpr>")
     }
 }
 
-impl<'a> CompiledExprWithArgs<'a> {
-    pub fn new(closure: impl 'a + Fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a>) -> Self {
+impl CompiledExprWithArgs {
+    pub fn new(closure: impl Fn(&mut Env, Vec<Value>) -> EvalResult + 'static) -> Self {
         CompiledExprWithArgs(Rc::new(closure))
     }
 
-    pub fn from_fn(function: fn(&mut Env, Vec<Value<'a>>) -> EvalResult<'a>) -> Self {
+    pub fn from_fn(function: fn(&mut Env, Vec<Value>) -> EvalResult) -> Self {
         CompiledExprWithArgs(Rc::new(function))
     }
 
-    pub fn execute(&self, env: &mut Env, args: Vec<Value<'a>>) -> EvalResult<'a> {
+    pub fn execute(&self, env: &mut Env, args: Vec<Value>) -> EvalResult {
         self.0(env, args)
     }
 }
 
-impl<'a> CompiledExprWithLazyArgs<'a> {
-    pub fn new(closure: impl 'a + Fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a>) -> Self {
+impl CompiledExprWithLazyArgs {
+    pub fn new(closure: impl Fn(&mut Env, &Vec<CompiledExpr>) -> EvalResult + 'static) -> Self {
         CompiledExprWithLazyArgs(Rc::new(closure))
     }
 
-    pub fn from_fn(function: fn(&mut Env, &Vec<CompiledExpr<'a>>) -> EvalResult<'a>) -> Self {
+    pub fn from_fn(function: fn(&mut Env, &Vec<CompiledExpr>) -> EvalResult) -> Self {
         CompiledExprWithLazyArgs(Rc::new(function))
     }
 
-    pub fn execute(&self, env: &mut Env, args: &Vec<CompiledExpr<'a>>) -> EvalResult<'a> {
+    pub fn execute(&self, env: &mut Env, args: &Vec<CompiledExpr>) -> EvalResult {
         self.0(env, args)
     }
 }
 
-pub struct Env<'a> {
-    pub var_storage: Storage<'a>,
+pub struct Env {
+    pub var_storage: Storage,
     pub rand: Rand,
     // Other params from Typescript implementation, for future reference:
     // recorder
     // trace
 }
 
-impl<'a> Env<'a> {
-    pub fn new(var_storage: Storage<'a>) -> Self {
+impl Env {
+    pub fn new(var_storage: Storage) -> Self {
         Self {
             var_storage,
             rand: Rand::new(),
         }
     }
 
-    pub fn with_rand_state(var_storage: Storage<'a>, state: u64) -> Self {
+    pub fn with_rand_state(var_storage: Storage, state: u64) -> Self {
         Self {
             var_storage,
             rand: Rand::with_state(state),
@@ -91,10 +90,10 @@ impl<'a> Env<'a> {
 
 pub struct Interpreter<'a> {
     table: &'a LookupTable,
-    param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult<'a>>>>,
-    scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult<'a>>>>>,
-    pub var_storage: Storage<'a>,
-    memo: FxHashMap<QuintId, CompiledExpr<'a>>,
+    param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
+    scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult>>>>,
+    pub var_storage: Storage,
+    memo: FxHashMap<QuintId, CompiledExpr>,
     // Other params from Typescript implementation, for future reference:
     // constRegistry: Map<bigint, Register> = new Map()
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
@@ -125,7 +124,7 @@ impl<'a> Interpreter<'a> {
         self.var_storage.shift_vars();
     }
 
-    fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult<'a>>> {
+    fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult>> {
         self.param_registry
             .entry(param.id)
             .or_insert_with(|| {
@@ -161,7 +160,7 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    fn get_or_create_var(&mut self, id: &QuintId, name: &str) -> Rc<RefCell<VariableRegister<'a>>> {
+    fn get_or_create_var(&mut self, id: &QuintId, name: &str) -> Rc<RefCell<VariableRegister>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         if !self.var_storage.vars.contains_key(&key) {
             self.create_var(id, name);
@@ -176,12 +175,12 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableRegister<'a>>> {
+    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableRegister>> {
         let key = format!("{}", id); // TODO: include namespaces in the key
         self.var_storage.next_vars.get(&key).unwrap().clone()
     }
 
-    pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr<'a> {
+    pub fn compile_def(&mut self, def: &'a LookupDefinition) -> CompiledExpr {
         if let Some(cached) = self.memo.get(&def.id()) {
             return cached.clone();
         }
@@ -213,7 +212,9 @@ impl<'a> Interpreter<'a> {
                 }
             }
             LookupDefinition::Definition(QuintDeclaration::QuintVar { id, name }) => {
-                let register = self.get_or_create_var(id, name);
+                let register = Rc::clone(&self.get_or_create_var(id, name));
+                let name = name.clone();
+
                 CompiledExpr::new(move |_| {
                     register.borrow().clone().value.ok_or(QuintError::new(
                         "QNT502",
@@ -262,14 +263,7 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    fn mk_lambda<'e>(
-        &mut self,
-        params: Vec<QuintLambdaParameter>,
-        body: CompiledExpr<'a>,
-    ) -> Value<'a>
-    where
-        'a: 'e,
-    {
+    fn mk_lambda(&mut self, params: Vec<QuintLambdaParameter>, body: CompiledExpr) -> Value {
         let registers = params
             .into_iter()
             .map(|param| {
@@ -281,20 +275,23 @@ impl<'a> Interpreter<'a> {
         Value::Lambda(registers.clone(), body.clone())
     }
 
-    pub fn compile(&mut self, expr: &'a QuintEx) -> CompiledExpr<'a> {
+    pub fn compile(&mut self, expr: &'a QuintEx) -> CompiledExpr {
         if let Some(cached) = self.memo.get(&expr.id()) {
             return cached.clone();
         }
         let compiled_expr = match expr {
             QuintEx::QuintInt { id: _, value } => {
-                CompiledExpr::new(move |_| Ok(Value::Int(*value)))
+                let value = *value;
+                CompiledExpr::new(move |_| Ok(Value::Int(value)))
             }
 
             QuintEx::QuintBool { id: _, value } => {
-                CompiledExpr::new(move |_| Ok(Value::Bool(*value)))
+                let value = *value;
+                CompiledExpr::new(move |_| Ok(Value::Bool(value)))
             }
 
             QuintEx::QuintStr { id: _, value } => {
+                let value = value.clone();
                 CompiledExpr::new(move |_| Ok(Value::Str(value.clone())))
             }
 
@@ -335,8 +332,9 @@ impl<'a> Interpreter<'a> {
                 } else if LAZY_OPS.contains(&opcode.as_str()) {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
+                    let opcode = opcode.clone();
                     CompiledExpr::new(move |env| {
-                        let op = compile_lazy_op(opcode);
+                        let op = compile_lazy_op(&opcode);
                         op.execute(env, &compiled_args)
                     })
                 } else {
@@ -379,7 +377,7 @@ impl<'a> Interpreter<'a> {
         compiled_expr
     }
 
-    pub fn compile_op(&mut self, id: QuintId, op: &'a str) -> CompiledExprWithArgs<'a> {
+    pub fn compile_op(&mut self, id: QuintId, op: &'a str) -> CompiledExprWithArgs {
         match self.table.get(&id) {
             Some(def) => {
                 let op = self.compile_def(def);
@@ -393,7 +391,7 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    pub fn eval(&mut self, env: &mut Env, expr: &'a QuintEx) -> EvalResult<'a> {
+    pub fn eval(&mut self, env: &mut Env, expr: &'a QuintEx) -> EvalResult {
         self.compile(expr).execute(env)
     }
 }
@@ -418,10 +416,7 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
-pub fn run<'a, 'b>(table: &'b LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError>
-where
-    'b: 'a,
-{
+pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new(interpreter.var_storage.clone());
 
