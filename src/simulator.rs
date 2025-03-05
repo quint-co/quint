@@ -1,7 +1,6 @@
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{QuintError, QuintOutput},
-    value::Value,
 };
 
 #[derive(Debug)]
@@ -31,7 +30,7 @@ impl QuintOutput {
         let init = interpreter.compile(&init_def.expr);
         let step = interpreter.compile(&step_def.expr);
         let invariant = interpreter.compile(&invariant_def.expr);
-        let mut trace: Vec<Value<'_>> = Vec::with_capacity(steps + 1);
+        let mut trace = Vec::with_capacity(steps + 1);
 
         for sample_number in 1..=samples {
             trace.clear();

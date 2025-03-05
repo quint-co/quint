@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use crate::value::Value;
 
-impl<'a> Value<'a> {
+impl Value {
     #[allow(clippy::unnecessary_to_owned)]
-    pub fn normalize(self) -> Value<'a> {
+    pub fn normalize(self) -> Value {
         match self {
             Value::Int(_) | Value::Bool(_) | Value::Str(_) => self,
             Value::Set(_)
@@ -31,10 +31,9 @@ impl<'a> Value<'a> {
                     .collect(),
             ),
             Value::List(elems) => Value::List(elems.into_iter().map(|v| v.normalize()).collect()),
-            Value::Variant(label, value) => Value::Variant(
-                label,
-                Rc::new(<Value<'_> as Clone>::clone(&value).normalize()),
-            ),
+            Value::Variant(label, value) => {
+                Value::Variant(label, Rc::new(<Value as Clone>::clone(&value).normalize()))
+            }
             Value::Lambda(_, _) => panic!("Cannot normalize lambda"),
         }
     }

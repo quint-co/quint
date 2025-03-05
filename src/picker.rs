@@ -4,8 +4,8 @@ use crate::{
 };
 use std::convert::TryInto;
 
-impl<'a> Value<'a> {
-    pub fn pick<T: Iterator<Item = usize>>(&self, indexes: &mut T) -> Value<'a> {
+impl Value {
+    pub fn pick<T: Iterator<Item = usize>>(&self, indexes: &mut T) -> Value {
         match self {
             Value::Set(set) => {
                 let index = indexes
