@@ -1,18 +1,20 @@
 // -*- mode: Bluespec; -*-
 
-  /************************************************************************************************
-  (* Quint Specification for Algorithm 15: Consensus Algorithm in the Presence of Crash Failures *)
-  (* This specification is derived from book "Distributed Computing: Fundamentals, Simulations,  *)
-  (* and Advanced Topics" (Second Edition) by Hagit Attiya and Jennifer Welch, specifically from *)
-  (* Chapter 5, page 93.                                                                         *)
-  (* http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf                       *)
-  ************************************************************************************************/
+/*
+ * Quint Specification for Algorithm 15: Consensus Algorithm in the Presence of Crash Failures 
+ * This specification is derived from book "Distributed Computing: Fundamentals, Simulations,  
+ * and Advanced Topics" (Second Edition) by Hagit Attiya and Jennifer Welch [1], specifically from 
+ * Chapter 5, page 93.
+ *
+ * Tatjana Kirda, Josef Widder and Gabriela Moreira, Informal Systems, 2024-2025
+ *                                                                       
+ * [1]: http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf                       
+*/
 module ConsensusAlg {
-
-  const N : int
-  const F : int
-  const actualFaults : int
-  const MAX_ROUNDS : int
+  const N: int
+  const F: int
+  const actualFaults: int
+  const MAX_ROUNDS: int
 
   type Proc = int
   type Value = int
@@ -20,15 +22,15 @@ module ConsensusAlg {
   type Message = { sender: Proc, values: Set[Value] }
 
   type Decision = 
-      | None 
-      | Some(Value)
+    | None 
+    | Some(Value)
 
   type LocalState = {
-      V: Set[Value],
-      r: Round,
-      y: Decision,
-      S: Set[Set[Value]],
-      x: Value
+    V: Set[Value],
+    r: Round,
+    y: Decision,
+    S: Set[Set[Value]],
+    x: Value
   }
 
   type Stage = Starting | Sending | Receiving | Computing
@@ -39,21 +41,17 @@ module ConsensusAlg {
 
   def getFirst(s: Set[int]): int = s.fold(0, (_, v) => v)
 
-  def minValue(values: Set[int]): int = { val initial = getFirst(values) values.fold(initial, (min, v) => if (v < min) v else min) }
+  def minValue(values: Set[int]): int = {
+    val initial = getFirst(values)
+    values.fold(initial, (min, v) => if (v < min) v else min)
+  }
 
   pure def compute(s: LocalState): LocalState = {
-    
     val newV = s.V.union(flatten(s.S))
     val newR = s.r + 1
     val newY = if (s.r == MAX_ROUNDS) Some(minValue(newV)) else s.y
     
-    {
-        V: newV,
-        r: newR,
-        y: newY,
-        S: Set(),
-        x: s.x
-    }
+    { V: newV, r: newR, y: newY, S: Set(), x: s.x }
   }
 
   //
@@ -74,26 +72,28 @@ module ConsensusAlg {
   // Invariants
   //
 
-  def agreement = Procs.exclude(crashed).forall(p => 
-    Procs.exclude(crashed).forall(q => 
-      ( procState.get(p).y != None and procState.get(q).y != None) implies 
-        procState.get(p).y == procState.get(q).y))
+  def agreement = Procs.exclude(crashed).forall(p => { 
+    Procs.exclude(crashed).forall(q => {
+      (procState.get(p).y != None and procState.get(q).y != None) implies 
+        procState.get(p).y == procState.get(q).y
+    })
+  })
 
   /// If all processes have the same initial value v, then this must be the only decision value
   def validity = 
     val allXValues = Procs.map(p => procState.get(p).x)
-    if (allXValues.size() == 1)
-      allXValues.forall(v => 
-        Procs.exclude(crashed).forall(p =>
+    allXValues.size() == 1 implies
+      allXValues.forall(v => {
+        Procs.exclude(crashed).forall(p => {
           match procState.get(p).y {
             | Some(y) => y == v
             | None => true
-          }))
-    else 
-      true
+          }
+        })
+      })
 
   //
-  // Steps
+  // Actions
   //
 
   action init = all {
@@ -134,12 +134,12 @@ module ConsensusAlg {
       values: procState.get(p).V
     }),
     crashedProcsMessages' =
-      if (newlyCrashed.size() > 0){
+      if (newlyCrashed.size() > 0) {
          newlyCrashed.map(p => {
            sender: p,
            values: procState.get(p).V
         })
-      } else{
+      } else {
         crashedProcsMessages
       },
     round' = round,
@@ -157,10 +157,13 @@ module ConsensusAlg {
     crashedProcsMessages' = crashedProcsMessages
   }
   
-  action randCrash = all {
+  /// Crash some number of processes smaller or equal to `actualFaults`
+  action crash = all {
     if (actualFaults - crashed.size() > 0) {
       nondet newCrashCount = oneOf(1.to(actualFaults - crashed.size()))
-      nondet newlyCrashedProcesses = Procs.exclude(crashed).powerset().filter(s => s.size() == newCrashCount).oneOf()
+      nondet newlyCrashedProcesses = Procs.exclude(crashed).powerset().filter(s => {
+        s.size() == newCrashCount
+      }).oneOf()
       newlyCrashed' = newlyCrashedProcesses
     } else {
       newlyCrashed' = newlyCrashed
@@ -177,72 +180,74 @@ module ConsensusAlg {
     correctProcsMessages' = Set(),
     crashedProcsMessages' = Set(),
     val newCorrectValues: Set[Set[Value]] = correctProcsMessages.map(m => m.values)
-    if (crashedProcsMessages.size() == 0){
-      procState' = procState.keys().mapBy(p => {... procState.get(p), S:newCorrectValues})
-    }
-    else{
+    if (crashedProcsMessages.size() == 0) {
+      procState' = procState.keys().mapBy(p => {... procState.get(p), S: newCorrectValues})
+    } else {
       val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(m => m.values)
-      nondet crashedMessagesRecived = Procs.setOfMaps(newCrashedProcsValues).union(Set()).oneOf()// for each process we pick from which newly crashed they receive a message
-      procState' = procState.keys().mapBy(p => { ... procState.get(p), S: newCorrectValues.union(Set(crashedMessagesRecived.get(p))) })
+      // for each process we pick from which newly crashed they receive a message
+      nondet crashedMessagesReceived = Procs.setOfMaps(newCrashedProcsValues).union(Set()).oneOf()
+      procState' = procState.keys().mapBy(p => {
+        ...procState.get(p),
+        S: newCorrectValues.union(Set(crashedMessagesReceived.get(p)))
+      })
     },
     crashed' = crashed,
     newlyCrashed' = newlyCrashed,
   }    
 
   action computeAction = all {
-      correctProcsMessages' = Set(),
-      procState' = procState.keys().mapBy(p => compute(procState.get(p))),
-      round' = round + 1,
-      crashed' = crashed.union(newlyCrashed),
-      newlyCrashed' = Set(),
-      crashedProcsMessages' = Set()
+    correctProcsMessages' = Set(),
+    procState' = procState.keys().mapBy(p => compute(procState.get(p))),
+    round' = round + 1,
+    crashed' = crashed.union(newlyCrashed),
+    newlyCrashed' = Set(),
+    crashedProcsMessages' = Set()
   }
 
-  /// the set s of correct processes don't receive the messages from newlycrashed
+  /// the set `s` of correct processes don't receive the messages from `newlyCrashed`
   action receiveMessage(s) = all {
     round' = round,
     correctProcsMessages' = Set(),
     crashedProcsMessages' = Set(),
     val newCorrectValues: Set[Set[Value]] = correctProcsMessages.map(m => m.values)
     val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(m => m.values)
-    procState' = procState.keys().mapBy(p => 
+    procState' = procState.keys().mapBy(p => { 
         { ...procState.get(p), 
           S: if (s.contains(p)) 
-              newCorrectValues 
+               newCorrectValues 
              else 
-              newCorrectValues.union(newCrashedProcsValues) 
+               newCorrectValues.union(newCrashedProcsValues) 
         }
-    ),
+    }),
     crashed' = crashed,
     newlyCrashed' = newlyCrashed,
   }
 
   action stuttering = all {
-     round' = round,
-     correctProcsMessages' = correctProcsMessages,
-     crashedProcsMessages' = crashedProcsMessages,
-     procState' = procState,
-     crashed' = crashed,
-     newlyCrashed' = newlyCrashed,
-     stage' = stage,
-   }
+    round' = round,
+    correctProcsMessages' = correctProcsMessages,
+    crashedProcsMessages' = crashedProcsMessages,
+    procState' = procState,
+    crashed' = crashed,
+    newlyCrashed' = newlyCrashed,
+    stage' = stage,
+  }
 
   action step =
     if (round > MAX_ROUNDS) {
       stuttering
     } else {
       match stage {
-        | Starting => all { randCrash, stage' = Sending }
+        | Starting => all { crash, stage' = Sending }
         | Sending => all { sendMessages, stage' = Receiving }
         | Receiving => all { receiveMessages, stage' = Computing }
         | Computing => all { computeAction, stage' = Starting }
       }
   }
-
 }
 
 module properValues {
-  //quint run --main=properValues ConsensusAlg.qnt
+  // quint run --main properValues --invariant agreement ConsensusAlg.qnt
   import ConsensusAlg(N = 6, F = 1, actualFaults = 1, MAX_ROUNDS = 2).*
 
   run consensusRunTest = 
@@ -252,18 +257,17 @@ module properValues {
     .expect(validity)
 }
 
-
 module badValues {
-  //quint run ConsensusAlg.qnt --main badValues --invariant agreement --max-steps 5  
-  //quint test --main=badValues ConsensusAlg.qnt
+  // quint run ConsensusAlg.qnt --main badValues --invariant agreement --max-steps 5  
+  // quint test --main=badValues ConsensusAlg.qnt
   import ConsensusAlg(N = 6, F = 1, actualFaults = 2, MAX_ROUNDS = 2).*
 
   run consensusRunTest  =
     init
-    .then((F + 1).reps(_ => step))
-    .expect(validity)
+      .then((F + 1).reps(_ => step))
+      .expect(validity)
 
-  /// we crash process p, and the set s does not receive p's messages
+  /// We crash process p, and the set s does not receive p's messages
   run stepHidePsMessagesFromS(p,s) = any {
     crashProcess(p).then(sendMessages).then(receiveMessage(s)).then(computeAction)
   }
@@ -274,8 +278,7 @@ module badValues {
   /// some process see the 1 while others don't
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
-    .then(stepHidePsMessagesFromS(1, Set(3, 4, 5)))
-    .then(stepHidePsMessagesFromS(2, Set(4, 5)))
-    .expect(not(agreement))
-
+      .then(stepHidePsMessagesFromS(1, Set(3, 4, 5)))
+      .then(stepHidePsMessagesFromS(2, Set(4, 5)))
+      .expect(not(agreement))
 }

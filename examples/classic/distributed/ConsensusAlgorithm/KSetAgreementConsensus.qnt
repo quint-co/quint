@@ -1,17 +1,20 @@
 // -*- mode: Bluespec; -*-
 
-  /******************************************************************************************************
-  (* Quint Specification for Algorithm 18: K-set Consensus Algorithm in the Presence of Crash Failures  *)
-  (* This specification is derived from book "Distributed Computing: Fundamentals, Simulations, and     *)
-  (* Advanced Topics" (Second Edition) by Hagit Attiya and Jennifer Welch, specifically from Chapter 5, *)
-  (* page 120.                                                                                          *)
-  (* http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf                              *)
-  *******************************************************************************************************/
+/*
+ * Quint Specification for Algorithm 18: K-set Consensus Algorithm in the Presence of Crash Failures 
+ * This specification is derived from book "Distributed Computing: Fundamentals, Simulations, and    
+ * Advanced Topics" (Second Edition) by Hagit Attiya and Jennifer Welch [1], specifically from Chapter 5,
+ * page 120.                                                                                         
+ *
+ * Tatjana Kirda, Josef Widder and Gabriela Moreira, Informal Systems, 2024-2025
+ *
+ * [1]: http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf                             
+ */
 module KSetAgreementConsensus {
   import ConsensusAlg.* from "ConsensusAlg"
   export ConsensusAlg.*
 
-  const K : int
+  const K: int
 
   def kSetAgreement = {
     // Get all decided values (excluding None) and ensure they are unique
@@ -23,7 +26,7 @@ module KSetAgreementConsensus {
 }
 
 module KSetProperValues {
-  //quint run --main=KSetProperValues KSetAgreementConsensus.qnt
+  // quint run --main KSetProperValues --invariant kSetAgreement KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest =
@@ -34,26 +37,26 @@ module KSetProperValues {
 }
 
 module KSetBadValues {
-  //quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
-  //quint test --main=KSetBadValues KSetAgreementConsensus.qnt
+  // quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
+  // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest  =
     init
-    .then((F/K + 1).reps(_ => step))
-    .expect(validity)
+      .then((F/K + 1).reps(_ => step))
+      .expect(validity)
 
   action crashProcessesFromConfig(hidingConfigs) = all {
     // Collect all processes that need to be crashed from all hiding configurations
     val nc = flatten(hidingConfigs.map(config => config.hiddenProcs))
     all {
-    newlyCrashed' = nc,
-    crashed.intersect(nc).size() == 0, // Ensure no process is crashed twice
-    crashed' = crashed,
-    round' = round,
-    procState' = procState,
-    correctProcsMessages' = correctProcsMessages,
-    crashedProcsMessages' = crashedProcsMessages
+      newlyCrashed' = nc,
+      crashed.intersect(nc).size() == 0, // Ensure no process is crashed twice
+      crashed' = crashed,
+      round' = round,
+      procState' = procState,
+      correctProcsMessages' = correctProcsMessages,
+      crashedProcsMessages' = crashedProcsMessages
     }
   }
 
@@ -108,18 +111,17 @@ module KSetBadValues {
   // values are allowed.
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
-    .then(stepWithMultipleHiding(Set(
-      { hiddenProcs: Set(1), targetProc: 4 },
-      { hiddenProcs: Set(1), targetProc: 5 },
-      { hiddenProcs: Set(1), targetProc: 6 },
-      { hiddenProcs: Set(1), targetProc: 7 },
-      { hiddenProcs: Set(2), targetProc: 5 },
-      { hiddenProcs: Set(2), targetProc: 6 },
-      { hiddenProcs: Set(2), targetProc: 7 },
-      )))
-    .then(stepWithMultipleHiding(Set(
-      { hiddenProcs: Set(3), targetProc: 6 },
-      { hiddenProcs: Set(3, 4), targetProc: 7 }) ))
-    .expect(not(kSetAgreement))
-
+      .then(stepWithMultipleHiding(Set(
+        { hiddenProcs: Set(1), targetProc: 4 },
+        { hiddenProcs: Set(1), targetProc: 5 },
+        { hiddenProcs: Set(1), targetProc: 6 },
+        { hiddenProcs: Set(1), targetProc: 7 },
+        { hiddenProcs: Set(2), targetProc: 5 },
+        { hiddenProcs: Set(2), targetProc: 6 },
+        { hiddenProcs: Set(2), targetProc: 7 },
+        )))
+      .then(stepWithMultipleHiding(Set(
+        { hiddenProcs: Set(3), targetProc: 6 },
+        { hiddenProcs: Set(3, 4), targetProc: 7 }) ))
+      .expect(not(kSetAgreement))
 }
