@@ -357,29 +357,29 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
         },
 
         "fold" => |env, args| {
-            apply_lambda(
-                FoldOrder::Forward,
+            let reducer = args[2].as_closure();
+            fold_left(
                 args[0].as_set().iter().cloned(),
                 args[1].clone(),
-                |arg| args[2].as_closure()(env, arg.to_vec()),
+                |acc, arg| reducer(env, vec![acc, arg]),
             )
         },
 
         "foldl" => |env, args| {
-            apply_lambda(
-                FoldOrder::Forward,
+            let reducer = args[2].as_closure();
+            fold_left(
                 args[0].as_list().iter().cloned(),
                 args[1].clone(),
-                |arg| args[2].as_closure()(env, arg.to_vec()),
+                |acc, arg| reducer(env, vec![acc, arg]),
             )
         },
 
         "foldr" => |env, args| {
-            apply_lambda(
-                FoldOrder::Backward,
-                args[0].as_list().iter().cloned().rev(),
+            let reducer = args[2].as_closure();
+            fold_right(
+                args[0].as_list().iter().cloned(),
                 args[1].clone(),
-                |arg| args[2].as_closure()(env, arg.to_vec()),
+                |arg, acc| reducer(env, vec![arg, acc]),
             )
         },
 
@@ -581,26 +581,81 @@ pub fn compile_eager_op<'a>(op: &str) -> CompiledExprWithArgs<'a> {
     })
 }
 
-enum FoldOrder {
-    Forward,
-    Backward,
-}
-
-fn apply_lambda<'a, T>(
-    order: FoldOrder,
-    iterable: T,
+fn fold_left<'a, T>(
+    mut iterable: T,
     initial: Value<'a>,
-    mut closure: impl FnMut(&[Value<'a>]) -> Result<Value<'a>, QuintError>,
+    closure: impl FnMut(Value<'a>, Value<'a>) -> Result<Value<'a>, QuintError>,
 ) -> Result<Value<'a>, QuintError>
 where
     T: Iterator<Item = Value<'a>>,
 {
-    let reducer = |acc: Result<Value<'a>, QuintError>, elem: Value<'a>| {
-        acc.and_then(|acc| match order {
-            FoldOrder::Forward => closure(&[acc, elem]),
-            FoldOrder::Backward => closure(&[elem, acc]),
-        })
-    };
+    iterable.try_fold(initial, closure)
+}
 
-    iterable.fold(Ok(initial), reducer)
+fn fold_right<'a, T>(
+    iterable: T,
+    initial: Value<'a>,
+    mut closure: impl FnMut(Value<'a>, Value<'a>) -> Result<Value<'a>, QuintError>,
+) -> Result<Value<'a>, QuintError>
+where
+    T: Iterator<Item = Value<'a>> + DoubleEndedIterator,
+{
+    iterable
+        .rev()
+        .try_fold(initial, |acc, arg| closure(arg, acc))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ghci> foldl (flip (:)) [] [1,2,3]
+    // [3,2,1]
+    #[test]
+    fn test_fold_left() {
+        let list = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
+        let result = fold_left(
+            list.into_iter(),
+            Value::List(ImmutableVec::new()),
+            |acc, arg| {
+                let mut acc = acc.as_list().clone();
+                acc.push_front(arg);
+                Ok(Value::List(acc))
+            },
+        );
+
+        assert_eq!(
+            result.unwrap(),
+            Value::List(ImmutableVec::from(vec![
+                Value::Int(3),
+                Value::Int(2),
+                Value::Int(1),
+            ]))
+        );
+    }
+
+    // ghci> foldr (:) [] [1,2,3]
+    // [1,2,3]
+    #[test]
+    fn test_fold_right() {
+        let list = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
+        let result = fold_right(
+            list.into_iter(),
+            Value::List(ImmutableVec::new()),
+            |arg, acc| {
+                let mut acc = acc.as_list().clone();
+                acc.push_front(arg);
+                Ok(Value::List(acc))
+            },
+        );
+
+        assert_eq!(
+            result.unwrap(),
+            Value::List(ImmutableVec::from(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3)
+            ]))
+        );
+    }
 }
