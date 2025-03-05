@@ -1,7 +1,12 @@
+use quint_simulator::value::Value;
 use quint_simulator::{evaluator::run, helpers};
 
+fn extend_lifetime<'b>(a: Value<'_>) -> Value<'b> {
+    unsafe { std::mem::transmute(a) }
+}
+
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
-    fn quint_content(expr: &str) -> String {
+    let quint_content = |expr: &str| {
         format!(
             "module main {{
               type T = Some(int) | None
@@ -10,7 +15,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
               val step = true
             }}"
         )
-    }
+    };
 
     let parsed = helpers::parse(&quint_content(input), "init", "step", None)?;
     let input_def = parsed.find_definition_by_name("expr")?;
@@ -25,11 +30,11 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     let expected_def = parsed_expected.find_definition_by_name("expr")?;
     let expected_value = run(&parsed_expected.table, &expected_def.expr);
 
-    let v = value.map(|v| v.normalize());
+    let value = value.map(|v| extend_lifetime(v.normalize()));
+
     assert_eq!(
-        v, expected_value,
-        "expression: {}, expected: {:#?}, got: {:#?}",
-        input, expected, v
+        value, expected_value,
+        "expression: {input}, expected: {expected:#?}, got: {value:#?}",
     );
 
     Ok(())

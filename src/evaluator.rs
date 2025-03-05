@@ -418,7 +418,10 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
-pub fn run<'a>(table: &'a LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError> {
+pub fn run<'a, 'b>(table: &'b LookupTable, expr: &'a QuintEx) -> Result<Value<'a>, QuintError>
+where
+    'b: 'a,
+{
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new(interpreter.var_storage.clone());
 
