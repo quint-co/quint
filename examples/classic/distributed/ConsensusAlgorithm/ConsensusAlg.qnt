@@ -191,7 +191,7 @@ module ConsensusAlg {
     } else {
       val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(m => m.values)
       // for each process we pick from which newly crashed they receive a message
-      nondet crashedMessagesReceived = Procs.setOfMaps(newCrashedProcsValues).union(Set()).oneOf()
+      nondet crashedMessagesReceived = Procs.setOfMaps(newCrashedProcsValues.union(Set(Set()))).oneOf()
 
       procState' = procState.keys().mapBy(p => {
         ...procState.get(p),

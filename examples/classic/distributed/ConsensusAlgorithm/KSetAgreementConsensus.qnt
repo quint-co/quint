@@ -105,8 +105,8 @@ module KSetBadValues {
       .then(computeAction)
 
   // Test scenario where processes decide on different values:
-  // TODO: I don't understand this next sentence
-  // We need to execute two rounds, but because there are too many faults in each round 2 fail.
+  // For K-Set agreement, we would need at least one round with less than K crashes
+  // In this scenario, we don't have this, as we have 2 round and in each round 2 processes fail.
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
        // In the first round, processes 1 and 2 crash:
@@ -129,7 +129,7 @@ module KSetBadValues {
       .then(stepWithMultipleHiding(Set(
         { hiddenProcs: Set(3), targetProc: 6 },
         { hiddenProcs: Set(3, 4), targetProc: 7 }) ))
-      // Thus process 5, 6, and 7 decide on different values, although K=2 and only two different
+      // Thus processes 5, 6, and 7 decide on different values, although K=2 and only two different
       // values are allowed.
       .expect(not(kSetAgreement))
 }
