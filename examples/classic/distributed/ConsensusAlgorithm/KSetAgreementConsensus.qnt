@@ -1,14 +1,14 @@
 // -*- mode: Bluespec; -*-
 
 /*
- * Quint Specification for Algorithm 18: K-set Consensus Algorithm in the Presence of Crash Failures 
- * This specification is derived from book "Distributed Computing: Fundamentals, Simulations, and    
+ * Quint Specification for Algorithm 18: K-set Consensus Algorithm in the Presence of Crash Failures
+ * This specification is derived from book "Distributed Computing: Fundamentals, Simulations, and
  * Advanced Topics" (Second Edition) by Hagit Attiya and Jennifer Welch [1], specifically from Chapter 5,
- * page 120.                                                                                         
+ * page 120.
  *
  * Tatjana Kirda, Josef Widder and Gabriela Moreira, Informal Systems, 2024-2025
  *
- * [1]: http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf                             
+ * [1]: http://lib.ysu.am/disciplines_bk/c95d04e111f3e28ae4cc589bfda1e18b.pdf
  */
 module KSetAgreementConsensus {
   import ConsensusAlg.* from "ConsensusAlg"
@@ -16,7 +16,7 @@ module KSetAgreementConsensus {
 
   const K: int
 
-  def kSetAgreement = {
+  val kSetAgreement = {
     // Get all decided values (excluding None) and ensure they are unique
     val decidedValues = Procs.exclude(crashed).map(p => procState.get(p).y).filter(v => v != None)
 
@@ -27,7 +27,7 @@ module KSetAgreementConsensus {
 
 module KSetProperValues {
   // quint run --main KSetProperValues --invariant kSetAgreement KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
+  import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest =
     init
@@ -39,12 +39,16 @@ module KSetProperValues {
 module KSetBadValues {
   // quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
   // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 8, F = 3, actualFaults = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
+  import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest  =
     init
       .then((F/K + 1).reps(_ => step))
       .expect(validity)
+
+  //
+  //  Auxiliary definitions to crash in a specific way
+  //
 
   action crashProcessesFromConfig(hidingConfigs) = all {
     // Collect all processes that need to be crashed from all hiding configurations
@@ -64,8 +68,12 @@ module KSetBadValues {
     round' = round,
     correctProcsMessages' = Set(),
     crashedProcsMessages' = Set(),
+    crashed' = crashed,
+    newlyCrashed' = newlyCrashed,
+
     val newCorrectValues: Set[Set[Value]] = correctProcsMessages.map(m => m.values)
     val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(m => m.values)
+
     procState' = procState.keys().mapBy(p => {
       // Find if this process is a target in any hiding config
       val configForThisProc = hidingConfigs.filter(config => config.targetProc == p)
@@ -88,8 +96,6 @@ module KSetBadValues {
 
       { ...procState.get(p), S: processedValues }
     }),
-    crashed' = crashed,
-    newlyCrashed' = newlyCrashed,
   }
 
   run stepWithMultipleHiding(hidingConfigs) =
@@ -99,18 +105,14 @@ module KSetBadValues {
       .then(computeAction)
 
   // Test scenario where processes decide on different values:
+  // TODO: I don't understand this next sentence
   // We need to execute two rounds, but because there are too many faults in each round 2 fail.
-  // In the first round, processes 1 and 2 crash:
-  // only process 3 sees process 1's value (the smallest), process 4 sees process 2's value (the second smallest),
-  // while all others consider 3 to be the smallest value. 
-  // In the second round, processes 3 and 4 crash:
-  // only process 5 sees all values, including process 3's value (the smallest), 
-  // process 6 sees process 4's value (the second smallest),
-  // process 7 doesn't see a new value and sticks to 3.
-  // Thus process 5, 6, and 7 decide on different values, although K=2 and only two different
-  // values are allowed.
   run consensusDisagreementTest =
     initializeProcsStateWithDistinctValues
+       // In the first round, processes 1 and 2 crash:
+       // only process 3 sees process 1's value (the smallest),
+       // process 4 sees process 2's value (the second smallest),
+       // while all others consider 3 to be the smallest value.
       .then(stepWithMultipleHiding(Set(
         { hiddenProcs: Set(1), targetProc: 4 },
         { hiddenProcs: Set(1), targetProc: 5 },
@@ -120,8 +122,14 @@ module KSetBadValues {
         { hiddenProcs: Set(2), targetProc: 6 },
         { hiddenProcs: Set(2), targetProc: 7 },
         )))
+      // In the second round, processes 3 and 4 crash:
+      // only process 5 sees all values, including process 3's value (the smallest),
+      // process 6 sees process 4's value (the second smallest),
+      // process 7 doesn't see a new value and sticks to 3.
       .then(stepWithMultipleHiding(Set(
         { hiddenProcs: Set(3), targetProc: 6 },
         { hiddenProcs: Set(3, 4), targetProc: 7 }) ))
+      // Thus process 5, 6, and 7 decide on different values, although K=2 and only two different
+      // values are allowed.
       .expect(not(kSetAgreement))
 }
