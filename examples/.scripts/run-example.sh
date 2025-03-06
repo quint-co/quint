@@ -82,6 +82,10 @@ get_main () {
     main="--main=two_phase_commit_3"
   elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" ]] ; then
     main="--main=Paxos_val2_accept3_quorum2"
+  elif [[ "$file" == "classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt" ]] ; then
+    main="--main=badValues"
+  elif [[ "$file" == "classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt" ]] ; then
+    main="--main=KSetBadValues"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then

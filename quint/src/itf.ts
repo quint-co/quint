@@ -1,6 +1,6 @@
 /*
  * Support for the Informal Trace Format (ITF):
- * https://apalache.informal.systems/docs/adr/015adr-trace.html
+ * https://apalache-mc.org/docs/adr/015adr-trace.html
  *
  * Igor Konnov, Shon Feder, Informal Systems, 2023
  *
@@ -202,7 +202,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     } else if (typeof value === 'number') {
       // We never encode an integer as a JS number,
       // but we consume it for backwards compatibility with older ITF traces.
-      // See: https://apalache.informal.systems/docs/adr/015adr-trace.html
+      // See: https://apalache-mc.org/docs/adr/015adr-trace.html
       return { id, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
       return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
