@@ -49,6 +49,8 @@ listed without any additional command line arguments.
 | Example | Syntax (`parse`) | Types (`typecheck`) | Unit tests (`test`) | Apalache (`verify`) |
 |---------|:----------------:|:-------------------:|:-------------------:|:-------------------:|
 | [classic/distributed/ClockSync/clockSync3.qnt](./classic/distributed/ClockSync/clockSync3.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt](./classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt](./classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [classic/distributed/ewd426/ewd426.qnt](./classic/distributed/ewd426/ewd426.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/ewd426/ewd426_3.qnt](./classic/distributed/ewd426/ewd426_3.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/ewd426/ewd426_4.qnt](./classic/distributed/ewd426/ewd426_4.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
