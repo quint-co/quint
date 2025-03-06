@@ -27,6 +27,7 @@ module KSetAgreementConsensus {
 
 module KSetProperValues {
   // quint run --main KSetProperValues --invariant kSetAgreement KSetAgreementConsensus.qnt
+  // quint test --main KSetProperValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest =
@@ -37,7 +38,7 @@ module KSetProperValues {
 }
 
 module KSetBadValues {
-  // quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
+  // (should fail) quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
   // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
