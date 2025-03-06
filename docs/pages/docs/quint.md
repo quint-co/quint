@@ -1,8 +1,4 @@
-# quint: Tool for the Quint specification language
-
-| Revision | Date       | Author                  |
-|---------:|:----------:|:------------------------|
-|        9 | 2024-06-26 | Igor Konnov, Shon Feder, Gabriela Moreira |
+# Quint CLI: Tool for the Quint specification language
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
@@ -362,12 +358,12 @@ prerequisite is a [compatible installation of OpenJDK](../quint/README.md).
 You may also manually obtain and run a distribution of Apalache, following these
 steps:
 
-1. Install a distribution of [Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html).
+1. Install a distribution of [Apalache](https://apalache-mc.org/docs/apalache/installation/jvm.html).
 2. Start the Apalache server `apalache-mc server` and ensure that it is running.
 
 Apalache uses bounded model checking. This technique checks *all runs* up to
 `--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache
-configuration](https://apalache.informal.systems/docs/apalache/config.html?highlight=configuration#apalache-configuration)
+configuration](https://apalache-mc.org/docs/apalache/config.html#apalache-configuration)
 for guidance.
 
 - If there are no critical errors (e.g., in parsing, typechecking, etc.), this
@@ -455,8 +451,8 @@ exact format is to be specified in the future.
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 [Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/quintIr.ts
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
-[Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[Informal Trace Format]: https://apalache-mc.org/docs/adr/015adr-trace.html
 [ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
 [jq]: https://stedolan.github.io/jq/
 [z3]: https://github.com/z3prover/z3
-[Apalache]: https://apalache.informal.systems/
+[Apalache]: https://apalache-mc.org/

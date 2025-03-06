@@ -18,9 +18,9 @@ be used for:
 Quint's type system should be simple, in consequence of the language design
 decisions that avoid ambiguity present in TLA+, eliminating the need for ad-hoc
 polymorphism. Using [Apalache's type
-system](https://apalache.informal.systems/docs/adr/002adr-types.html) and its
+system](https://apalache-mc.org/docs/adr/002adr-types.html) and its
 [extension for precise
-records](https://apalache.informal.systems/docs/adr/014adr-precise-records.html)
+records](https://apalache-mc.org/docs/adr/014adr-precise-records.html)
 as basis, the proposed type system should be able to infer simple types, match
 annotations and handle row types from records and tuples variants.
 

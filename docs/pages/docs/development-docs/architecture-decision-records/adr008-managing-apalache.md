@@ -161,7 +161,7 @@ Cons:
 
 #### 3.2.3 Using the Github release directly (xcopy-deploy the JAR file)
 
-This is currently the [recommended way for obtaining Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html):
+This is currently the [recommended way for obtaining Apalache](https://apalache-mc.org/docs/apalache/installation/jvm.html):
 Download the Github release, and unpack Apalache's JAR file to the target system.
 
 Pros:

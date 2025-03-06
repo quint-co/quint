@@ -148,7 +148,7 @@ npm run apalache-integration
 ```
 
 It is required that you have a Java version meeting [Apalache's minimum
-requirements](https://apalache.informal.systems/docs/apalache/installation/jvm.html).
+requirements](https://apalache-mc.org/docs/apalache/installation/jvm.html).
 
 ### Parser
 
