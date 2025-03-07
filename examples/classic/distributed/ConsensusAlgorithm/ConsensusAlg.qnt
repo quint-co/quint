@@ -105,7 +105,7 @@ module ConsensusAlg {
   //
 
   action init = all {
-    nondet initialValues = Procs.setOfMaps(Set(1, 2, 3)).oneOf()
+    nondet initialValues = Procs.setOfMaps(1.to(N + 1)).oneOf()
     procState' = Procs.mapBy(i => {
       val initialValue = initialValues.get(i)
       {
@@ -263,7 +263,7 @@ module properValues {
 }
 
 module badValues {
-  // quint run ConsensusAlg.qnt --main badValues --invariant agreement --max-steps 5
+  // (should fail) quint run ConsensusAlg.qnt --main badValues --invariant agreement --max-steps 8
   // quint test --main=badValues ConsensusAlg.qnt
   import ConsensusAlg(N = 6, F = 1, ACTUAL_FAULTS = 2, MAX_ROUNDS = 2).*
 

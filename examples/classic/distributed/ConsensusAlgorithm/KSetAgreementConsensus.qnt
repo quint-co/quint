@@ -38,7 +38,9 @@ module KSetProperValues {
 }
 
 module KSetBadValues {
-  // (should fail) quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 5
+  // quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 8
+  // The command above should fail, but it might take a few minutes (and extra samples) to find a violation
+  // Use --seed=0x12d0977afd37f0 to find it (generated in quint v0.23.0)
   // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
