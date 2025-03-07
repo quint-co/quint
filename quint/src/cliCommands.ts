@@ -87,6 +87,7 @@ interface OutputStage {
   errors?: ErrorMessage[]
   warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
   sourceCode?: Map<string, string> // Should not be printed, only used in formatting errors
+  main?: string
 }
 
 // Extract just the parts of a ProcedureStage that we use for the output
@@ -106,6 +107,7 @@ const pickOutputStage = ({
   status,
   trace,
   seed,
+  main,
 }: ProcedureStage) => {
   return {
     stage,
@@ -122,6 +124,7 @@ const pickOutputStage = ({
     status,
     trace,
     seed,
+    main,
   }
 }
 
@@ -705,6 +708,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     return right({
       ...typechecked,
       mainModule: main,
+      main: mainName,
       stage: 'compiling',
     })
   }
@@ -726,6 +730,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     ...flattenedAnalysis,
     mainModule: flatMain,
     table: flattenedTable,
+    main: mainName,
     stage: 'compiling',
   })
 }
