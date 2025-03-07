@@ -57,7 +57,7 @@ pub fn parse_from_path(
         .args(["--init", init])
         .args(["--step", step])
         .args(["--invariant", inv.unwrap_or("true")])
-        .args(main.map(|m| vec!["--main", m]).unwrap_or_else(Vec::new))
+        .args(main.map(|m| vec!["--main", m]).unwrap_or_default())
         .args(["--flatten", "false"])
         .stdout(file)
         .output()?;
