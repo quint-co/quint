@@ -494,73 +494,73 @@ modules:
                     value: 2
         depth: ~
       - kind: def
-        id: 475
+        id: 473
         name: init
         qualifier: action
         expr:
           kind: app
-          id: 474
+          id: 472
           opcode: actionAll
           args:
             - kind: app
-              id: 458
+              id: 456
               opcode: assign
               args:
                 - kind: name
-                  id: 457
+                  id: 455
                   name: nextTurn
                 - kind: name
-                  id: 456
+                  id: 454
                   name: X
             - kind: app
-              id: 473
+              id: 471
               opcode: assign
               args:
                 - kind: name
-                  id: 472
+                  id: 470
                   name: board
                 - kind: app
-                  id: 471
+                  id: 469
                   opcode: mapBy
                   args:
                     - kind: app
-                      id: 461
+                      id: 459
                       opcode: to
                       args:
                         - kind: int
-                          id: 459
+                          id: 457
                           value: 1
                         - kind: int
-                          id: 460
+                          id: 458
                           value: 3
                     - kind: lambda
-                      id: 470
+                      id: 468
                       params:
-                        - id: 462
-                          name: __470
+                        - id: 460
+                          name: __468
                       expr:
                         kind: app
-                        id: 469
+                        id: 467
                         opcode: mapBy
                         args:
                           - kind: app
-                            id: 465
+                            id: 463
                             opcode: to
                             args:
                               - kind: int
-                                id: 463
+                                id: 461
                                 value: 1
                               - kind: int
-                                id: 464
+                                id: 462
                                 value: 3
                           - kind: lambda
-                            id: 468
+                            id: 466
                             params:
-                              - id: 466
-                                name: __468
+                              - id: 464
+                                name: __466
                             expr:
                               kind: name
-                              id: 467
+                              id: 465
                               name: Empty
         depth: ~
       - kind: def
@@ -1311,124 +1311,120 @@ modules:
                 name: corner
         depth: ~
       - kind: def
-        id: 491
+        id: 489
         name: XHasNotWon
         qualifier: val
         expr:
           kind: app
-          id: 490
+          id: 488
           opcode: not
           args:
             - kind: app
-              id: 489
+              id: 487
               opcode: won
               args:
                 - kind: name
-                  id: 488
+                  id: 486
                   name: X
         depth: ~
       - kind: def
-        id: 495
+        id: 493
         name: OHasNotWon
         qualifier: val
         expr:
           kind: app
-          id: 494
+          id: 492
           opcode: not
           args:
             - kind: app
-              id: 493
+              id: 491
               opcode: won
               args:
                 - kind: name
-                  id: 492
+                  id: 490
                   name: O
         depth: ~
       - kind: def
-        id: 504
+        id: 502
         name: XMustEventuallyWin
         qualifier: temporal
         expr:
           kind: app
-          id: 503
+          id: 501
           opcode: eventually
           args:
             - kind: app
-              id: 502
+              id: 500
               opcode: won
               args:
                 - kind: name
-                  id: 501
+                  id: 499
                   name: X
         depth: ~
       - kind: def
-        id: 455
+        id: 453
         name: MoveO
         qualifier: action
         expr:
           kind: app
-          id: 454
+          id: 452
           opcode: actionAll
           args:
             - kind: app
-              id: 445
+              id: 444
               opcode: eq
               args:
                 - kind: name
-                  id: 443
+                  id: 442
                   name: nextTurn
                 - kind: name
-                  id: 444
+                  id: 443
                   name: O
             - kind: app
-              id: 448
+              id: 446
               opcode: not
               args:
-                - kind: app
-                  id: 447
-                  opcode: won
-                  args:
-                    - kind: name
-                      id: 446
-                      name: X
+                - kind: name
+                  id: 445
+                  name: gameOver
             - kind: app
-              id: 450
+              id: 448
               opcode: MoveToEmpty
               args:
                 - kind: name
-                  id: 449
+                  id: 447
                   name: O
             - kind: app
-              id: 453
+              id: 451
               opcode: assign
               args:
                 - kind: name
-                  id: 452
+                  id: 450
                   name: nextTurn
                 - kind: name
-                  id: 451
+                  id: 449
                   name: X
         depth: ~
       - kind: def
-        id: 498
+        id: 496
         name: NotStalemate
         qualifier: val
         expr:
           kind: app
-          id: 497
+          id: 495
           opcode: not
           args:
             - kind: name
-              id: 496
+              id: 494
               name: stalemate
         depth: ~
       - kind: def
-        id: 500
+        id: 498
         name: inv
         qualifier: val
         expr:
           kind: name
-          id: 499
+          id: 497
           name: OHasNotWon
         depth: ~
       - kind: def
@@ -1636,12 +1632,12 @@ modules:
                       name: coordinate
         depth: ~
       - kind: def
-        id: 442
+        id: 441
         name: MoveX
         qualifier: action
         expr:
           kind: app
-          id: 441
+          id: 440
           opcode: actionAll
           args:
             - kind: app
@@ -1655,143 +1651,139 @@ modules:
                   id: 416
                   name: X
             - kind: app
-              id: 420
+              id: 419
               opcode: not
               args:
-                - kind: app
-                  id: 419
-                  opcode: won
-                  args:
-                    - kind: name
-                      id: 418
-                      name: O
+                - kind: name
+                  id: 418
+                  name: gameOver
             - kind: app
-              id: 437
+              id: 436
               opcode: ite
               args:
                 - kind: name
-                  id: 421
+                  id: 420
                   name: boardEmpty
                 - kind: name
-                  id: 422
+                  id: 421
                   name: StartInCorner
                 - kind: app
-                  id: 436
+                  id: 435
                   opcode: ite
                   args:
                     - kind: name
-                      id: 423
+                      id: 422
                       name: canWin
                     - kind: name
-                      id: 424
+                      id: 423
                       name: Win
                     - kind: app
-                      id: 435
+                      id: 434
                       opcode: ite
                       args:
                         - kind: name
-                          id: 425
+                          id: 424
                           name: canBlock
                         - kind: name
-                          id: 426
+                          id: 425
                           name: Block
                         - kind: app
-                          id: 434
+                          id: 433
                           opcode: ite
                           args:
                             - kind: name
-                              id: 427
+                              id: 426
                               name: canTakeCenter
                             - kind: name
-                              id: 428
+                              id: 427
                               name: TakeCenter
                             - kind: app
-                              id: 433
+                              id: 432
                               opcode: ite
                               args:
                                 - kind: name
-                                  id: 429
+                                  id: 428
                                   name: canSetupWin
                                 - kind: name
-                                  id: 430
+                                  id: 429
                                   name: SetupWin
                                 - kind: app
-                                  id: 432
+                                  id: 431
                                   opcode: MoveToEmpty
                                   args:
                                     - kind: name
-                                      id: 431
+                                      id: 430
                                       name: X
             - kind: app
-              id: 440
+              id: 439
               opcode: assign
               args:
                 - kind: name
-                  id: 439
+                  id: 438
                   name: nextTurn
                 - kind: name
-                  id: 438
+                  id: 437
                   name: O
         depth: ~
       - kind: def
-        id: 487
+        id: 485
         name: step
         qualifier: action
         expr:
           kind: app
-          id: 486
+          id: 484
           opcode: actionAny
           args:
             - kind: name
-              id: 476
+              id: 474
               name: MoveX
             - kind: name
-              id: 477
+              id: 475
               name: MoveO
             - kind: app
-              id: 485
+              id: 483
               opcode: actionAll
               args:
                 - kind: name
-                  id: 478
+                  id: 476
                   name: gameOver
                 - kind: app
-                  id: 481
+                  id: 479
                   opcode: assign
                   args:
                     - kind: name
-                      id: 480
+                      id: 478
                       name: board
                     - kind: name
-                      id: 479
+                      id: 477
                       name: board
                 - kind: app
-                  id: 484
+                  id: 482
                   opcode: assign
                   args:
                     - kind: name
-                      id: 483
+                      id: 481
                       name: nextTurn
                     - kind: name
-                      id: 482
+                      id: 480
                       name: nextTurn
         depth: ~
       - kind: def
-        id: 507
+        id: 505
         name: "q::init"
         qualifier: action
         expr:
           kind: name
-          id: 506
+          id: 504
           name: init
         depth: ~
       - kind: def
-        id: 509
+        id: 507
         name: "q::step"
         qualifier: action
         expr:
           kind: name
-          id: 508
+          id: 506
           name: step
         depth: ~
 table:
@@ -8147,72 +8139,37 @@ table:
     depth: 0
   418:
     kind: def
-    id: 12
-    name: O
+    id: 226
+    name: gameOver
     qualifier: val
     expr:
       kind: app
-      id: 11
-      opcode: variant
+      id: 225
+      opcode: or
       args:
-        - kind: str
-          id: 9
-          value: O
         - kind: app
-          id: 10
-          opcode: Tup
-          args: []
-    depth: 0
-  419:
-    kind: def
-    id: 203
-    name: won
-    qualifier: def
-    expr:
-      kind: lambda
-      id: 202
-      params:
-        - id: 190
-          name: player_202
-      expr:
-        kind: app
-        id: 201
-        opcode: exists
-        args:
-          - kind: name
-            id: 191
-            name: winningPatterns
-          - kind: lambda
-            id: 200
-            params:
-              - id: 192
-                name: pattern_200
-            expr:
-              kind: app
-              id: 199
-              opcode: forall
+          id: 223
+          opcode: or
+          args:
+            - kind: app
+              id: 220
+              opcode: won
               args:
                 - kind: name
-                  id: 193
-                  name: pattern_200
-                - kind: lambda
-                  id: 198
-                  params:
-                    - id: 194
-                      name: coordinate_198
-                  expr:
-                    kind: app
-                    id: 197
-                    opcode: hasPlayer
-                    args:
-                      - kind: name
-                        id: 195
-                        name: coordinate_198
-                      - kind: name
-                        id: 196
-                        name: player_202
+                  id: 219
+                  name: X
+            - kind: app
+              id: 222
+              opcode: won
+              args:
+                - kind: name
+                  id: 221
+                  name: O
+        - kind: name
+          id: 224
+          name: boardFull
     depth: 0
-  421:
+  420:
     kind: def
     id: 189
     name: boardEmpty
@@ -8229,7 +8186,7 @@ table:
           id: 187
           name: isEmpty
     depth: 0
-  422:
+  421:
     kind: def
     id: 414
     name: StartInCorner
@@ -8262,7 +8219,7 @@ table:
             id: 411
             name: corner
     depth: 0
-  423:
+  422:
     kind: def
     id: 299
     name: canWin
@@ -8279,7 +8236,7 @@ table:
           id: 297
           name: canWinWithPattern
     depth: 0
-  424:
+  423:
     kind: def
     id: 353
     name: Win
@@ -8349,7 +8306,7 @@ table:
                   id: 348
                   name: coordinate
     depth: 0
-  425:
+  424:
     kind: def
     id: 303
     name: canBlock
@@ -8366,7 +8323,7 @@ table:
           id: 301
           name: canBlockWithPattern
     depth: 0
-  426:
+  425:
     kind: def
     id: 371
     name: Block
@@ -8436,7 +8393,7 @@ table:
                   id: 366
                   name: coordinate
     depth: 0
-  427:
+  426:
     kind: def
     id: 308
     name: canTakeCenter
@@ -8457,7 +8414,7 @@ table:
               id: 305
               value: 2
     depth: 0
-  428:
+  427:
     kind: def
     id: 377
     name: TakeCenter
@@ -8481,7 +8438,7 @@ table:
               id: 374
               value: 2
     depth: 0
-  429:
+  428:
     kind: def
     id: 312
     name: canSetupWin
@@ -8498,7 +8455,7 @@ table:
           id: 310
           name: canSetupWinWithPattern
     depth: 0
-  430:
+  429:
     kind: def
     id: 394
     name: SetupWin
@@ -8565,26 +8522,26 @@ table:
                   id: 389
                   name: coordinate
     depth: 0
+  430:
+    kind: def
+    id: 8
+    name: X
+    qualifier: val
+    expr:
+      kind: app
+      id: 7
+      opcode: variant
+      args:
+        - kind: str
+          id: 5
+          value: X
+        - kind: app
+          id: 6
+          opcode: Tup
+          args: []
+    depth: 0
   431:
     kind: def
-    id: 8
-    name: X
-    qualifier: val
-    expr:
-      kind: app
-      id: 7
-      opcode: variant
-      args:
-        - kind: str
-          id: 5
-          value: X
-        - kind: app
-          id: 6
-          opcode: Tup
-          args: []
-    depth: 0
-  432:
-    kind: def
     id: 406
     name: MoveToEmpty
     qualifier: action
@@ -8628,133 +8585,129 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    depth: 0
+  437:
+    kind: def
+    id: 12
+    name: O
+    qualifier: val
+    expr:
+      kind: app
+      id: 11
+      opcode: variant
+      args:
+        - kind: str
+          id: 9
+          value: O
+        - kind: app
+          id: 10
+          opcode: Tup
+          args: []
     depth: 0
   438:
-    kind: def
-    id: 12
-    name: O
-    qualifier: val
-    expr:
-      kind: app
-      id: 11
-      opcode: variant
-      args:
-        - kind: str
-          id: 9
-          value: O
-        - kind: app
-          id: 10
-          opcode: Tup
-          args: []
-    depth: 0
-  439:
     kind: var
     id: 34
     name: nextTurn
+  441:
+    kind: def
+    id: 441
+    name: MoveX
+    qualifier: action
+    expr:
+      kind: app
+      id: 440
+      opcode: actionAll
+      args:
+        - kind: app
+          id: 417
+          opcode: eq
+          args:
+            - kind: name
+              id: 415
+              name: nextTurn
+            - kind: name
+              id: 416
+              name: X
+        - kind: app
+          id: 419
+          opcode: not
+          args:
+            - kind: name
+              id: 418
+              name: gameOver
+        - kind: app
+          id: 436
+          opcode: ite
+          args:
+            - kind: name
+              id: 420
+              name: boardEmpty
+            - kind: name
+              id: 421
+              name: StartInCorner
+            - kind: app
+              id: 435
+              opcode: ite
+              args:
+                - kind: name
+                  id: 422
+                  name: canWin
+                - kind: name
+                  id: 423
+                  name: Win
+                - kind: app
+                  id: 434
+                  opcode: ite
+                  args:
+                    - kind: name
+                      id: 424
+                      name: canBlock
+                    - kind: name
+                      id: 425
+                      name: Block
+                    - kind: app
+                      id: 433
+                      opcode: ite
+                      args:
+                        - kind: name
+                          id: 426
+                          name: canTakeCenter
+                        - kind: name
+                          id: 427
+                          name: TakeCenter
+                        - kind: app
+                          id: 432
+                          opcode: ite
+                          args:
+                            - kind: name
+                              id: 428
+                              name: canSetupWin
+                            - kind: name
+                              id: 429
+                              name: SetupWin
+                            - kind: app
+                              id: 431
+                              opcode: MoveToEmpty
+                              args:
+                                - kind: name
+                                  id: 430
+                                  name: X
+        - kind: app
+          id: 439
+          opcode: assign
+          args:
+            - kind: name
+              id: 438
+              name: nextTurn
+            - kind: name
+              id: 437
+              name: O
+    depth: 0
   442:
-    kind: def
-    id: 442
-    name: MoveX
-    qualifier: action
-    expr:
-      kind: app
-      id: 441
-      opcode: actionAll
-      args:
-        - kind: app
-          id: 417
-          opcode: eq
-          args:
-            - kind: name
-              id: 415
-              name: nextTurn
-            - kind: name
-              id: 416
-              name: X
-        - kind: app
-          id: 420
-          opcode: not
-          args:
-            - kind: app
-              id: 419
-              opcode: won
-              args:
-                - kind: name
-                  id: 418
-                  name: O
-        - kind: app
-          id: 437
-          opcode: ite
-          args:
-            - kind: name
-              id: 421
-              name: boardEmpty
-            - kind: name
-              id: 422
-              name: StartInCorner
-            - kind: app
-              id: 436
-              opcode: ite
-              args:
-                - kind: name
-                  id: 423
-                  name: canWin
-                - kind: name
-                  id: 424
-                  name: Win
-                - kind: app
-                  id: 435
-                  opcode: ite
-                  args:
-                    - kind: name
-                      id: 425
-                      name: canBlock
-                    - kind: name
-                      id: 426
-                      name: Block
-                    - kind: app
-                      id: 434
-                      opcode: ite
-                      args:
-                        - kind: name
-                          id: 427
-                          name: canTakeCenter
-                        - kind: name
-                          id: 428
-                          name: TakeCenter
-                        - kind: app
-                          id: 433
-                          opcode: ite
-                          args:
-                            - kind: name
-                              id: 429
-                              name: canSetupWin
-                            - kind: name
-                              id: 430
-                              name: SetupWin
-                            - kind: app
-                              id: 432
-                              opcode: MoveToEmpty
-                              args:
-                                - kind: name
-                                  id: 431
-                                  name: X
-        - kind: app
-          id: 440
-          opcode: assign
-          args:
-            - kind: name
-              id: 439
-              name: nextTurn
-            - kind: name
-              id: 438
-              name: O
-    depth: 0
+    kind: var
+    id: 34
+    name: nextTurn
   443:
-    kind: var
-    id: 34
-    name: nextTurn
-  444:
     kind: def
     id: 12
     name: O
@@ -8772,472 +8725,7 @@ table:
           opcode: Tup
           args: []
     depth: 0
-  446:
-    kind: def
-    id: 8
-    name: X
-    qualifier: val
-    expr:
-      kind: app
-      id: 7
-      opcode: variant
-      args:
-        - kind: str
-          id: 5
-          value: X
-        - kind: app
-          id: 6
-          opcode: Tup
-          args: []
-    depth: 0
-  447:
-    kind: def
-    id: 203
-    name: won
-    qualifier: def
-    expr:
-      kind: lambda
-      id: 202
-      params:
-        - id: 190
-          name: player_202
-      expr:
-        kind: app
-        id: 201
-        opcode: exists
-        args:
-          - kind: name
-            id: 191
-            name: winningPatterns
-          - kind: lambda
-            id: 200
-            params:
-              - id: 192
-                name: pattern_200
-            expr:
-              kind: app
-              id: 199
-              opcode: forall
-              args:
-                - kind: name
-                  id: 193
-                  name: pattern_200
-                - kind: lambda
-                  id: 198
-                  params:
-                    - id: 194
-                      name: coordinate_198
-                  expr:
-                    kind: app
-                    id: 197
-                    opcode: hasPlayer
-                    args:
-                      - kind: name
-                        id: 195
-                        name: coordinate_198
-                      - kind: name
-                        id: 196
-                        name: player_202
-    depth: 0
-  449:
-    kind: def
-    id: 12
-    name: O
-    qualifier: val
-    expr:
-      kind: app
-      id: 11
-      opcode: variant
-      args:
-        - kind: str
-          id: 9
-          value: O
-        - kind: app
-          id: 10
-          opcode: Tup
-          args: []
-    depth: 0
-  450:
-    kind: def
-    id: 406
-    name: MoveToEmpty
-    qualifier: action
-    expr:
-      kind: lambda
-      id: 405
-      params:
-        - id: 395
-          name: player_405
-      expr:
-        kind: let
-        id: 404
-        opdef:
-          id: 400
-          name: coordinate
-          qualifier: nondet
-          expr:
-            kind: app
-            id: 399
-            opcode: oneOf
-            args:
-              - kind: app
-                id: 398
-                opcode: filter
-                args:
-                  - kind: name
-                    id: 396
-                    name: boardCoordinates
-                  - kind: name
-                    id: 397
-                    name: isEmpty
-          depth: ~
-        expr:
-          kind: app
-          id: 403
-          opcode: Move
-          args:
-            - kind: name
-              id: 401
-              name: player_405
-            - kind: name
-              id: 402
-              name: coordinate
-    depth: 0
-  451:
-    kind: def
-    id: 8
-    name: X
-    qualifier: val
-    expr:
-      kind: app
-      id: 7
-      opcode: variant
-      args:
-        - kind: str
-          id: 5
-          value: X
-        - kind: app
-          id: 6
-          opcode: Tup
-          args: []
-    depth: 0
-  452:
-    kind: var
-    id: 34
-    name: nextTurn
-  455:
-    kind: def
-    id: 455
-    name: MoveO
-    qualifier: action
-    expr:
-      kind: app
-      id: 454
-      opcode: actionAll
-      args:
-        - kind: app
-          id: 445
-          opcode: eq
-          args:
-            - kind: name
-              id: 443
-              name: nextTurn
-            - kind: name
-              id: 444
-              name: O
-        - kind: app
-          id: 448
-          opcode: not
-          args:
-            - kind: app
-              id: 447
-              opcode: won
-              args:
-                - kind: name
-                  id: 446
-                  name: X
-        - kind: app
-          id: 450
-          opcode: MoveToEmpty
-          args:
-            - kind: name
-              id: 449
-              name: O
-        - kind: app
-          id: 453
-          opcode: assign
-          args:
-            - kind: name
-              id: 452
-              name: nextTurn
-            - kind: name
-              id: 451
-              name: X
-    depth: 0
-  456:
-    kind: def
-    id: 8
-    name: X
-    qualifier: val
-    expr:
-      kind: app
-      id: 7
-      opcode: variant
-      args:
-        - kind: str
-          id: 5
-          value: X
-        - kind: app
-          id: 6
-          opcode: Tup
-          args: []
-    depth: 0
-  457:
-    kind: var
-    id: 34
-    name: nextTurn
-  467:
-    kind: def
-    id: 26
-    name: Empty
-    qualifier: val
-    expr:
-      kind: app
-      id: 25
-      opcode: variant
-      args:
-        - kind: str
-          id: 23
-          value: Empty
-        - kind: app
-          id: 24
-          opcode: Tup
-          args: []
-    depth: 0
-  472:
-    kind: var
-    id: 32
-    name: board
-  475:
-    kind: def
-    id: 475
-    name: init
-    qualifier: action
-    expr:
-      kind: app
-      id: 474
-      opcode: actionAll
-      args:
-        - kind: app
-          id: 458
-          opcode: assign
-          args:
-            - kind: name
-              id: 457
-              name: nextTurn
-            - kind: name
-              id: 456
-              name: X
-        - kind: app
-          id: 473
-          opcode: assign
-          args:
-            - kind: name
-              id: 472
-              name: board
-            - kind: app
-              id: 471
-              opcode: mapBy
-              args:
-                - kind: app
-                  id: 461
-                  opcode: to
-                  args:
-                    - kind: int
-                      id: 459
-                      value: 1
-                    - kind: int
-                      id: 460
-                      value: 3
-                - kind: lambda
-                  id: 470
-                  params:
-                    - id: 462
-                      name: __470
-                  expr:
-                    kind: app
-                    id: 469
-                    opcode: mapBy
-                    args:
-                      - kind: app
-                        id: 465
-                        opcode: to
-                        args:
-                          - kind: int
-                            id: 463
-                            value: 1
-                          - kind: int
-                            id: 464
-                            value: 3
-                      - kind: lambda
-                        id: 468
-                        params:
-                          - id: 466
-                            name: __468
-                        expr:
-                          kind: name
-                          id: 467
-                          name: Empty
-    depth: 0
-  476:
-    kind: def
-    id: 442
-    name: MoveX
-    qualifier: action
-    expr:
-      kind: app
-      id: 441
-      opcode: actionAll
-      args:
-        - kind: app
-          id: 417
-          opcode: eq
-          args:
-            - kind: name
-              id: 415
-              name: nextTurn
-            - kind: name
-              id: 416
-              name: X
-        - kind: app
-          id: 420
-          opcode: not
-          args:
-            - kind: app
-              id: 419
-              opcode: won
-              args:
-                - kind: name
-                  id: 418
-                  name: O
-        - kind: app
-          id: 437
-          opcode: ite
-          args:
-            - kind: name
-              id: 421
-              name: boardEmpty
-            - kind: name
-              id: 422
-              name: StartInCorner
-            - kind: app
-              id: 436
-              opcode: ite
-              args:
-                - kind: name
-                  id: 423
-                  name: canWin
-                - kind: name
-                  id: 424
-                  name: Win
-                - kind: app
-                  id: 435
-                  opcode: ite
-                  args:
-                    - kind: name
-                      id: 425
-                      name: canBlock
-                    - kind: name
-                      id: 426
-                      name: Block
-                    - kind: app
-                      id: 434
-                      opcode: ite
-                      args:
-                        - kind: name
-                          id: 427
-                          name: canTakeCenter
-                        - kind: name
-                          id: 428
-                          name: TakeCenter
-                        - kind: app
-                          id: 433
-                          opcode: ite
-                          args:
-                            - kind: name
-                              id: 429
-                              name: canSetupWin
-                            - kind: name
-                              id: 430
-                              name: SetupWin
-                            - kind: app
-                              id: 432
-                              opcode: MoveToEmpty
-                              args:
-                                - kind: name
-                                  id: 431
-                                  name: X
-        - kind: app
-          id: 440
-          opcode: assign
-          args:
-            - kind: name
-              id: 439
-              name: nextTurn
-            - kind: name
-              id: 438
-              name: O
-    depth: 0
-  477:
-    kind: def
-    id: 455
-    name: MoveO
-    qualifier: action
-    expr:
-      kind: app
-      id: 454
-      opcode: actionAll
-      args:
-        - kind: app
-          id: 445
-          opcode: eq
-          args:
-            - kind: name
-              id: 443
-              name: nextTurn
-            - kind: name
-              id: 444
-              name: O
-        - kind: app
-          id: 448
-          opcode: not
-          args:
-            - kind: app
-              id: 447
-              opcode: won
-              args:
-                - kind: name
-                  id: 446
-                  name: X
-        - kind: app
-          id: 450
-          opcode: MoveToEmpty
-          args:
-            - kind: name
-              id: 449
-              name: O
-        - kind: app
-          id: 453
-          opcode: assign
-          args:
-            - kind: name
-              id: 452
-              name: nextTurn
-            - kind: name
-              id: 451
-              name: X
-    depth: 0
-  478:
+  445:
     kind: def
     id: 226
     name: gameOver
@@ -9269,152 +8757,7 @@ table:
           id: 224
           name: boardFull
     depth: 0
-  479:
-    kind: var
-    id: 32
-    name: board
-  480:
-    kind: var
-    id: 32
-    name: board
-  482:
-    kind: var
-    id: 34
-    name: nextTurn
-  483:
-    kind: var
-    id: 34
-    name: nextTurn
-  487:
-    kind: def
-    id: 487
-    name: step
-    qualifier: action
-    expr:
-      kind: app
-      id: 486
-      opcode: actionAny
-      args:
-        - kind: name
-          id: 476
-          name: MoveX
-        - kind: name
-          id: 477
-          name: MoveO
-        - kind: app
-          id: 485
-          opcode: actionAll
-          args:
-            - kind: name
-              id: 478
-              name: gameOver
-            - kind: app
-              id: 481
-              opcode: assign
-              args:
-                - kind: name
-                  id: 480
-                  name: board
-                - kind: name
-                  id: 479
-                  name: board
-            - kind: app
-              id: 484
-              opcode: assign
-              args:
-                - kind: name
-                  id: 483
-                  name: nextTurn
-                - kind: name
-                  id: 482
-                  name: nextTurn
-    depth: 0
-  488:
-    kind: def
-    id: 8
-    name: X
-    qualifier: val
-    expr:
-      kind: app
-      id: 7
-      opcode: variant
-      args:
-        - kind: str
-          id: 5
-          value: X
-        - kind: app
-          id: 6
-          opcode: Tup
-          args: []
-    depth: 0
-  489:
-    kind: def
-    id: 203
-    name: won
-    qualifier: def
-    expr:
-      kind: lambda
-      id: 202
-      params:
-        - id: 190
-          name: player_202
-      expr:
-        kind: app
-        id: 201
-        opcode: exists
-        args:
-          - kind: name
-            id: 191
-            name: winningPatterns
-          - kind: lambda
-            id: 200
-            params:
-              - id: 192
-                name: pattern_200
-            expr:
-              kind: app
-              id: 199
-              opcode: forall
-              args:
-                - kind: name
-                  id: 193
-                  name: pattern_200
-                - kind: lambda
-                  id: 198
-                  params:
-                    - id: 194
-                      name: coordinate_198
-                  expr:
-                    kind: app
-                    id: 197
-                    opcode: hasPlayer
-                    args:
-                      - kind: name
-                        id: 195
-                        name: coordinate_198
-                      - kind: name
-                        id: 196
-                        name: player_202
-    depth: 0
-  491:
-    kind: def
-    id: 491
-    name: XHasNotWon
-    qualifier: val
-    expr:
-      kind: app
-      id: 490
-      opcode: not
-      args:
-        - kind: app
-          id: 489
-          opcode: won
-          args:
-            - kind: name
-              id: 488
-              name: X
-    depth: 0
-  492:
+  447:
     kind: def
     id: 12
     name: O
@@ -9432,7 +8775,485 @@ table:
           opcode: Tup
           args: []
     depth: 0
-  493:
+  448:
+    kind: def
+    id: 406
+    name: MoveToEmpty
+    qualifier: action
+    expr:
+      kind: lambda
+      id: 405
+      params:
+        - id: 395
+          name: player_405
+      expr:
+        kind: let
+        id: 404
+        opdef:
+          id: 400
+          name: coordinate
+          qualifier: nondet
+          expr:
+            kind: app
+            id: 399
+            opcode: oneOf
+            args:
+              - kind: app
+                id: 398
+                opcode: filter
+                args:
+                  - kind: name
+                    id: 396
+                    name: boardCoordinates
+                  - kind: name
+                    id: 397
+                    name: isEmpty
+          depth: ~
+        expr:
+          kind: app
+          id: 403
+          opcode: Move
+          args:
+            - kind: name
+              id: 401
+              name: player_405
+            - kind: name
+              id: 402
+              name: coordinate
+    depth: 0
+  449:
+    kind: def
+    id: 8
+    name: X
+    qualifier: val
+    expr:
+      kind: app
+      id: 7
+      opcode: variant
+      args:
+        - kind: str
+          id: 5
+          value: X
+        - kind: app
+          id: 6
+          opcode: Tup
+          args: []
+    depth: 0
+  450:
+    kind: var
+    id: 34
+    name: nextTurn
+  453:
+    kind: def
+    id: 453
+    name: MoveO
+    qualifier: action
+    expr:
+      kind: app
+      id: 452
+      opcode: actionAll
+      args:
+        - kind: app
+          id: 444
+          opcode: eq
+          args:
+            - kind: name
+              id: 442
+              name: nextTurn
+            - kind: name
+              id: 443
+              name: O
+        - kind: app
+          id: 446
+          opcode: not
+          args:
+            - kind: name
+              id: 445
+              name: gameOver
+        - kind: app
+          id: 448
+          opcode: MoveToEmpty
+          args:
+            - kind: name
+              id: 447
+              name: O
+        - kind: app
+          id: 451
+          opcode: assign
+          args:
+            - kind: name
+              id: 450
+              name: nextTurn
+            - kind: name
+              id: 449
+              name: X
+    depth: 0
+  454:
+    kind: def
+    id: 8
+    name: X
+    qualifier: val
+    expr:
+      kind: app
+      id: 7
+      opcode: variant
+      args:
+        - kind: str
+          id: 5
+          value: X
+        - kind: app
+          id: 6
+          opcode: Tup
+          args: []
+    depth: 0
+  455:
+    kind: var
+    id: 34
+    name: nextTurn
+  465:
+    kind: def
+    id: 26
+    name: Empty
+    qualifier: val
+    expr:
+      kind: app
+      id: 25
+      opcode: variant
+      args:
+        - kind: str
+          id: 23
+          value: Empty
+        - kind: app
+          id: 24
+          opcode: Tup
+          args: []
+    depth: 0
+  470:
+    kind: var
+    id: 32
+    name: board
+  473:
+    kind: def
+    id: 473
+    name: init
+    qualifier: action
+    expr:
+      kind: app
+      id: 472
+      opcode: actionAll
+      args:
+        - kind: app
+          id: 456
+          opcode: assign
+          args:
+            - kind: name
+              id: 455
+              name: nextTurn
+            - kind: name
+              id: 454
+              name: X
+        - kind: app
+          id: 471
+          opcode: assign
+          args:
+            - kind: name
+              id: 470
+              name: board
+            - kind: app
+              id: 469
+              opcode: mapBy
+              args:
+                - kind: app
+                  id: 459
+                  opcode: to
+                  args:
+                    - kind: int
+                      id: 457
+                      value: 1
+                    - kind: int
+                      id: 458
+                      value: 3
+                - kind: lambda
+                  id: 468
+                  params:
+                    - id: 460
+                      name: __468
+                  expr:
+                    kind: app
+                    id: 467
+                    opcode: mapBy
+                    args:
+                      - kind: app
+                        id: 463
+                        opcode: to
+                        args:
+                          - kind: int
+                            id: 461
+                            value: 1
+                          - kind: int
+                            id: 462
+                            value: 3
+                      - kind: lambda
+                        id: 466
+                        params:
+                          - id: 464
+                            name: __466
+                        expr:
+                          kind: name
+                          id: 465
+                          name: Empty
+    depth: 0
+  474:
+    kind: def
+    id: 441
+    name: MoveX
+    qualifier: action
+    expr:
+      kind: app
+      id: 440
+      opcode: actionAll
+      args:
+        - kind: app
+          id: 417
+          opcode: eq
+          args:
+            - kind: name
+              id: 415
+              name: nextTurn
+            - kind: name
+              id: 416
+              name: X
+        - kind: app
+          id: 419
+          opcode: not
+          args:
+            - kind: name
+              id: 418
+              name: gameOver
+        - kind: app
+          id: 436
+          opcode: ite
+          args:
+            - kind: name
+              id: 420
+              name: boardEmpty
+            - kind: name
+              id: 421
+              name: StartInCorner
+            - kind: app
+              id: 435
+              opcode: ite
+              args:
+                - kind: name
+                  id: 422
+                  name: canWin
+                - kind: name
+                  id: 423
+                  name: Win
+                - kind: app
+                  id: 434
+                  opcode: ite
+                  args:
+                    - kind: name
+                      id: 424
+                      name: canBlock
+                    - kind: name
+                      id: 425
+                      name: Block
+                    - kind: app
+                      id: 433
+                      opcode: ite
+                      args:
+                        - kind: name
+                          id: 426
+                          name: canTakeCenter
+                        - kind: name
+                          id: 427
+                          name: TakeCenter
+                        - kind: app
+                          id: 432
+                          opcode: ite
+                          args:
+                            - kind: name
+                              id: 428
+                              name: canSetupWin
+                            - kind: name
+                              id: 429
+                              name: SetupWin
+                            - kind: app
+                              id: 431
+                              opcode: MoveToEmpty
+                              args:
+                                - kind: name
+                                  id: 430
+                                  name: X
+        - kind: app
+          id: 439
+          opcode: assign
+          args:
+            - kind: name
+              id: 438
+              name: nextTurn
+            - kind: name
+              id: 437
+              name: O
+    depth: 0
+  475:
+    kind: def
+    id: 453
+    name: MoveO
+    qualifier: action
+    expr:
+      kind: app
+      id: 452
+      opcode: actionAll
+      args:
+        - kind: app
+          id: 444
+          opcode: eq
+          args:
+            - kind: name
+              id: 442
+              name: nextTurn
+            - kind: name
+              id: 443
+              name: O
+        - kind: app
+          id: 446
+          opcode: not
+          args:
+            - kind: name
+              id: 445
+              name: gameOver
+        - kind: app
+          id: 448
+          opcode: MoveToEmpty
+          args:
+            - kind: name
+              id: 447
+              name: O
+        - kind: app
+          id: 451
+          opcode: assign
+          args:
+            - kind: name
+              id: 450
+              name: nextTurn
+            - kind: name
+              id: 449
+              name: X
+    depth: 0
+  476:
+    kind: def
+    id: 226
+    name: gameOver
+    qualifier: val
+    expr:
+      kind: app
+      id: 225
+      opcode: or
+      args:
+        - kind: app
+          id: 223
+          opcode: or
+          args:
+            - kind: app
+              id: 220
+              opcode: won
+              args:
+                - kind: name
+                  id: 219
+                  name: X
+            - kind: app
+              id: 222
+              opcode: won
+              args:
+                - kind: name
+                  id: 221
+                  name: O
+        - kind: name
+          id: 224
+          name: boardFull
+    depth: 0
+  477:
+    kind: var
+    id: 32
+    name: board
+  478:
+    kind: var
+    id: 32
+    name: board
+  480:
+    kind: var
+    id: 34
+    name: nextTurn
+  481:
+    kind: var
+    id: 34
+    name: nextTurn
+  485:
+    kind: def
+    id: 485
+    name: step
+    qualifier: action
+    expr:
+      kind: app
+      id: 484
+      opcode: actionAny
+      args:
+        - kind: name
+          id: 474
+          name: MoveX
+        - kind: name
+          id: 475
+          name: MoveO
+        - kind: app
+          id: 483
+          opcode: actionAll
+          args:
+            - kind: name
+              id: 476
+              name: gameOver
+            - kind: app
+              id: 479
+              opcode: assign
+              args:
+                - kind: name
+                  id: 478
+                  name: board
+                - kind: name
+                  id: 477
+                  name: board
+            - kind: app
+              id: 482
+              opcode: assign
+              args:
+                - kind: name
+                  id: 481
+                  name: nextTurn
+                - kind: name
+                  id: 480
+                  name: nextTurn
+    depth: 0
+  486:
+    kind: def
+    id: 8
+    name: X
+    qualifier: val
+    expr:
+      kind: app
+      id: 7
+      opcode: variant
+      args:
+        - kind: str
+          id: 5
+          value: X
+        - kind: app
+          id: 6
+          opcode: Tup
+          args: []
+    depth: 0
+  487:
     kind: def
     id: 203
     name: won
@@ -9481,25 +9302,110 @@ table:
                         id: 196
                         name: player_202
     depth: 0
-  495:
+  489:
     kind: def
-    id: 495
+    id: 489
+    name: XHasNotWon
+    qualifier: val
+    expr:
+      kind: app
+      id: 488
+      opcode: not
+      args:
+        - kind: app
+          id: 487
+          opcode: won
+          args:
+            - kind: name
+              id: 486
+              name: X
+    depth: 0
+  490:
+    kind: def
+    id: 12
+    name: O
+    qualifier: val
+    expr:
+      kind: app
+      id: 11
+      opcode: variant
+      args:
+        - kind: str
+          id: 9
+          value: O
+        - kind: app
+          id: 10
+          opcode: Tup
+          args: []
+    depth: 0
+  491:
+    kind: def
+    id: 203
+    name: won
+    qualifier: def
+    expr:
+      kind: lambda
+      id: 202
+      params:
+        - id: 190
+          name: player_202
+      expr:
+        kind: app
+        id: 201
+        opcode: exists
+        args:
+          - kind: name
+            id: 191
+            name: winningPatterns
+          - kind: lambda
+            id: 200
+            params:
+              - id: 192
+                name: pattern_200
+            expr:
+              kind: app
+              id: 199
+              opcode: forall
+              args:
+                - kind: name
+                  id: 193
+                  name: pattern_200
+                - kind: lambda
+                  id: 198
+                  params:
+                    - id: 194
+                      name: coordinate_198
+                  expr:
+                    kind: app
+                    id: 197
+                    opcode: hasPlayer
+                    args:
+                      - kind: name
+                        id: 195
+                        name: coordinate_198
+                      - kind: name
+                        id: 196
+                        name: player_202
+    depth: 0
+  493:
+    kind: def
+    id: 493
     name: OHasNotWon
     qualifier: val
     expr:
       kind: app
-      id: 494
+      id: 492
       opcode: not
       args:
         - kind: app
-          id: 493
+          id: 491
           opcode: won
           args:
             - kind: name
-              id: 492
+              id: 490
               name: O
     depth: 0
-  496:
+  494:
     kind: def
     id: 218
     name: stalemate
@@ -9539,49 +9445,49 @@ table:
                   id: 214
                   name: O
     depth: 0
-  498:
+  496:
     kind: def
-    id: 498
+    id: 496
     name: NotStalemate
     qualifier: val
     expr:
       kind: app
-      id: 497
+      id: 495
       opcode: not
       args:
         - kind: name
-          id: 496
+          id: 494
           name: stalemate
     depth: 0
-  499:
+  497:
     kind: def
-    id: 495
+    id: 493
     name: OHasNotWon
     qualifier: val
     expr:
       kind: app
-      id: 494
+      id: 492
       opcode: not
       args:
         - kind: app
-          id: 493
+          id: 491
           opcode: won
           args:
             - kind: name
-              id: 492
+              id: 490
               name: O
     depth: 0
-  500:
+  498:
     kind: def
-    id: 500
+    id: 498
     name: inv
     qualifier: val
     expr:
       kind: name
-      id: 499
+      id: 497
       name: OHasNotWon
     depth: 0
-  501:
+  499:
     kind: def
     id: 8
     name: X
@@ -9599,7 +9505,7 @@ table:
           opcode: Tup
           args: []
     depth: 0
-  502:
+  500:
     kind: def
     id: 203
     name: won
@@ -9648,156 +9554,157 @@ table:
                         id: 196
                         name: player_202
     depth: 0
-  504:
+  502:
     kind: def
-    id: 504
+    id: 502
     name: XMustEventuallyWin
     qualifier: temporal
     expr:
       kind: app
-      id: 503
+      id: 501
       opcode: eventually
       args:
         - kind: app
-          id: 502
+          id: 500
           opcode: won
           args:
             - kind: name
-              id: 501
+              id: 499
               name: X
     depth: 0
-  506:
+  504:
     kind: def
-    id: 475
+    id: 473
     name: init
     qualifier: action
     expr:
       kind: app
-      id: 474
+      id: 472
       opcode: actionAll
       args:
         - kind: app
-          id: 458
+          id: 456
           opcode: assign
           args:
             - kind: name
-              id: 457
+              id: 455
               name: nextTurn
             - kind: name
-              id: 456
+              id: 454
               name: X
         - kind: app
-          id: 473
+          id: 471
           opcode: assign
           args:
             - kind: name
-              id: 472
+              id: 470
               name: board
             - kind: app
-              id: 471
+              id: 469
               opcode: mapBy
               args:
                 - kind: app
-                  id: 461
+                  id: 459
                   opcode: to
                   args:
                     - kind: int
-                      id: 459
+                      id: 457
                       value: 1
                     - kind: int
-                      id: 460
+                      id: 458
                       value: 3
                 - kind: lambda
-                  id: 470
+                  id: 468
                   params:
-                    - id: 462
-                      name: __470
+                    - id: 460
+                      name: __468
                   expr:
                     kind: app
-                    id: 469
+                    id: 467
                     opcode: mapBy
                     args:
                       - kind: app
-                        id: 465
+                        id: 463
                         opcode: to
                         args:
                           - kind: int
-                            id: 463
+                            id: 461
                             value: 1
                           - kind: int
-                            id: 464
+                            id: 462
                             value: 3
                       - kind: lambda
-                        id: 468
+                        id: 466
                         params:
-                          - id: 466
-                            name: __468
+                          - id: 464
+                            name: __466
                         expr:
                           kind: name
-                          id: 467
+                          id: 465
                           name: Empty
     depth: 0
-  507:
+  505:
     kind: def
-    id: 507
+    id: 505
     name: "q::init"
     qualifier: action
     expr:
       kind: name
-      id: 506
+      id: 504
       name: init
     depth: 0
-  508:
+  506:
     kind: def
-    id: 487
+    id: 485
     name: step
     qualifier: action
     expr:
       kind: app
-      id: 486
+      id: 484
       opcode: actionAny
       args:
         - kind: name
-          id: 476
+          id: 474
           name: MoveX
         - kind: name
-          id: 477
+          id: 475
           name: MoveO
         - kind: app
-          id: 485
+          id: 483
           opcode: actionAll
           args:
             - kind: name
-              id: 478
+              id: 476
               name: gameOver
             - kind: app
-              id: 481
+              id: 479
               opcode: assign
               args:
                 - kind: name
-                  id: 480
+                  id: 478
                   name: board
                 - kind: name
-                  id: 479
+                  id: 477
                   name: board
             - kind: app
-              id: 484
+              id: 482
               opcode: assign
               args:
                 - kind: name
-                  id: 483
+                  id: 481
                   name: nextTurn
                 - kind: name
-                  id: 482
+                  id: 480
                   name: nextTurn
     depth: 0
-  509:
+  507:
     kind: def
-    id: 509
+    id: 507
     name: "q::step"
     qualifier: action
     expr:
       kind: name
-      id: 508
+      id: 506
       name: step
     depth: 0
+main: tictactoe

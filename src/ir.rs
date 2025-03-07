@@ -40,6 +40,7 @@ impl QuintError {
 pub struct QuintOutput {
     pub modules: Vec<QuintModule>,
     pub table: LookupTable,
+    pub main: String,
 }
 
 pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
@@ -224,12 +225,10 @@ pub struct QuintLambdaParameter {
 }
 
 impl QuintOutput {
-    pub fn find_definition_by_name<'a>(
-        &'a self,
-        name: &'_ str,
-    ) -> Result<&'a OpDef, Box<dyn Error>> {
+    pub fn find_definition_by_name<'a>(&'a self, name: &str) -> Result<&'a OpDef, Box<dyn Error>> {
         self.modules
-            .first()
+            .iter()
+            .find(|m| m.name == self.main)
             .and_then(|module| {
                 module.declarations.iter().find_map(|d| match d {
                     QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),

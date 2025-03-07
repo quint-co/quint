@@ -25,6 +25,10 @@ struct Args {
     #[argh(option)]
     inv: Option<String>,
 
+    /// name of the main module to check (default: computed from filename)
+    #[argh(option)]
+    main: Option<String>,
+
     /// the maximum on the number of steps in every trace (default: 10)
     #[argh(option, default = "10")]
     max_steps: usize,
@@ -52,6 +56,7 @@ fn main() -> eyre::Result<()> {
         args.init.as_str(),
         args.step.as_str(),
         args.inv.as_deref(),
+        args.main.as_deref(),
     )
     .unwrap();
     let start = Instant::now();
