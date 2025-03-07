@@ -105,7 +105,22 @@ module ConsensusAlg {
   //
 
   action init = all {
-    initializeProcsStateWithDistinctValues,
+    nondet initialValues = Procs.setOfMaps(1.to(N + 1)).oneOf()
+    procState' = Procs.mapBy(i => {
+      val initialValue = initialValues.get(i)
+      {
+        V: Set(initialValue),
+        r: 1,
+        y: None,
+        S: Set(),
+        x: initialValue,
+      }
+    }),
+    round' = 1,
+    correctProcsMessages' = Set(),
+    crashed' = Set(),
+    newlyCrashed' = Set(),
+    crashedProcsMessages' = Set(),
     stage' = Starting,
   }
 
