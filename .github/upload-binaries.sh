@@ -67,6 +67,8 @@ for target_config in "${TARGETS[@]}"; do
   echo "Compiling for target: $TARGET"
   deno compile \
     --allow-all \
+    --node-modules-dir=auto \
+    --allow-scripts \
     --target "$TARGET" \
     --output "quint-$SUFFIX" \
     "npm:@informalsystems/quint@$VERSION"
