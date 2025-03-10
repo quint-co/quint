@@ -55,7 +55,9 @@ fi
 
 TARGETS=(
   "x86_64-unknown-linux-gnu:linux-amd64"
+  "aarch64-unknown-linux-gnu:linux-arm64",
   "aarch64-apple-darwin:macos-arm64"
+  "x86_64-apple-darwin:macos-amd64",
   "x86_64-pc-windows-msvc:pc-amd64.exe"
 )
 
