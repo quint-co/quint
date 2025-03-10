@@ -17,7 +17,7 @@ const benefits = [
   [
     "Executable",
     ["Quint", ["checked names and types", "executable"]],
-    ["English & Markdown", ["not checked", "not executuable"]],
+    ["English & Markdown", ["not checked", "not executable"]],
   ],
   [
     "Abstract",

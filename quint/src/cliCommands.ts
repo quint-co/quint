@@ -37,7 +37,7 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
-import { Outcome, SimulatorOptions } from './simulation'
+import { Outcome, SimulationResult, SimulatorOptions } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -81,6 +81,7 @@ interface OutputStage {
   // Possible results from 'run'
   status?: 'ok' | 'violation' | 'failure' | 'error'
   trace?: QuintEx[]
+  seed?: bigint
   /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
@@ -104,6 +105,7 @@ const pickOutputStage = ({
   ignored,
   status,
   trace,
+  seed,
 }: ProcedureStage) => {
   return {
     stage,
@@ -119,6 +121,7 @@ const pickOutputStage = ({
     ignored,
     status,
     trace,
+    seed,
   }
 }
 
@@ -477,6 +480,28 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
   }
 }
 
+function maybePrintWitnesses(
+  verbosityLevel: number,
+  evalResult: Either<QuintError, SimulationResult>,
+  witnesses: string[]
+) {
+  if (verbosity.hasWitnessesOutput(verbosityLevel)) {
+    evalResult.map(r => {
+      if (r.witnessingTraces.length > 0) {
+        console.log(chalk.green('Witnesses:'))
+      }
+      r.witnessingTraces.forEach((n, i) => {
+        const percentage = chalk.gray(`(${(((1.0 * n) / r.samples) * 100).toFixed(2)}%)`)
+        console.log(
+          `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+            r.samples
+          } explored ${percentage}`
+        )
+      })
+    })
+  }
+}
+
 /**
  * Run the simulator.
  *
@@ -514,7 +539,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       const itfFile: string | undefined = prev.args.outItf
       if (itfFile) {
         const filename = expandOutputTemplate(itfFile, index, { autoAppend: prev.args.nTraces > 1 })
-        const trace = toItf(vars, states)
+        const trace = toItf(vars, states, prev.args.mbt)
         if (trace.isRight()) {
           const jsonObj = addItfHeader(prev.args.input, status, trace.value)
           writeToJson(filename, jsonObj)
@@ -542,20 +567,23 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     return right(parseResult.expr)
   }
 
-  const argsParsingResult = mergeInMany([prev.args.init, prev.args.step, prev.args.invariant].map(toExpr))
+  const argsParsingResult = mergeInMany(
+    [prev.args.init, prev.args.step, prev.args.invariant, ...prev.args.witnesses].map(toExpr)
+  )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
       errors: argsParsingResult.value.map(mkErrorMessage(new Map())),
     })
   }
-  const [init, step, invariant] = argsParsingResult.value
+  const [init, step, invariant, ...witnesses] = argsParsingResult.value
 
   const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
   const evalResult = evaluator.simulate(
     init,
     step,
     invariant,
+    witnesses,
     prev.args.maxSamples,
     prev.args.maxSteps,
     prev.args.nTraces ?? 1
@@ -564,8 +592,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const elapsedMs = Date.now() - startMs
 
   const outcome: Outcome = evalResult.isRight()
-    ? { status: (evalResult.value as QuintBool).value ? 'ok' : 'violation' }
+    ? { status: (evalResult.value.result as QuintBool).value ? 'ok' : 'violation' }
     : { status: 'error', errors: [evalResult.value] }
+
+  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
+  const frames = recorder.bestTraces[0]?.frame?.subframes
+  simulator.seed = recorder.bestTraces[0]?.seed
 
   recorder.bestTraces.forEach((trace, index) => {
     const maybeEvalResult = trace.frame.result
@@ -584,9 +616,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     options.onTrace(index, status, evaluator.varNames(), states)
   })
 
-  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
-  const frames = recorder.bestTraces[0]?.frame?.subframes
-  const seed = recorder.bestTraces[0]?.seed
   switch (outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
@@ -600,12 +629,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return right({
         ...simulator,
@@ -617,12 +646,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, states, frames)
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-        console.log(chalk.gray(`Use --seed=0x${seed.toString(16)} to reproduce.`))
 
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
+      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
 
       return cliErr('Invariant violated', {
         ...simulator,
@@ -866,21 +895,28 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
 export function outputResult(result: CLIProcedure<ProcedureStage>) {
   result
     .map(stage => {
+      const verbosityLevel = deriveVerbosity(stage.args)
       const outputData = pickOutputStage(stage)
       if (stage.args.out) {
         writeToJson(stage.args.out, outputData)
+      } else if (!stage.args.outItf && outputData.seed && verbosity.hasResults(verbosityLevel)) {
+        console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
       }
 
       process.exit(0)
     })
     .mapLeft(({ msg, stage }) => {
       const { args, errors, sourceCode } = stage
+      const verbosityLevel = deriveVerbosity(args)
       const outputData = pickOutputStage(stage)
       if (args.out) {
         writeToJson(args.out, outputData)
       } else {
         const finders = createFinders(sourceCode!)
         uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
+        if (!stage.args.outItf && outputData.seed && verbosity.hasResults(verbosityLevel)) {
+          console.log(chalk.gray(`Use --seed=0x${outputData.seed.toString(16)} to reproduce.`))
+        }
         console.error(`error: ${msg}`)
       }
       process.exit(1)
@@ -923,7 +959,7 @@ function addItfHeader(source: string, status: string, traceInJson: any): any {
   return {
     '#meta': {
       format: 'ITF',
-      'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
+      'format-description': 'https://apalache-mc.org/docs/adr/015adr-trace.html',
       source,
       status,
       description: 'Created by Quint on ' + new Date(),

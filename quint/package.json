@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.22.2",
+  "version": "0.23.1",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
@@ -41,7 +41,7 @@
     "test/**/*.ts"
   ],
   "engines": {
-    "node": "18 - 20"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",

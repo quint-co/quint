@@ -779,6 +779,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set().allListsUpTo(3)', 'Set(List())')
       assertResultAsString('Set(1).allListsUpTo(0)', 'Set(List())')
     })
+
+    it('getOnlyElement', () => {
+      assertResultAsString('Set(5).getOnlyElement()', '5')
+      assertResultAsString('Set().getOnlyElement()', undefined)
+      assertResultAsString('Set(1, 2).getOnlyElement()', undefined)
+    })
   })
 
   describe('compile over records', () => {
@@ -892,6 +898,12 @@ describe('compiling specs to runtime values', () => {
               Map(2 -> 6, 3 -> 6))`,
         'true'
       )
+      assertResultAsString('Set().setOfMaps(Set(3, 5))', 'Set(Map())')
+
+      assertResultAsString('Set().setOfMaps(Set())', 'Set(Map())')
+
+      assertResultAsString('Set(1, 2).setOfMaps(Set())', 'Set()')
+
       assertResultAsString('Set(2).setOfMaps(5.to(6))', 'Set(Map(Tup(2, 5)), Map(Tup(2, 6)))')
       assertResultAsString('2.to(3).setOfMaps(Set(5))', 'Set(Map(Tup(2, 5), Tup(3, 5)))')
       assertResultAsString('2.to(4).setOfMaps(5.to(8)).size()', '64')

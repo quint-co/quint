@@ -1,6 +1,6 @@
 /*
  * Support for the Informal Trace Format (ITF):
- * https://apalache.informal.systems/docs/adr/015adr-trace.html
+ * https://apalache-mc.org/docs/adr/015adr-trace.html
  *
  * Igor Konnov, Shon Feder, Informal Systems, 2023
  *
@@ -24,6 +24,9 @@ export type ItfTrace = {
   states: ItfState[]
   loop?: number
 }
+
+export const ACTION_TAKEN = 'mbt::actionTaken'
+export const NONDET_PICKS = 'mbt::nondetPicks'
 
 export type ItfState = {
   '#meta'?: any
@@ -86,7 +89,7 @@ function isUnserializable(v: ItfValue): v is ItfUnserializable {
  * @param states an array of expressions that represent the states
  * @returns an object that represent the trace in the ITF format
  */
-export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrace> {
+export function toItf(vars: string[], states: QuintEx[], mbtMetadata: boolean = false): Either<string, ItfTrace> {
   const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
@@ -167,6 +170,9 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
       )
     )
   ).mapRight(s => {
+    if (mbtMetadata) {
+      vars = [...vars, ACTION_TAKEN, NONDET_PICKS]
+    }
     return {
       vars: vars,
       states: s,
@@ -189,12 +195,6 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     if (typeof value === 'boolean') {
       return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
-      if (value === 'U_OF_UNIT') {
-        // Apalache converts empty tuples to its unit value, "U_OF_UNIT".
-        // We need to convert it back to Quint's unit value, the empty tuple.
-        return { id, kind: 'app', opcode: 'Tup', args: [] }
-      }
-
       return { id, kind: 'str', value }
     } else if (isBigint(value)) {
       // this is the standard way of encoding an integer in ITF.
@@ -202,7 +202,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     } else if (typeof value === 'number') {
       // We never encode an integer as a JS number,
       // but we consume it for backwards compatibility with older ITF traces.
-      // See: https://apalache.informal.systems/docs/adr/015adr-trace.html
+      // See: https://apalache-mc.org/docs/adr/015adr-trace.html
       return { id, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
       return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
@@ -226,6 +226,11 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       }
     } else if (isVariant(value)) {
       const l = ofItfValue(value.tag)
+      if (l.kind === 'str' && l.value === 'UNIT') {
+        // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
+        // We need to convert it back to Quint's unit value, the empty tuple.
+        return { id, kind: 'app', opcode: 'Tup', args: [] }
+      }
       const v = ofItfValue(value.value)
       return { id, kind: 'app', opcode: 'variant', args: [l, v] }
     } else if (typeof value === 'object') {

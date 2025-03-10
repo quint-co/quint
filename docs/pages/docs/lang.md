@@ -1,9 +1,5 @@
 # Summary of Quint
 
-| Revision | Date       | Author                                                  |
-|:---------|:-----------|:--------------------------------------------------------|
-| 36       | 26.06.2024 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
-
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf). Although we keep it
 up-to-date, this document originated Quint and precedes it's implementation. It
