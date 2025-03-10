@@ -41,9 +41,22 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  binaries:
+  arches:
+    strategy:
+      matrix:
+        os:
+          # linux-amd64
+          - ubuntu-22.04
+          # linux-arm64
+          - ubuntu-22.04-arm
+          # macos-arm64
+          - macos-14
+          # macos-intel
+          - macos-13
+          # pc-amd64
+          - windows-2022
     needs: release
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Install Deno
         uses: denoland/setup-deno@v2
@@ -57,6 +70,14 @@ jobs:
           while ! deno run -A "npm:@informalsystems/quint@${REF_NAME#v}" --version; do
             sleep 30
           done
+  binaries:
+    needs: arches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
 
       - name: Upload assets
         run: |
