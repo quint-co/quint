@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.23.1 -- 2025-03-10
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Fixed a requirement from the package configuration that would lead to always installing v0.18.3 on node versions > 20 (#1602)
 
