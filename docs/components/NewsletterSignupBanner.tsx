@@ -71,7 +71,7 @@ export function NewsletterSignupBanner() {
         />
 
         <p className="text-2xl">
-          Subscibe to our newsletter for the latest
+          Subscribe to our newsletter for the latest
           updates&nbsp;and&nbsp;features
         </p>
 

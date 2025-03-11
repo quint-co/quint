@@ -2,12 +2,9 @@ import { Code, Pre } from 'nextra/components'
 
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useTheme } from 'nextra-theme-docs'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import CodeSample from './code_sample.mdx'
 import ViolationSample from './violation_sample.mdx'
-
-import Image from 'next/image'
 
 import { Button } from '../atomic-ui-elements/button'
 import { NewsletterSignupBanner } from '../NewsletterSignupBanner'
@@ -32,29 +29,6 @@ const benefits = [
   ],
 ] as const
 
-function informalSystemsLogo() {
-  const { resolvedTheme } = useTheme()
-  const [theme, setTheme] = useState(null)
-  useEffect(() => {
-    setTheme(resolvedTheme)
-  }, [resolvedTheme])
-
-  return (
-    <a href="https://informal.systems">
-      <Image
-        src={
-          theme == 'dark'
-            ? '/informal-systems-white.png'
-            : '/informal-systems.png'
-        }
-        alt="Informal Systems"
-        width={200}
-        height={200}
-      />
-    </a>
-  )
-}
-
 const components = {
   pre: Pre,
   code: Code,
@@ -69,8 +43,8 @@ export function Home() {
 
   return (
     <div className="overflow-x-hidden">
-      <section className="relative py-12 sm:py-16 lg:pb-20">
-        <div className="relative px-4 mx-auto max-w-7xl sm:px-6 lg:px-2">
+      <section className="relative py-12 sm:py-16 lg:pb-1">
+        <div className="relative px-4 mx-auto max-w-7xl sm:px-8 xl:px-12">
           <h1 className="text-4xl text-center font-bold leading-tight text-inherit sm:text-5xl sm:leading-tight lg:text-6xl lg:leading-tight font-pj">
             Quint
           </h1>
@@ -144,10 +118,6 @@ export function Home() {
           </div>
 
           <NewsletterSignupBanner />
-
-          <div className="mt-8 mb-8 flex justify-center">
-            {informalSystemsLogo()}
-          </div>
         </div>
       </section>
     </div>
