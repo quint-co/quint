@@ -5,7 +5,7 @@ import { QuintDef } from '@informalsystems/quint'
  *
  * The regular expression recognizes two capture groups:
  *   - the first capture group matches the qualifiers,
- *   - the second caputre group matches the declaration's name.
+ *   - the second capture group matches the declaration's name.
  */
 export function getDeclRegExp(decl: QuintDef): RegExp {
   switch (decl.kind) {

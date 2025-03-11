@@ -397,4 +397,4 @@ it may emit an error, see [Errors][].
 
 
 [Errors]: ./adr002-errors
-[Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
+[Apalache JSON]: https://apalache-mc.org/docs/adr/005adr-json.html

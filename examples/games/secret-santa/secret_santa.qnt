@@ -1,9 +1,9 @@
 // -*- mode: Bluespec; -*-
 /**
- * A secret santa spec, in celebration of the 2023 end-of-year holidays.
+ * A Secret Santa spec, in celebration of the 2023 end-of-year holidays.
  * This is accompanied by a blogpost! See [1].
  *
- * [1]: https://github.com/informalsystems/quint/tree/main/tutorials/blogpost0-secretsanta/secret_santa.org
+ * [1]: https://quint-lang.org/docs/blogposts/secret_santa
  *
  * Gabriela Moreira, Informal Systems, 2023
  */
@@ -13,7 +13,7 @@ module secret_santa {
 
   const participants: Set[str]
 
-  /// A map from santas to their recipients. get(recipient_for_santa, S) is the recipient for secret santa S
+  /// A map from Santas to their recipients. get(recipient_for_santa, S) is the recipient for secret Santa S
   var recipient_for_santa: str -> str
 
   /// The bowl of participants, containing a paper piece for each participant's name
@@ -27,14 +27,14 @@ module secret_santa {
   var last_draw: LastDraw
 
   /// Who had already drawn a paper when someone got themself. This way, I know
-  /// that none of those people can be the santa of the person who is drawing.
+  /// that none of those people can be the Santa of the person who is drawing.
   var gabrielas_memory: str -> Set[str]
 
   /// The initial state
   action init = all {
-    recipient_for_santa' = Map(), // No santas or recipients
+    recipient_for_santa' = Map(), // No Santas or recipients
     bowl' = participants,         // Every participant's name in the bowl
-    last_draw' = Ok,              // if no oe has drawn yet, no one has drawn themself
+    last_draw' = Ok,              // if no one has drawn yet, no one has drawn themself
     gabrielas_memory' = Map(),
   }
 
@@ -78,7 +78,7 @@ module secret_santa {
     }
   }
 
-  // Store current santas (people who have already drawn) on a participant's key, meaning that they can't be that participant's santa
+  // Store current Santas (people who have already drawn) on a participant's key, meaning that they can't be that participant's Santa
   action memorize(participant) = {
     gabrielas_memory' = put(gabrielas_memory, participant, santas)
   }
@@ -111,7 +111,7 @@ module secret_santa {
 
   val inv = (last_draw == Ok) implies no_person_is_self_santa
 
-  /// true iff Gabriela can find out who is a santa for someone.
+  /// true iff Gabriela can find out who is a Santa for someone.
   /// That is, if exists a participant where find_out_a_santa_for participant is Some()
   val gabriela_finds_out_a_santa = participants.exists(participant => {
     if (gabrielas_memory.has(participant)) {

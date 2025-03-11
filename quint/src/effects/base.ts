@@ -211,7 +211,7 @@ function bindEntity(name: string, entity: Entity): Substitutions {
 }
 
 /**
- * Finds all entity names refered to by an entity
+ * Finds all entity names referred to by an entity
  *
  * @param entity the entity to be searched
  *
@@ -229,7 +229,7 @@ export function entityNames(entity: Entity): string[] {
 }
 
 /**
- * Finds all state variables refered to by an entity
+ * Finds all state variables referred to by an entity
  *
  * @param entity the entity to be searched
  *

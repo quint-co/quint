@@ -127,7 +127,7 @@ module tictactoe {
 
   action MoveX = all {
     nextTurn == X,
-    not(won(O)),
+    not(gameOver),
     if (boardEmpty) StartInCorner else
     if (canWin) Win else
     if (canBlock) Block else
@@ -139,7 +139,7 @@ module tictactoe {
 
   action MoveO = all {
     nextTurn == O,
-    not(won(X)),
+    not(gameOver),
     MoveToEmpty(O),
     nextTurn' = X,
   }
