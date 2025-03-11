@@ -87,6 +87,7 @@ export function Home() {
                   href="/docs/getting-started"
                   className="mt-8 sm:mt-10"
                   role="button"
+                  variant="primary"
                 >
                   Get started
                 </Button>

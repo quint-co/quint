@@ -8,20 +8,24 @@ type ButtonProps<T extends 'a' | 'button'> = ComponentProps<T> & {
 
 const classNamesByVariant = {
   primary: `
+    border-2
+    border-quint-purple
     bg-quint-purple
     text-white
-    hover:bg-[#2d0075]
+    hover:bg-quint-purple-dark
     hover:text-quint-purple
     px-8
-    py-4
+    py-3
   `,
   secondary: `
-    bg-quint-purple
-    text-white
-    hover:bg-[#2d0075]
-    hover:text-quint-purple
-    px-6
-    py-2
+    border-2
+    border-quint-purple
+    text-quint-purple
+    hover:bg-quint-purple/10
+    hover:border-quint-purple-dark
+    hover:text-quint-purple-dark
+    px-8
+    py-3
   `,
 }
 

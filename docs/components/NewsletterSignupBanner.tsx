@@ -52,7 +52,7 @@ export function NewsletterSignupBanner() {
       </div>
 
       <form
-        action="https://systems.us4.list-manage.com/subscribe/post?u=0f6ea1a79dbcc56e2f4c22ec8&amp;id=06adecf928&amp;f_id=0018d4edf0"
+        action="https://systems.us4.list-manage.com/subscribe/post?u=0f6ea1a79dbcc56e2f4c22ec8&amp;id=06adecf928&amp;v_id=9749&amp;f_id=0018d4edf0"
         method="post"
         id="mc-embedded-subscribe-form"
         name="mc-embedded-subscribe-form"
@@ -84,7 +84,6 @@ export function NewsletterSignupBanner() {
               id="mce-FNAME"
               placeholder="First Name"
               className="w-full"
-              value=""
             />
           </label>
 
@@ -97,7 +96,6 @@ export function NewsletterSignupBanner() {
               required
               className="w-full"
               placeholder="Email Address"
-              value=""
             />
           </label>
         </div>
@@ -113,12 +111,20 @@ export function NewsletterSignupBanner() {
             className="gdpr"
             value="Y"
             checked={true}
+            onChange={() => {}}
           />
           <input
             type="text"
             name="b_0f6ea1a79dbcc56e2f4c22ec8_06adecf928"
             tabIndex={-1}
             value=""
+            onChange={() => {}}
+          />
+          <input
+            type="hidden"
+            name="tags"
+            value="8032879"
+            onChange={() => {}}
           />
         </div>
 
@@ -127,7 +133,7 @@ export function NewsletterSignupBanner() {
           name="subscribe"
           id="mc-embedded-subscribe"
           variant="primary"
-          className="w-full"
+          className="w-full justify-center"
         >
           Subscribe
         </Button>
