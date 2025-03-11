@@ -52,7 +52,7 @@ export function NewsletterSignupBanner() {
       </div>
 
       <form
-        action="https://systems.us4.list-manage.com/subscribe/post?u=0f6ea1a79dbcc56e2f4c22ec8&amp;id=06adecf928&amp;v_id=9749&amp;f_id=0018d4edf0"
+        action="https://systems.us4.list-manage.com/subscribe/post?u=0f6ea1a79dbcc56e2f4c22ec8&amp;id=06adecf928&amp;v_id=9754&amp;f_id=0018d4edf0"
         method="post"
         id="mc-embedded-subscribe-form"
         name="mc-embedded-subscribe-form"
@@ -123,7 +123,7 @@ export function NewsletterSignupBanner() {
           <input
             type="hidden"
             name="tags"
-            value="8032879"
+            value="8032881"
             onChange={() => {}}
           />
         </div>
