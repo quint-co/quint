@@ -217,7 +217,7 @@ space outlined by the four examples is quite large.
 [IBC denominations]: https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md#data-structures
 [SHA-2]: https://en.wikipedia.org/wiki/SHA-2
 [Cosmos Accounts]: https://docs.cosmos.network/v0.45/basics/accounts.html#signatures
-[ITF Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[ITF Format]: https://apalache-mc.org/docs/adr/015adr-trace.html
 [Quint manual]: /docs/quint
 [Issue 2453]: https://github.com/apalache-mc/apalache/issues/2453
 [Issue 143]: https://github.com/informalsystems/quint/issues/143

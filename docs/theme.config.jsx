@@ -64,11 +64,11 @@ export default {
         />
         <meta
           name="description"
-          content="A modern and exectuable specification language"
+          content="A modern and executable specification language"
         />
         <meta
           name="og:description"
-          content="A modern and exectuable specification language"
+          content="A modern and executable specification language"
         />
         <meta
           name="twitter:card"
