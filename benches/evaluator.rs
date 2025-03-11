@@ -20,9 +20,9 @@ fn simulate(
     let mut interpreter = Interpreter::new(&output.table);
     let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
-    let init = interpreter.compile(&init_def.expr);
-    let step = interpreter.compile(&step_def.expr);
-    let invariant = interpreter.compile(&invariant_def.expr);
+    let init = interpreter.compile(init_def.expr.clone());
+    let step = interpreter.compile(step_def.expr.clone());
+    let invariant = interpreter.compile(invariant_def.expr.clone());
 
     for _ in 1..=samples {
         init.execute(&mut env)?;

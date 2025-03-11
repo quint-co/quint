@@ -27,9 +27,9 @@ impl QuintOutput {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
 
-        let init = interpreter.compile(&init_def.expr);
-        let step = interpreter.compile(&step_def.expr);
-        let invariant = interpreter.compile(&invariant_def.expr);
+        let init = interpreter.compile(init_def.expr.clone());
+        let step = interpreter.compile(step_def.expr.clone());
+        let invariant = interpreter.compile(invariant_def.expr.clone());
         let mut trace = Vec::with_capacity(steps + 1);
 
         for sample_number in 1..=samples {
@@ -39,17 +39,17 @@ impl QuintOutput {
                 return Ok(SimulationResult { result: false });
             }
 
-            for step_number in 1..=steps {
+            for step_number in 1..=(steps + 1) {
                 interpreter.shift();
 
                 trace.push(interpreter.var_storage.as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    println!("Violation at step {step_number}, sample {sample_number}");
+                    println!("Violation at step {step_number}, sample {sample_number}",);
                     return Ok(SimulationResult { result: false });
                 }
 
-                if step_number != steps && !step.execute(&mut env)?.as_bool() {
+                if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
                     // The run cannot be extended. In some cases, this may indicate a deadlock.
                     // Since we are doing random simulation, it is very likely
                     // that we have not generated good values for extending
@@ -59,6 +59,9 @@ impl QuintOutput {
                     break;
                 }
             }
+            // for (state, i) in trace.iter().enumerate() {
+            //     println!("State {}: {:?}", state, i);
+            // }
         }
         Ok(SimulationResult { result: true })
     }
