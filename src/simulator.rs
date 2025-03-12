@@ -39,7 +39,7 @@ impl QuintOutput {
                 return Ok(SimulationResult { result: false });
             }
 
-            for step_number in 1..=steps {
+            for step_number in 1..=(steps + 1) {
                 interpreter.shift();
 
                 trace.push(interpreter.var_storage.as_record());
@@ -49,7 +49,7 @@ impl QuintOutput {
                     return Ok(SimulationResult { result: false });
                 }
 
-                if step_number != steps && !step.execute(&mut env)?.as_bool() {
+                if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
                     // The run cannot be extended. In some cases, this may indicate a deadlock.
                     // Since we are doing random simulation, it is very likely
                     // that we have not generated good values for extending
