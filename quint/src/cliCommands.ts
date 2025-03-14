@@ -733,10 +733,18 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const verbosityLevel = deriveVerbosity(args)
   const target = (compiled.args.target as string).toLowerCase()
 
-  const main = target == 'tlaplus' ? convertInit(compiled.mainModule, compiled.table) : compiled.mainModule
+  const main =
+    target == 'tlaplus' ? convertInit(compiled.mainModule, compiled.table, compiled.modes) : right(compiled.mainModule)
+
+  if (main.isLeft()) {
+    return cliErr('Failed to convert init to predicate', {
+      ...compiled,
+      errors: main.value.map(mkErrorMessage(compiled.sourceMap)),
+    })
+  }
 
   const parsedSpecJson = jsonStringOfOutputStage(
-    pickOutputStage({ ...compiled, modules: [main], table: compiled.table })
+    pickOutputStage({ ...compiled, modules: [main.value], table: compiled.table })
   )
   switch (target) {
     case 'json':

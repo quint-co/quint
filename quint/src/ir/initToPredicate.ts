@@ -1,12 +1,24 @@
+import { Either, left, right } from '@sweet-monads/either'
 import { LookupTable } from '../names/base'
+import { QuintError } from '../quintError'
 import { IRTransformer, transformModule } from './IRTransformer'
 import { IRVisitor, walkDefinition, walkModule } from './IRVisitor'
-import { QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
+import { OpQualifier, QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
 
-export function convertInit(module: QuintModule, lookupTable: LookupTable): QuintModule {
+export function convertInit(
+  module: QuintModule,
+  lookupTable: LookupTable,
+  modes: Map<bigint, OpQualifier>
+): Either<QuintError[], QuintModule> {
   const defsFinder = new InitDefsFinder(lookupTable)
   walkModule(defsFinder, module)
-  return transformModule(new InitConverter(defsFinder.insideInitDefs), module)
+  const converter = new InitConverter(defsFinder.insideInitDefs, lookupTable, modes)
+  const convertedModule = transformModule(converter, module)
+  if (converter.errors.length > 0) {
+    return left(converter.errors)
+  } else {
+    return right(convertedModule)
+  }
 }
 
 class InitDefsFinder implements IRVisitor {
@@ -56,11 +68,16 @@ class InitDefsFinder implements IRVisitor {
 }
 
 class InitConverter implements IRTransformer {
+  errors: QuintError[] = []
   private insideInit = 0
   private insideInitDefs: String[]
+  private lookupTable: LookupTable
+  private modes: Map<bigint, OpQualifier>
 
-  constructor(insideInitDefs: String[]) {
+  constructor(insideInitDefs: String[], lookupTable: LookupTable, modes: Map<bigint, OpQualifier>) {
     this.insideInitDefs = insideInitDefs
+    this.lookupTable = lookupTable
+    this.modes = modes
   }
 
   enterDef(def: QuintDef): QuintDef {
@@ -80,10 +97,48 @@ class InitConverter implements IRTransformer {
   }
 
   enterApp(app: QuintApp): QuintApp {
+    this.checkMixedUsage(app.id, app.opcode)
     if (this.insideInit && app.opcode == 'assign') {
       return { ...app, opcode: 'eq' }
     }
 
     return app
+  }
+
+  enterName(expr: QuintName): QuintName {
+    this.checkMixedUsage(expr.id, expr.name)
+
+    return expr
+  }
+
+  private checkMixedUsage(id: bigint, name: string) {
+    if (this.insideInit == 0 && this.insideInitDefs.includes(name) && this.hasAssignment(id)) {
+      this.errors.push({
+        code: 'QNT409',
+        message: `Action ${name} is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.`,
+        reference: id,
+      })
+    }
+  }
+
+  private hasAssignment(id: bigint): boolean {
+    const def = this.lookupTable.get(id)
+    if (!def) {
+      return false
+    }
+
+    const mode = this.modes.get(def.id)!
+    if (mode == 'action') {
+      // The mode checker says the mode should be action
+      return true
+    }
+
+    if (mode == undefined) {
+      // The mode checker doesn't have suggestions, so the annotation is correct
+      return def.kind == 'def' && def.qualifier == 'action'
+    }
+
+    // Mode is not action
+    return false
   }
 }
