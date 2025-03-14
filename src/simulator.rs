@@ -1,6 +1,9 @@
+use std::{fs::File, io::Write};
+
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{QuintError, QuintOutput},
+    itf::Trace,
 };
 
 #[derive(Debug)]
@@ -45,7 +48,14 @@ impl QuintOutput {
                 trace.push(interpreter.var_storage.as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    println!("Violation at step {step_number}, sample {sample_number}",);
+                    println!(
+                        "Violation at step {step_number}, sample {sample_number}. Writing trace."
+                    );
+                    // TODO: improve, this is temporary
+                    let itf_trace = Trace(trace).to_itf();
+                    let json_data = serde_json::to_string(&itf_trace).unwrap();
+                    let mut file = File::create("out.itf.json").unwrap();
+                    file.write_all(json_data.as_bytes()).unwrap();
                     return Ok(SimulationResult { result: false });
                 }
 
