@@ -1,3 +1,19 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright 2025 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Convert init definitions to predicates to be compatible with TLA+.
+ * Returns errors if some action is re-used between init and step, as that would require generating new actions.
+ * We ask for user intervention in such edge cases.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Either, left, right } from '@sweet-monads/either'
 import { LookupTable } from '../names/base'
 import { QuintError } from '../quintError'
@@ -5,6 +21,18 @@ import { IRTransformer, transformModule } from './IRTransformer'
 import { IRVisitor, walkDefinition, walkModule } from './IRVisitor'
 import { OpQualifier, QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
 
+/**
+ * Converts the the action named as "q::init" and all its dependencies to
+ * predicates (transforming assignments into equalities). If one of the
+ * converted dependencies is also used outside of init, this produces an error
+ * as that case would be more complicated to handle.
+ *
+ * @param module: the module with the init definition and its dependencies
+ * @param lookupTable: the lookup table for the module
+ * @param modes: the result of mode checking the module
+ *
+ * @returns The converted module, or errors intructing manual fix.
+ */
 export function convertInit(
   module: QuintModule,
   lookupTable: LookupTable,
