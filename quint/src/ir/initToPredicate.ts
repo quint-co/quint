@@ -32,19 +32,25 @@ class InitDefsFinder implements IRVisitor {
 
   enterName(expr: QuintName) {
     if (this.insideInit > 0) {
-      this.insideInitDefs.push(expr.name)
-
       const def = this.lookupTable.get(expr.id)
-      if (def) walkDefinition(this, def as QuintDef)
+      if (!def || def.kind != 'def') {
+        return
+      }
+
+      this.insideInitDefs.push(expr.name)
+      walkDefinition(this, def as QuintDef)
     }
   }
 
   enterApp(app: QuintApp) {
     if (this.insideInit > 0) {
-      this.insideInitDefs.push(app.opcode)
-
       const def = this.lookupTable.get(app.id)
-      if (def) walkDefinition(this, def as QuintDef)
+      if (!def || def.kind != 'def') {
+        return
+      }
+
+      this.insideInitDefs.push(app.opcode)
+      walkDefinition(this, def as QuintDef)
     }
   }
 }
@@ -75,7 +81,6 @@ class InitConverter implements IRTransformer {
 
   enterApp(app: QuintApp): QuintApp {
     if (this.insideInit && app.opcode == 'assign') {
-      console.log('updating', app)
       return { ...app, opcode: 'eq' }
     }
 

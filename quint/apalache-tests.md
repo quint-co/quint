@@ -308,9 +308,7 @@ ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
   @type: (() => Bool);
 *)
 init ==
-  x'
-    := (importedValue
-      + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
+  x = importedValue + ApalacheCompilation_ModuleToInstantiate_instantiatedValue
 
 (*
   @type: (() => Bool);
