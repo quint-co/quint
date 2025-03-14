@@ -6,7 +6,7 @@ source ./common.sh || { echo "Error: Could not load common.sh"; exit 1; }
 # Default configurations
 APALACHE_JAR="$HOME/.quint/apalache-dist-0.47.2/apalache/lib/apalache.jar"
 JAVA_OPTS="-Xmx8G -Xss515m"
-FILES=()  # Mandatory: User must specify via --files
+FILE=""  # Mandatory: User must specify a file
 
 # Optional parameters
 INVARIANTS=()
@@ -24,16 +24,16 @@ parse_args() {
                 shift
                 IFS=',' read -ra TEMPORAL_PROPS <<< "$1"
                 ;;
-            --files)
+            --file)
                 shift
-                IFS=',' read -ra FILES <<< "$1"
+                FILE="$1"
                 ;;
             --apalache-jar)
                 shift
                 APALACHE_JAR="$1"
                 ;;
             --help)
-                echo "Usage: $0 --files FILE1.qnt,FILE2.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH]"
+                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH]"
                 exit 0
                 ;;
             *)
@@ -44,9 +44,9 @@ parse_args() {
         shift
     done
 
-    # Ensure at least one file is provided
-    if [[ ${#FILES[@]} -eq 0 ]]; then
-        err_and_exit "You must specify at least one Quint file using --files FILE1.qnt,FILE2.qnt"
+    # Ensure exactly one file is provided
+    if [[ -z "$FILE" ]]; then
+        err_and_exit "You must specify a Quint file using --file FILE.qnt"
     fi
 }
 
@@ -101,19 +101,18 @@ run_tlc() {
     fi
 }
 
-# Main function to process each file
+# Main function to process the file
 process_file() {
-    local file="$1"
-    local base_name="${file%.qnt}"
+    local base_name="${FILE%.qnt}"
     local tla_file="${base_name}.tla"
     local cfg_file="${base_name}.cfg"
 
-    info "Processing $file..."
+    info "Processing $FILE..."
 
     # Step 1: Compile the .qnt file to .tla
     local compile_options
     compile_options=$(generate_compile_options)
-    quint compile --target=tlaplus "$file" $compile_options > "$tla_file" || err_and_exit "Compilation failed for $file"
+    quint compile --target=tlaplus "$FILE" $compile_options > "$tla_file" || err_and_exit "Compilation failed for $FILE"
 
     # Step 2: Fix init predicate issue using Perl (cross-platform solution)
     perl -0777 -i -pe "s/(.*)'\s+:= (.*_self_stabilization_.*?initial)/\1 = \2/s" "$tla_file" || err_and_exit "Failed to edit $tla_file"
@@ -131,9 +130,7 @@ process_file() {
 # Parse command-line arguments
 parse_args "$@"
 
-# Process each file
-for file in "${FILES[@]}"; do
-    process_file "$file"
-done
+# Process the single file
+process_file
 
-info "All files processed successfully."
+info "File processed successfully."
