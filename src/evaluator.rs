@@ -170,17 +170,12 @@ impl<'a> Interpreter<'a> {
         let key = [vec![id.to_string()], self.namespaces.clone()]
             .concat()
             .join("#");
+
         if !self.var_storage.vars.contains_key(&key) {
             self.create_var(id, name.clone());
         }
-        self.var_storage
-            .vars
-            .entry(key)
-            .or_insert(Rc::new(RefCell::new(VariableRegister {
-                name,
-                value: None,
-            })))
-            .clone()
+
+        Rc::clone(&self.var_storage.vars[&key])
     }
 
     fn get_or_create_const(&mut self, id: QuintId, name: String) -> Rc<RefCell<EvalResult>> {
