@@ -165,19 +165,19 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    fn get_or_create_var(&mut self, id: QuintId, name: String) -> Rc<RefCell<VariableRegister>> {
+    fn get_or_create_var(&mut self, id: QuintId, name: &str) -> Rc<RefCell<VariableRegister>> {
         let key = [vec![id.to_string()], self.namespaces.clone()]
             .concat()
             .join("#");
 
         if !self.var_storage.vars.contains_key(&key) {
-            self.create_var(id, name.clone());
+            self.create_var(id, name.to_string());
         }
 
         Rc::clone(&self.var_storage.vars[&key])
     }
 
-    fn get_or_create_const(&mut self, id: QuintId, name: String) -> Rc<RefCell<EvalResult>> {
+    fn get_or_create_const(&mut self, id: QuintId, name: &str) -> Rc<RefCell<EvalResult>> {
         self.const_registry
             .entry(id)
             .or_insert_with(|| {
@@ -201,7 +201,7 @@ impl<'a> Interpreter<'a> {
 
     pub fn compile_under_context(
         &mut self,
-        def: LookupDefinition,
+        def: &LookupDefinition,
         mut compilation: impl FnMut(&mut Interpreter) -> CompiledExpr,
     ) -> CompiledExpr {
         if let Some(ImportedFrom::Instance { id, overrides }) = def.imported_from() {
@@ -232,7 +232,7 @@ impl<'a> Interpreter<'a> {
                 .cloned()
                 .map(|(param, expr)| {
                     let id = self.table.get(&param.id).unwrap().id();
-                    let register = self.get_or_create_const(id, param.name.clone());
+                    let register = self.get_or_create_const(id, &param.name);
 
                     // Build the expr as a pure val def so it gets properly cached
                     let pure_val_def =
@@ -245,9 +245,9 @@ impl<'a> Interpreter<'a> {
                             namespaces: None,
                             depth: None,
                         }));
-                    let compiled_pure_val = self.compile_def(pure_val_def);
 
-                    (register, compiled_pure_val.clone())
+                    let compiled_pure_val = self.compile_def(&pure_val_def);
+                    (register, compiled_pure_val)
                 })
                 .collect::<Vec<_>>();
 
@@ -275,31 +275,29 @@ impl<'a> Interpreter<'a> {
         compilation(self)
     }
 
-    fn compile_def(&mut self, def: LookupDefinition) -> CompiledExpr {
-        self.compile_under_context(def.clone(), |interpreter| {
-            interpreter.compile_def_core(def.clone())
-        })
+    fn compile_def(&mut self, def: &LookupDefinition) -> CompiledExpr {
+        self.compile_under_context(def, |interpreter| interpreter.compile_def_core(def))
     }
 
-    fn compile_def_core(&mut self, def: LookupDefinition) -> CompiledExpr {
+    fn compile_def_core(&mut self, def: &LookupDefinition) -> CompiledExpr {
         if let Some(cached) = self.memo.borrow().get(&def.id()) {
             return cached.clone();
         }
 
-        let compiled_def = match def.clone() {
+        let compiled_def = match def {
             LookupDefinition::Definition(QuintDeclaration::QuintOpDef(op)) => {
                 if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
-                    self.compile(op.expr)
+                    self.compile(&op.expr)
                 } else {
                     let cached_value = {
                         let cached = self.scoped_cached_values.get(&op.id).unwrap();
                         Rc::clone(cached)
                     };
 
-                    let compiled_expr = self.compile(op.expr);
+                    let compiled_expr = self.compile(&op.expr);
                     CompiledExpr::new(move |env| {
                         let mut cached = cached_value.borrow_mut();
                         if let Some(value) = cached.as_ref() {
@@ -316,7 +314,7 @@ impl<'a> Interpreter<'a> {
             LookupDefinition::Definition(QuintDeclaration::QuintVar(QuintVar {
                 id, name, ..
             })) => {
-                let register = self.get_or_create_var(id, name.clone());
+                let register = self.get_or_create_var(*id, name);
                 let name = name.clone();
 
                 CompiledExpr::new(move |_| {
@@ -331,11 +329,11 @@ impl<'a> Interpreter<'a> {
                 name,
                 ..
             })) => {
-                let register = self.get_or_create_const(id, name);
+                let register = self.get_or_create_const(*id, name);
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
             LookupDefinition::Param(p) => {
-                let register = self.get_or_create_param(&p);
+                let register = self.get_or_create_param(p);
                 CompiledExpr::new(move |_| register.borrow().clone())
             }
             d => unimplemented!("{:#?}", d),
@@ -343,7 +341,7 @@ impl<'a> Interpreter<'a> {
 
         // For top-level value definitions, we can cache the resulting value,
         // as long as we are careful with state changes.
-        match can_cache(&def) {
+        match can_cache(def) {
             Cache::None => {
                 self.memo
                     .borrow_mut()
@@ -391,14 +389,21 @@ impl<'a> Interpreter<'a> {
         Value::Lambda(registers, body)
     }
 
-    pub fn compile(&mut self, expr: QuintEx) -> CompiledExpr {
+    pub fn compile(&mut self, expr: &QuintEx) -> CompiledExpr {
         if let Some(cached) = self.memo.borrow().get(&expr.id()) {
             return cached.clone();
         }
-        let compiled_expr = match expr.clone() {
-            QuintEx::QuintInt { id: _, value } => CompiledExpr::new(move |_| Ok(Value::Int(value))),
+
+        let id = expr.id();
+
+        let compiled_expr = match expr {
+            QuintEx::QuintInt { id: _, value } => {
+                let value = *value;
+                CompiledExpr::new(move |_| Ok(Value::Int(value)))
+            }
 
             QuintEx::QuintBool { id: _, value } => {
+                let value = *value;
                 CompiledExpr::new(move |_| Ok(Value::Bool(value)))
             }
 
@@ -409,8 +414,8 @@ impl<'a> Interpreter<'a> {
 
             QuintEx::QuintName { id, name } => self
                 .table
-                .get(&id)
-                .map(|def| self.compile_def(def.clone()))
+                .get(id)
+                .map(|def| self.compile_def(def))
                 .unwrap_or_else(|| builtin_value(name.as_str())),
 
             QuintEx::QuintLambda {
@@ -418,26 +423,23 @@ impl<'a> Interpreter<'a> {
                 params,
                 expr,
             } => {
-                let body = self.compile(*expr);
+                let body = self.compile(expr);
                 let lambda = self.mk_lambda(params.to_vec(), body);
                 CompiledExpr::new(move |_| Ok(lambda.clone()))
             }
 
             QuintEx::QuintApp { id, opcode, args } => {
-                let compiled_args = args
-                    .iter()
-                    .map(|arg| self.compile(arg.clone()))
-                    .collect::<Vec<_>>();
+                let compiled_args = args.iter().map(|arg| self.compile(arg)).collect::<Vec<_>>();
 
                 if opcode == "assign" {
                     // Assign is too special, so we handle it separately.
                     // We need to build things under the context of the variable being assigned,
                     // as it may come from an instance, and that changed everything
                     let var_def = self.table.get(&args[0].id()).unwrap();
-                    self.compile_under_context(var_def.clone(), |interpreter| {
+                    self.compile_under_context(var_def, |interpreter| {
                         interpreter.create_var(var_def.id(), var_def.name().to_string());
                         let register = interpreter.get_next_var(&var_def.id());
-                        let expr = interpreter.compile(args[1].clone());
+                        let expr = interpreter.compile(&args[1]);
 
                         CompiledExpr::new(move |env| {
                             let value = expr.execute(env)?;
@@ -478,7 +480,7 @@ impl<'a> Interpreter<'a> {
                 };
                 // Then, we build the expression for the let body. It will use the lookup table and, every time it needs the value
                 // for the definition under the let, it will use the cached value (or eval a new value and store it).
-                let compiled_expr = self.compile(*expr.clone());
+                let compiled_expr = self.compile(expr);
                 CompiledExpr::new(move |env| {
                     let result = compiled_expr.execute(env);
                     // After evaluating the whole let expression, we clear the cached value, as it is no longer in scope.
@@ -489,28 +491,26 @@ impl<'a> Interpreter<'a> {
             }
         };
 
-        self.memo
-            .borrow_mut()
-            .insert(expr.id(), compiled_expr.clone());
+        self.memo.borrow_mut().insert(id, compiled_expr.clone());
         compiled_expr
     }
 
-    pub fn compile_op(&mut self, id: QuintId, op: String) -> CompiledExprWithArgs {
-        match self.table.get(&id) {
+    pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
+        match self.table.get(id) {
             Some(def) => {
-                let op = self.compile_def(def.clone());
+                let op = self.compile_def(def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure();
                     closure(env, args)
                 })
             }
-            None => compile_eager_op(op.as_str()),
+            None => compile_eager_op(op),
         }
     }
 
     pub fn eval(&mut self, env: &mut Env, expr: QuintEx) -> EvalResult {
-        self.compile(expr).execute(env)
+        self.compile(&expr).execute(env)
     }
 }
 
