@@ -48,37 +48,32 @@ impl Value {
             Self::Int(i) => itf::Value::Number(*i),
             Self::Bool(b) => itf::Value::Bool(*b),
             Self::Str(s) => itf::Value::String(s.clone()),
-            Self::Set(_)
-            | Self::Interval(_, _)
+            Self::Set(s) => itf::Value::Set(s.iter().map(|v| v.to_itf()).collect()),
+            Self::Interval(_, _)
             | Self::CrossProduct(_)
             | Self::PowerSet(_)
             | Self::MapSet(_, _) => {
-                // itf::Value::Set(s.iter().map(|v| v.to_itf()).collect())
-                todo!() // I think we need to update ITF to implement FromIterator on Set
+                todo!()
             }
-            Self::Tuple(elems) => {
-                // itf::Value::Tuple((elems.iter().map(|v| v.to_itf()).collect())),
-                todo!() // Same, need FromIterator
-            }
-            Self::Record(fields) => itf::Value::Record(itf::value::Map::new(
-                // FIXME: This is not working, being serialized as "#map". Seems like a problem in itf-rs
+            Self::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
+            Self::Record(fields) => itf::Value::Record(
                 fields
                     .iter()
                     .map(|(k, v)| (k.clone(), v.to_itf()))
                     .collect(),
-            )),
-            Self::Map(map) => itf::Value::Map(itf::value::Map::new(
-                map.iter().map(|(k, v)| (k.to_itf(), v.to_itf())).collect(),
-            )),
+            ),
+            Self::Map(map) => {
+                itf::Value::Map(map.iter().map(|(k, v)| (k.to_itf(), v.to_itf())).collect())
+            }
             Self::List(elems) => itf::Value::List(elems.iter().map(|v| v.to_itf()).collect()),
-            Self::Variant(label, value) => itf::Value::Record(itf::value::Map::new(
+            Self::Variant(label, value) => itf::Value::Record(
                 vec![
                     ("tag".to_string(), itf::Value::String(label.clone())),
                     ("value".to_string(), value.to_itf()),
                 ]
                 .into_iter()
                 .collect(),
-            )),
+            ),
             Self::Lambda(_, _) => panic!("Cannot convert Lambda to ITF"),
         }
     }
