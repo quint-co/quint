@@ -45,7 +45,7 @@ impl QuintOutput {
                 trace.push(interpreter.var_storage.as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    println!("Violation at step {step_number}, sample {sample_number}");
+                    println!("Violation at step {step_number}, sample {sample_number}",);
                     return Ok(SimulationResult { result: false });
                 }
 
@@ -59,6 +59,9 @@ impl QuintOutput {
                     break;
                 }
             }
+            // for (state, i) in trace.iter().enumerate() {
+            //     println!("State {}: {:?}", state, i);
+            // }
         }
         Ok(SimulationResult { result: true })
     }

@@ -13,17 +13,17 @@ macro_rules! run_test {
         // Set a specific seed so different runs generate the same result
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 123_456);
 
-        let init = interpreter.eval(&mut env, &init_def.expr);
+        let init = interpreter.eval(&mut env, init_def.expr.clone());
         assert_eq!(init.unwrap(), Value::Bool(true));
 
         for expected_value in $expected_values {
             interpreter.shift();
             let input_def = parsed.find_definition_by_name("input")?;
-            let input = interpreter.eval(&mut env, &input_def.expr);
+            let input = interpreter.eval(&mut env, input_def.expr.clone());
             assert_eq!(input.unwrap(), expected_value);
 
             let step_def = parsed.find_definition_by_name("step")?;
-            let step = interpreter.eval(&mut env, &step_def.expr);
+            let step = interpreter.eval(&mut env, step_def.expr.clone());
             assert_eq!(step.unwrap(), Value::Bool(true));
         }
 

@@ -286,6 +286,8 @@ modules:
                     - kind: int
                       id: 120
                       value: 3
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 138
@@ -336,6 +338,8 @@ modules:
                 - kind: int
                   id: 135
                   value: 3
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: typedef
         id: 3
@@ -368,6 +372,8 @@ modules:
                 - kind: int
                   id: 39
                   value: 3
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 12
@@ -385,12 +391,16 @@ modules:
               id: 10
               opcode: Tup
               args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: typedef
         id: 15
       - kind: var
         id: 34
         name: nextTurn
+        importedFrom: ~
+        namespaces: ~
       - kind: def
         id: 8
         name: X
@@ -407,6 +417,8 @@ modules:
               id: 6
               opcode: Tup
               args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 22
@@ -429,6 +441,8 @@ modules:
               - kind: name
                 id: 19
                 name: __OccupiedParam_21
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 26
@@ -446,10 +460,14 @@ modules:
               id: 24
               opcode: Tup
               args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: var
         id: 32
         name: board
+        importedFrom: ~
+        namespaces: ~
       - kind: def
         id: 154
         name: square
@@ -492,6 +510,8 @@ modules:
                   - kind: int
                     id: 150
                     value: 2
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 473
@@ -562,6 +582,8 @@ modules:
                               kind: name
                               id: 465
                               name: Empty
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 171
@@ -618,6 +640,8 @@ modules:
                     - kind: name
                       id: 161
                       name: p_168
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 185
@@ -665,6 +689,8 @@ modules:
                   kind: bool
                   id: 176
                   value: false
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 189
@@ -681,6 +707,8 @@ modules:
             - kind: name
               id: 187
               name: isEmpty
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 203
@@ -729,6 +757,8 @@ modules:
                           - kind: name
                             id: 196
                             name: player_202
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 208
@@ -749,6 +779,8 @@ modules:
                 - kind: name
                   id: 205
                   name: isEmpty
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 249
@@ -830,6 +862,8 @@ modules:
                   - kind: int
                     id: 245
                     value: 1
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 272
@@ -911,6 +945,8 @@ modules:
                   - kind: int
                     id: 268
                     value: 1
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 295
@@ -992,6 +1028,8 @@ modules:
                   - kind: int
                     id: 291
                     value: 2
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 308
@@ -1012,6 +1050,8 @@ modules:
                 - kind: int
                   id: 305
                   value: 2
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 335
@@ -1091,6 +1131,8 @@ modules:
                                 - kind: name
                                   id: 326
                                   name: player_334
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 218
@@ -1130,6 +1172,8 @@ modules:
                     - kind: name
                       id: 214
                       name: O
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 226
@@ -1161,6 +1205,8 @@ modules:
             - kind: name
               id: 224
               name: boardFull
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 299
@@ -1177,6 +1223,8 @@ modules:
             - kind: name
               id: 297
               name: canWinWithPattern
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 303
@@ -1193,6 +1241,8 @@ modules:
             - kind: name
               id: 301
               name: canBlockWithPattern
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 312
@@ -1209,6 +1259,8 @@ modules:
             - kind: name
               id: 310
               name: canSetupWinWithPattern
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 377
@@ -1232,6 +1284,8 @@ modules:
                 - kind: int
                   id: 374
                   value: 2
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 406
@@ -1265,6 +1319,8 @@ modules:
                       - kind: name
                         id: 397
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -1277,6 +1333,8 @@ modules:
                 - kind: name
                   id: 402
                   name: coordinate
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 414
@@ -1297,6 +1355,8 @@ modules:
                 - kind: name
                   id: 407
                   name: corners
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -1309,6 +1369,8 @@ modules:
               - kind: name
                 id: 411
                 name: corner
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 489
@@ -1326,6 +1388,8 @@ modules:
                 - kind: name
                   id: 486
                   name: X
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 493
@@ -1343,6 +1407,8 @@ modules:
                 - kind: name
                   id: 490
                   name: O
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 502
@@ -1360,6 +1426,8 @@ modules:
                 - kind: name
                   id: 499
                   name: X
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 453
@@ -1404,6 +1472,8 @@ modules:
                 - kind: name
                   id: 449
                   name: X
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 496
@@ -1417,6 +1487,8 @@ modules:
             - kind: name
               id: 494
               name: stalemate
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 498
@@ -1426,6 +1498,8 @@ modules:
           kind: name
           id: 497
           name: OHasNotWon
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 353
@@ -1460,6 +1534,8 @@ modules:
                         - kind: name
                           id: 338
                           name: canWinWithPattern
+                importedFrom: ~
+                namespaces: ~
                 depth: ~
               expr:
                 kind: let
@@ -1483,6 +1559,8 @@ modules:
                           - kind: name
                             id: 343
                             name: isEmpty
+                  importedFrom: ~
+                  namespaces: ~
                   depth: ~
                 expr:
                   kind: app
@@ -1495,6 +1573,8 @@ modules:
                     - kind: name
                       id: 348
                       name: coordinate
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 371
@@ -1529,6 +1609,8 @@ modules:
                         - kind: name
                           id: 356
                           name: canBlockWithPattern
+                importedFrom: ~
+                namespaces: ~
                 depth: ~
               expr:
                 kind: let
@@ -1552,6 +1634,8 @@ modules:
                           - kind: name
                             id: 361
                             name: isEmpty
+                  importedFrom: ~
+                  namespaces: ~
                   depth: ~
                 expr:
                   kind: app
@@ -1564,6 +1648,8 @@ modules:
                     - kind: name
                       id: 366
                       name: coordinate
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 394
@@ -1595,6 +1681,8 @@ modules:
                         - kind: name
                           id: 379
                           name: canSetupWinWithPattern
+                importedFrom: ~
+                namespaces: ~
                 depth: ~
               expr:
                 kind: let
@@ -1618,6 +1706,8 @@ modules:
                           - kind: name
                             id: 384
                             name: isEmpty
+                  importedFrom: ~
+                  namespaces: ~
                   depth: ~
                 expr:
                   kind: app
@@ -1630,6 +1720,8 @@ modules:
                     - kind: name
                       id: 389
                       name: coordinate
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 441
@@ -1724,6 +1816,8 @@ modules:
                 - kind: name
                   id: 437
                   name: O
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 485
@@ -1767,6 +1861,8 @@ modules:
                     - kind: name
                       id: 480
                       name: nextTurn
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 505
@@ -1776,6 +1872,8 @@ modules:
           kind: name
           id: 504
           name: init
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 507
@@ -1785,6 +1883,8 @@ modules:
           kind: name
           id: 506
           name: step
+        importedFrom: ~
+        namespaces: ~
         depth: ~
 table:
   8:
@@ -1804,6 +1904,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   12:
     kind: def
@@ -1822,6 +1924,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   19:
     id: 18
@@ -1848,6 +1952,8 @@ table:
           - kind: name
             id: 19
             name: __OccupiedParam_21
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   26:
     kind: def
@@ -1866,6 +1972,8 @@ table:
           id: 24
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   42:
     kind: def
@@ -1897,6 +2005,8 @@ table:
             - kind: int
               id: 39
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   124:
     kind: def
@@ -2180,6 +2290,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   138:
     kind: def
@@ -2231,11 +2343,15 @@ table:
             - kind: int
               id: 135
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   144:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   145:
     id: 142
     name: coordinate_153
@@ -2285,6 +2401,8 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   157:
     id: 155
@@ -2332,6 +2450,8 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   160:
     id: 156
@@ -2395,6 +2515,8 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   173:
     id: 172
@@ -2442,6 +2564,8 @@ table:
               - kind: int
                 id: 150
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   185:
     kind: def
@@ -2490,6 +2614,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   186:
     kind: def
@@ -2521,6 +2647,8 @@ table:
             - kind: int
               id: 39
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   187:
     kind: def
@@ -2569,6 +2697,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   189:
     kind: def
@@ -2586,6 +2716,8 @@ table:
         - kind: name
           id: 187
           name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   191:
     kind: def
@@ -2869,6 +3001,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   193:
     id: 192
@@ -2935,6 +3069,8 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   203:
     kind: def
@@ -2984,6 +3120,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   204:
     kind: def
@@ -3015,6 +3153,8 @@ table:
             - kind: int
               id: 39
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   205:
     kind: def
@@ -3063,6 +3203,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   208:
     kind: def
@@ -3084,6 +3226,8 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   209:
     kind: def
@@ -3105,6 +3249,8 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   210:
     kind: def
@@ -3123,6 +3269,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   211:
     kind: def
@@ -3172,6 +3320,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   214:
     kind: def
@@ -3190,6 +3340,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   215:
     kind: def
@@ -3239,6 +3391,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   218:
     kind: def
@@ -3279,6 +3433,8 @@ table:
                 - kind: name
                   id: 214
                   name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   219:
     kind: def
@@ -3297,6 +3453,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   220:
     kind: def
@@ -3346,6 +3504,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   221:
     kind: def
@@ -3364,6 +3524,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   222:
     kind: def
@@ -3413,6 +3575,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   224:
     kind: def
@@ -3434,6 +3598,8 @@ table:
             - kind: name
               id: 205
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   226:
     kind: def
@@ -3466,6 +3632,8 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   228:
     id: 227
@@ -3490,6 +3658,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   232:
     kind: def
@@ -3547,6 +3717,8 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   238:
     id: 227
@@ -3601,6 +3773,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   249:
     kind: def
@@ -3683,6 +3857,8 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   251:
     id: 250
@@ -3707,6 +3883,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   255:
     kind: def
@@ -3764,6 +3942,8 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   261:
     id: 250
@@ -3818,6 +3998,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   272:
     kind: def
@@ -3900,6 +4082,8 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   274:
     id: 273
@@ -3924,6 +4108,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   278:
     kind: def
@@ -3981,6 +4167,8 @@ table:
                 - kind: name
                   id: 161
                   name: p_168
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   284:
     id: 273
@@ -4035,6 +4223,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   295:
     kind: def
@@ -4117,6 +4307,8 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   296:
     kind: def
@@ -4400,6 +4592,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   297:
     kind: def
@@ -4482,6 +4676,8 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   299:
     kind: def
@@ -4499,6 +4695,8 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   300:
     kind: def
@@ -4782,6 +4980,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   301:
     kind: def
@@ -4864,6 +5064,8 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   303:
     kind: def
@@ -4881,6 +5083,8 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   307:
     kind: def
@@ -4929,6 +5133,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   308:
     kind: def
@@ -4950,6 +5156,8 @@ table:
             - kind: int
               id: 305
               value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   309:
     kind: def
@@ -5233,6 +5441,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   310:
     kind: def
@@ -5315,6 +5525,8 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   312:
     kind: def
@@ -5332,6 +5544,8 @@ table:
         - kind: name
           id: 310
           name: canSetupWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   315:
     id: 314
@@ -5383,11 +5597,15 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   317:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   318:
     id: 314
     name: coordinate_334
@@ -5422,11 +5640,15 @@ table:
           - kind: name
             id: 19
             name: __OccupiedParam_21
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   331:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   335:
     kind: def
     id: 335
@@ -5506,6 +5728,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   336:
     kind: def
@@ -5523,6 +5747,8 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   337:
     kind: def
@@ -5806,6 +6032,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   338:
     kind: def
@@ -5888,6 +6116,8 @@ table:
               - kind: int
                 id: 245
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   341:
     kind: def
@@ -5909,6 +6139,8 @@ table:
             - kind: name
               id: 338
               name: canWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   342:
     kind: def
@@ -5930,6 +6162,8 @@ table:
             - kind: name
               id: 338
               name: canWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   343:
     kind: def
@@ -5978,6 +6212,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   346:
     kind: def
@@ -5999,6 +6235,8 @@ table:
             - kind: name
               id: 343
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   347:
     kind: def
@@ -6017,6 +6255,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   348:
     kind: def
@@ -6038,6 +6278,8 @@ table:
             - kind: name
               id: 343
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   349:
     kind: def
@@ -6118,6 +6360,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   353:
     kind: def
@@ -6153,6 +6397,8 @@ table:
                     - kind: name
                       id: 338
                       name: canWinWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -6176,6 +6422,8 @@ table:
                       - kind: name
                         id: 343
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -6188,6 +6436,8 @@ table:
                 - kind: name
                   id: 348
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   354:
     kind: def
@@ -6205,6 +6455,8 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   355:
     kind: def
@@ -6488,6 +6740,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   356:
     kind: def
@@ -6570,6 +6824,8 @@ table:
               - kind: int
                 id: 268
                 value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   359:
     kind: def
@@ -6591,6 +6847,8 @@ table:
             - kind: name
               id: 356
               name: canBlockWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   360:
     kind: def
@@ -6612,6 +6870,8 @@ table:
             - kind: name
               id: 356
               name: canBlockWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   361:
     kind: def
@@ -6660,6 +6920,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   364:
     kind: def
@@ -6681,6 +6943,8 @@ table:
             - kind: name
               id: 361
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   365:
     kind: def
@@ -6699,6 +6963,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   366:
     kind: def
@@ -6720,6 +6986,8 @@ table:
             - kind: name
               id: 361
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   367:
     kind: def
@@ -6800,6 +7068,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   371:
     kind: def
@@ -6835,6 +7105,8 @@ table:
                     - kind: name
                       id: 356
                       name: canBlockWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -6858,6 +7130,8 @@ table:
                       - kind: name
                         id: 361
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -6870,6 +7144,8 @@ table:
                 - kind: name
                   id: 366
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   372:
     kind: def
@@ -6888,6 +7164,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   376:
     kind: def
@@ -6968,6 +7246,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   377:
     kind: def
@@ -6992,6 +7272,8 @@ table:
             - kind: int
               id: 374
               value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   378:
     kind: def
@@ -7275,6 +7557,8 @@ table:
                 - kind: int
                   id: 120
                   value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   379:
     kind: def
@@ -7357,6 +7641,8 @@ table:
               - kind: int
                 id: 291
                 value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   382:
     kind: def
@@ -7378,6 +7664,8 @@ table:
             - kind: name
               id: 379
               name: canSetupWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   383:
     kind: def
@@ -7399,6 +7687,8 @@ table:
             - kind: name
               id: 379
               name: canSetupWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   384:
     kind: def
@@ -7447,6 +7737,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   387:
     kind: def
@@ -7468,6 +7760,8 @@ table:
             - kind: name
               id: 384
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   388:
     kind: def
@@ -7486,6 +7780,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   389:
     kind: def
@@ -7507,6 +7803,8 @@ table:
             - kind: name
               id: 384
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   390:
     kind: def
@@ -7587,6 +7885,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   394:
     kind: def
@@ -7619,6 +7919,8 @@ table:
                     - kind: name
                       id: 379
                       name: canSetupWinWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -7642,6 +7944,8 @@ table:
                       - kind: name
                         id: 384
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -7654,6 +7958,8 @@ table:
                 - kind: name
                   id: 389
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   396:
     kind: def
@@ -7685,6 +7991,8 @@ table:
             - kind: int
               id: 39
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   397:
     kind: def
@@ -7733,6 +8041,8 @@ table:
               kind: bool
               id: 176
               value: false
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   400:
     kind: def
@@ -7754,6 +8064,8 @@ table:
             - kind: name
               id: 397
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   401:
     id: 395
@@ -7778,6 +8090,8 @@ table:
             - kind: name
               id: 397
               name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 3
   403:
     kind: def
@@ -7858,6 +8172,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   406:
     kind: def
@@ -7892,6 +8208,8 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          importedFrom: ~
+          namespaces: ~
           depth: ~
         expr:
           kind: app
@@ -7904,6 +8222,8 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   407:
     kind: def
@@ -7955,6 +8275,8 @@ table:
             - kind: int
               id: 135
               value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   409:
     kind: def
@@ -7969,6 +8291,8 @@ table:
         - kind: name
           id: 407
           name: corners
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   410:
     kind: def
@@ -7987,6 +8311,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   411:
     kind: def
@@ -8001,6 +8327,8 @@ table:
         - kind: name
           id: 407
           name: corners
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   412:
     kind: def
@@ -8081,6 +8409,8 @@ table:
                             - kind: name
                               id: 326
                               name: player_334
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   414:
     kind: def
@@ -8102,6 +8432,8 @@ table:
             - kind: name
               id: 407
               name: corners
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -8114,11 +8446,15 @@ table:
           - kind: name
             id: 411
             name: corner
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   415:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   416:
     kind: def
     id: 8
@@ -8136,6 +8472,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   418:
     kind: def
@@ -8168,6 +8506,8 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   420:
     kind: def
@@ -8185,6 +8525,8 @@ table:
         - kind: name
           id: 187
           name: isEmpty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   421:
     kind: def
@@ -8206,6 +8548,8 @@ table:
             - kind: name
               id: 407
               name: corners
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -8218,6 +8562,8 @@ table:
           - kind: name
             id: 411
             name: corner
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   422:
     kind: def
@@ -8235,6 +8581,8 @@ table:
         - kind: name
           id: 297
           name: canWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   423:
     kind: def
@@ -8270,6 +8618,8 @@ table:
                     - kind: name
                       id: 338
                       name: canWinWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -8293,6 +8643,8 @@ table:
                       - kind: name
                         id: 343
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -8305,6 +8657,8 @@ table:
                 - kind: name
                   id: 348
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   424:
     kind: def
@@ -8322,6 +8676,8 @@ table:
         - kind: name
           id: 301
           name: canBlockWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   425:
     kind: def
@@ -8357,6 +8713,8 @@ table:
                     - kind: name
                       id: 356
                       name: canBlockWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -8380,6 +8738,8 @@ table:
                       - kind: name
                         id: 361
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -8392,6 +8752,8 @@ table:
                 - kind: name
                   id: 366
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   426:
     kind: def
@@ -8413,6 +8775,8 @@ table:
             - kind: int
               id: 305
               value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   427:
     kind: def
@@ -8437,6 +8801,8 @@ table:
             - kind: int
               id: 374
               value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   428:
     kind: def
@@ -8454,6 +8820,8 @@ table:
         - kind: name
           id: 310
           name: canSetupWinWithPattern
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   429:
     kind: def
@@ -8486,6 +8854,8 @@ table:
                     - kind: name
                       id: 379
                       name: canSetupWinWithPattern
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: let
@@ -8509,6 +8879,8 @@ table:
                       - kind: name
                         id: 384
                         name: isEmpty
+              importedFrom: ~
+              namespaces: ~
               depth: ~
             expr:
               kind: app
@@ -8521,6 +8893,8 @@ table:
                 - kind: name
                   id: 389
                   name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   430:
     kind: def
@@ -8539,6 +8913,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   431:
     kind: def
@@ -8573,6 +8949,8 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          importedFrom: ~
+          namespaces: ~
           depth: ~
         expr:
           kind: app
@@ -8585,6 +8963,8 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   437:
     kind: def
@@ -8603,11 +8983,15 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   438:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   441:
     kind: def
     id: 441
@@ -8702,11 +9086,15 @@ table:
             - kind: name
               id: 437
               name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   442:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   443:
     kind: def
     id: 12
@@ -8724,6 +9112,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   445:
     kind: def
@@ -8756,6 +9146,8 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   447:
     kind: def
@@ -8774,6 +9166,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   448:
     kind: def
@@ -8808,6 +9202,8 @@ table:
                   - kind: name
                     id: 397
                     name: isEmpty
+          importedFrom: ~
+          namespaces: ~
           depth: ~
         expr:
           kind: app
@@ -8820,6 +9216,8 @@ table:
             - kind: name
               id: 402
               name: coordinate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   449:
     kind: def
@@ -8838,11 +9236,15 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   450:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   453:
     kind: def
     id: 453
@@ -8887,6 +9289,8 @@ table:
             - kind: name
               id: 449
               name: X
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   454:
     kind: def
@@ -8905,11 +9309,15 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   455:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   465:
     kind: def
     id: 26
@@ -8927,11 +9335,15 @@ table:
           id: 24
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   470:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   473:
     kind: def
     id: 473
@@ -9002,6 +9414,8 @@ table:
                           kind: name
                           id: 465
                           name: Empty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   474:
     kind: def
@@ -9097,6 +9511,8 @@ table:
             - kind: name
               id: 437
               name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   475:
     kind: def
@@ -9142,6 +9558,8 @@ table:
             - kind: name
               id: 449
               name: X
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   476:
     kind: def
@@ -9174,23 +9592,33 @@ table:
         - kind: name
           id: 224
           name: boardFull
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   477:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   478:
     kind: var
     id: 32
     name: board
+    importedFrom: ~
+    namespaces: ~
   480:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   481:
     kind: var
     id: 34
     name: nextTurn
+    importedFrom: ~
+    namespaces: ~
   485:
     kind: def
     id: 485
@@ -9234,6 +9662,8 @@ table:
                 - kind: name
                   id: 480
                   name: nextTurn
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   486:
     kind: def
@@ -9252,6 +9682,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   487:
     kind: def
@@ -9301,6 +9733,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   489:
     kind: def
@@ -9319,6 +9753,8 @@ table:
             - kind: name
               id: 486
               name: X
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   490:
     kind: def
@@ -9337,6 +9773,8 @@ table:
           id: 10
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   491:
     kind: def
@@ -9386,6 +9824,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   493:
     kind: def
@@ -9404,6 +9844,8 @@ table:
             - kind: name
               id: 490
               name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   494:
     kind: def
@@ -9444,6 +9886,8 @@ table:
                 - kind: name
                   id: 214
                   name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   496:
     kind: def
@@ -9458,6 +9902,8 @@ table:
         - kind: name
           id: 494
           name: stalemate
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   497:
     kind: def
@@ -9476,6 +9922,8 @@ table:
             - kind: name
               id: 490
               name: O
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   498:
     kind: def
@@ -9486,6 +9934,8 @@ table:
       kind: name
       id: 497
       name: OHasNotWon
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   499:
     kind: def
@@ -9504,6 +9954,8 @@ table:
           id: 6
           opcode: Tup
           args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   500:
     kind: def
@@ -9553,6 +10005,8 @@ table:
                       - kind: name
                         id: 196
                         name: player_202
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   502:
     kind: def
@@ -9571,6 +10025,8 @@ table:
             - kind: name
               id: 499
               name: X
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   504:
     kind: def
@@ -9642,6 +10098,8 @@ table:
                           kind: name
                           id: 465
                           name: Empty
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   505:
     kind: def
@@ -9652,6 +10110,8 @@ table:
       kind: name
       id: 504
       name: init
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   506:
     kind: def
@@ -9696,6 +10156,8 @@ table:
                 - kind: name
                   id: 480
                   name: nextTurn
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   507:
     kind: def
@@ -9706,5 +10168,7 @@ table:
       kind: name
       id: 506
       name: step
+    importedFrom: ~
+    namespaces: ~
     depth: 0
 main: tictactoe

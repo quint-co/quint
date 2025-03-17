@@ -45,7 +45,7 @@ pub struct QuintOutput {
 
 pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum LookupDefinition {
     Definition(QuintDeclaration),
@@ -66,6 +66,20 @@ impl LookupDefinition {
             LookupDefinition::Param(param) => param.name.as_str(),
         }
     }
+
+    pub fn imported_from(&self) -> Option<&ImportedFrom> {
+        match self {
+            LookupDefinition::Definition(def) => def.imported_from(),
+            LookupDefinition::Param(_) => None,
+        }
+    }
+
+    pub fn namespaces(&self) -> Option<&Vec<String>> {
+        match self {
+            LookupDefinition::Definition(def) => def.namespaces(),
+            LookupDefinition::Param(_) => None,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -74,16 +88,68 @@ pub struct QuintModule {
     pub declarations: Vec<QuintDeclaration>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OpDef {
     pub id: QuintId,
     pub name: String,
     pub qualifier: OpQualifier,
     pub expr: QuintEx,
+    #[serde(rename = "importedFrom")]
+    pub imported_from: Option<ImportedFrom>,
+    pub namespaces: Option<Vec<String>>,
     pub depth: Option<u64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "kind")]
+pub enum ImportedFrom {
+    #[serde(rename = "import")]
+    Import { id: QuintId },
+    #[serde(rename = "instance")]
+    Instance {
+        id: QuintId,
+        overrides: Vec<(QuintLambdaParameter, QuintEx)>,
+    },
+    #[serde(rename = "export")]
+    Export { id: QuintId },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QuintVar {
+    pub id: QuintId,
+    pub name: String,
+    #[serde(rename = "importedFrom")]
+    pub imported_from: Option<ImportedFrom>,
+    pub namespaces: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QuintAssume {
+    pub id: QuintId,
+    pub name: String,
+    pub assumption: QuintEx,
+    #[serde(rename = "importedFrom")]
+    pub imported_from: Option<ImportedFrom>,
+    pub namespaces: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QuintTypeDef {
+    pub id: QuintId,
+    // We don't care about the type definition
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "kind")]
+pub struct QuintConst {
+    pub id: QuintId,
+    pub name: String,
+    #[serde(rename = "importedFrom")]
+    pub imported_from: Option<ImportedFrom>,
+    pub namespaces: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "kind")]
 pub enum QuintDeclaration {
     // Constants should have been dropped in flattening
@@ -93,27 +159,16 @@ pub enum QuintDeclaration {
     QuintOpDef(OpDef),
 
     #[serde(rename = "var")]
-    QuintVar { id: QuintId, name: String },
+    QuintVar(QuintVar),
 
     #[serde(rename = "assume")]
-    QuintAssume {
-        id: QuintId,
-        name: String,
-        assumption: QuintEx,
-    },
+    QuintAssume(QuintAssume),
 
     #[serde(rename = "typedef")]
-    QuintTypeDef {
-        id: QuintId,
-        // We don't care about the type definition
-    },
+    QuintTypeDef(QuintTypeDef),
 
     #[serde(rename = "const")]
-    QuintConst {
-        id: QuintId,
-        name: String,
-        // We don't care about the constant definition
-    },
+    QuintConst(QuintConst),
 
     #[serde(rename = "import")]
     QuintImport {}, // Ignore
@@ -127,10 +182,10 @@ impl QuintDeclaration {
     pub fn id(&self) -> QuintId {
         match self {
             Self::QuintOpDef(def) => def.id,
-            Self::QuintVar { id, .. } => *id,
-            Self::QuintAssume { id, .. } => *id,
-            Self::QuintTypeDef { id } => *id,
-            Self::QuintConst { id, .. } => *id,
+            Self::QuintVar(QuintVar { id, .. }) => *id,
+            Self::QuintAssume(QuintAssume { id, .. }) => *id,
+            Self::QuintTypeDef(QuintTypeDef { id }) => *id,
+            Self::QuintConst(QuintConst { id, .. }) => *id,
             _ => panic!("This import-like declaration doesn't have an id"),
         }
     }
@@ -138,16 +193,38 @@ impl QuintDeclaration {
     pub fn name(&self) -> &str {
         match self {
             Self::QuintOpDef(def) => def.name.as_str(),
-            Self::QuintVar { name, .. } => name.as_str(),
-            Self::QuintAssume { name, .. } => name.as_str(),
-            Self::QuintTypeDef { .. } => panic!("There shouldn't be any typedefs here"),
-            Self::QuintConst { name, .. } => name.as_str(),
+            Self::QuintVar(QuintVar { name, .. }) => name.as_str(),
+            Self::QuintAssume(QuintAssume { name, .. }) => name.as_str(),
+            Self::QuintTypeDef(QuintTypeDef { .. }) => {
+                panic!("There shouldn't be any typedefs here")
+            }
+            Self::QuintConst(QuintConst { name, .. }) => name.as_str(),
             _ => panic!("This import-like declaration doesn't have a name"),
+        }
+    }
+
+    pub fn imported_from(&self) -> Option<&ImportedFrom> {
+        match self {
+            Self::QuintOpDef(OpDef { imported_from, .. })
+            | Self::QuintVar(QuintVar { imported_from, .. })
+            | Self::QuintAssume(QuintAssume { imported_from, .. })
+            | Self::QuintConst(QuintConst { imported_from, .. }) => imported_from.as_ref(),
+            _ => None,
+        }
+    }
+
+    pub fn namespaces(&self) -> Option<&Vec<String>> {
+        match self {
+            Self::QuintOpDef(OpDef { namespaces, .. })
+            | Self::QuintVar(QuintVar { namespaces, .. })
+            | Self::QuintAssume(QuintAssume { namespaces, .. })
+            | Self::QuintConst(QuintConst { namespaces, .. }) => namespaces.as_ref(),
+            _ => None,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum OpQualifier {
     #[serde(rename = "puredef")]
     PureDef,
@@ -167,7 +244,7 @@ pub enum OpQualifier {
     Temporal,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "kind")]
 pub enum QuintEx {
     #[serde(rename = "name")]

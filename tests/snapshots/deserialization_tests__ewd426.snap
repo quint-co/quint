@@ -13,6 +13,8 @@ modules:
           kind: int
           id: 223
           value: 5
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: def
         id: 226
@@ -22,10 +24,14 @@ modules:
           kind: int
           id: 224
           value: 7
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: var
         id: 241
         name: "ewd426::self_stabilization::system"
+        importedFrom: ~
+        namespaces: ~
       - kind: def
         id: 285
         name: "ewd426::self_stabilization::init"
@@ -77,6 +83,8 @@ modules:
                                 - kind: int
                                   id: 298
                                   value: 1
+                importedFrom: ~
+                namespaces: ~
                 depth: ~
               expr:
                 kind: app
@@ -89,6 +97,10 @@ modules:
                   - kind: name
                     id: 301
                     name: "ewd426::self_stabilization::initial"
+        importedFrom:
+          kind: import
+          id: 227
+        namespaces: ~
         depth: 0
       - kind: def
         id: 236
@@ -98,6 +110,8 @@ modules:
           kind: name
           id: 235
           name: "ewd426::self_stabilization::init"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       - kind: def
         id: 239
@@ -107,6 +121,8 @@ modules:
           kind: int
           id: 240
           value: 0
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: def
         id: 245
@@ -116,6 +132,8 @@ modules:
           kind: name
           id: 246
           name: "ewd426::self_stabilization::N"
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: def
         id: 251
@@ -203,6 +221,8 @@ modules:
                               - kind: int
                                 id: 284
                                 value: 1
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: def
         id: 342
@@ -300,6 +320,8 @@ modules:
                           - kind: int
                             id: 378
                             value: 1
+        importedFrom: ~
+        namespaces: ~
         depth: 0
       - kind: def
         id: 379
@@ -347,6 +369,8 @@ modules:
                           - kind: name
                             id: 391
                             name: "ewd426::self_stabilization::i_104"
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -376,6 +400,10 @@ modules:
                       - kind: name
                         id: 399
                         name: "ewd426::self_stabilization::node"
+        importedFrom:
+          kind: import
+          id: 227
+        namespaces: ~
         depth: 0
       - kind: def
         id: 238
@@ -385,16 +413,22 @@ modules:
           kind: name
           id: 237
           name: "ewd426::self_stabilization::step"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
 table:
   5:
-    kind: const
+    kind: QuintConst
     id: 4
     name: K
+    importedFrom: ~
+    namespaces: ~
   6:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   10:
     kind: def
     id: 10
@@ -404,11 +438,15 @@ table:
       kind: int
       id: 9
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   11:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   12:
     kind: def
     id: 12
@@ -418,6 +456,8 @@ table:
       kind: name
       id: 11
       name: N
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   24:
     id: 22
@@ -431,6 +471,8 @@ table:
       kind: int
       id: 9
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   27:
     id: 20
@@ -444,6 +486,8 @@ table:
       kind: int
       id: 9
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   30:
     id: 20
@@ -457,6 +501,8 @@ table:
       kind: name
       id: 11
       name: N
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   34:
     id: 20
@@ -557,6 +603,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   54:
     id: 50
@@ -651,6 +699,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   58:
     id: 50
@@ -670,6 +720,8 @@ table:
       kind: int
       id: 9
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   64:
     id: 50
@@ -683,11 +735,15 @@ table:
       kind: int
       id: 9
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   69:
-    kind: const
+    kind: QuintConst
     id: 4
     name: K
+    importedFrom: ~
+    namespaces: ~
   71:
     id: 50
     name: nodes_78
@@ -791,15 +847,21 @@ table:
                       - kind: int
                         id: 73
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   81:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   84:
-    kind: const
+    kind: QuintConst
     id: 4
     name: K
+    importedFrom: ~
+    namespaces: ~
   90:
     kind: def
     id: 90
@@ -841,6 +903,8 @@ table:
                     - kind: int
                       id: 85
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   91:
     kind: def
@@ -883,11 +947,15 @@ table:
                     - kind: int
                       id: 85
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   92:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   96:
     kind: def
     id: 96
@@ -940,6 +1008,8 @@ table:
                             - kind: int
                               id: 85
                               value: 1
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -952,15 +1022,21 @@ table:
               - kind: name
                 id: 91
                 name: initial
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   98:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   101:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   102:
     id: 100
     name: i_104
@@ -1051,6 +1127,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   107:
     kind: def
@@ -1092,11 +1170,15 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   108:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   109:
     kind: def
     id: 107
@@ -1137,11 +1219,15 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   110:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   111:
     kind: def
     id: 107
@@ -1182,6 +1268,8 @@ table:
                   - kind: name
                     id: 102
                     name: i_104
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   112:
     kind: def
@@ -1280,11 +1368,15 @@ table:
                       - kind: int
                         id: 73
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   114:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   117:
     kind: def
     id: 117
@@ -1332,6 +1424,8 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -1361,15 +1455,21 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   119:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   122:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   123:
     id: 121
     name: i_125
@@ -1460,6 +1560,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   131:
     kind: def
@@ -1513,6 +1615,8 @@ table:
               id: 128
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   132:
     kind: def
@@ -1566,11 +1670,15 @@ table:
               id: 128
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   133:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   136:
     id: 134
     name: s_142
@@ -1581,6 +1689,8 @@ table:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   139:
     id: 135
     name: x_142
@@ -1681,11 +1791,15 @@ table:
                       - kind: int
                         id: 73
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   144:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   147:
     kind: def
     id: 147
@@ -1745,6 +1859,8 @@ table:
                   id: 128
                   opcode: Set
                   args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -1792,11 +1908,15 @@ table:
                         - kind: name
                           id: 139
                           name: x_142
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   154:
-    kind: const
+    kind: QuintConst
     id: 2
     name: N
+    importedFrom: ~
+    namespaces: ~
   157:
     id: 151
     name: nodes_163
@@ -1890,6 +2010,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   164:
     kind: def
@@ -1937,6 +2059,8 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   165:
     kind: def
@@ -1985,6 +2109,8 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -2014,15 +2140,21 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   166:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   169:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   170:
     kind: def
     id: 164
@@ -2069,6 +2201,8 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   175:
     kind: def
@@ -2112,11 +2246,15 @@ table:
                 - kind: int
                   id: 171
                   value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   176:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   177:
     kind: def
     id: 164
@@ -2163,11 +2301,15 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   180:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   181:
     kind: def
     id: 164
@@ -2214,6 +2356,8 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   187:
     kind: def
@@ -2261,6 +2405,8 @@ table:
                     - kind: int
                       id: 182
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   188:
     kind: def
@@ -2309,6 +2455,8 @@ table:
                       - kind: name
                         id: 102
                         name: i_104
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -2338,15 +2486,21 @@ table:
                   - kind: name
                     id: 111
                     name: node
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   189:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   192:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   193:
     kind: def
     id: 164
@@ -2393,6 +2547,8 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   199:
     kind: def
@@ -2440,11 +2596,15 @@ table:
                     - kind: int
                       id: 194
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   200:
     kind: var
     id: 16
     name: system
+    importedFrom: ~
+    namespaces: ~
   201:
     kind: def
     id: 164
@@ -2491,6 +2651,8 @@ table:
                     - kind: name
                       id: 158
                       name: i_160
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   204:
     kind: def
@@ -2512,6 +2674,8 @@ table:
         - kind: int
           id: 202
           value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   212:
     id: 208
@@ -2609,6 +2773,8 @@ table:
                           - kind: int
                             id: 39
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   221:
     kind: def
@@ -2649,6 +2815,8 @@ table:
                 - kind: name
                   id: 216
                   name: i_218
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   225:
     kind: def
@@ -2659,6 +2827,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   226:
     kind: def
@@ -2669,6 +2839,8 @@ table:
       kind: int
       id: 224
       value: 7
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   231:
     kind: def
@@ -2679,6 +2851,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   232:
     kind: def
@@ -2689,6 +2863,8 @@ table:
       kind: int
       id: 230
       value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   235:
     kind: def
@@ -2742,6 +2918,8 @@ table:
                             - kind: int
                               id: 298
                               value: 1
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -2754,6 +2932,8 @@ table:
               - kind: name
                 id: 301
                 name: "ewd426::self_stabilization::initial"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   236:
     kind: def
@@ -2764,6 +2944,8 @@ table:
       kind: name
       id: 235
       name: "ewd426::self_stabilization::init"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   237:
     kind: def
@@ -2812,6 +2994,8 @@ table:
                       - kind: name
                         id: 391
                         name: "ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -2841,6 +3025,8 @@ table:
                   - kind: name
                     id: 399
                     name: "ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   238:
     kind: def
@@ -2851,6 +3037,8 @@ table:
       kind: name
       id: 237
       name: "ewd426::self_stabilization::step"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   239:
     kind: def
@@ -2861,6 +3049,8 @@ table:
       kind: int
       id: 240
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   245:
     kind: def
@@ -2871,6 +3061,8 @@ table:
       kind: name
       id: 246
       name: "ewd426::self_stabilization::N"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   246:
     kind: def
@@ -2881,6 +3073,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   249:
     kind: def
@@ -2891,6 +3085,8 @@ table:
       kind: int
       id: 224
       value: 7
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   250:
     kind: def
@@ -2901,6 +3097,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   251:
     kind: def
@@ -2989,6 +3187,8 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   266:
     id: 259
@@ -3002,6 +3202,8 @@ table:
       kind: int
       id: 240
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   270:
     id: 258
@@ -3015,6 +3217,8 @@ table:
       kind: int
       id: 240
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   273:
     id: 258
@@ -3028,6 +3232,8 @@ table:
       kind: name
       id: 246
       name: "ewd426::self_stabilization::N"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   278:
     id: 258
@@ -3093,6 +3299,8 @@ table:
                             - kind: int
                               id: 298
                               value: 1
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -3105,6 +3313,10 @@ table:
               - kind: name
                 id: 301
                 name: "ewd426::self_stabilization::initial"
+    importedFrom:
+      kind: import
+      id: 227
+    namespaces: ~
     depth: 0
   288:
     kind: def
@@ -3147,6 +3359,8 @@ table:
                     - kind: int
                       id: 298
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   293:
     kind: def
@@ -3157,6 +3371,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   297:
     kind: def
@@ -3167,11 +3383,15 @@ table:
       kind: int
       id: 224
       value: 7
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   300:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   301:
     kind: def
     id: 288
@@ -3213,6 +3433,8 @@ table:
                     - kind: int
                       id: 298
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   302:
     kind: def
@@ -3260,6 +3482,8 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   316:
     kind: def
@@ -3270,6 +3494,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   319:
     kind: def
@@ -3358,6 +3584,8 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   320:
     id: 308
@@ -3404,6 +3632,8 @@ table:
                 - kind: name
                   id: 341
                   name: "ewd426::self_stabilization::i_218"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   336:
     id: 330
@@ -3495,6 +3725,8 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   340:
     id: 330
@@ -3599,6 +3831,8 @@ table:
                       - kind: int
                         id: 378
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   357:
     kind: def
@@ -3687,6 +3921,8 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   358:
     id: 349
@@ -3712,6 +3948,8 @@ table:
       kind: int
       id: 240
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   370:
     id: 349
@@ -3725,6 +3963,8 @@ table:
       kind: int
       id: 240
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   373:
     kind: def
@@ -3735,6 +3975,8 @@ table:
       kind: int
       id: 224
       value: 7
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   375:
     id: 349
@@ -3789,6 +4031,8 @@ table:
                       - kind: name
                         id: 391
                         name: "ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -3818,6 +4062,10 @@ table:
                   - kind: name
                     id: 399
                     name: "ewd426::self_stabilization::node"
+    importedFrom:
+      kind: import
+      id: 227
+    namespaces: ~
     depth: 0
   381:
     kind: def
@@ -3859,6 +4107,8 @@ table:
                   - kind: name
                     id: 391
                     name: "ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   386:
     kind: def
@@ -3869,6 +4119,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   389:
     kind: def
@@ -3957,11 +4209,15 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   390:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   391:
     id: 388
     name: "ewd426::self_stabilization::i_104"
@@ -3969,10 +4225,14 @@ table:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   395:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   396:
     kind: def
     id: 381
@@ -4013,6 +4273,8 @@ table:
                   - kind: name
                     id: 391
                     name: "ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   397:
     kind: def
@@ -4111,11 +4373,15 @@ table:
                       - kind: int
                         id: 378
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   398:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   399:
     kind: def
     id: 381
@@ -4156,6 +4422,8 @@ table:
                   - kind: name
                     id: 391
                     name: "ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   400:
     kind: def
@@ -4216,6 +4484,8 @@ table:
                   id: 415
                   opcode: Set
                   args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -4263,6 +4533,8 @@ table:
                         - kind: name
                           id: 429
                           name: "ewd426::self_stabilization::x_142"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   402:
     kind: def
@@ -4316,6 +4588,8 @@ table:
               id: 415
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   409:
     kind: def
@@ -4326,6 +4600,8 @@ table:
       kind: int
       id: 223
       value: 5
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   412:
     kind: def
@@ -4414,11 +4690,15 @@ table:
                           - kind: int
                             id: 284
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   413:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   414:
     id: 411
     name: "ewd426::self_stabilization::i_125"
@@ -4426,6 +4706,8 @@ table:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   419:
     kind: def
     id: 402
@@ -4478,11 +4760,15 @@ table:
               id: 415
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   420:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   425:
     id: 422
     name: "ewd426::self_stabilization::s_142"
@@ -4586,11 +4872,15 @@ table:
                       - kind: int
                         id: 378
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   428:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   429:
     id: 423
     name: "ewd426::self_stabilization::x_142"
@@ -4640,6 +4930,8 @@ table:
                     - kind: int
                       id: 441
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   434:
     kind: def
@@ -4687,11 +4979,15 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   435:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   439:
     kind: def
     id: 302
@@ -4738,11 +5034,15 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   440:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   442:
     kind: def
     id: 442
@@ -4763,6 +5063,8 @@ table:
         - kind: int
           id: 446
           value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   444:
     kind: def
@@ -4810,11 +5112,15 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   445:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   447:
     kind: def
     id: 447
@@ -4857,6 +5163,8 @@ table:
                 - kind: int
                   id: 457
                   value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   450:
     kind: def
@@ -4905,6 +5213,8 @@ table:
                       - kind: name
                         id: 391
                         name: "ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -4934,11 +5244,15 @@ table:
                   - kind: name
                     id: 399
                     name: "ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   452:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   455:
     kind: def
     id: 302
@@ -4985,11 +5299,15 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   456:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   458:
     kind: def
     id: 458
@@ -5036,6 +5354,8 @@ table:
                     - kind: int
                       id: 469
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   461:
     kind: def
@@ -5084,6 +5404,8 @@ table:
                       - kind: name
                         id: 391
                         name: "ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -5113,11 +5435,15 @@ table:
                   - kind: name
                     id: 399
                     name: "ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   463:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   467:
     kind: def
     id: 302
@@ -5164,11 +5490,15 @@ table:
                     - kind: name
                       id: 321
                       name: "ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   468:
     kind: var
     id: 241
     name: "ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   470:
     kind: def
     id: 470
@@ -5178,6 +5508,8 @@ table:
       kind: int
       id: 471
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   476:
     kind: def
@@ -5188,6 +5520,8 @@ table:
       kind: name
       id: 477
       name: "broken_ewd426::self_stabilization::N"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   477:
     kind: def
@@ -5198,6 +5532,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   480:
     kind: def
@@ -5208,6 +5544,8 @@ table:
       kind: int
       id: 230
       value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   481:
     kind: def
@@ -5218,6 +5556,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   482:
     kind: def
@@ -5306,6 +5646,8 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   497:
     id: 490
@@ -5319,6 +5661,8 @@ table:
       kind: int
       id: 471
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   501:
     id: 489
@@ -5332,6 +5676,8 @@ table:
       kind: int
       id: 471
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   504:
     id: 489
@@ -5345,6 +5691,8 @@ table:
       kind: name
       id: 477
       name: "broken_ewd426::self_stabilization::N"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   509:
     id: 489
@@ -5410,6 +5758,8 @@ table:
                             - kind: int
                               id: 529
                               value: 1
+            importedFrom: ~
+            namespaces: ~
             depth: ~
           expr:
             kind: app
@@ -5422,6 +5772,8 @@ table:
               - kind: name
                 id: 532
                 name: "broken_ewd426::self_stabilization::initial"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   519:
     kind: def
@@ -5464,6 +5816,8 @@ table:
                     - kind: int
                       id: 529
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   524:
     kind: def
@@ -5474,6 +5828,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   528:
     kind: def
@@ -5484,11 +5840,15 @@ table:
       kind: int
       id: 230
       value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   531:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   532:
     kind: def
     id: 519
@@ -5530,6 +5890,8 @@ table:
                     - kind: int
                       id: 529
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   533:
     kind: def
@@ -5577,6 +5939,8 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   547:
     kind: def
@@ -5587,6 +5951,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   550:
     kind: def
@@ -5675,6 +6041,8 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   551:
     id: 539
@@ -5721,6 +6089,8 @@ table:
                 - kind: name
                   id: 572
                   name: "broken_ewd426::self_stabilization::i_218"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   567:
     id: 561
@@ -5812,6 +6182,8 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   571:
     id: 561
@@ -5916,6 +6288,8 @@ table:
                       - kind: int
                         id: 609
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   588:
     kind: def
@@ -6004,6 +6378,8 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   589:
     id: 580
@@ -6029,6 +6405,8 @@ table:
       kind: int
       id: 471
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   601:
     id: 580
@@ -6042,6 +6420,8 @@ table:
       kind: int
       id: 471
       value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   604:
     kind: def
@@ -6052,6 +6432,8 @@ table:
       kind: int
       id: 230
       value: 2
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   606:
     id: 580
@@ -6106,6 +6488,8 @@ table:
                       - kind: name
                         id: 622
                         name: "broken_ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -6135,6 +6519,8 @@ table:
                   - kind: name
                     id: 630
                     name: "broken_ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   612:
     kind: def
@@ -6176,6 +6562,8 @@ table:
                   - kind: name
                     id: 622
                     name: "broken_ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   617:
     kind: def
@@ -6186,6 +6574,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   620:
     kind: def
@@ -6274,11 +6664,15 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   621:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   622:
     id: 619
     name: "broken_ewd426::self_stabilization::i_104"
@@ -6286,10 +6680,14 @@ table:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   626:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   627:
     kind: def
     id: 612
@@ -6330,6 +6728,8 @@ table:
                   - kind: name
                     id: 622
                     name: "broken_ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   628:
     kind: def
@@ -6428,11 +6828,15 @@ table:
                       - kind: int
                         id: 609
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   629:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   630:
     kind: def
     id: 612
@@ -6473,6 +6877,8 @@ table:
                   - kind: name
                     id: 622
                     name: "broken_ewd426::self_stabilization::i_104"
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   631:
     kind: def
@@ -6533,6 +6939,8 @@ table:
                   id: 646
                   opcode: Set
                   args: []
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -6580,6 +6988,8 @@ table:
                         - kind: name
                           id: 660
                           name: "broken_ewd426::self_stabilization::x_142"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   633:
     kind: def
@@ -6633,6 +7043,8 @@ table:
               id: 646
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   640:
     kind: def
@@ -6643,6 +7055,8 @@ table:
       kind: int
       id: 229
       value: 3
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   643:
     kind: def
@@ -6731,11 +7145,15 @@ table:
                           - kind: int
                             id: 515
                             value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   644:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   645:
     id: 642
     name: "broken_ewd426::self_stabilization::i_125"
@@ -6743,6 +7161,8 @@ table:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   650:
     kind: def
     id: 633
@@ -6795,11 +7215,15 @@ table:
               id: 646
               opcode: Set
               args: []
+    importedFrom: ~
+    namespaces: ~
     depth: 2
   651:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   656:
     id: 653
     name: "broken_ewd426::self_stabilization::s_142"
@@ -6903,11 +7327,15 @@ table:
                       - kind: int
                         id: 609
                         value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   659:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   660:
     id: 654
     name: "broken_ewd426::self_stabilization::x_142"
@@ -6957,6 +7385,8 @@ table:
                     - kind: int
                       id: 672
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   665:
     kind: def
@@ -7004,11 +7434,15 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   666:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   670:
     kind: def
     id: 533
@@ -7055,11 +7489,15 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   671:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   673:
     kind: def
     id: 673
@@ -7080,6 +7518,8 @@ table:
         - kind: int
           id: 677
           value: 0
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   675:
     kind: def
@@ -7127,11 +7567,15 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   676:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   678:
     kind: def
     id: 678
@@ -7174,6 +7618,8 @@ table:
                 - kind: int
                   id: 688
                   value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   681:
     kind: def
@@ -7222,6 +7668,8 @@ table:
                       - kind: name
                         id: 622
                         name: "broken_ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -7251,11 +7699,15 @@ table:
                   - kind: name
                     id: 630
                     name: "broken_ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   683:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   686:
     kind: def
     id: 533
@@ -7302,11 +7754,15 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   687:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   689:
     kind: def
     id: 689
@@ -7353,6 +7809,8 @@ table:
                     - kind: int
                       id: 700
                       value: 1
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   692:
     kind: def
@@ -7401,6 +7859,8 @@ table:
                       - kind: name
                         id: 622
                         name: "broken_ewd426::self_stabilization::i_104"
+        importedFrom: ~
+        namespaces: ~
         depth: ~
       expr:
         kind: app
@@ -7430,11 +7890,15 @@ table:
                   - kind: name
                     id: 630
                     name: "broken_ewd426::self_stabilization::node"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   694:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
   698:
     kind: def
     id: 533
@@ -7481,9 +7945,13 @@ table:
                     - kind: name
                       id: 552
                       name: "broken_ewd426::self_stabilization::i_160"
+    importedFrom: ~
+    namespaces: ~
     depth: 0
   699:
     kind: var
     id: 472
     name: "broken_ewd426::self_stabilization::system"
+    importedFrom: ~
+    namespaces: ~
 main: ewd426
