@@ -350,7 +350,7 @@ impl<'a> Interpreter<'a> {
 
         // For top-level value definitions, we can cache the resulting value,
         // as long as we are careful with state changes.
-        match can_cache(def.clone()) {
+        match can_cache(&def) {
             Cache::None => {
                 self.memo
                     .borrow_mut()
@@ -534,7 +534,7 @@ enum Cache {
     Forever,
 }
 
-fn can_cache(def: LookupDefinition) -> Cache {
+fn can_cache(def: &LookupDefinition) -> Cache {
     if let LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d)) = def {
         if d.qualifier == OpQualifier::Val && d.depth.is_none_or(|x| x == 0) {
             return Cache::ForState;
