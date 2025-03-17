@@ -224,8 +224,7 @@ impl<'a> Interpreter<'a> {
 
             // We also need to update the namespaces to include the instance's namespaces.
             // So, if variable x is updated, we update the instance's x, i.e. my_instance::my_module::x
-            let empty_namespaces = Vec::new();
-            self.namespaces = def.namespaces().unwrap_or(&empty_namespaces).clone();
+            self.namespaces = def.namespaces().cloned().unwrap_or_default();
 
             // Pre-compute as much as possible for the overrides: find the registers and find the expressions to evaluate
             // so we don't need to look that up in runtime
