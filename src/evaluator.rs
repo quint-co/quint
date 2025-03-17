@@ -1,12 +1,11 @@
-use crate::rand::Rand;
-use crate::storage::{Storage, VariableRegister};
-use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
-use QuintConst;
-use QuintVar;
+
+use crate::rand::Rand;
+use crate::storage::{Storage, VariableRegister};
+use crate::{builtins::*, ir::*, value::*};
 
 pub type EvalResult = Result<Value, QuintError>;
 
