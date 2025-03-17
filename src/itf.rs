@@ -54,12 +54,12 @@ impl Value {
             Self::Int(i) => itf::Value::Number(*i),
             Self::Bool(b) => itf::Value::Bool(*b),
             Self::Str(s) => itf::Value::String(s.clone()),
-            Self::Set(s) => itf::Value::Set(s.iter().map(|v| v.to_itf()).collect()),
-            Self::Interval(_, _)
+            Self::Set(_)
+            | Self::Interval(_, _)
             | Self::CrossProduct(_)
             | Self::PowerSet(_)
             | Self::MapSet(_, _) => {
-                todo!()
+                itf::Value::Set(self.as_set().iter().map(|v| v.to_itf()).collect())
             }
             Self::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
             Self::Record(fields) => itf::Value::Record(
