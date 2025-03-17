@@ -21,6 +21,12 @@ impl Trace {
             })
             .collect::<Vec<itf::State<itf::Value>>>();
 
+        let vars = if let Some(Value::Record(map)) = self.0.first() {
+            map.keys().cloned().collect::<Vec<String>>()
+        } else {
+            panic!("Expected a record, got {}", self.0[0]);
+        };
+
         itf::Trace {
             // TODO Fill remaining fields
             meta: itf::trace::Meta {
@@ -35,7 +41,7 @@ impl Trace {
                 other: BTreeMap::default(),
             },
             params: vec![],
-            vars: vec![],
+            vars,
             loop_index: None,
             states,
         }
