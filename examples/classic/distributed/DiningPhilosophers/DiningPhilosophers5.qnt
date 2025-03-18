@@ -150,5 +150,3 @@ module DiningPhilosophers {
     //  ensures that no philosopher stays in the “HUNGRY” state forever.
     temporal LivelockFreedom = philosophers.forall(p => not(always(states.get(p) == Hungry)))
 }
-
-:q!
