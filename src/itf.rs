@@ -1,15 +1,17 @@
+use crate::value::Value;
+use chrono::{self};
+use itf;
 use std::collections::BTreeMap;
 
-use itf;
-
-use crate::value::Value;
-
-pub struct Trace(pub Vec<Value>);
+pub struct Trace {
+    pub states: Vec<Value>,
+    pub violation: bool,
+}
 
 impl Trace {
-    pub fn to_itf(self) -> itf::Trace<itf::Value> {
+    pub fn to_itf(self, source: String) -> itf::Trace<itf::Value> {
         let states = self
-            .0
+            .states
             .iter()
             .enumerate()
             .map(|(i, v)| itf::State {
@@ -21,29 +23,41 @@ impl Trace {
             })
             .collect::<Vec<itf::State<itf::Value>>>();
 
-        let vars = if let Some(Value::Record(map)) = self.0.first() {
+        let vars = if let Some(Value::Record(map)) = self.states.first() {
             map.keys().cloned().collect::<Vec<String>>()
         } else {
-            panic!("Expected a record, got {}", self.0[0]);
+            panic!("Expected a record, got {}", self.states[0]);
         };
 
+        let mut other = BTreeMap::new();
+        other.insert(
+            "status".to_string(),
+            if self.violation {
+                "violation".to_string()
+            } else {
+                "ok".to_string()
+            },
+        );
+
         itf::Trace {
-            // TODO Fill remaining fields
             meta: itf::trace::Meta {
-                format: None,
+                format: Some("ITF".to_string()),
                 format_description: Some(
                     "https://apalache-mc.org/docs/adr/015adr-trace.html".to_string(),
                 ),
-                source: None,
-                description: Some("Created by the Quint Rust simulator.".to_string()),
+                source: Some(source),
+                description: Some(format!(
+                    "Created by Quint (Rust version) on {}",
+                    chrono::offset::Local::now().to_rfc2822()
+                )),
                 var_types: BTreeMap::default(),
-                timestamp: None,
-                other: BTreeMap::default(),
+                timestamp: Some(chrono::offset::Local::now().timestamp_millis() as u64),
+                other,
             },
-            params: vec![],
             vars,
-            loop_index: None,
             states,
+            params: vec![],
+            loop_index: None,
         }
     }
 }

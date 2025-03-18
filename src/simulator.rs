@@ -1,14 +1,12 @@
-use std::{fs::File, io::Write};
-
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{QuintError, QuintOutput},
     itf::Trace,
 };
 
-#[derive(Debug)]
 pub struct SimulationResult {
     pub result: bool,
+    pub best_traces: Vec<Trace>,
     // TODO
     // witnessing_traces
     // samples
@@ -33,13 +31,20 @@ impl QuintOutput {
         let init = interpreter.compile(init_def.expr.clone());
         let step = interpreter.compile(step_def.expr.clone());
         let invariant = interpreter.compile(invariant_def.expr.clone());
-        let mut trace = Vec::with_capacity(steps + 1);
 
-        for sample_number in 1..=samples {
-            trace.clear();
+        // TODO: this is a parameter
+        let n_traces = 1;
+        // Have one extra space as we insert first and then pop if we have too many traces
+        let mut best_traces = Vec::with_capacity(n_traces + 1);
+
+        for _sample_number in 1..=samples {
+            let mut trace = Vec::with_capacity(steps + 1);
 
             if !init.execute(&mut env)?.as_bool() {
-                return Ok(SimulationResult { result: false });
+                return Ok(SimulationResult {
+                    result: false,
+                    best_traces,
+                });
             }
 
             for step_number in 1..=(steps + 1) {
@@ -48,15 +53,17 @@ impl QuintOutput {
                 trace.push(interpreter.var_storage.as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    println!(
-                        "Violation at step {step_number}, sample {sample_number}. Writing trace."
+                    insert_trace_sorted_by_quality(
+                        &mut best_traces,
+                        Trace {
+                            states: trace,
+                            violation: true,
+                        },
                     );
-                    // TODO: improve, this is temporary
-                    let itf_trace = Trace(trace).to_itf();
-                    let json_data = serde_json::to_string(&itf_trace).unwrap();
-                    let mut file = File::create("out.itf.json").unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
-                    return Ok(SimulationResult { result: false });
+                    return Ok(SimulationResult {
+                        result: false,
+                        best_traces,
+                    });
                 }
 
                 if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
@@ -69,10 +76,34 @@ impl QuintOutput {
                     break;
                 }
             }
-            // for (state, i) in trace.iter().enumerate() {
-            //     println!("State {}: {:?}", state, i);
-            // }
+            insert_trace_sorted_by_quality(
+                &mut best_traces,
+                Trace {
+                    states: trace,
+                    violation: false,
+                },
+            );
         }
-        Ok(SimulationResult { result: true })
+        Ok(SimulationResult {
+            result: true,
+            best_traces,
+        })
+    }
+}
+
+fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
+    match (a.violation, b.violation) {
+        (true, true) => a.states.len().cmp(&b.states.len()),
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        (false, false) => b.states.len().cmp(&a.states.len()),
+    }
+}
+
+fn insert_trace_sorted_by_quality(best_traces: &mut Vec<Trace>, trace: Trace) {
+    let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace));
+    match index {
+        Ok(index) => best_traces.insert(index, trace),
+        Err(index) => best_traces.insert(index, trace),
     }
 }
