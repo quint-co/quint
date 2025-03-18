@@ -38,6 +38,10 @@ struct Args {
     #[argh(option, default = "10000")]
     max_samples: usize,
 
+    /// how many traces to generate (only affects output to out-itf) (default: 1)
+    #[argh(option, default = "1")]
+    n_traces: usize,
+
     /// enable JSON output
     #[argh(switch)]
     json: bool,
@@ -69,6 +73,7 @@ fn main() -> eyre::Result<()> {
         "q::inv",
         args.max_steps,
         args.max_samples,
+        args.n_traces,
     );
 
     let elapsed = start.elapsed();
