@@ -24,16 +24,12 @@ for file in "${FILES[@]}"; do
         exit 1
     fi
 
-    # Step 2: Fix init to be a predicate instead of an assignment
-    perl -0777 -i -pe "s/(.*)'\s+:= (.*_self_stabilization_.*?initial)/\1 = \2/s" "$tla_file"
-
-
     if [[ $? -ne 0 ]]; then
         echo "Error: Failed to edit $tla_file"
         exit 1
     fi
 
-    # Step 3: Create the .cfg file
+    # Step 2: Create the .cfg file
     cat <<EOF > "$cfg_file"
 INIT
 q_init
@@ -48,10 +44,10 @@ INVARIANT
 q_inv
 EOF
 
-    # Step 4: Run TLC with the required Apalache lib files and check output
+    # Step 3: Run TLC with the required Apalache lib files and check output
     output=$(java $JAVA_OPTS -cp "$APALACHE_JAR" tlc2.TLC -deadlock "$tla_file" 2>&1)
 
-    # Step 5: Delete the generated .tla and .cfg files
+    # Step 4: Delete the generated .tla and .cfg files
     rm -f "$tla_file" "$cfg_file"
 
     if echo "$output" | grep -q "Model checking completed. No error has been found."; then
