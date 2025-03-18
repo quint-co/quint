@@ -23,6 +23,7 @@ env:
   RUST_BACKTRACE: short
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
+  GIT_LFS_SKIP_SMUDGE: 1
 
 jobs:
   unit:

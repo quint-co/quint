@@ -28,9 +28,9 @@ impl QuintOutput {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
 
-        let init = interpreter.compile(init_def.expr.clone());
-        let step = interpreter.compile(step_def.expr.clone());
-        let invariant = interpreter.compile(invariant_def.expr.clone());
+        let init = interpreter.compile(&init_def.expr);
+        let step = interpreter.compile(&step_def.expr);
+        let invariant = interpreter.compile(&invariant_def.expr);
 
         // TODO: this is a parameter
         let n_traces = 1;
