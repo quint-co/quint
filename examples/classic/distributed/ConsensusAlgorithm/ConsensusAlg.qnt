@@ -143,7 +143,7 @@ module ConsensusAlg {
       if (newlyCrashed.size() > 0) {
          newlyCrashed.map(p => { sender: p, values: procState.get(p).V })
       } else {
-        crashedProcsMessages
+        Set()
       },
     round' = round,
     procState' = procState,
