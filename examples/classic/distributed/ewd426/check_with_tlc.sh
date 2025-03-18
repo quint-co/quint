@@ -114,16 +114,13 @@ process_file() {
     compile_options=$(generate_compile_options)
     quint compile --target=tlaplus "$FILE" $compile_options > "$tla_file" || err_and_exit "Compilation failed for $FILE"
 
-    # Step 2: Fix init predicate issue using Perl (cross-platform solution)
-    perl -0777 -i -pe "s/(.*)'\s+:= (.*_self_stabilization_.*?initial)/\1 = \2/s" "$tla_file" || err_and_exit "Failed to edit $tla_file"
-
-    # Step 3: Create .cfg file with `q_inv` and `q_temporalProps`
+    # Step 2: Create .cfg file with `q_inv` and `q_temporalProps`
     create_cfg_file "$cfg_file"
 
-    # Step 4: Run model checker
+    # Step 3: Run model checker
     run_tlc "$tla_file"
 
-    # Step 5: Cleanup
+    # Step 4: Cleanup
     rm -f "$tla_file" "$cfg_file"
 }
 
