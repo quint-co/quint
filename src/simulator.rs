@@ -53,11 +53,12 @@ impl QuintOutput {
                 trace.push(interpreter.var_storage.as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    insert_trace_sorted_by_quality(
+                    collect_trace(
                         &mut best_traces,
+                        n_traces,
                         Trace {
                             states: trace,
-                            violation: true,
+                            violation: false,
                         },
                     );
                     return Ok(SimulationResult {
@@ -76,8 +77,9 @@ impl QuintOutput {
                     break;
                 }
             }
-            insert_trace_sorted_by_quality(
+            collect_trace(
                 &mut best_traces,
+                n_traces,
                 Trace {
                     states: trace,
                     violation: false,
@@ -88,6 +90,13 @@ impl QuintOutput {
             result: true,
             best_traces,
         })
+    }
+}
+
+fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
+    insert_trace_sorted_by_quality(best_traces, trace);
+    if best_traces.len() > n_traces {
+        best_traces.pop();
     }
 }
 
