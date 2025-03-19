@@ -8,3 +8,5 @@ client/server
 _build
 .DS_Store
 _apalache-out/
+# Intelij stuff
+.idea

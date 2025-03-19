@@ -35,6 +35,9 @@ import {
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
+import { logger, overrideConsole } from './logger';
+
+overrideConsole();
 
 import {
   AnalysisOutput,
@@ -274,54 +277,53 @@ export class QuintLanguageServer {
     })
 
     connection.onCompletion((params: CompletionParams): CompletionItem[] => {
-      // Only complete on "."
-      // TODO: offer completion at arbitrary positions in the text
-      if (params.context?.triggerKind !== CompletionTriggerKind.TriggerCharacter) {
-        return []
+      logger.debug(`Completion requested at position ${JSON.stringify(params.position)} in ${params.textDocument.uri}`);
+
+      if (params.context?.triggerKind !== CompletionTriggerKind.Invoked) {
+        logger.debug(`Completion triggered by non-invoked action, ignoring.`);
+        return [];
       }
 
-      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
-      if (!parsedData) {
-        return []
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri);
+      const document = this.documents.get(params.textDocument.uri);
+
+      if (!parsedData || !document) {
+        logger.debug(`No parsed data or document found for completion.`);
+        return [];
       }
 
-      const document = this.documents.get(params.textDocument.uri)
-      if (!document) {
-        return []
-      }
-
-      // Parse the identifier that triggered completion
-      // TODO: offer completion for chained calls
-      //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
       const triggeringLine = document.getText({
-        start: { ...params.position, character: 0 },
+        start: {...params.position, character: 0},
         end: params.position,
-      })
+      });
 
-      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
+      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/);
       if (!match) {
-        return []
+        logger.debug(`No matching identifier found in line: ${triggeringLine}`);
+        return [];
       }
-      const triggeringIdentifier = match[1]
 
-      const sourceFile = URI.parse(params.textDocument.uri).path
+      const triggeringIdentifier = match[1];
+      const sourceFile = URI.parse(params.textDocument.uri).path;
 
-      // Run analysis synchronously to get the required information for completion
-      this.triggerAnalysis(document)
+      this.triggerAnalysis(document);
 
-      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri);
       if (!analysisOutput) {
-        return []
+        logger.debug(`No analysis output available for completion.`);
+        return [];
       }
 
-      return completeIdentifier(
-        triggeringIdentifier,
-        parsedData,
-        analysisOutput,
-        sourceFile,
-        params.position,
-        loadedBuiltInDocs
-      )
+      let completionItems = completeIdentifier(
+          triggeringIdentifier,
+          parsedData,
+          analysisOutput,
+          sourceFile,
+          params.position,
+          loadedBuiltInDocs
+      );
+
+      return completionItems;
     })
 
     connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
@@ -456,8 +458,10 @@ export class QuintLanguageServer {
 
   private analyze(document: TextDocument) {
     try {
+      logger.debug(`Starting analysis for document: ${document.uri}`);
       const parsedData = this.parsedDataByDocument.get(document.uri)
       if (!parsedData) {
+        logger.debug(`No parsed data found for document: ${document.uri}`);
         return
       }
 
@@ -473,6 +477,7 @@ export class QuintLanguageServer {
       const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
       const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
       this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
+      logger.debug(`Analysis completed for document: ${document.uri}, errors found: ${diagnostics.length}`);
     } catch (e) {
       this.connection.console.error(`Error during analysis: ${e}`)
     }
@@ -480,3 +485,4 @@ export class QuintLanguageServer {
 }
 
 new QuintLanguageServer(createConnection(ProposedFeatures.all), new TextDocuments(TextDocument))
+logger.info("🚀 Quint Language Server Started!");

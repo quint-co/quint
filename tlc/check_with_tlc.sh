@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# Load common utilities
-source ./common.sh || { echo "Error: Could not load common.sh"; exit 1; }
+# Resolve the script's directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source the common script using absolute path
+source "$SCRIPT_DIR/common.sh" || { echo "Error: Could not load common.sh"; exit 1; }
 
 # Default configurations
 APALACHE_JAR="$HOME/.quint/apalache-dist-0.47.2/apalache/lib/apalache.jar"
