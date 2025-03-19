@@ -8,7 +8,7 @@ fn tictactoe_ok() {
 
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None).unwrap();
     // Pass an invariant that should hold
-    let result = parsed.simulate("init", "step", "inv", 10, 100);
+    let result = parsed.simulate("init", "step", "inv", 10, 100, 0);
     assert!(result.is_ok());
     // Should not find violation
     assert!(result.unwrap().result);
@@ -20,7 +20,7 @@ fn tictactoe_violation() {
 
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None).unwrap();
     // Pass an invariant that should not hold
-    let result = parsed.simulate("init", "step", "XHasNotWon", 10, 100);
+    let result = parsed.simulate("init", "step", "XHasNotWon", 10, 100, 0);
     assert!(result.is_ok());
     // Should find violation
     assert!(!result.unwrap().result);
@@ -35,7 +35,7 @@ fn instances_ok() {
         helpers::parse_from_path(file_path, "init", "step", Some("inv"), Some("instances"))
             .unwrap();
     // Pass an invariant that should hold
-    let result = parsed.simulate("init", "step", "inv", 10, 100);
+    let result = parsed.simulate("init", "step", "inv", 10, 100, 0);
     assert!(result.is_ok());
     // Should not find violation
     assert!(result.unwrap().result);

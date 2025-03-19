@@ -18,6 +18,8 @@ argh = "0.1.13"
 eyre = "0.6.12"
 colored = "3.0.0"
 imbl = "5.0.0"
+itf = "0.3.0"
+chrono = "0.4.40"
 
 [dev-dependencies]
 insta = {version = "1.22.0", features = ["yaml"]}

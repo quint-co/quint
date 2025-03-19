@@ -1,4 +1,5 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -37,6 +38,10 @@ struct Args {
     #[argh(option, default = "10000")]
     max_samples: usize,
 
+    /// how many traces to generate (only affects output to out-itf) (default: 1)
+    #[argh(option, default = "1")]
+    n_traces: usize,
+
     /// enable JSON output
     #[argh(switch)]
     json: bool,
@@ -68,12 +73,23 @@ fn main() -> eyre::Result<()> {
         "q::inv",
         args.max_steps,
         args.max_samples,
+        args.n_traces,
     );
 
     let elapsed = start.elapsed();
 
     match result {
-        Ok(result) => log!("Result", "{}", result.result),
+        Ok(result) => {
+            log!("Result", "{}", result.result);
+            for (i, trace) in result.best_traces.into_iter().enumerate() {
+                let itf_trace = trace.to_itf(args.file.display().to_string());
+                let json_data = serde_json::to_string(&itf_trace).unwrap();
+                let filename = format!("out_{i}.itf.json");
+                let mut file = File::create(filename.clone()).unwrap();
+                file.write_all(json_data.as_bytes()).unwrap();
+                log!("Trace", "{filename}")
+            }
+        }
         Err(e) => log!("", "Simulation failed: {e}"),
     }
 
