@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use fxhash::FxBuildHasher;
+use hipstr::LocalHipStr;
 use imbl::{shared_ptr::RcK, GenericHashMap};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,7 @@ use thiserror::Error;
 pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 
 pub type QuintId = u64;
+pub type QuintName = LocalHipStr<'static>;
 
 #[derive(Debug, Clone, Error, PartialEq)]
 #[error("[{code}] {message}")]
@@ -40,7 +42,7 @@ impl QuintError {
 pub struct QuintOutput {
     pub modules: Vec<QuintModule>,
     pub table: LookupTable,
-    pub main: String,
+    pub main: QuintName,
 }
 
 pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
@@ -60,10 +62,10 @@ impl LookupDefinition {
         }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &QuintName {
         match self {
             LookupDefinition::Definition(def) => def.name(),
-            LookupDefinition::Param(param) => param.name.as_str(),
+            LookupDefinition::Param(param) => &param.name,
         }
     }
 
@@ -74,7 +76,7 @@ impl LookupDefinition {
         }
     }
 
-    pub fn namespaces(&self) -> Option<&Vec<String>> {
+    pub fn namespaces(&self) -> Option<&Vec<QuintName>> {
         match self {
             LookupDefinition::Definition(def) => def.namespaces(),
             LookupDefinition::Param(_) => None,
@@ -84,19 +86,19 @@ impl LookupDefinition {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuintModule {
-    pub name: String,
+    pub name: QuintName,
     pub declarations: Vec<QuintDeclaration>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OpDef {
     pub id: QuintId,
-    pub name: String,
+    pub name: QuintName,
     pub qualifier: OpQualifier,
     pub expr: QuintEx,
     #[serde(rename = "importedFrom")]
     pub imported_from: Option<ImportedFrom>,
-    pub namespaces: Option<Vec<String>>,
+    pub namespaces: Option<Vec<QuintName>>,
     pub depth: Option<u64>,
 }
 
@@ -117,20 +119,20 @@ pub enum ImportedFrom {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuintVar {
     pub id: QuintId,
-    pub name: String,
+    pub name: QuintName,
     #[serde(rename = "importedFrom")]
     pub imported_from: Option<ImportedFrom>,
-    pub namespaces: Option<Vec<String>>,
+    pub namespaces: Option<Vec<QuintName>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuintAssume {
     pub id: QuintId,
-    pub name: String,
+    pub name: QuintName,
     pub assumption: QuintEx,
     #[serde(rename = "importedFrom")]
     pub imported_from: Option<ImportedFrom>,
-    pub namespaces: Option<Vec<String>>,
+    pub namespaces: Option<Vec<QuintName>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -143,10 +145,10 @@ pub struct QuintTypeDef {
 #[serde(tag = "kind")]
 pub struct QuintConst {
     pub id: QuintId,
-    pub name: String,
+    pub name: QuintName,
     #[serde(rename = "importedFrom")]
     pub imported_from: Option<ImportedFrom>,
-    pub namespaces: Option<Vec<String>>,
+    pub namespaces: Option<Vec<QuintName>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -190,15 +192,15 @@ impl QuintDeclaration {
         }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &QuintName {
         match self {
-            Self::QuintOpDef(def) => def.name.as_str(),
-            Self::QuintVar(QuintVar { name, .. }) => name.as_str(),
-            Self::QuintAssume(QuintAssume { name, .. }) => name.as_str(),
+            Self::QuintOpDef(def) => &def.name,
+            Self::QuintVar(QuintVar { name, .. }) => name,
+            Self::QuintAssume(QuintAssume { name, .. }) => name,
             Self::QuintTypeDef(QuintTypeDef { .. }) => {
                 panic!("There shouldn't be any typedefs here")
             }
-            Self::QuintConst(QuintConst { name, .. }) => name.as_str(),
+            Self::QuintConst(QuintConst { name, .. }) => name,
             _ => panic!("This import-like declaration doesn't have a name"),
         }
     }
@@ -213,7 +215,7 @@ impl QuintDeclaration {
         }
     }
 
-    pub fn namespaces(&self) -> Option<&Vec<String>> {
+    pub fn namespaces(&self) -> Option<&Vec<QuintName>> {
         match self {
             Self::QuintOpDef(OpDef { namespaces, .. })
             | Self::QuintVar(QuintVar { namespaces, .. })
@@ -248,7 +250,7 @@ pub enum OpQualifier {
 #[serde(tag = "kind")]
 pub enum QuintEx {
     #[serde(rename = "name")]
-    QuintName { id: QuintId, name: String },
+    QuintName { id: QuintId, name: QuintName },
 
     #[serde(rename = "bool")]
     QuintBool { id: QuintId, value: bool },
@@ -257,12 +259,12 @@ pub enum QuintEx {
     QuintInt { id: QuintId, value: i64 }, // Should we use BigInts?
 
     #[serde(rename = "str")]
-    QuintStr { id: QuintId, value: String },
+    QuintStr { id: QuintId, value: QuintName },
 
     #[serde(rename = "app")]
     QuintApp {
         id: QuintId,
-        opcode: String,
+        opcode: QuintName,
         args: Vec<QuintEx>,
     },
 
@@ -298,7 +300,7 @@ impl QuintEx {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QuintLambdaParameter {
     pub id: QuintId,
-    pub name: String,
+    pub name: QuintName,
 }
 
 impl QuintOutput {

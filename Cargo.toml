@@ -3,6 +3,10 @@ name = "quint_simulator"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+codegen-units = 1
+lto = "thin"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -20,6 +24,7 @@ colored = "3.0.0"
 imbl = "5.0.0"
 itf = "0.3.0"
 chrono = "0.4.40"
+hipstr = { version = "0.8.0", features = ["serde"] }
 
 [dev-dependencies]
 insta = {version = "1.22.0", features = ["yaml"]}

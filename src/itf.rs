@@ -24,7 +24,7 @@ impl Trace {
             .collect::<Vec<itf::State<itf::Value>>>();
 
         let vars = if let Some(Value::Record(map)) = self.states.first() {
-            map.keys().cloned().collect::<Vec<String>>()
+            map.keys().map(|v| v.to_string()).collect::<Vec<_>>()
         } else {
             panic!("Expected a record, got {}", self.states[0]);
         };
@@ -67,7 +67,7 @@ impl Value {
         match self {
             Self::Int(i) => itf::Value::Number(*i),
             Self::Bool(b) => itf::Value::Bool(*b),
-            Self::Str(s) => itf::Value::String(s.clone()),
+            Self::Str(s) => itf::Value::String(s.to_string()),
             Self::Set(_)
             | Self::Interval(_, _)
             | Self::CrossProduct(_)
@@ -79,7 +79,7 @@ impl Value {
             Self::Record(fields) => itf::Value::Record(
                 fields
                     .iter()
-                    .map(|(k, v)| (k.clone(), v.to_itf()))
+                    .map(|(k, v)| (k.to_string(), v.to_itf()))
                     .collect(),
             ),
             Self::Map(map) => {
@@ -88,7 +88,7 @@ impl Value {
             Self::List(elems) => itf::Value::List(elems.iter().map(|v| v.to_itf()).collect()),
             Self::Variant(label, value) => itf::Value::Record(
                 vec![
-                    ("tag".to_string(), itf::Value::String(label.clone())),
+                    ("tag".to_string(), itf::Value::String(label.to_string())),
                     ("value".to_string(), value.to_itf()),
                 ]
                 .into_iter()

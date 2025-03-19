@@ -1,5 +1,5 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::ImmutableMap;
+use crate::ir::{ImmutableMap, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashSet, GenericVector};
 use itertools::Itertools;
@@ -11,19 +11,20 @@ use std::rc::Rc;
 
 pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
 pub type ImmutableVec<T> = GenericVector<T, RcK>;
+pub type Str = hipstr::LocalHipStr<'static>;
 
 #[derive(Clone, Debug)]
 pub enum Value {
     Int(i64),
     Bool(bool),
-    Str(String),
+    Str(Str),
     Set(ImmutableSet<Value>),
     Tuple(ImmutableVec<Value>),
-    Record(ImmutableMap<String, Value>),
+    Record(ImmutableMap<QuintName, Value>),
     Map(ImmutableMap<Value, Value>),
     List(ImmutableVec<Value>),
     Lambda(Vec<Rc<RefCell<EvalResult>>>, CompiledExpr),
-    Variant(String, Rc<Value>),
+    Variant(QuintName, Rc<Value>),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
     CrossProduct(Vec<Value>),
@@ -200,9 +201,9 @@ impl Value {
         }
     }
 
-    pub fn as_str(&self) -> String {
+    pub fn as_str(&self) -> Str {
         match self {
-            Value::Str(s) => s.to_string(),
+            Value::Str(s) => s.clone(),
             _ => panic!("Expected string"),
         }
     }
@@ -303,7 +304,7 @@ impl Value {
         }
     }
 
-    pub fn as_record_map(&self) -> &ImmutableMap<String, Value> {
+    pub fn as_record_map(&self) -> &ImmutableMap<QuintName, Value> {
         match self {
             Value::Record(fields) => fields,
             _ => panic!("Expected record"),
