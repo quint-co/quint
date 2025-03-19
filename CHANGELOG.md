@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Init definitions are now properly transpiled into TLA+ without assignments (#1613)
+
 ### Security
 
 ## v0.23.1 -- 2025-03-10
