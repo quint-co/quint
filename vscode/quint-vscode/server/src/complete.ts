@@ -261,26 +261,12 @@ function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
     case 'var':
     case 'sum':
     case 'app':
-      logger.error(`🛑 Unhandled type: ${type.kind}, calling getBuiltinsForOperator()`)
-      return getBuiltinsForOperator(type)
+      return []
 
     default:
       logger.warn(`⚠️ Unknown type encountered:`)
       return []
   }
-}
-
-// Determine built-in functions for applied types (Set[T], List[T], Map[K, V])
-function getBuiltinsForOperator(appliedType: QuintType): { name: string }[] {
-  if (appliedType.kind === 'const') {
-    const operatorMap: Record<string, { name: string }[]> = {
-      "Set": setOperators,
-      "List": listOperators,
-      "Map": mapOperators,
-    }
-    return operatorMap[appliedType.name] || []
-  }
-  return []
 }
 
 function getFieldCompletions(type: QuintType): CompletionItem[] {
