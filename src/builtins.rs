@@ -307,7 +307,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         "with" => |_env, args| {
             let mut record = args[0].as_record_map().clone();
-            record.insert(args[1].as_str().to_string(), args[2].clone());
+            record.insert(args[1].as_str(), args[2].clone());
             Ok(Value::Record(record))
         },
 

@@ -97,7 +97,7 @@ pub struct Interpreter<'a> {
     pub var_storage: Storage,
     memo: Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>,
     memo_by_instance: FxHashMap<QuintId, Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>>,
-    namespaces: Vec<String>,
+    namespaces: Vec<QuintName>,
     // Other params from Typescript implementation, for future reference:
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
 }
@@ -140,15 +140,14 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    fn create_var(&mut self, id: QuintId, name: String) {
-        let key = [vec![id.to_string()], self.namespaces.clone()]
-            .concat()
-            .join("#");
+    fn create_var(&mut self, id: QuintId, name: &QuintName) {
+        let key = var_with_namespaces(id, &self.namespaces);
+
         if self.var_storage.vars.contains_key(&key) {
             return;
         }
 
-        let var_name = name_with_namespaces(name, self.namespaces.clone());
+        let var_name = name_with_namespaces(name, &self.namespaces);
         let register_for_current = Rc::new(RefCell::new(VariableRegister {
             name: var_name.clone(),
             value: None,
@@ -165,13 +164,15 @@ impl<'a> Interpreter<'a> {
         self.var_storage.next_vars.insert(key, register_for_next);
     }
 
-    fn get_or_create_var(&mut self, id: QuintId, name: &str) -> Rc<RefCell<VariableRegister>> {
-        let key = [vec![id.to_string()], self.namespaces.clone()]
-            .concat()
-            .join("#");
+    fn get_or_create_var(
+        &mut self,
+        id: QuintId,
+        name: &QuintName,
+    ) -> Rc<RefCell<VariableRegister>> {
+        let key = var_with_namespaces(id, &self.namespaces);
 
         if !self.var_storage.vars.contains_key(&key) {
-            self.create_var(id, name.to_string());
+            self.create_var(id, name);
         }
 
         Rc::clone(&self.var_storage.vars[&key])
@@ -192,10 +193,9 @@ impl<'a> Interpreter<'a> {
             .clone()
     }
 
-    fn get_next_var(&self, id: &QuintId) -> Rc<RefCell<VariableRegister>> {
-        let key = [vec![id.to_string()], self.namespaces.clone()]
-            .concat()
-            .join("#");
+    fn get_next_var(&self, id: QuintId) -> Rc<RefCell<VariableRegister>> {
+        let key = var_with_namespaces(id, &self.namespaces);
+
         self.var_storage.next_vars.get(&key).unwrap().clone()
     }
 
@@ -437,8 +437,8 @@ impl<'a> Interpreter<'a> {
                     // as it may come from an instance, and that changed everything
                     let var_def = self.table.get(&args[0].id()).unwrap();
                     self.compile_under_context(var_def, |interpreter| {
-                        interpreter.create_var(var_def.id(), var_def.name().to_string());
-                        let register = interpreter.get_next_var(&var_def.id());
+                        interpreter.create_var(var_def.id(), var_def.name());
+                        let register = interpreter.get_next_var(var_def.id());
                         let expr = interpreter.compile(&args[1]);
 
                         CompiledExpr::new(move |env| {
@@ -514,10 +514,19 @@ impl<'a> Interpreter<'a> {
     }
 }
 
-fn name_with_namespaces(name: String, namespaces: Vec<String>) -> String {
-    let mut reverted_namespaces = namespaces.into_iter().rev().collect::<Vec<_>>();
-    reverted_namespaces.push(name);
-    reverted_namespaces.join("::")
+fn name_with_namespaces(name: &QuintName, namespaces: &[QuintName]) -> QuintName {
+    let reverted_namespaces = namespaces.iter().rev().chain(std::iter::once(name));
+    QuintName::join(reverted_namespaces, "::")
+}
+
+fn var_with_namespaces(id: QuintId, namespaces: &[QuintName]) -> QuintName {
+    use itertools::Itertools;
+
+    let key = std::iter::once(id.to_string())
+        .chain(namespaces.iter().map(|n| n.to_string()))
+        .join("#");
+
+    QuintName::from(key)
 }
 
 #[derive(Debug, PartialEq)]
