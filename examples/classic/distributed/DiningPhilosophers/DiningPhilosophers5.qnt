@@ -5,7 +5,7 @@
 // This specification models the dining philosophers problem with N philosophers,
 // ensuring deadlock freedom and mutual exclusion while also considering starvation
 // and livelock conditions.
-module DiningPhilosophersDeadlockFree5 {
+module DiningPhilosophers5 {
     // This module initializes the DiningPhilosophers model with N = 5
     import DiningPhilosophers(N = 5).*
 }
@@ -141,12 +141,16 @@ module DiningPhilosophers {
 
     temporal DeadlockProperty = eventually(DeadlockCondition)
 
+    val vars = (forks, taken, states)
+
     //  ensure that we can always escape deadlock.
-    temporal DeadlockFreedom = always(eventually(not(DeadlockCondition)))
+    temporal DeadlockFreedom = weakFair(step, vars) implies always(eventually(not(DeadlockCondition)))
 
     // starvation freedom = occurs if a philosopher is infinitely prevented from eating. We ensure that every philosopher will eventually eat.
-    temporal NoStarvation = philosophers.forall(p => always(eventually(states.get(p) == Eating)))
+    temporal NoStarvation =
+      (weakFair(step, vars) and philosophers.forall(p => strongFair(pickBothForks(p), vars) and strongFair(becomeHungry(p), vars)))
+        implies philosophers.forall(p => always(eventually(states.get(p) == Eating)))
 
     //  ensures that no philosopher stays in the “HUNGRY” state forever.
-    temporal LivelockFreedom = philosophers.forall(p => not(always(states.get(p) == Hungry)))
+    temporal LivelockFreedom = weakFair(step, vars) implies philosophers.forall(p => not(always(states.get(p) == Hungry)))
 }
