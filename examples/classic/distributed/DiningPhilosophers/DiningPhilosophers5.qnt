@@ -38,11 +38,6 @@ module DiningPhilosophers {
 
     // --- HELPER FUNCTIONS FOR FORK POSITIONS ---
 
-    def isMostStarved(p: Philosopher): bool =
-        philosophers.forall(q =>
-            states.get(q) != Hungry or q == p or waitTimes.get(q) <= waitTimes.get(p)
-        )
-
     // Returns the left fork assigned to a given philosopher
     def leftFork(p : Philosopher): Fork = p
 
