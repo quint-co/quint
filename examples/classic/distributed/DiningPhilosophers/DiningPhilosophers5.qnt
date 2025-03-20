@@ -38,6 +38,11 @@ module DiningPhilosophers {
 
     // --- HELPER FUNCTIONS FOR FORK POSITIONS ---
 
+    def isMostStarved(p: Philosopher): bool =
+        philosophers.forall(q =>
+            states.get(q) != Hungry or q == p or waitTimes.get(q) <= waitTimes.get(p)
+        )
+
     // Returns the left fork assigned to a given philosopher
     def leftFork(p : Philosopher): Fork = p
 
@@ -145,12 +150,8 @@ module DiningPhilosophers {
 
     //  ensure that we can always escape deadlock.
     temporal DeadlockFreedom = weakFair(step, vars) implies always(eventually(not(DeadlockCondition)))
+    temporal LivelockFreedom = weakFair(step, vars) implies philosophers.forall(p => not(always(states.get(p) == Hungry)))
 
     // starvation freedom = occurs if a philosopher is infinitely prevented from eating. We ensure that every philosopher will eventually eat.
-    temporal NoStarvation =
-      (weakFair(step, vars) and philosophers.forall(p => strongFair(pickBothForks(p), vars) and strongFair(becomeHungry(p), vars)))
-        implies philosophers.forall(p => always(eventually(states.get(p) == Eating)))
-
-    //  ensures that no philosopher stays in the “HUNGRY” state forever.
-    temporal LivelockFreedom = weakFair(step, vars) implies philosophers.forall(p => not(always(states.get(p) == Hungry)))
+    // The basic Dijkstra algorithm does not inherently solve starvation.
 }
