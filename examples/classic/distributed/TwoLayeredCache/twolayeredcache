@@ -7,6 +7,13 @@
   * read-after-write consistency and write-after-write consistency across the
   * cache layers.
   * 
+  * Run with:
+  *	    quint verify \
+  *		    two_layered_cache.qnt \
+  *		    --invariant=readAfterWrite,writeAfterWrite \
+  *		    --temporal=agreement \
+  *		    --verbosity
+  * 
   * Preston Pham (@mt40), 2025
   */ 
 
