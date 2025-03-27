@@ -230,11 +230,11 @@ module two_layered_cache {
     //**********************************************************
 
     // All layers contain the same latest written value
-    val agreement: bool = {
+    temporal agreement: bool = eventually({
         val a = getHeadOfSet(l1)
         val b = getHeadOfSet(l2)
         a == b
-    }
+    })
 
     //**********************************************************
     // QUICK TESTS
