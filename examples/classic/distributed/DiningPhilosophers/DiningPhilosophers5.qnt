@@ -1,5 +1,5 @@
 // -- -*- mode: Bluespec; -*-
-// Dining Philosophers Problem Specification
+// Dining Philosophers Problem Specification, with Dijkstra's solution
 // Based on: https://en.wikipedia.org/wiki/Dining_philosophers_problem
 //
 // This specification models the dining philosophers problem with N philosophers,
