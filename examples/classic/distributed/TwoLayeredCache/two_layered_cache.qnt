@@ -7,13 +7,18 @@
   * read-after-write consistency and write-after-write consistency across the
   * cache layers.
   * 
-  * Run with:
-  *	    quint verify \
-  *		    two_layered_cache.qnt \
-  *		    --invariant=readAfterWrite,writeAfterWrite \
-  *		    --temporal=agreement \
-  *		    --verbosity
-  * 
+  * Check with:
+  *   quint verify \
+  *     two_layered_cache.qnt \
+  *     --invariant=readAfterWrite,writeAfterWrite \
+  *     --temporal=agreement \
+  *
+  * Or with TLC using the `check_with_tlc.sh` script from this repo:
+  *   sh check_with_tlc.sh \
+  *     --file ~/projects/quint/examples/classic/distributed/TwoLayeredCache/two_layered_cache.qnt \
+  *     --invariant readAfterWrite,writeAfterWrite \
+  *     --temporal agreement
+  *
   * Preston Pham (@mt40), 2025
   */ 
 
@@ -187,10 +192,14 @@ module two_layered_cache {
         history' = [],
     }
 
-    action step = any {
-        clientProc,
-        stutter,
-        l1Expire
+    action step = all {
+      // Limit the state space to enable exploration with TLC
+      history.length() < 15,
+      any {
+          clientProc,
+          stutter,
+          l1Expire
+      }
     }
 
     //**********************************************************
