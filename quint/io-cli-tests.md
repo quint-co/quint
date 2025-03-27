@@ -444,7 +444,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x308623f2a48e7 to reproduce.
+Use --seed=0x308623f2a4957 to reproduce.
 error: Invariant violated
 ```
 
@@ -454,7 +454,7 @@ The command `run` finds an invariant violation and outputs metadata for MBT, whe
 
 <!-- !test in run finds violation with metadata -->
 ```
-output=$(quint run --seed=0x308623f2a48e7 --mbt --max-steps=4 \
+output=$(quint run --seed=0x308623f2a4957 --mbt --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
@@ -466,19 +466,19 @@ exit $exit_code
 ```
 An example execution:
 
-[State 0] { action_taken: "init", n: 1, nondet_picks: {  } }
+[State 0] { mbt::actionTaken: "init", mbt::nondetPicks: {  }, n: 1 }
 
-[State 1] { action_taken: "OnPositive", n: 2, nondet_picks: {  } }
+[State 1] { mbt::actionTaken: "OnPositive", mbt::nondetPicks: {  }, n: 2 }
 
-[State 2] { action_taken: "OnPositive", n: 3, nondet_picks: {  } }
+[State 2] { mbt::actionTaken: "OnPositive", mbt::nondetPicks: {  }, n: 3 }
 
-[State 3] { action_taken: "OnDivByThree", n: 6, nondet_picks: {  } }
+[State 3] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 6 }
 
-[State 4] { action_taken: "OnDivByThree", n: 12, nondet_picks: {  } }
+[State 4] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 12 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x308623f2a48e7 to reproduce.
+Use --seed=0x308623f2a4957 to reproduce.
 error: Invariant violated
 ```
 
@@ -502,30 +502,16 @@ An example execution:
 
 [State 0]
 {
-  action_taken: "init",
   balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0),
-  nondet_picks: { account: None, amount: None }
+  mbt::actionTaken: "init",
+  mbt::nondetPicks: { account: None, amount: None }
 }
 
 [State 1]
 {
-  action_taken: "deposit",
-  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("charlie"), amount: Some(53) }
-}
-
-[State 2]
-{
-  action_taken: "deposit",
-  balances: Map("alice" -> 26, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("alice"), amount: Some(26) }
-}
-
-[State 3]
-{
-  action_taken: "withdraw",
-  balances: Map("alice" -> -13, "bob" -> 0, "charlie" -> 53),
-  nondet_picks: { account: Some("alice"), amount: Some(39) }
+  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> -75),
+  mbt::actionTaken: "withdraw",
+  mbt::nondetPicks: { account: Some("charlie"), amount: Some(75) }
 }
 
 [violation] Found an issue (duration).
@@ -553,11 +539,11 @@ An example execution:
 
 [State 1] { n: 2 }
 
-[State 2] { n: 3 }
+[State 2] { n: 1 }
 
-[State 3] { n: 6 }
+[State 3] { n: 2 }
 
-[State 4] { n: 12 }
+[State 4] { n: 3 }
 
 [ok] No violation found (duration).
 You may increase --max-samples and --max-steps.
@@ -592,7 +578,7 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1e352e160ffa12 --invariant=totalSupplyDoesNotOverflowInv \
+output=$(quint run --max-steps=5 --seed=0x1e352e160ffb15 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -615,12 +601,12 @@ An example execution:
 {
   balances:
     Map(
-      "alice" -> 0,
+      "alice" ->
+        94541396474536885635239092281406920580729946306097367569491485195445962194366,
       "bob" -> 0,
       "charlie" -> 0,
       "eve" -> 0,
-      "null" ->
-        47468303772350480796754932551497789850659553878128630540503207933116325625281
+      "null" -> 0
     ),
   minter: "alice"
 }
@@ -629,20 +615,20 @@ An example execution:
 {
   balances:
     Map(
-      "alice" -> 0,
-      "bob" -> 0,
+      "alice" ->
+        94541396474536885635239092281406920580729946306097367569491485195445962194366,
+      "bob" ->
+        53481678647226234506653603827987361074517460680431655489916483293654777859474,
       "charlie" -> 0,
-      "eve" ->
-        86701019854146491074035808072771270690110858489697827845755906419340818387504,
-      "null" ->
-        47468303772350480796754932551497789850659553878128630540503207933116325625281
+      "eve" -> 0,
+      "null" -> 0
     ),
   minter: "alice"
 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x1e352e160ffbb3 to reproduce.
+Use --seed=0x1e352e160ffb15 to reproduce.
 error: Invariant violated
 ```
 
@@ -652,7 +638,7 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 
 <!-- !test in run shows calls -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1786e678d45fe0 \
+output=$(quint run --max-steps=5 --seed=0x1786e678d460ed \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
   ../examples/tutorials/coin.qnt 2>&1)
@@ -681,18 +667,14 @@ q::initAndInvariant => true
 [Frame 1]
 q::stepAndInvariant => true
 ├─ step => true
-│  └─ mint(
+│  └─ send(
 │       "alice",
-│       "eve",
-│       33944027745092921485394061592130395256199599638916782090017603421409072478812
-│     ) => true
-│     ├─ require(true) => true
-│     └─ require(true) => true
-│        └─ isUInt(
-│             33944027745092921485394061592130395256199599638916782090017603421409072478812
-│           ) => true
+│       "null",
+│       78071281284846825193495013785477188646129629244112530489195111677146856342020
+│     ) => false
+│     └─ require(false) => false
 └─ isUInt(
-     33944027745092921485394061592130395256199599638916782090017603421409072478812
+     78071281284846825193495013785477188646129629244112530489195111677146856342020
    ) => true
 
 [State 1]
@@ -702,29 +684,25 @@ q::stepAndInvariant => true
       "alice" -> 0,
       "bob" -> 0,
       "charlie" -> 0,
-      "eve" ->
-        33944027745092921485394061592130395256199599638916782090017603421409072478812,
-      "null" -> 0
+      "eve" -> 0,
+      "null" ->
+        78071281284846825193495013785477188646129629244112530489195111677146856342020
     ),
   minter: "alice"
 }
 
 [Frame 2]
-q::stepAndInvariant => true
+q::stepAndInvariant => false
 ├─ step => true
-│  └─ mint(
+│  └─ send(
 │       "alice",
-│       "eve",
-│       37478542505835205046968520025158070945751003972871720238447843997511300995974
-│     ) => true
-│     ├─ require(true) => true
-│     └─ require(true) => true
-│        └─ isUInt(
-│             71422570250928126532362581617288466201950603611788502328465447418920373474786
-│           ) => true
+│       "charlie",
+│       71516992819340132902114648681722204450273946921092387316973942850220744245470
+│     ) => false
+│     └─ require(false) => false
 └─ isUInt(
-     71422570250928126532362581617288466201950603611788502328465447418920373474786
-   ) => true
+     149588274104186958095609662467199393096403576165204917806169054527367600587490
+   ) => false
 
 [State 2]
 {
@@ -732,49 +710,18 @@ q::stepAndInvariant => true
     Map(
       "alice" -> 0,
       "bob" -> 0,
-      "charlie" -> 0,
-      "eve" ->
-        71422570250928126532362581617288466201950603611788502328465447418920373474786,
-      "null" -> 0
-    ),
-  minter: "alice"
-}
-
-[Frame 3]
-q::stepAndInvariant => false
-├─ step => true
-│  └─ mint(
-│       "alice",
-│       "null",
-│       109067983118832076063755963802104322727953985633488183463930115464609414175363
-│     ) => true
-│     ├─ require(true) => true
-│     └─ require(true) => true
-│        └─ isUInt(
-│             109067983118832076063755963802104322727953985633488183463930115464609414175363
-│           ) => true
-└─ isUInt(
-     180490553369760202596118545419392788929904589245276685792395562883529787650149
-   ) => false
-
-[State 3]
-{
-  balances:
-    Map(
-      "alice" -> 0,
-      "bob" -> 0,
-      "charlie" -> 0,
-      "eve" ->
-        71422570250928126532362581617288466201950603611788502328465447418920373474786,
+      "charlie" ->
+        71516992819340132902114648681722204450273946921092387316973942850220744245470,
+      "eve" -> 0,
       "null" ->
-        109067983118832076063755963802104322727953985633488183463930115464609414175363
+        78071281284846825193495013785477188646129629244112530489195111677146856342020
     ),
   minter: "alice"
 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x1786e678d460fe to reproduce.
+Use --seed=0x1786e678d460ed to reproduce.
 error: Invariant violated
 ```
 
@@ -816,7 +763,6 @@ rm out-itf-mbt-example.itf.json
   "#meta": {
     "index": 1
   },
-  "action_taken": "mint",
   "balances": {
     "#map": [
       [
@@ -834,7 +780,7 @@ rm out-itf-mbt-example.itf.json
       [
         "charlie",
         {
-          "#bigint": "49617995555028370892926474303042238797407019137772330780016167115018841762373"
+          "#bigint": "79626045751699704635016553258820412024546765398372583361896346889345270192783"
         }
       ],
       [
@@ -851,12 +797,12 @@ rm out-itf-mbt-example.itf.json
       ]
     ]
   },
-  "minter": "bob",
-  "nondet_picks": {
+  "mbt::actionTaken": "mint",
+  "mbt::nondetPicks": {
     "amount": {
       "tag": "Some",
       "value": {
-        "#bigint": "49617995555028370892926474303042238797407019137772330780016167115018841762373"
+        "#bigint": "79626045751699704635016553258820412024546765398372583361896346889345270192783"
       }
     },
     "receiver": {
@@ -865,9 +811,10 @@ rm out-itf-mbt-example.itf.json
     },
     "sender": {
       "tag": "Some",
-      "value": "bob"
+      "value": "eve"
     }
-  }
+  },
+  "minter": "eve"
 }
 ```
 
@@ -894,14 +841,16 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
+cat out-itf-example1.itf.json | jq '.states[0]["mbt::actionTaken"]'
 rm out-itf-example*.itf.json
 ```
 
 <!-- !test out run with n-traces itf -->
 ```
 "ok"
+"init"
 ```
 
 ### Run to generate multiple ITF traces with violation
@@ -1460,4 +1409,23 @@ exit $exit_code
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: parsing failed
+```
+### Prints witnesses counts
+
+<!-- !test exit 0 -->
+<!-- !test in witnesses -->
+```
+output=$(quint run ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out witnesses -->
+```
+[ok] No violation found (duration).
+Witnesses:
+won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
+stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
+Use --seed=0x2b442ab439177 to reproduce.
 ```

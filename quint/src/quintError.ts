@@ -85,6 +85,8 @@ export type ErrorCode =
   | 'QNT407'
   /* QNT408: Case-sensitive filenames */
   | 'QNT408'
+  /* QNT409: Init cannot be converted to TLA+ */
+  | 'QNT409'
   /* QNT500: Uninitialized constant */
   | 'QNT500'
   /* QNT501: Internal compiler error */

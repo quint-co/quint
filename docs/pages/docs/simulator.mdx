@@ -1,0 +1,59 @@
+import { Callout } from 'nextra/components'
+
+# Understanding the Simulator
+
+<Callout type="warning" emoji="🚧️">
+  This page is under construction.
+</Callout>
+
+Quint's simulator generates samples of executions valid for the model and check invariants at each state of those executions. It is not a verification tool, but it **can** find violations - sometimes faster than the model checker. Given a model and properties (invariants only, temporal properties are not supported), the simulator will output one of the following:
+
+## Output: OK
+OK means: it could not find a violation in the explored executions. **There might still be an issue**.
+
+```ansi
+Running... [■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■] 99% | ETA: 1s | 9999/10000 samples
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m37[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 2[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m79[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 3[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m3[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 4[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m90[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 5[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m90[39m, [32m"charlie"[39m[90m ->[39m [33m79[39m) }
+
+[32m[ok][39m No violation found [90m(2459ms).[39m
+[90mYou may increase --max-samples and --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+[90mUse --seed=0xe924b0166c3c5 to reproduce.[39m
+```
+
+By default, the simulator will include an example execution, which can be useful to understand the model. To disable it, run it with lower verbosity (`--verbosity=1`).
+
+## Output: Violation
+Violation means: there is for sure is a violation, and it will provide a counter-example.
+```ansi
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m-63[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[31m[violation][39m Found an issue [90m(44ms).[39m
+[90mUse --seed=0x4e85b3a53f7ef to reproduce.[39m
+[90mUse --verbosity=3 to show executions.[39m
+error: Invariant violated
+```
+
+While a model checker's counter-example is always minimal, the simulator one is not - there might exist another counter-example that is smaller.
+
+## When to use it
+
+The simulator is a good tool to be used to find some initial bugs and potential problems with the model, as it will quickly find any violation that is likely enough to occur in the number of samples inspected. After some iteration fixing those problems, you get to the point where the simulator runs for a few hours and can't find any bug. Then it is the time to run a model checker and go after the verification. Using the model checker to find the first bugs results in longer feedback cycles, making the simulator a valuable in the process of writing and validating a specification.
+
+

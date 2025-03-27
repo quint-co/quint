@@ -138,7 +138,7 @@ Pros:
 Cons:
 
 - Requires differing per-platform docs/instructions.
-- Requires maintaining per-platfrom packages; unclear who could provide and maintain these.
+- Requires maintaining per-platform packages; unclear who could provide and maintain these.
 - Quint is already available from npm.
 
 #### 3.2.2 Using an ecosystem package manager (npm, coursier, ...)
@@ -161,7 +161,7 @@ Cons:
 
 #### 3.2.3 Using the Github release directly (xcopy-deploy the JAR file)
 
-This is currently the [recommended way for obtaining Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html):
+This is currently the [recommended way for obtaining Apalache](https://apalache-mc.org/docs/apalache/installation/jvm.html):
 Download the Github release, and unpack Apalache's JAR file to the target system.
 
 Pros:
@@ -227,7 +227,7 @@ Cons:
 - Assumes that the JRE is installed on the local system.
 
 *Note: We did a prototype implementation querying the GitHub REST API in [#1115](https://github.com/informalsystems/quint/issues/1115).
-However, we observed CI issues due to the Github API's rate limiting as described in [#1124](https://github.com/informalsystems/quint/issues/1124). In pratice, the same issues can affect users (e.g., behind a shared IP) and may segnificantly impact UX of the `verify` command. As a countermeasure, we reverted to a hardcoded Apalache version in [`4ceb7d8`](https://github.com/informalsystems/quint/commit/4ceb7d8be824ddc0a2c2a14e105baff446f71e72).*
+However, we observed CI issues due to the Github API's rate limiting as described in [#1124](https://github.com/informalsystems/quint/issues/1124). In practice, the same issues can affect users (e.g., behind a shared IP) and may segnificantly impact UX of the `verify` command. As a countermeasure, we reverted to a hardcoded Apalache version in [`4ceb7d8`](https://github.com/informalsystems/quint/commit/4ceb7d8be824ddc0a2c2a14e105baff446f71e72).*
 
 #### 3.2.5 Apalache as cloud-hosted SaaS
 
@@ -237,7 +237,7 @@ is necessary.
 Pros:
 
 - No installation or server management issues.
-- Versioning and backwards-compatiblity could be exposed via separate endpoints.
+- Versioning and backwards-compatibility could be exposed via separate endpoints.
 
 Cons:
 
@@ -248,7 +248,7 @@ Cons:
 
 ### 3.3 Version dependencies between Quint and Apalache
 
-We want to maintain compatiblity between Quint and Apalache, therefore we need
+We want to maintain compatibility between Quint and Apalache, therefore we need
 some mode of linking compatible versions of both tools. Both tools follow
 [semantic versioning][].
 
