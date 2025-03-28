@@ -84,11 +84,6 @@ module two_layered_cache {
         }
     }
 
-    // Get the first element of a given non-empty Set
-    pure def getHeadOfSet(s: Set[int]): int = {
-        s.fold(0, (a, b) => b)
-    }
-
     pure def isNotEmpty(l: CacheLayer): bool = {
         l.keys().size() > 0
     }
