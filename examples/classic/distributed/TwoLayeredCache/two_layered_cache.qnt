@@ -26,7 +26,8 @@ module two_layered_cache {
     //**********************************************************
     // TYPE DEFINITIONS
     //**********************************************************
-    type CacheLayer = Set[int] // use Set so it is easy to extend to multiple keys if needed
+
+    type CacheLayer = str -> int
     type ClientPID = int
 
     type HistoryEntry = Read(int) | Write(int)
@@ -34,6 +35,10 @@ module two_layered_cache {
     //**********************************************************
     // CONSTANTS
     //**********************************************************
+
+    // We only consider 1 key in this spec but it is easy to
+    // extend to multiple keys if needed
+    pure val DefaultKey = "default"
     pure val DefaultExpireDuration = 3
     pure val ClientProcesses: Set[ClientPID] = 1.to(10)
     pure val MaxVal = 1000000
@@ -84,17 +89,21 @@ module two_layered_cache {
         s.fold(0, (a, b) => b)
     }
 
+    pure def isNotEmpty(l: CacheLayer): bool = {
+        l.keys().size() > 0
+    }
+
     //**********************************************************
     // HELPERS
     // Operators for convenience
     //**********************************************************
 
     action writeL1(v: int): bool = all {
-        l1' = Set(v)
+        l1' = l1.put(DefaultKey, v)
     }
 
     action writeL2(v: int): bool = all {
-        l2' = Set(v)
+        l2' = l2.put(DefaultKey, v)
     }
 
     //**********************************************************
@@ -114,7 +123,7 @@ module two_layered_cache {
     }
 
     action handleL1Found(): bool = {
-        val value = getHeadOfSet(l1)
+        val value = l1.get(DefaultKey)
         all {
             l1' = l1,
             l2' = l2,
@@ -123,7 +132,7 @@ module two_layered_cache {
     }
 
     action handleL2Found(): bool = {
-        val value = getHeadOfSet(l2)
+        val value = l2.get(DefaultKey)
         all {
             writeL1(value),
             l2' = l2,
@@ -132,7 +141,7 @@ module two_layered_cache {
     }
 
     action handleFound(): bool = {
-        if (l1.size() > 0) {
+        if (isNotEmpty(l1)) {
             handleL1Found
         } else {
             handleL2Found
@@ -143,7 +152,7 @@ module two_layered_cache {
     // If val exists in L2, write back to L1 then return.
     // Otherwise, not found (false).
     action readCache(pid: ClientPID): bool = {
-        if (l1.size() > 0 or l2.size() > 0) {
+        if (isNotEmpty(l1) or isNotEmpty(l2)) {
             handleFound
         } else {
             handleNotFound
@@ -171,7 +180,7 @@ module two_layered_cache {
     action l1Expire = all {
         any {
             l1' = l1,
-            l1' = Set()
+            l1' = Map()
         },
         l2' = l2,
         num' = num,
@@ -187,8 +196,8 @@ module two_layered_cache {
 
     action init = all {
         num' = 0,
-        l1' = Set(),
-        l2' = Set(),
+        l1' = Map(),
+        l2' = Map(),
         history' = [],
     }
 
@@ -240,8 +249,8 @@ module two_layered_cache {
 
     // All layers contain the same latest written value
     temporal agreement: bool = eventually({
-        val a = getHeadOfSet(l1)
-        val b = getHeadOfSet(l2)
+        val a = l1.get(DefaultKey)
+        val b = l2.get(DefaultKey)
         a == b
     })
 
