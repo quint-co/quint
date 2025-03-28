@@ -1060,10 +1060,12 @@ fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::
     let result = eval_run("run1", input);
 
     assert!(result.is_err());
+    let err = result.unwrap_err();
     assert_eq!(
-        result.unwrap_err().to_string(),
+        err.to_string(),
         "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"
     );
+    assert!(err.reference.is_some());
 
     Ok(())
 }
@@ -1099,10 +1101,12 @@ fn run_reps_false_when_action_is_false() -> Result<(), Box<dyn std::error::Error
     let result = eval_run("run1", input);
 
     assert!(result.is_err());
+    let err = result.unwrap_err();
     assert_eq!(
-        result.unwrap_err().to_string(),
+        err.to_string(),
         "[QNT513] Reps loop could not continue after iteration #6 evaluated to false"
     );
+    assert!(err.reference.is_some());
 
     Ok(())
 }
@@ -1137,10 +1141,12 @@ fn run_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
     let result = eval_run("run1", input);
 
     assert!(result.is_err());
+    let err = result.unwrap_err();
     assert_eq!(
-        result.unwrap_err().to_string(),
+        err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
+    assert!(err.reference.is_some());
 
     Ok(())
 }
@@ -1163,10 +1169,9 @@ fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Erro
     let result = eval_run("run1", input);
 
     assert!(result.is_err());
-    assert_eq!(
-        result.unwrap_err().to_string(),
-        "[QNT508] Cannot continue to \"expect\""
-    );
+    let err = result.unwrap_err();
+    assert_eq!(err.to_string(), "[QNT508] Cannot continue to \"expect\"");
+    assert!(err.reference.is_some());
 
     Ok(())
 }
@@ -1178,10 +1183,12 @@ fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>
     let result = eval_run("run1", input);
 
     assert!(result.is_err());
+    let err = result.unwrap_err();
     assert_eq!(
-        result.unwrap_err().to_string(),
+        err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
+    assert!(err.reference.is_some());
 
     Ok(())
 }
