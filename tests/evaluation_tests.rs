@@ -1172,7 +1172,7 @@ fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[test]
-fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn::std::error::Error>> {
+fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
     let input = "var n: int\n
                  run run1 = (n' = 0).then(n' = 3).expect(n == 3).then(n' = 4).expect(n == 3)";
     let result = eval_run("run1", input);
@@ -1187,7 +1187,7 @@ fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn::std::error::Error
 }
 
 #[test]
-fn run_q_debug() -> Result<(), Box<dyn::std::error::Error>> {
+fn run_q_debug() -> Result<(), Box<dyn std::error::Error>> {
     assert_var_after_run(
         "n",
         "2",
