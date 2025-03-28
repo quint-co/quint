@@ -43,13 +43,19 @@ export function completeIdentifier(
   // Until we have incremental parsing, try to lookup `triggeringIdentifier` by name
   const declIds = findDeclByNameAtPos(identifier, position, sourceFile, parsedData)
 
+  // Lookup types for the found declarations
   const types = declIds.map(declId => {
     try {
       const declBigInt = BigInt(declId)
       const refId = table.get(declBigInt)?.id ?? declBigInt
       const type = analysisOutput.types.get(refId)?.type
 
-      logger.info(`DeclId: ${declId} (BigInt: ${declBigInt.toString()}), RefId: ${refId.toString()}, Type: ${JSON.stringify(type, (_, val) => typeof val === 'bigint' ? val.toString() : val)}`)
+      logger.info(
+        `DeclId: ${declId} (BigInt: ${declBigInt.toString()}), RefId: ${refId.toString()}, Type: ${JSON.stringify(
+          type,
+          (_, val) => (typeof val === 'bigint' ? val.toString() : val)
+        )}`
+      )
       return type
     } catch (error) {
       logger.error(`Error processing declId ${declId}: ${error}`)
@@ -58,33 +64,32 @@ export function completeIdentifier(
   })
 
   const properTypes = compact(
-      types.map(type => {
-        if (type?.kind === 'const') {
-          const alias = type.id ? table.get(type.id) : undefined
-          if (alias?.kind !== 'typedef' || !alias.type) {
-            logger.debug(`Skipping const type alias: ${JSON.stringify(alias)}`)
-            return undefined
-          }
-          logger.debug(`Resolved const alias: ${JSON.stringify(alias.type)}`)
-          return alias.type
-          // TODO(#693): Workaround for #693, filter overly general types
-        } else if (type?.kind === 'var') {
-          logger.debug("Skipping 'var' type...")
+    types.map(type => {
+      if (type?.kind === 'const') {
+        const alias = type.id ? table.get(type.id) : undefined
+        if (alias?.kind !== 'typedef' || !alias.type) {
+          logger.debug(`Skipping const type alias: ${JSON.stringify(alias)}`)
           return undefined
         }
-        return type
-      })
+        logger.debug(`Resolved const alias: ${JSON.stringify(alias.type)}`)
+        return alias.type
+        // TODO(#693): Workaround for #693, filter overly general types
+      } else if (type?.kind === 'var') {
+        logger.debug("Skipping 'var' type...")
+        return undefined
+      }
+      return type
+    })
   )
 
   if (properTypes.length === 0) {
-    logger.debug("No valid types found, returning empty list.")
+    logger.debug('No valid types found, returning empty list.')
     return []
   }
 
   const type = properTypes[0]
 
-
-  logger.debug("Fetching built-in completions...")
+  logger.debug('Fetching built-in completions...')
   const builtinCompletions = builtinCompletionsWithDocs(getSuggestedBuiltinsForType(type), builtinDocs)
   logger.debug(`Builtin completions: ${JSON.stringify(builtinCompletions)}`)
 
@@ -92,12 +97,14 @@ export function completeIdentifier(
   logger.debug(`Field completions: ${JSON.stringify(fieldCompletions)}`)
 
   let responseObject = builtinCompletions.concat(fieldCompletions)
-  logger.debug(`Raw response object before conversion: ${JSON.stringify(responseObject, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
+  logger.debug(
+    `Raw response object before conversion: ${JSON.stringify(responseObject, (_, v) =>
+      typeof v === 'bigint' ? v.toString() : v
+    )}`
+  )
 
   // Explicitly remove any lingering BigInt values
-  responseObject = JSON.parse(JSON.stringify(responseObject, (_, v) =>
-      typeof v === "bigint" ? v.toString() : v
-  ))
+  responseObject = JSON.parse(JSON.stringify(responseObject, (_, v) => (typeof v === 'bigint' ? v.toString() : v)))
   logger.info(`Returning safe completion response: ${JSON.stringify(responseObject)}`)
 
   return responseObject
@@ -164,9 +171,7 @@ function findDeclByNameInsideScope(name: string, scopeId: string, modules: Quint
   const module = modules.find(module => module.id.toString() == scopeId)
   if (module) {
     // scope is a module return all variables with name `name`
-    return module.declarations
-        .filter(decl => decl.kind == 'var' && decl.name == name)
-        .map(decl => decl.id.toString()) // Convert BigInt to string
+    return module.declarations.filter(decl => decl.kind == 'var' && decl.name == name).map(decl => decl.id.toString()) // Convert BigInt to string
   }
   const expr = findExpressionWithId(modules, BigInt(scopeId))
   if (expr) {

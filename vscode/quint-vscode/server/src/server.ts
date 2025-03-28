@@ -293,7 +293,7 @@ export class QuintLanguageServer {
       }
 
       const triggeringLine = document.getText({
-        start: {...params.position, character: 0},
+        start: { ...params.position, character: 0 },
         end: params.position,
       })
 
@@ -315,12 +315,12 @@ export class QuintLanguageServer {
       }
 
       let completionItems = completeIdentifier(
-          triggeringIdentifier,
-          parsedData,
-          analysisOutput,
-          sourceFile,
-          params.position,
-          loadedBuiltInDocs
+        triggeringIdentifier,
+        parsedData,
+        analysisOutput,
+        sourceFile,
+        params.position,
+        loadedBuiltInDocs
       )
 
       return completionItems
@@ -485,4 +485,4 @@ export class QuintLanguageServer {
 }
 
 new QuintLanguageServer(createConnection(ProposedFeatures.all), new TextDocuments(TextDocument))
-logger.info("🚀 Quint Language Server Started!")
+logger.info('🚀 Quint Language Server Started!')
