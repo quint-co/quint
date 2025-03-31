@@ -72,9 +72,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     return Ok(Value::Bool(true));
                 }
 
-                env.var_storage
-                    .borrow_mut()
-                    .restore(next_vars_snapshot.clone());
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
             }
             Ok(Value::Bool(false))
         },
@@ -84,7 +82,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             for action in args {
                 let result = action.execute(env)?;
                 if !result.as_bool() {
-                    env.var_storage.borrow_mut().restore(next_vars_snapshot);
+                    env.var_storage.borrow_mut().restore(&next_vars_snapshot);
                     return Ok(Value::Bool(false));
                 }
             }
@@ -201,7 +199,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
                 env.shift();
                 let predicate_result = predicate.execute(env)?;
-                env.var_storage.borrow_mut().restore(next_vars_snapshot);
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
 
                 if !predicate_result.as_bool() {
                     return Err(QuintError::new(
