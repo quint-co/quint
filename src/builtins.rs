@@ -54,7 +54,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             args[1].execute(env)
         },
         "actionAny" => |env, args| {
-            let next_vars_snapshot = env.var_storage.clone().take_snapshot();
+            let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
 
             let mut indices: Vec<usize> = (0..args.len()).collect();
             // Fisher-Yates shuffle algorithm using our randomizer
@@ -72,17 +72,17 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     return Ok(Value::Bool(true));
                 }
 
-                env.var_storage.restore(next_vars_snapshot.clone());
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
             }
             Ok(Value::Bool(false))
         },
         "actionAll" => |env, args| {
-            let next_vars_snapshot = env.var_storage.clone().take_snapshot();
+            let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
 
             for action in args {
                 let result = action.execute(env)?;
                 if !result.as_bool() {
-                    env.var_storage.restore(next_vars_snapshot);
+                    env.var_storage.borrow_mut().restore(&next_vars_snapshot);
                     return Ok(Value::Bool(false));
                 }
             }
@@ -104,7 +104,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let matching_case = cases.chunks_exact(2).find_map(|chunk| match chunk {
                 [case_label_expr, case_elim_expr] => {
                     let case_label = case_label_expr.execute(env).ok()?;
-                    if case_label.as_str() == variant_label || case_label.as_str() == "_" {
+                    if case_label.as_str() == *variant_label || case_label.as_str() == "_" {
                         Some(case_elim_expr)
                     } else {
                         None
@@ -116,7 +116,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             match matching_case {
                 Some(case_elim_expr) => {
                     let case_elim = case_elim_expr.execute(env)?;
-                    case_elim.clone().as_closure()(env, vec![variant_value.clone()])
+                    let closure = case_elim.as_closure();
+                    closure(env, vec![variant_value.clone()])
                 }
                 None => Err(QuintError::new(
                     "QNT505",
@@ -140,6 +141,76 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
             Ok(set.pick(&mut positions.into_iter()))
         },
+        "then" => |env, args| {
+            // Compose two actions, executing the second one only if the first one results in true.
+            let first = args[0].execute(env)?;
+            if !first.as_bool() {
+                return Err(QuintError::new(
+                    "QNT513",
+                    "Cannot continue in A.then(B), A evaluates to 'false'",
+                ));
+            }
+
+            env.shift();
+            // TODO: record state on recorder
+            args[1].execute(env)
+        },
+        "reps" => {
+            |env, args| {
+                let reps = args[0].execute(env).map(|r| r.as_int())?;
+                let action = &args[1];
+                let mut result = Value::Bool(true);
+                for i in 0..reps {
+                    let closure = action.execute(env)?;
+                    result = closure.as_closure()(env, vec![Value::Int(i)])?;
+                    if !result.as_bool() {
+                        return Err(QuintError::new(
+                            "QNT513",
+                            format!("Reps loop could not continue after iteration #{} evaluated to false", i+1).as_str(),
+                        ));
+                    }
+
+                    // Don't shift the last one
+                    if i < reps - 1 {
+                        env.shift();
+                    }
+                }
+                Ok(result)
+            }
+        }
+        "expect" => {
+            // Translate A.expect(P):
+            //  - Evaluate A.
+            //  - When A's result is 'false', emit a runtime error.
+            //  - When A's result is 'true':
+            //    - Commit the variable updates: Shift the primed variables to unprimed.
+            //    - Evaluate `P`.
+            //    - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
+            //    - If `P` evaluates to `true`, rollback to the previous state and return `true`.
+            |env, args| {
+                let action = &args[0];
+                let predicate = &args[1];
+
+                let action_result = action.execute(env)?;
+                if !action_result.as_bool() {
+                    return Err(QuintError::new("QNT508", "Cannot continue to \"expect\""));
+                }
+
+                let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
+                env.shift();
+                let predicate_result = predicate.execute(env)?;
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
+
+                if !predicate_result.as_bool() {
+                    return Err(QuintError::new(
+                        "QNT508",
+                        "Expect condition does not hold true",
+                    ));
+                }
+
+                Ok(Value::Bool(true))
+            }
+        }
         _ => {
             panic!("Unknown lazy op: {op}")
         }
@@ -526,8 +597,13 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 Rc::new(args[1].clone()),
             ))
         },
-
-        // TODO fail, assert
+        "fail" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
+        "assert" => |_env, args| {
+            if !args[0].as_bool() {
+                return Err(QuintError::new("QNT508", "Assertion failed"));
+            }
+            Ok(Value::Bool(true))
+        },
         "allListsUpTo" => |_env, args| {
             let set = args[0].as_set();
             let length = args[1].as_int();

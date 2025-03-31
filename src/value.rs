@@ -327,7 +327,7 @@ impl Value {
         }
     }
 
-    pub fn as_variant(&self) -> (&str, &Value) {
+    pub fn as_variant(&self) -> (&QuintName, &Value) {
         match self {
             Value::Variant(label, value) => (label, value),
             _ => panic!("Expected variant"),

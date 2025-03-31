@@ -1,4 +1,10 @@
-use quint_simulator::{evaluator::run, helpers};
+use std::rc::Rc;
+
+use quint_simulator::{
+    evaluator::{run, Env, EvalResult, Interpreter},
+    helpers,
+    value::Value,
+};
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = |expr: &str| {
@@ -30,6 +36,73 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     assert_eq!(
         value, expected_value,
         "expression: {input}, expected: {expected:#?}, got: {value:#?}",
+    );
+
+    Ok(())
+}
+fn eval_run(callee: &str, input: &str) -> EvalResult {
+    let quint_content = {
+        format!(
+            "module main {{
+              type T = Some(int) | None
+              val init = true
+              val step = true
+              {input}
+            }}"
+        )
+    };
+
+    let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
+    let run_def = parsed.find_definition_by_name(callee).unwrap();
+    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+
+    interpreter.eval(&mut env, run_def.expr.clone())
+}
+
+fn assert_var_after_run(
+    var_name: &str,
+    expected: &str,
+    callee: &str,
+    input: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let quint_content = {
+        format!(
+            "module main {{
+              type T = Some(int) | None
+              val init = true
+              val step = true
+              {input}
+              val expected = {expected}
+            }}"
+        )
+    };
+
+    let parsed = helpers::parse(&quint_content, "init", "step", None)?;
+    let run_def = parsed.find_definition_by_name(callee)?;
+    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+
+    let run_result = interpreter.eval(&mut env, run_def.expr.clone());
+
+    assert_eq!(run_result, Ok(Value::Bool(true)));
+
+    let storage = env.var_storage.borrow();
+    let var_value = storage
+        .next_vars
+        .values()
+        .find(|v| v.borrow().name == var_name)
+        .unwrap()
+        .borrow();
+    let var_value = var_value.clone().value.unwrap().normalize();
+
+    let parsed_expected = helpers::parse(&quint_content, "init", "step", None)?;
+    let expected_def = parsed_expected.find_definition_by_name("expected")?;
+    let expected_value = run(&parsed_expected.table, &expected_def.expr)?;
+
+    assert_eq!(
+        var_value, expected_value,
+        "expression: {input}, expected: {expected:#?}, got: {var_value:#?}",
     );
 
     Ok(())
@@ -968,4 +1041,158 @@ fn set_of_maps() -> Result<(), Box<dyn std::error::Error>> {
         "true",
     )
 }
-// TODO Runs and special ops tests
+
+#[test]
+fn run_then_success() -> Result<(), Box<dyn std::error::Error>> {
+    assert_var_after_run(
+        "n",
+        "12",
+        "run1",
+        "var n: int\n
+         run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)",
+    )
+}
+
+#[test]
+fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 1).then(all { n == 0, n' = n + 2 }).then(n' = 3)";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn run_then_false_when_rhs_is_false() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 1).then(all { n == 0, n' = n + 2 })";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Bool(false));
+
+    Ok(())
+}
+
+#[test]
+fn run_reps() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 var hist: List[int]\n
+                 run run1 = (all { n' = 1, hist' = [] })\n
+                            .then(3.reps(_ => all { n' = n + 1, hist' = hist.append(n) }))\n
+                 run run2 = (all { n' = 1, hist' = [] })\n
+                            .then(3.reps(i => all { n' = i, hist' = hist.append(i) }))";
+    assert_var_after_run("hist", "List(1, 2, 3)", "run1", input)?;
+    assert_var_after_run("hist", "List(0, 1, 2)", "run2", input)
+}
+
+#[test]
+fn run_reps_false_when_action_is_false() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 0).then(10.reps(i => all { n < 5, n' = n + 1 }))";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "[QNT513] Reps loop could not continue after iteration #6 evaluated to false"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn run_fail() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 1).fail()";
+    let result = eval_run("run1", input);
+
+    assert_eq!(result, Ok(Value::Bool(false)));
+
+    Ok(())
+}
+
+#[test]
+fn run_assert() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 3).then(all { assert(n < 3), n' = n })";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err().to_string(), "[QNT508] Assertion failed");
+
+    Ok(())
+}
+
+#[test]
+fn run_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 0).then(n' = 3).expect(n < 3)";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "[QNT508] Expect condition does not hold true"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn run_expect_success() -> Result<(), Box<dyn std::error::Error>> {
+    assert_var_after_run(
+        "n",
+        "3",
+        "run1",
+        "var n: int\n
+         run run1 = (n' = 0).then(n' = 3).expect(n == 3)",
+    )
+}
+
+#[test]
+fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 0).then(all { n == 1, n' = 3 }).expect(n < 3)";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "[QNT508] Cannot continue to \"expect\""
+    );
+
+    Ok(())
+}
+
+#[test]
+fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "var n: int\n
+                 run run1 = (n' = 0).then(n' = 3).expect(n == 3).then(n' = 4).expect(n == 3)";
+    let result = eval_run("run1", input);
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "[QNT508] Expect condition does not hold true"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn run_q_debug() -> Result<(), Box<dyn std::error::Error>> {
+    assert_var_after_run(
+        "n",
+        "2",
+        "run1",
+        "var n: int\n
+         run run1 = (n' = 1).then(n' = q::debug(\"n plus one\", n + 1))",
+    )
+}
