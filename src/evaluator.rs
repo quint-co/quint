@@ -412,7 +412,23 @@ impl<'a> Interpreter<'a> {
 
         let id = expr.id();
 
-        let compiled_expr = match expr {
+        let compiled_expr = self.compile_expr_core(expr);
+        let wrapped_expr = CompiledExpr::new(move |env| {
+            compiled_expr.execute(env).map_err(|err| {
+                // This is where we add the reference to the error, if it is not already there.
+                // This way, we don't need to worry about references anywhere else :)
+                if err.reference.is_none() {
+                    return err.with_reference(id);
+                }
+                err
+            })
+        });
+        self.memo.borrow_mut().insert(id, wrapped_expr.clone());
+        wrapped_expr
+    }
+
+    pub fn compile_expr_core(&mut self, expr: &QuintEx) -> CompiledExpr {
+        match expr {
             QuintEx::QuintInt { id: _, value } => {
                 let value = *value;
                 CompiledExpr::new(move |_| Ok(Value::Int(value)))
@@ -505,10 +521,7 @@ impl<'a> Interpreter<'a> {
                     result
                 })
             }
-        };
-
-        self.memo.borrow_mut().insert(id, compiled_expr.clone());
-        compiled_expr
+        }
     }
 
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {

@@ -29,10 +29,10 @@ impl QuintError {
         }
     }
 
-    pub fn with_reference(code: &str, message: &str, reference: QuintId) -> Self {
+    pub fn with_reference(self, reference: QuintId) -> Self {
         QuintError {
-            code: code.to_string(),
-            message: message.to_string(),
+            code: self.code,
+            message: self.message,
             reference: Some(reference),
         }
     }
