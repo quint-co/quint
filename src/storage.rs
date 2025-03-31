@@ -54,7 +54,7 @@ impl Storage {
         }
     }
 
-    pub fn restore(&mut self, snapshot: Snapshot) {
+    pub fn restore(&mut self, snapshot: &Snapshot) {
         self.next_vars.iter().for_each(|(k, v)| {
             if let Some(next) = snapshot.next_vars.get(k) {
                 v.borrow_mut().value = next.value.clone();

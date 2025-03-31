@@ -72,9 +72,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     return Ok(Value::Bool(true));
                 }
 
-                env.var_storage
-                    .borrow_mut()
-                    .restore(next_vars_snapshot.clone());
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
             }
             Ok(Value::Bool(false))
         },
@@ -84,7 +82,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             for action in args {
                 let result = action.execute(env)?;
                 if !result.as_bool() {
-                    env.var_storage.borrow_mut().restore(next_vars_snapshot);
+                    env.var_storage.borrow_mut().restore(&next_vars_snapshot);
                     return Ok(Value::Bool(false));
                 }
             }
@@ -106,7 +104,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let matching_case = cases.chunks_exact(2).find_map(|chunk| match chunk {
                 [case_label_expr, case_elim_expr] => {
                     let case_label = case_label_expr.execute(env).ok()?;
-                    if case_label.as_str() == variant_label || case_label.as_str() == "_" {
+                    if case_label.as_str() == *variant_label || case_label.as_str() == "_" {
                         Some(case_elim_expr)
                     } else {
                         None
@@ -118,7 +116,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             match matching_case {
                 Some(case_elim_expr) => {
                     let case_elim = case_elim_expr.execute(env)?;
-                    case_elim.clone().as_closure()(env, vec![variant_value.clone()])
+                    let closure = case_elim.as_closure();
+                    closure(env, vec![variant_value.clone()])
                 }
                 None => Err(QuintError::new(
                     "QNT505",
@@ -159,7 +158,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         "reps" => {
             |env, args| {
                 let reps = args[0].execute(env).map(|r| r.as_int())?;
-                let action = args[1].clone();
+                let action = &args[1];
                 let mut result = Value::Bool(true);
                 for i in 0..reps {
                     let closure = action.execute(env)?;
@@ -189,8 +188,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             //    - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
             //    - If `P` evaluates to `true`, rollback to the previous state and return `true`.
             |env, args| {
-                let action = args[0].clone();
-                let predicate = args[1].clone();
+                let action = &args[0];
+                let predicate = &args[1];
 
                 let action_result = action.execute(env)?;
                 if !action_result.as_bool() {
@@ -200,7 +199,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
                 env.shift();
                 let predicate_result = predicate.execute(env)?;
-                env.var_storage.borrow_mut().restore(next_vars_snapshot);
+                env.var_storage.borrow_mut().restore(&next_vars_snapshot);
 
                 if !predicate_result.as_bool() {
                     return Err(QuintError::new(
