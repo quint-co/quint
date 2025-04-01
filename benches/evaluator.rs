@@ -3,7 +3,6 @@ use std::path::Path;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use quint_simulator::evaluator::{Env, Interpreter};
 use quint_simulator::helpers;
-use quint_simulator::ir::QuintOutput;
 use quint_simulator::simulator::ParsedQuint;
 
 fn simulate(
