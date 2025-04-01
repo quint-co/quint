@@ -48,7 +48,7 @@ type T =
 
 ### Constructors
 
-Internally, we need to need add an operator `variant` similar to the
+Internally, we need to add an operator `variant` similar to the
 "injection" operator from
 [Leijen05](https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/):
 

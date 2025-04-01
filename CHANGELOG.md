@@ -17,6 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Init definitions are now properly transpiled into TLA+ without assignments (#1613)
+
+### Security
+
+## v0.23.1 -- 2025-03-10
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a requirement from the package configuration that would lead to always installing v0.18.3 on node versions > 20 (#1602)
+
 ### Security
 
 ## v0.23.0 -- 2025-01-24

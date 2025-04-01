@@ -53,8 +53,11 @@ import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { walkExpression } from './ir/IRVisitor'
+import { convertInit } from './ir/initToPredicate'
 import { QuintRustWrapper } from './quintRustWrapper'
 import { replacer } from './jsonHelper'
+
+
 
 export type stage =
   | 'loading'
@@ -781,11 +784,22 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const stage: stage = 'outputting target'
   const args = compiled.args
   const verbosityLevel = deriveVerbosity(args)
+  const target = (compiled.args.target as string).toLowerCase()
+
+  const main =
+    target == 'tlaplus' ? convertInit(compiled.mainModule, compiled.table, compiled.modes) : right(compiled.mainModule)
+
+  if (main.isLeft()) {
+    return cliErr('Failed to convert init to predicate', {
+      ...compiled,
+      errors: main.value.map(mkErrorMessage(compiled.sourceMap)),
+    })
+  }
 
   const parsedSpecJson = jsonStringOfOutputStage(
-    pickOutputStage({ ...compiled, modules: [compiled.mainModule], table: compiled.table })
+    pickOutputStage({ ...compiled, modules: [main.value], table: compiled.table })
   )
-  switch ((compiled.args.target as string).toLowerCase()) {
+  switch (target) {
     case 'json':
       process.stdout.write(parsedSpecJson)
       return right(compiled)

@@ -44,7 +44,7 @@ type T =
 
 *** Constructors
 
-Internally, we need to need add an operator =variant= similar to the "injection"
+Internally, we need to add an operator =variant= similar to the "injection"
 operator from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
 
 #+begin_src haskell

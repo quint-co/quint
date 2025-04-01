@@ -308,9 +308,7 @@ ApalacheCompilation_ModuleToInstantiate_instantiatedValue ==
   @type: (() => Bool);
 *)
 init ==
-  x'
-    := (importedValue
-      + ApalacheCompilation_ModuleToInstantiate_instantiatedValue)
+  x = importedValue + ApalacheCompilation_ModuleToInstantiate_instantiatedValue
 
 (*
   @type: (() => Bool);
@@ -407,4 +405,25 @@ VARIABLE
   *)
   clockSync3_clockSync3Spec_time
 
+```
+
+### Test error case when something is re-used between init and step, on TLA+ compilation
+
+<!-- !test in ApalacheCompliationError.qnt to TLA+ -->
+```
+quint compile --target tlaplus ./testFixture/ApalacheCompilationError.qnt 2> >(sed -E 's#(/[^ ]*/)testFixture/ApalacheCompilationError.qnt#HOME/ApalacheCompilationError.qnt#g' >&2)
+```
+
+<!-- !test exit 1 -->
+<!-- !test err ApalacheCompliationError.qnt to TLA+ -->
+```
+HOME/ApalacheCompilationError.qnt:19:5 - error: [QNT409] Action A is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+19:     A,
+        ^
+
+HOME/ApalacheCompilationError.qnt:20:5 - error: [QNT409] Action parameterizedAction is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+20:     parameterizedAction(x),
+        ^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to convert init to predicate
 ```
