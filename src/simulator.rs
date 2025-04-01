@@ -1,6 +1,6 @@
 use crate::{
     evaluator::{Env, Interpreter},
-    ir::{QuintError, QuintOutput},
+    ir::{QuintError, QuintEx, QuintOutput},
     itf::Trace,
 };
 
@@ -15,23 +15,19 @@ pub struct SimulationResult {
 impl QuintOutput {
     pub fn simulate(
         &self,
-        init_name: &str,
-        step_name: &str,
-        invariant_name: &str,
+        init_expr: &QuintEx,
+        step_expr: &QuintEx,
+        invariant_expr: &QuintEx,
         steps: usize,
         samples: usize,
         n_traces: usize,
     ) -> Result<SimulationResult, QuintError> {
-        let init_def = self.find_definition_by_name(init_name).unwrap();
-        let step_def = self.find_definition_by_name(step_name).unwrap();
-        let invariant_def = self.find_definition_by_name(invariant_name).unwrap();
-
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
 
-        let init = interpreter.compile(&init_def.expr);
-        let step = interpreter.compile(&step_def.expr);
-        let invariant = interpreter.compile(&invariant_def.expr);
+        let init = interpreter.compile(&init_expr);
+        let step = interpreter.compile(&step_expr);
+        let invariant = interpreter.compile(&invariant_expr);
 
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);

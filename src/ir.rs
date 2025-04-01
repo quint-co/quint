@@ -12,7 +12,7 @@ pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 pub type QuintId = u64;
 pub type QuintName = LocalHipStr<'static>;
 
-#[derive(Debug, Clone, Error, PartialEq)]
+#[derive(Debug, Clone, Error, PartialEq, Serialize)]
 #[error("[{code}] {message}")]
 pub struct QuintError {
     pub code: String,

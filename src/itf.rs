@@ -3,6 +3,7 @@ use chrono::{self};
 use itf;
 use std::collections::BTreeMap;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Trace {
     pub states: Vec<Value>,
     pub violation: bool,
