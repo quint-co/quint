@@ -585,6 +585,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       )
       console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
     }
+
     const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
     outcome = quintRustWrapper.simulate(
       { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant },

@@ -5,7 +5,6 @@
 // (see https://stackoverflow.com/questions/46634449/json-stringify-of-object-of-map-return-empty)
 //
 // The approach here follows https://stackoverflow.com/a/56150320/1187277
-
 export function replacer(_key: String, value: any): any {
   if (value instanceof Map) {
     // Represent Maps as JSON objects
