@@ -738,12 +738,17 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   analyzeInc(typechecked, typechecked.table, extraDefs)
 
   if (!args.flatten) {
-    return right({
-      ...typechecked,
-      mainModule: main,
-      main: mainName,
-      stage: 'compiling',
-    })
+    if (args.target === 'tlaplus') {
+      console.warn(chalk.yellow('Warning: flattening is required for TLA+ output, ignoring --flatten=false option.'))
+    } else {
+      // Early return with the original (unflattened) module and its fields
+      return right({
+        ...typechecked,
+        mainModule: main,
+        main: mainName,
+        stage: 'compiling',
+      })
+    }
   }
 
   // Flatten modules, replacing instances, imports and exports with their definitions
