@@ -28,12 +28,23 @@ export interface SimulatorOptions {
   onTrace(index: number, status: string, vars: string[], states: QuintEx[]): void
 }
 
+export interface SimulationTrace {
+  states: QuintEx[]
+  result: boolean
+  seed: bigint
+}
+
+export type SimulationStatus = 'ok' | 'violation' | 'error'
+
 /** The outcome of a simulation
  */
-export type Outcome =
-  | { status: 'ok' } /** Simulation succeeded */
-  | { status: 'violation' } /** Simulation found an invariant violation */
-  | { status: 'error'; errors: QuintError[] } /** An error occurred during simulation  */
+export interface Outcome {
+  status: SimulationStatus
+  errors: QuintError[]
+  bestTraces: SimulationTrace[]
+  witnessingTraces: number[]
+  samples: number
+}
 
 /**
  * A result returned by the simulator.

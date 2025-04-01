@@ -296,6 +296,11 @@ const runCmd = {
         desc: '(experimental) whether to produce metadata to be used by model-based testing',
         type: 'boolean',
         default: false,
+      })
+     .option('backend', {
+        desc: 'either to use the "typescript" or "rust" (new) backend',
+        type: 'string',
+        default: "typescript",
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633

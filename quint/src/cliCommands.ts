@@ -37,7 +37,7 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator, zerog } from './idGenerator'
-import { Outcome, SimulationResult, SimulatorOptions } from './simulation'
+import { Outcome, SimulationResult, SimulationTrace, SimulatorOptions } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -53,6 +53,8 @@ import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { walkExpression } from './ir/IRVisitor'
+import { QuintRustWrapper } from './quintRustWrapper'
+import { replacer } from './jsonHelper'
 
 export type stage =
   | 'loading'
@@ -483,24 +485,18 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
   }
 }
 
-function maybePrintWitnesses(
-  verbosityLevel: number,
-  evalResult: Either<QuintError, SimulationResult>,
-  witnesses: string[]
-) {
+function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses: string[]) {
   if (verbosity.hasWitnessesOutput(verbosityLevel)) {
-    evalResult.map(r => {
-      if (r.witnessingTraces.length > 0) {
-        console.log(chalk.green('Witnesses:'))
-      }
-      r.witnessingTraces.forEach((n, i) => {
-        const percentage = chalk.gray(`(${(((1.0 * n) / r.samples) * 100).toFixed(2)}%)`)
-        console.log(
-          `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
-            r.samples
-          } explored ${percentage}`
-        )
-      })
+    if (outcome.witnessingTraces.length > 0) {
+      console.log(chalk.green('Witnesses:'))
+    }
+    outcome.witnessingTraces.forEach((n, i) => {
+      const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
+      console.log(
+        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+          outcome.samples
+        } explored ${percentage}`
+      )
     })
   }
 }
@@ -581,50 +577,82 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
   const [init, step, invariant, ...witnesses] = argsParsingResult.value
 
-  const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
-  const evalResult = evaluator.simulate(
-    init,
-    step,
-    invariant,
-    witnesses,
-    prev.args.maxSamples,
-    prev.args.maxSteps,
-    prev.args.nTraces ?? 1
-  )
+  let outcome: Outcome
+  if (prev.args.backend == 'rust') {
+    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    outcome = quintRustWrapper.simulate(
+      { modules: [], table: prev.resolver.table, main: mainName },
+      prev.path,
+      init,
+      step,
+      invariant,
+      witnesses,
+      prev.args.maxSamples,
+      prev.args.maxSteps,
+      prev.args.nTraces ?? 1
+    )
+  } else {
+    const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
+    const evalResult = evaluator.simulate(
+      init,
+      step,
+      invariant,
+      witnesses,
+      prev.args.maxSamples,
+      prev.args.maxSteps,
+      prev.args.nTraces ?? 1
+    )
+
+    simulator.seed = recorder.bestTraces[0]?.seed
+
+    const results: Either<QuintError[], SimulationTrace[]> = mergeInMany(
+      recorder.bestTraces.map((trace, index) => {
+        const maybeEvalResult = trace.frame.result
+        if (maybeEvalResult.isLeft()) {
+          return left(maybeEvalResult.value)
+        }
+        const quintExResult = maybeEvalResult.value.toQuintEx(prev.idGen)
+        assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
+        const simulationSucceeded = quintExResult.value
+        const status = simulationSucceeded ? 'ok' : 'violation'
+        const states = trace.frame.args.map(e => e.toQuintEx(prev.idGen))
+
+        options.onTrace(index, status, evaluator.varNames(), states)
+
+        return right({ states, result: simulationSucceeded, seed: trace.seed })
+      })
+    )
+
+    if (results.isLeft()) {
+      return cliErr('Runtime error', {
+        ...simulator,
+        errors: results.value.map(mkErrorMessage(prev.sourceMap)),
+      })
+    }
+
+    let traces = results.value
+
+    outcome = {
+      status: evalResult.isRight() ? ((evalResult.value.result as QuintBool).value ? 'ok' : 'violation') : 'error',
+      errors: evalResult.isLeft() ? [evalResult.value] : [],
+      bestTraces: traces,
+      witnessingTraces: evalResult.isRight() ? evalResult.value.witnessingTraces : [],
+      samples: evalResult.isRight() ? evalResult.value.samples : 0,
+    }
+  }
 
   const elapsedMs = Date.now() - startMs
 
-  const outcome: Outcome = evalResult.isRight()
-    ? { status: (evalResult.value.result as QuintBool).value ? 'ok' : 'violation' }
-    : { status: 'error', errors: [evalResult.value] }
-
-  const states = recorder.bestTraces[0]?.frame?.args?.map(e => e.toQuintEx(zerog))
+  simulator.seed = outcome.bestTraces[0]?.seed
+  const states = outcome.bestTraces[0]?.states
   const frames = recorder.bestTraces[0]?.frame?.subframes
-  simulator.seed = recorder.bestTraces[0]?.seed
-
-  recorder.bestTraces.forEach((trace, index) => {
-    const maybeEvalResult = trace.frame.result
-    if (maybeEvalResult.isLeft()) {
-      return cliErr('Runtime error', {
-        ...simulator,
-        errors: [mkErrorMessage(simulator.sourceMap)(maybeEvalResult.value)],
-      })
-    }
-    const quintExResult = maybeEvalResult.value.toQuintEx(prev.idGen)
-    assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
-    const simulationSucceeded = quintExResult.value
-    const status = simulationSucceeded ? 'ok' : 'violation'
-    const states = trace.frame.args.map(e => e.toQuintEx(prev.idGen))
-
-    options.onTrace(index, status, evaluator.varNames(), states)
-  })
 
   switch (outcome.status) {
     case 'error':
       return cliErr('Runtime error', {
         ...simulator,
         status: outcome.status,
-        trace: states,
+        // trace: states,
         errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
@@ -637,7 +665,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
-      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
+      maybePrintWitnesses(verbosityLevel, outcome, prev.args.witnesses)
 
       return right({
         ...simulator,
@@ -654,7 +682,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
-      maybePrintWitnesses(verbosityLevel, evalResult, prev.args.witnesses)
+      maybePrintWitnesses(verbosityLevel, outcome, prev.args.witnesses)
 
       return cliErr('Invariant violated', {
         ...simulator,
@@ -979,25 +1007,6 @@ function addItfHeader(source: string, status: string, traceInJson: any): any {
       timestamp: Date.now(),
     },
     ...traceInJson,
-  }
-}
-
-// Preprocess troublesome types so they are represented in JSON.
-//
-// We need it particularly because, by default, serialization of Map and Set
-// objects just produces an empty object
-// (see https://stackoverflow.com/questions/46634449/json-stringify-of-object-of-map-return-empty)
-//
-// The approach here follows https://stackoverflow.com/a/56150320/1187277
-function replacer(_key: String, value: any): any {
-  if (value instanceof Map) {
-    // Represent Maps as JSON objects
-    return Object.fromEntries(value)
-  } else if (value instanceof Set) {
-    // Represent Sets as JSON arrays
-    return Array.from(value)
-  } else {
-    return value
   }
 }
 
