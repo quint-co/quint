@@ -85,12 +85,14 @@ Options:
   --temporal   the temporal properties to check, separated by commas    [string]
   --target     the compilation target. Supported values: tlaplus, json
                                                       [string] [default: "json"]
+  --flatten           Whether or not to flatten the modules into one
+                                                       [boolean] [default: true]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
 ```
 
 Given a quint specification as input, this command parses, resolves imports,
 typechecks, and then "flattens" the specification into on module containing just
-the needed definitions.
+the needed definitions (unless `--flatten=false` is given).
 
 The main module is determined as follows: If a module name is specified by
 `--main`, that takes precedence. Otherwise, if there is only one module in the
