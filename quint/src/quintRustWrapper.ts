@@ -1,15 +1,31 @@
-import child_process, { StdioOptions } from 'child_process'
+/* ----------------------------------------------------------------------------------
+ * Copyright 2025 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * A wrapper around the Rust simulator for Quint.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+import child_process from 'child_process'
 import { QuintEx, QuintModule } from './ir/quintIr'
 import { Outcome } from './simulation'
-import { debugLog, verbosity } from './verbosity'
-import { right } from '@sweet-monads/either'
+import { debugLog } from './verbosity'
 import JSONbig from 'json-bigint'
 import path from 'path'
 import os from 'os'
 import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
-import { ItfTrace, ofItf } from './itf'
+import { ofItf } from './itf'
 
+/**
+ * Get the configuration directory for Quint.
+ * @returns {string} The path to the Quint configuration directory.
+ */
 function quintConfigDir(): string {
   return path.join(os.homedir(), '.quint')
 }
@@ -18,34 +34,50 @@ export type ParsedQuint = {
   modules: QuintModule[]
   table: LookupTable
   main: string
+  init: QuintEx
+  step: QuintEx
+  invariant: QuintEx
 }
 
 export class QuintRustWrapper {
   private verbosityLevel: number
 
+  /**
+   * Constructor for QuintRustWrapper.
+   * @param {number} verbosityLevel - The level of verbosity for logging.
+   */
   constructor(verbosityLevel: number) {
     this.verbosityLevel = verbosityLevel
   }
+
+  /**
+   * Simulate the parsed Quint model using the Rust simulator
+   *
+   * @param {ParsedQuint} parsed - The parsed Quint model.
+   * @param {string} source - The source code of the Quint model.
+   * @param {QuintEx[]} witnesses - The witnesses for the simulation.
+   * @param {number} nruns - The number of runs for the simulation.
+   * @param {number} nsteps - The number of steps per run.
+   * @param {number} ntraces - The number of traces to store.
+   *
+   * @returns {Outcome} The outcome of the simulation.
+   * @throws Will throw an error if the Rust simulator fails to launch or returns an error.
+   */
   simulate(
     parsed: ParsedQuint,
     source: string,
-    init: QuintEx,
-    step: QuintEx,
-    inv: QuintEx,
     witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
     ntraces: number
   ): Outcome {
+    // TODO: Download executable from GitHub if it doesn't exist
     const exe = path.join(quintConfigDir(), 'quint_simulator')
-    const args = ['simulate-quint']
+    const args = ['simulate-from-stdin']
     const input = JSONbig.stringify(
       {
         parsed: parsed,
         source: source,
-        init: init,
-        step: step,
-        inv: inv,
         witnesses: witnesses,
         nruns: nruns,
         nsteps: nsteps,
@@ -81,7 +113,10 @@ export class QuintRustWrapper {
       if (parsed.error) {
         throw new Error(parsed.error)
       }
+
+      // Convert traces to ITF
       parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({ ...trace, states: ofItf(trace.states) }))
+
       return parsed
     } catch (error) {
       throw new Error(`Failed to parse data from Rust simulator: ${JSONbig.stringify(error)}`)

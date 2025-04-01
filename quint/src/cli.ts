@@ -100,7 +100,9 @@ const typecheckCmd = {
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
-const supportedTarges = ['tlaplus', 'json']
+const supportedTargets = ['tlaplus', 'json']
+const supportedBackends = ['typescript', 'rust']
+
 // construct the compile subcommand
 const compileCmd = {
   command: 'compile <input>',
@@ -108,13 +110,13 @@ const compileCmd = {
   builder: (yargs: any) =>
     compileOpts(yargs)
       .option('target', {
-        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
+        desc: `the compilation target. Supported values: ${supportedTargets.join(', ')}`,
         type: 'string',
         default: 'json',
       })
       .coerce('target', (target: string): string => {
-        if (!supportedTarges.includes(target)) {
-          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
+        if (!supportedTargets.includes(target)) {
+          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTargets.join(', ')}`)
         }
         return target
       })
@@ -297,10 +299,16 @@ const runCmd = {
         type: 'boolean',
         default: false,
       })
-     .option('backend', {
+      .option('backend', {
         desc: 'either to use the "typescript" or "rust" (new) backend',
         type: 'string',
-        default: "typescript",
+        default: 'typescript',
+      })
+      .coerce('backend', (backend: string): string => {
+        if (!supportedBackends.includes(backend)) {
+          fail(`Invalid option for --backend: ${backend}. Valid options: ${supportedBackends.join(', ')}`)
+        }
+        return backend
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
