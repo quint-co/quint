@@ -51,7 +51,7 @@ impl ParsedQuint {
             for step_number in 1..=(steps + 1) {
                 interpreter.shift();
 
-                trace.push(interpreter.var_storage.as_record());
+                trace.push(interpreter.var_storage.borrow().as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
                     collect_trace(

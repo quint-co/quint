@@ -66,7 +66,7 @@ impl CompiledExprWithLazyArgs {
 }
 
 pub struct Env {
-    pub var_storage: Storage,
+    pub var_storage: Rc<RefCell<Storage>>,
     pub rand: Rand,
     // Other params from Typescript implementation, for future reference:
     // recorder
@@ -74,18 +74,22 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new(var_storage: Storage) -> Self {
+    pub fn new(var_storage: Rc<RefCell<Storage>>) -> Self {
         Self {
             var_storage,
             rand: Rand::new(),
         }
     }
 
-    pub fn with_rand_state(var_storage: Storage, state: u64) -> Self {
+    pub fn with_rand_state(var_storage: Rc<RefCell<Storage>>, state: u64) -> Self {
         Self {
             var_storage,
             rand: Rand::with_state(state),
         }
+    }
+
+    pub fn shift(&mut self) {
+        self.var_storage.borrow_mut().shift_vars();
     }
 }
 
@@ -94,7 +98,7 @@ pub struct Interpreter<'a> {
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
     const_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
     scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult>>>>,
-    pub var_storage: Storage,
+    pub var_storage: Rc<RefCell<Storage>>,
     memo: Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>,
     memo_by_instance: FxHashMap<QuintId, Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>>,
     namespaces: Vec<QuintName>,
@@ -117,7 +121,7 @@ impl<'a> Interpreter<'a> {
             param_registry: FxHashMap::default(),
             const_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
-            var_storage: Storage::default(),
+            var_storage: Rc::new(RefCell::new(Storage::default())),
             memo: Rc::new(RefCell::new(FxHashMap::default())),
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
@@ -125,7 +129,7 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn shift(&mut self) {
-        self.var_storage.shift_vars();
+        self.var_storage.borrow_mut().shift_vars();
     }
 
     fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult>> {
@@ -143,7 +147,7 @@ impl<'a> Interpreter<'a> {
     fn create_var(&mut self, id: QuintId, name: &QuintName) {
         let key = var_with_namespaces(id, &self.namespaces);
 
-        if self.var_storage.vars.contains_key(&key) {
+        if self.var_storage.borrow().vars.contains_key(&key) {
             return;
         }
 
@@ -159,9 +163,13 @@ impl<'a> Interpreter<'a> {
         }));
 
         self.var_storage
+            .borrow_mut()
             .vars
             .insert(key.clone(), register_for_current);
-        self.var_storage.next_vars.insert(key, register_for_next);
+        self.var_storage
+            .borrow_mut()
+            .next_vars
+            .insert(key, register_for_next);
     }
 
     fn get_or_create_var(
@@ -171,11 +179,11 @@ impl<'a> Interpreter<'a> {
     ) -> Rc<RefCell<VariableRegister>> {
         let key = var_with_namespaces(id, &self.namespaces);
 
-        if !self.var_storage.vars.contains_key(&key) {
+        if !self.var_storage.borrow().vars.contains_key(&key) {
             self.create_var(id, name);
         }
 
-        Rc::clone(&self.var_storage.vars[&key])
+        Rc::clone(&self.var_storage.borrow().vars[&key])
     }
 
     fn get_or_create_const(&mut self, id: QuintId, name: &str) -> Rc<RefCell<EvalResult>> {
@@ -196,7 +204,12 @@ impl<'a> Interpreter<'a> {
     fn get_next_var(&self, id: QuintId) -> Rc<RefCell<VariableRegister>> {
         let key = var_with_namespaces(id, &self.namespaces);
 
-        self.var_storage.next_vars.get(&key).unwrap().clone()
+        self.var_storage
+            .borrow()
+            .next_vars
+            .get(&key)
+            .unwrap()
+            .clone()
     }
 
     pub fn compile_under_context(
@@ -351,7 +364,10 @@ impl<'a> Interpreter<'a> {
             Cache::ForState => {
                 let cached_value = Rc::new(RefCell::new(None));
                 // This definition may use variables, so we need to clear the cache when they change
-                self.var_storage.caches_to_clear.push(cached_value.clone());
+                self.var_storage
+                    .borrow_mut()
+                    .caches_to_clear
+                    .push(cached_value.clone());
                 // Wrap the evaluation function with caching
                 let wrapped_expr = CompiledExpr::new(move |env| {
                     let mut cached = cached_value.borrow_mut();
@@ -396,7 +412,23 @@ impl<'a> Interpreter<'a> {
 
         let id = expr.id();
 
-        let compiled_expr = match expr {
+        let compiled_expr = self.compile_expr_core(expr);
+        let wrapped_expr = CompiledExpr::new(move |env| {
+            compiled_expr.execute(env).map_err(|err| {
+                // This is where we add the reference to the error, if it is not already there.
+                // This way, we don't need to worry about references anywhere else :)
+                if err.reference.is_none() {
+                    return err.with_reference(id);
+                }
+                err
+            })
+        });
+        self.memo.borrow_mut().insert(id, wrapped_expr.clone());
+        wrapped_expr
+    }
+
+    pub fn compile_expr_core(&mut self, expr: &QuintEx) -> CompiledExpr {
+        match expr {
             QuintEx::QuintInt { id: _, value } => {
                 let value = *value;
                 CompiledExpr::new(move |_| Ok(Value::Int(value)))
@@ -489,10 +521,7 @@ impl<'a> Interpreter<'a> {
                     result
                 })
             }
-        };
-
-        self.memo.borrow_mut().insert(id, compiled_expr.clone());
-        compiled_expr
+        }
     }
 
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
