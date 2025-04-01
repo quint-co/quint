@@ -1,8 +1,17 @@
 use crate::{
     evaluator::{Env, Interpreter},
-    ir::{QuintError, QuintEx, QuintOutput},
+    ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
 };
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+pub struct ParsedQuint {
+    pub init: QuintEx,
+    pub step: QuintEx,
+    pub invariant: QuintEx,
+    pub table: LookupTable,
+}
 
 pub struct SimulationResult {
     pub result: bool,
@@ -12,12 +21,9 @@ pub struct SimulationResult {
     // samples
 }
 
-impl QuintOutput {
+impl ParsedQuint {
     pub fn simulate(
         &self,
-        init_expr: &QuintEx,
-        step_expr: &QuintEx,
-        invariant_expr: &QuintEx,
         steps: usize,
         samples: usize,
         n_traces: usize,
@@ -25,9 +31,9 @@ impl QuintOutput {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
 
-        let init = interpreter.compile(&init_expr);
-        let step = interpreter.compile(&step_expr);
-        let invariant = interpreter.compile(&invariant_expr);
+        let init = interpreter.compile(&self.init);
+        let step = interpreter.compile(&self.step);
+        let invariant = interpreter.compile(&self.invariant);
 
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);

@@ -5,7 +5,8 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_simulator::ir::{QuintError, QuintEx, QuintOutput};
+use quint_simulator::ir::{QuintError, QuintEx};
+use quint_simulator::simulator::{ParsedQuint, SimulationResult};
 use quint_simulator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +21,7 @@ struct TopLevel {
 #[argh(subcommand)]
 enum Command {
     Run(RunArgs),
-    SimulateQuint(SimulateQuintArgs),
+    SimulateFromStdin(SimulateQuintArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -66,20 +67,18 @@ struct RunArgs {
 
 /// Run simulation with input from STDIN
 #[derive(FromArgs)]
-#[argh(subcommand, name = "simulate-quint")]
+#[argh(subcommand, name = "simulate-from-stdin")]
 struct SimulateQuintArgs {
     /// enable JSON output
     #[argh(switch)]
     json: bool,
 }
 
+/// Data expected on STDIN for simulation
 #[derive(Serialize, Deserialize)]
 struct SimulateInput {
-    parsed: QuintOutput,
+    parsed: ParsedQuint,
     source: String,
-    init: QuintEx,
-    step: QuintEx,
-    inv: Option<QuintEx>,
     witnesses: Vec<QuintEx>,
     nruns: usize,
     nsteps: usize,
@@ -95,6 +94,7 @@ enum SimulationStatus {
     Error,
 }
 
+/// Data to be written to STDOUT after simulation
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Outcome {
@@ -113,15 +113,23 @@ struct SimulationTrace {
     result: bool,
 }
 
+/// The CLI has two main commands: 1. `run`: Runs the simulation on a file with
+/// specified parameters, to be used for development and tests. 2.
+/// `simulate-from-stdin`: Reads input from standard input (STDIN) and simulates
+/// based on that input, used in the integration with the `quint` typescript tool.
 fn main() -> eyre::Result<()> {
     let top_level: TopLevel = argh::from_env();
 
     match top_level.command {
         Command::Run(args) => run_simulation(args),
-        Command::SimulateQuint(args) => simulate_from_stdin(args),
+        Command::SimulateFromStdin(args) => simulate_from_stdin(args),
     }
 }
 
+/// Utility to run the simulation with command-line arguments. Not meant to be
+/// user-facing, but quite useful for development and testing. This calls the
+/// `quint` typescript binary to parse the provided file (expects `quint` to be
+/// installed and in the PATH).
 fn run_simulation(args: RunArgs) -> eyre::Result<()> {
     log::set_json(args.json);
 
@@ -139,20 +147,9 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
     )
     .unwrap();
 
-    let init_def = parsed.find_definition_by_name("q::init").unwrap();
-    let step_def = parsed.find_definition_by_name("q::step").unwrap();
-    let invariant_def = parsed.find_definition_by_name("q::inv").unwrap();
-
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(
-        &init_def.expr,
-        &step_def.expr,
-        &invariant_def.expr,
-        args.max_steps,
-        args.max_samples,
-        args.n_traces,
-    );
+    let result = parsed.simulate(args.max_steps, args.max_samples, args.n_traces);
 
     let elapsed = start.elapsed();
 
@@ -175,6 +172,8 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
     Ok(())
 }
 
+/// Reads input from standard input (STDIN), parses it, and performs a simulation based on the parsed input.
+/// The result of the simulation is then printed in JSON format to standard output (STDOUT).
 fn simulate_from_stdin(args: SimulateQuintArgs) -> eyre::Result<()> {
     log::set_json(args.json);
 
@@ -183,51 +182,55 @@ fn simulate_from_stdin(args: SimulateQuintArgs) -> eyre::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     let input: SimulateInput = serde_json::from_str(&input)?;
-
     let parsed = input.parsed;
 
-    let result = parsed.simulate(
-        &input.init,
-        &input.step,
-        &input
-            .inv
-            .unwrap_or(QuintEx::QuintBool { id: 0, value: true }),
-        input.nsteps,
-        input.nruns,
-        input.ntraces,
-    );
+    let result = parsed.simulate(input.nsteps, input.nruns, input.ntraces);
 
-    let outcome = Outcome {
-        status: match result {
-            Ok(ref r) if r.result => SimulationStatus::Success,
-            Ok(_) => SimulationStatus::Violation,
-            Err(_) => SimulationStatus::Error,
-        },
-        errors: result
-            .as_ref()
-            .err()
-            .map(|e| vec![e.clone()])
-            .unwrap_or_default(),
-        best_traces: result
-            .as_ref()
-            .ok()
-            .map(|r| {
-                r.best_traces
-                    .iter()
-                    .cloned()
-                    .map(|t| SimulationTrace {
-                        seed: 0,
-                        states: t.clone().to_itf(input.source.clone()),
-                        result: !t.violation,
-                    })
-                    .collect()
-            })
-            .unwrap_or_default(),
-        witnessing_traces: vec![],
-        samples: 0,
-    };
+    // Transform the SimulationResult into the Outcome format expected by Quint
+    let outcome = to_outcome(input.source, result);
 
+    // Serialize the outcome to JSON and print it to STDOUT
     println!("{}", serde_json::to_string(&outcome)?);
 
     Ok(())
+}
+
+/// Converts the result of a simulation into an `Outcome` struct.
+///
+/// The status is determined based on whether the simulation result indicates success, violation, or error.
+/// Errors are collected into a vector if any are present.
+/// Best traces are converted to the intermediate trace format (ITF).
+fn to_outcome(source: String, result: Result<SimulationResult, QuintError>) -> Outcome {
+    let status = match &result {
+        Ok(r) if r.result => SimulationStatus::Success,
+        Ok(_) => SimulationStatus::Violation,
+        Err(_) => SimulationStatus::Error,
+    };
+
+    let errors = result
+        .as_ref()
+        .err()
+        .map_or_else(Vec::new, |e| vec![e.clone()]);
+
+    let best_traces = result.as_ref().ok().map_or_else(Vec::new, |r| {
+        r.best_traces
+            .iter()
+            .cloned()
+            .map(|t| SimulationTrace {
+                // TODO: Fetch seed from the random generator state
+                seed: 0,
+                states: t.clone().to_itf(source.clone()),
+                result: !t.violation,
+            })
+            .collect()
+    });
+
+    Outcome {
+        status,
+        errors,
+        best_traces,
+        // TODO: This simulator is not tracking witnesses yet
+        witnessing_traces: vec![],
+        samples: 0,
+    }
 }
