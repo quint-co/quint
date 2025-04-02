@@ -81,10 +81,18 @@ pub fn parse_from_path(
     let output: QuintOutput = serde_path_to_error::deserialize(jd).unwrap();
 
     Ok(ParsedQuint {
-        init: output.find_definition_by_name(init).unwrap().expr.clone(),
-        step: output.find_definition_by_name(step).unwrap().expr.clone(),
+        init: output
+            .find_definition_by_name("q::init")
+            .unwrap()
+            .expr
+            .clone(),
+        step: output
+            .find_definition_by_name("q::step")
+            .unwrap()
+            .expr
+            .clone(),
         invariant: output
-            .find_definition_by_name(inv.unwrap_or("true"))
+            .find_definition_by_name("q::inv")
             .unwrap()
             .expr
             .clone(),
