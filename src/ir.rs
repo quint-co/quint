@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use fxhash::FxBuildHasher;
 use hipstr::LocalHipStr;
 use imbl::{shared_ptr::RcK, GenericHashMap};
@@ -12,7 +10,7 @@ pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 pub type QuintId = u64;
 pub type QuintName = LocalHipStr<'static>;
 
-#[derive(Debug, Clone, Error, PartialEq)]
+#[derive(Debug, Clone, Error, PartialEq, Serialize)]
 #[error("[{code}] {message}")]
 pub struct QuintError {
     pub code: String,
@@ -301,19 +299,4 @@ impl QuintEx {
 pub struct QuintLambdaParameter {
     pub id: QuintId,
     pub name: QuintName,
-}
-
-impl QuintOutput {
-    pub fn find_definition_by_name<'a>(&'a self, name: &str) -> Result<&'a OpDef, Box<dyn Error>> {
-        self.modules
-            .iter()
-            .find(|m| m.name == self.main)
-            .and_then(|module| {
-                module.declarations.iter().find_map(|d| match d {
-                    QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
-                    _ => None,
-                })
-            })
-            .ok_or_else(|| "Input definition not found".into())
-    }
 }

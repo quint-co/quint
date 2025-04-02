@@ -1,4 +1,6 @@
-use crate::ir::QuintOutput;
+use crate::ir::OpDef;
+use crate::ir::{QuintDeclaration, QuintOutput};
+use crate::simulator::ParsedQuint;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -34,8 +36,9 @@ pub fn parse(
 
     let serialized_quint = String::from_utf8(output.stdout)?;
     let jd = &mut serde_json::Deserializer::from_str(serialized_quint.as_str());
-    let parsed: QuintOutput = serde_path_to_error::deserialize(jd).unwrap();
-    Ok(parsed)
+    let output: QuintOutput = serde_path_to_error::deserialize(jd).unwrap();
+
+    Ok(output)
 }
 
 pub fn parse_from_path(
@@ -44,7 +47,7 @@ pub fn parse_from_path(
     step: &str,
     inv: Option<&str>,
     main: Option<&str>,
-) -> Result<QuintOutput, Box<dyn Error>> {
+) -> Result<ParsedQuint, Box<dyn Error>> {
     let dir = tempfile::tempdir()?;
     let file_name = dir.path().join("tictactoe.json");
     let file = File::create(file_name.clone()).expect("failed to open file");
@@ -75,6 +78,39 @@ pub fn parse_from_path(
     file.read_to_string(&mut serialized_quint)?;
 
     let jd = &mut serde_json::Deserializer::from_str(serialized_quint.as_str());
-    let parsed: QuintOutput = serde_path_to_error::deserialize(jd).unwrap();
-    Ok(parsed)
+    let output: QuintOutput = serde_path_to_error::deserialize(jd).unwrap();
+
+    Ok(ParsedQuint {
+        init: output
+            .find_definition_by_name("q::init")
+            .unwrap()
+            .expr
+            .clone(),
+        step: output
+            .find_definition_by_name("q::step")
+            .unwrap()
+            .expr
+            .clone(),
+        invariant: output
+            .find_definition_by_name("q::inv")
+            .unwrap()
+            .expr
+            .clone(),
+        table: output.table,
+    })
+}
+
+impl QuintOutput {
+    pub fn find_definition_by_name<'a>(&'a self, name: &str) -> Result<&'a OpDef, Box<dyn Error>> {
+        self.modules
+            .iter()
+            .find(|m| m.name == self.main)
+            .and_then(|module| {
+                module.declarations.iter().find_map(|d| match d {
+                    QuintDeclaration::QuintOpDef(def) if def.name == name => Some(def),
+                    _ => None,
+                })
+            })
+            .ok_or_else(|| "Input definition not found".into())
+    }
 }
