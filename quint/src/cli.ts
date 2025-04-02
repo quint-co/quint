@@ -10,7 +10,6 @@
  * @author Igor Konnov, konnov.phd, 2024
  */
 
-import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
