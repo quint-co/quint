@@ -738,7 +738,8 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   typechecked.table = resolutionResult.table
   analyzeInc(typechecked, typechecked.table, extraDefs)
 
-  if (!args.flatten) {
+  // CANNOT be `if (!args.flatten)`, we need to make sure it's a boolean value
+  if (args.flatten === false) {
     if (args.target === 'tlaplus') {
       console.warn(chalk.yellow('Warning: flattening is required for TLA+ output, ignoring --flatten=false option.'))
     } else {
