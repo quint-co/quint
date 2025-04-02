@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
-Add autocomplete to the Quint LSP.
+- Add new autocomplete options (#1616).
 ### Changed
 ### Deprecated
 ### Removed
