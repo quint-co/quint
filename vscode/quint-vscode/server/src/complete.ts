@@ -169,10 +169,12 @@ function findDeclByNameInsideScope(name: string, scopeId: bigint, modules: Quint
     return module.declarations.filter(decl => decl.kind === 'var' && decl.name === name).map(decl => decl.id)
   }
   const expr = findExpressionWithId(modules, scopeId)
+  // scope is an expression; recursively search it for declarations of the name `name`
   if (expr) {
     return findDeclByNameInExpr(name, expr)
   }
   const def = findDefinitionWithId(modules, scopeId)
+  // scope is a declaration; recursively search it for declarations of the name `name`
   if (def) {
     return findDeclByNameInDecl(name, def)
   }
@@ -185,6 +187,7 @@ function findDeclByNameInsideScope(name: string, scopeId: bigint, modules: Quint
  * @returns Array of IDs that declare `name`.
  */
 function findDeclByNameAtPos(name: string, pos: Position, sourceFile: string, parsedData: ParserPhase3): bigint[] {
+  // Compute effects that contain the triggering position, from the smallest to the largest.
   const { modules, sourceMap } = parsedData
   const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
   const scopesContainingPos = findMatchingResults(sourceMap, results, pos, sourceFile)
