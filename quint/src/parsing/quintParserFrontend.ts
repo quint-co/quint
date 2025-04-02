@@ -163,7 +163,7 @@ export function parsePhase2sourceResolution(
   // We accumulate the source map over all files here.
   let sourceMap = new Map(mainPhase1Result.sourceMap)
 
-  // The list of modules that have not been been processed yet.  Each element of
+  // The list of modules that have not been processed yet.  Each element of
   // the list carries the module to be processed and the trail of sources that
   // led to this module.  The construction is similar to the worklist algorithm:
   // https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm
