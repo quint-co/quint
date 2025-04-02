@@ -85,7 +85,7 @@ Options:
   --temporal   the temporal properties to check, separated by commas    [string]
   --target     the compilation target. Supported values: tlaplus, json
                                                       [string] [default: "json"]
-  --flatten           Whether or not to flatten the modules into one
+  --flatten=[true|false]           Whether or not to flatten the modules into one
                                                        [boolean] [default: true]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
 ```
