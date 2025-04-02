@@ -32,7 +32,7 @@ import {
   TextDocuments,
   TextEdit,
   WorkspaceEdit,
-  createConnection
+  createConnection,
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
@@ -52,7 +52,7 @@ import {
   produceDocsById,
 } from '@informalsystems/quint'
 
-import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType} from './complete'
+import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType } from './complete'
 import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
@@ -325,18 +325,18 @@ export class QuintLanguageServer {
           return []
         }
 
-        logger.debug(`Resolved type for '${baseIdentifier}': ${JSON.stringify(type, (_, v) =>
+        logger.debug(
+          `Resolved type for '${baseIdentifier}': ${JSON.stringify(type, (_, v) =>
             typeof v === 'bigint' ? v.toString() : v
-        )}`)
+          )}`
+        )
 
         const builtinCompletions: CompletionItem[] = getSuggestedBuiltinsForType(type).map(op => {
           const docs = loadedBuiltInDocs.get(op.name)
           return {
             label: op.name,
             detail: docs?.signature,
-            documentation: docs?.documentation
-                ? { kind: MarkupKind.Markdown, value: docs.documentation }
-                : undefined,
+            documentation: docs?.documentation ? { kind: MarkupKind.Markdown, value: docs.documentation } : undefined,
           }
         })
 
@@ -355,12 +355,12 @@ export class QuintLanguageServer {
       const triggeringIdentifier = identifierMatch[1]
 
       return completeIdentifier(
-          triggeringIdentifier,
-          parsedData,
-          analysisOutput,
-          sourceFile,
-          params.position,
-          loadedBuiltInDocs
+        triggeringIdentifier,
+        parsedData,
+        analysisOutput,
+        sourceFile,
+        params.position,
+        loadedBuiltInDocs
       )
     })
 
