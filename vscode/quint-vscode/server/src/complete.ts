@@ -27,6 +27,7 @@ import {
 } from '@informalsystems/quint'
 import { findMatchingResults } from './reporting'
 import { logger, overrideConsole } from './logger'
+import JSONbig from 'json-bigint'
 
 overrideConsole()
 
@@ -97,14 +98,9 @@ export function completeIdentifier(
   logger.debug(`Field completions: ${JSON.stringify(fieldCompletions)}`)
 
   let responseObject = builtinCompletions.concat(fieldCompletions)
-  logger.debug(
-    `Raw response object before conversion: ${JSON.stringify(responseObject, (_, v) =>
-      typeof v === 'bigint' ? v.toString() : v
-    )}`
-  )
+  logger.debug(`Raw response object before conversion: ${JSONbig.stringify(responseObject)}`)
 
   // Explicitly remove any lingering BigInt values
-  responseObject = JSON.parse(JSON.stringify(responseObject, (_, v) => (typeof v === 'bigint' ? v.toString() : v)))
   logger.info(`Returning safe completion response: ${JSON.stringify(responseObject)}`)
 
   return responseObject
@@ -113,19 +109,19 @@ export function completeIdentifier(
 /**
  * Find a declaration of `name` by name inside `decl`.
  */
-function findDeclByNameInDecl(name: string, decl: QuintDeclaration): string[] {
+function findDeclByNameInDecl(name: string, decl: QuintDeclaration): bigint[] {
   const visitor = new DeclOfNameFinder(name)
   walkDeclaration(visitor, decl)
-  return visitor.namesFound.map(id => id.toString()) // Convert BigInt to string
+  return visitor.namesFound
 }
 
 /**
  * Find a declaration of `name` by name inside `expr`.
  */
-function findDeclByNameInExpr(name: string, expr: QuintEx): string[] {
+function findDeclByNameInExpr(name: string, expr: QuintEx): bigint[] {
   const visitor = new DeclOfNameFinder(name)
   walkExpression(visitor, expr)
-  return visitor.namesFound.map(id => id.toString()) // Convert BigInt to string
+  return visitor.namesFound
 }
 
 class DeclOfNameFinder implements IRVisitor {
@@ -167,20 +163,17 @@ class DeclOfNameFinder implements IRVisitor {
  *
  * @returns Array of IDs that declare `name`.
  */
-function findDeclByNameInsideScope(name: string, scopeId: string, modules: QuintModule[]): string[] {
-  const module = modules.find(module => module.id.toString() == scopeId)
+function findDeclByNameInsideScope(name: string, scopeId: bigint, modules: QuintModule[]): bigint[] {
+  const module = modules.find(module => module.id === scopeId)
   if (module) {
-    // scope is a module return all variables with name `name`
-    return module.declarations.filter(decl => decl.kind == 'var' && decl.name == name).map(decl => decl.id.toString()) // Convert BigInt to string
+    return module.declarations.filter(decl => decl.kind === 'var' && decl.name === name).map(decl => decl.id)
   }
-  const expr = findExpressionWithId(modules, BigInt(scopeId))
+  const expr = findExpressionWithId(modules, scopeId)
   if (expr) {
-    // scope is an expression recursively search it for declarations of the name `name`
     return findDeclByNameInExpr(name, expr)
   }
-  const def = findDefinitionWithId(modules, BigInt(scopeId))
+  const def = findDefinitionWithId(modules, scopeId)
   if (def) {
-    // scope is a declaration recursively search it for declarations of the name `name`
     return findDeclByNameInDecl(name, def)
   }
   return []
@@ -191,14 +184,13 @@ function findDeclByNameInsideScope(name: string, scopeId: string, modules: Quint
  *
  * @returns Array of IDs that declare `name`.
  */
-function findDeclByNameAtPos(name: string, pos: Position, sourceFile: string, parsedData: ParserPhase3): string[] {
-  // Compute effects that contain the triggering position, from the smallest to the largest.
+function findDeclByNameAtPos(name: string, pos: Position, sourceFile: string, parsedData: ParserPhase3): bigint[] {
   const { modules, sourceMap } = parsedData
   const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
   const scopesContainingPos = findMatchingResults(sourceMap, results, pos, sourceFile)
 
   for (let { id } of scopesContainingPos) {
-    const names = findDeclByNameInsideScope(name, id.toString(), modules)
+    const names = findDeclByNameInsideScope(name, id, modules)
     if (names.length > 0) {
       return names
     }
@@ -228,8 +220,8 @@ function builtinCompletionsWithDocs(
   })
 }
 
-function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
-  logger.info(`🔍 Checking builtins for type: ${type}`)
+export function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
+  logger.info(`🔍 Checking builtins for type: ${type.kind}`)
 
   switch (type.kind) {
     case 'bool':
@@ -249,7 +241,7 @@ function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
       return listOperators.filter(opCode => opCode.name != 'nth')
 
     case 'fun':
-      logger.trace('✅ Function type detected')
+      logger.trace('✅ Map type detected')
       return mapOperators
 
     case 'tup':
@@ -274,7 +266,7 @@ function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
   }
 }
 
-function getFieldCompletions(type: QuintType): CompletionItem[] {
+export function getFieldCompletions(type: QuintType): CompletionItem[] {
   // return `_1`, `_2`, ... for tuples
   if (type.kind == 'tup' && type.fields.kind == 'row') {
     return type.fields.fields.map((field, i) => ({

@@ -23,6 +23,7 @@ import {
   InitializeParams,
   InitializeResult,
   MarkupContent,
+  MarkupKind,
   ProposedFeatures,
   RenameParams,
   SignatureHelp,
@@ -31,7 +32,7 @@ import {
   TextDocuments,
   TextEdit,
   WorkspaceEdit,
-  createConnection,
+  createConnection
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
@@ -51,7 +52,7 @@ import {
   produceDocsById,
 } from '@informalsystems/quint'
 
-import { completeIdentifier } from './complete'
+import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType} from './complete'
 import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
@@ -297,33 +298,70 @@ export class QuintLanguageServer {
         end: params.position,
       })
 
-      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
-      if (!match) {
-        logger.debug(`No matching identifier found in line: ${triggeringLine}`)
-        return []
-      }
-
-      const triggeringIdentifier = match[1]
+      const dotAccessMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)\.$/)
       const sourceFile = URI.parse(params.textDocument.uri).path
 
       this.triggerAnalysis(document)
-
       const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
       if (!analysisOutput) {
         logger.debug(`No analysis output available for completion.`)
         return []
       }
 
-      let completionItems = completeIdentifier(
-        triggeringIdentifier,
-        parsedData,
-        analysisOutput,
-        sourceFile,
-        params.position,
-        loadedBuiltInDocs
-      )
+      if (dotAccessMatch) {
+        const baseIdentifier = dotAccessMatch[1]
+        logger.debug(`Detected dot-access on identifier: ${baseIdentifier}`)
 
-      return completionItems
+        const ref = [...parsedData.table.entries()].find(([_, v]) => v.name === baseIdentifier)
+        if (!ref) {
+          logger.debug(`Could not resolve identifier: ${baseIdentifier}`)
+          return []
+        }
+
+        const [declId, _binding] = ref
+        const type = analysisOutput.types.get(declId)?.type
+        if (!type) {
+          logger.debug(`No type found for identifier: ${baseIdentifier}`)
+          return []
+        }
+
+        logger.debug(`Resolved type for '${baseIdentifier}': ${JSON.stringify(type, (_, v) =>
+            typeof v === 'bigint' ? v.toString() : v
+        )}`)
+
+        const builtinCompletions: CompletionItem[] = getSuggestedBuiltinsForType(type).map(op => {
+          const docs = loadedBuiltInDocs.get(op.name)
+          return {
+            label: op.name,
+            detail: docs?.signature,
+            documentation: docs?.documentation
+                ? { kind: MarkupKind.Markdown, value: docs.documentation }
+                : undefined,
+          }
+        })
+
+        const fieldCompletions = getFieldCompletions(type)
+
+        return builtinCompletions.concat(fieldCompletions)
+      }
+
+      // Fallback: regular identifier completion
+      const identifierMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
+      if (!identifierMatch) {
+        logger.debug(`No matching identifier found in line: ${triggeringLine}`)
+        return []
+      }
+
+      const triggeringIdentifier = identifierMatch[1]
+
+      return completeIdentifier(
+          triggeringIdentifier,
+          parsedData,
+          analysisOutput,
+          sourceFile,
+          params.position,
+          loadedBuiltInDocs
+      )
     })
 
     connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
