@@ -59,20 +59,12 @@ struct RunArgs {
     /// how many traces to generate (only affects output to out-itf) (default: 1)
     #[argh(option, default = "1")]
     n_traces: usize,
-
-    /// enable JSON output
-    #[argh(switch)]
-    json: bool,
 }
 
 /// Run simulation with input from STDIN
 #[derive(FromArgs)]
 #[argh(subcommand, name = "simulate-from-stdin")]
-struct SimulateQuintArgs {
-    /// enable JSON output
-    #[argh(switch)]
-    json: bool,
-}
+struct SimulateQuintArgs {}
 
 /// Data expected on STDIN for simulation
 #[derive(Serialize, Deserialize)]
@@ -122,7 +114,7 @@ fn main() -> eyre::Result<()> {
 
     match top_level.command {
         Command::Run(args) => run_simulation(args),
-        Command::SimulateFromStdin(args) => simulate_from_stdin(args),
+        Command::SimulateFromStdin(_) => simulate_from_stdin(),
     }
 }
 
@@ -131,7 +123,7 @@ fn main() -> eyre::Result<()> {
 /// `quint` typescript binary to parse the provided file (expects `quint` to be
 /// installed and in the PATH).
 fn run_simulation(args: RunArgs) -> eyre::Result<()> {
-    log::set_json(args.json);
+    log::set_json(false);
 
     if !fs::exists(&args.file)? {
         bail!("File not found: {}", args.file.display());
@@ -174,8 +166,8 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
 /// Reads input from standard input (STDIN), parses it, and performs a simulation based on the parsed input.
 /// The result of the simulation is then printed in JSON format to standard output (STDOUT).
-fn simulate_from_stdin(args: SimulateQuintArgs) -> eyre::Result<()> {
-    log::set_json(args.json);
+fn simulate_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
 
     // Read all input from STDIN
     let mut input = String::new();
