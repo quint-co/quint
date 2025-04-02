@@ -195,7 +195,7 @@ quint compile --target invalidTarget ../examples/language-features/booleans.qnt 
 
 <!-- !test err compile to invalid target -->
 ```
-Invalid option for --target: invalidTarget. Valid options: tlaplus, json
+  Argument: target, Given: "invalidTarget", Choices: "tlaplus", "json"
 ```
 
 
