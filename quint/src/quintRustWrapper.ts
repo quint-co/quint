@@ -11,16 +11,18 @@
  *
  * @module
  */
-import child_process from 'child_process'
 import { QuintEx, QuintModule } from './ir/quintIr'
 import { Outcome } from './simulation'
 import { debugLog } from './verbosity'
 import JSONbig from 'json-bigint'
-import path from 'path'
-import os from 'os'
 import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
+
+import path from 'path'
+import os from 'os'
+import chalk from 'chalk'
+import child_process from 'child_process'
 
 const QUINT_SIMULATOR_VERSION = 'v0.0.0-pre.1'
 
@@ -211,7 +213,7 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   const path = require('path')
   const { unlink, mkdir } = require('fs/promises')
 
-  console.log(`Fetching Rust simulator ${version}...`)
+  console.log(chalk.gray(`Fetching Rust simulator ${version}...`))
 
   // Fetch the release from GitHub
   const release = await fetchGitHubRelease(version)
@@ -230,7 +232,7 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   // Clean up the downloaded archive
   await unlink(assetPath)
 
-  console.log(`Quint simulator installed at: ${executablePath}`)
+  console.log(chalk.green(`Quint simulator installed at: ${executablePath}`))
 
   return executablePath
 }
@@ -239,7 +241,7 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
   const util = require('util')
   const exec = util.promisify(require('child_process').exec)
 
-  console.log(`Extracting ${assetPath}...`)
+  console.log(chalk.gray(`Extracting ${assetPath}...`))
 
   const executablePath = path.join(simulatorDir, executable)
 
@@ -310,14 +312,14 @@ async function downloadGitHubAsset(
 
   const assetPath = path.join(simulatorDir, assetName)
   if (await exists(assetPath)) {
-    console.log(`File ${assetPath} already exists. Skipping download.`)
+    console.log(chalk.gray(`File ${assetPath} already exists. Skipping download.`))
     return assetPath
   }
 
   const fileStream = fs.createWriteStream(assetPath, { mode: 0o755, flags: 'wx' })
 
   // Download the asset
-  console.log(`Downloading Rust simulator from ${downloadUrl}...`)
+  console.log(chalk.gray(`Downloading Rust simulator from ${downloadUrl}...`))
 
   try {
     const response = await fetch(downloadUrl, downloadOptions)
