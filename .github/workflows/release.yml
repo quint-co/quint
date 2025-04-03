@@ -23,7 +23,6 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref }}
       - uses: taiki-e/create-gh-release-action@v1
         with:
-          changelog: CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.inputs.tag && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
 
