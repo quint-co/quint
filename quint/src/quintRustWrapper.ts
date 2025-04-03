@@ -119,6 +119,16 @@ export class QuintRustWrapper {
   }
 }
 
+interface GitHubRelease {
+  tag_name: string
+  assets: GitHubAsset[]
+}
+
+interface GitHubAsset {
+  name: string
+  url: string
+}
+
 /**
  * Get the configuration directory for Quint.
  * @returns {string} The path to the Quint configuration directory.
@@ -144,13 +154,6 @@ function rustSimulatorDir(version: string): string {
  */
 async function getRustSimulatorPath(version: string = QUINT_SIMULATOR_VERSION): Promise<string> {
   const path = require('path')
-  const { stat } = require('fs/promises')
-
-  async function exists(filePath: string): Promise<boolean> {
-    return stat(filePath)
-      .then(() => true)
-      .catch(() => false)
-  }
 
   // Determine platform and architecture
   const platform = os.platform()
@@ -180,20 +183,17 @@ async function fetchGitHubRelease(version: string): Promise<GitHubRelease> {
   }
 
   const githubToken = process.env.GITHUB_TOKEN
-
   if (githubToken) {
     options.headers['Authorization'] = `Bearer ${githubToken} `
   }
 
   const response = await fetch(url, options)
-
   if (!response.ok) {
     throw new Error(`Failed to fetch release: ${response.statusText}`)
   }
 
   const releases = (await response.json()) as GitHubRelease[]
   const release = releases.find(release => release.tag_name === version)
-
   if (!release) {
     throw new Error(`Release ${version} not found`)
   }
@@ -224,7 +224,8 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   // Create the simulator directory if it doesn't exist
   await mkdir(simulatorDir, { recursive: true })
 
-  const assetPath = await downloadGitHubAsset(release, version, assetName, simulatorDir)
+  // Download the asset from GitHub
+  const assetPath = await downloadGitHubAsset(release, assetName, simulatorDir)
 
   // Extract the asset
   await extractAsset(executable, assetName, assetPath, simulatorDir)
@@ -237,6 +238,14 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   return executablePath
 }
 
+/**
+ * Extract the downloaded asset to the simulator directory.
+ * @param {string} executable - The name of the executable file.
+ * @param {string} assetName - The name of the asset to extract.
+ * @param {string} assetPath - The path to the downloaded asset.
+ * @param {string} simulatorDir - The path to the simulator directory.
+ * @throws Will throw an error if the asset format is unsupported.
+ */
 async function extractAsset(executable: string, assetName: string, assetPath: string, simulatorDir: string) {
   const util = require('util')
   const exec = util.promisify(require('child_process').exec)
@@ -259,34 +268,22 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
   }
 }
 
-interface GitHubRelease {
-  tag_name: string
-  assets: GitHubAsset[]
-}
-
-interface GitHubAsset {
-  name: string
-  url: string
-}
-
-async function downloadGitHubAsset(
-  release: GitHubRelease,
-  version: string,
-  assetName: string,
-  simulatorDir: string
-): Promise<string> {
+/**
+ * Download a GitHub asset from a release.
+ * @param {GitHubRelease} release - The GitHub release object.
+ * @param {string} assetName - The name of the asset to download.
+ * @param {string} simulatorDir - The directory to save the downloaded asset.
+ * @returns {Promise<string>} - The path to the downloaded asset.
+ * @throws Will throw an error if the download fails or the asset is not found.
+ */
+async function downloadGitHubAsset(release: GitHubRelease, assetName: string, simulatorDir: string): Promise<string> {
   const path = require('path')
   const fs = require('fs')
-  const { stat, unlink } = require('fs/promises')
+  const { unlink } = require('fs/promises')
   const { Readable } = require('stream')
   const { finished } = require('stream/promises')
 
-  async function exists(filePath: string): Promise<boolean> {
-    return stat(filePath)
-      .then(() => true)
-      .catch(() => false)
-  }
-
+  const version = release.tag_name
   const asset = release.assets.find(asset => asset.name === assetName)
 
   if (!asset) {
@@ -366,4 +363,11 @@ function inferAssetAndExecutableNames(platform: string, arch: string): { assetNa
   }
 
   return { assetName, executable }
+}
+
+async function exists(filePath: string): Promise<boolean> {
+  const { stat } = require('fs/promises')
+  return stat(filePath)
+    .then(() => true)
+    .catch(() => false)
 }
