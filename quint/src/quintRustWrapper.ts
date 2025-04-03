@@ -246,11 +246,6 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
   if (assetName.endsWith('.tar.gz')) {
     await exec(`tar -xzf ${assetPath} -C ${simulatorDir} `)
     await exec(`chmod +x ${executablePath}`)
-
-    if (process.platform == 'darwin') {
-      // Remove quarantine attribute on macOS
-      await exec(`xattr -d com.apple.quarantine ${executablePath}`)
-    }
   } else if (assetName.endsWith('.zip')) {
     // For Windows, use a simple unzip command (requires unzip to be installed)
     // You might want to use a JavaScript unzip library for better compatibility
@@ -303,7 +298,7 @@ async function downloadGitHubAsset(
     follow: 10,
     headers: {
       'User-Agent': 'quint-simulator-fetch',
-      Accept: '*/*',
+      Accept: 'application/octet-stream',
     },
   }
 
@@ -331,7 +326,7 @@ async function downloadGitHubAsset(
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    await finished(Readable.fromWeb(response.body), fileStream)
+    await finished(Readable.fromWeb(response.body).pipe(fileStream))
   } catch (err) {
     await unlink(assetPath).catch(() => {})
     throw err
