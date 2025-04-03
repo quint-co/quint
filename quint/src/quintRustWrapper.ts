@@ -22,13 +22,7 @@ import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
 
-/**
- * Get the configuration directory for Quint.
- * @returns {string} The path to the Quint configuration directory.
- */
-function quintConfigDir(): string {
-  return path.join(os.homedir(), '.quint')
-}
+const QUINT_SIMULATOR_VERSION = 'v0.0.0-pre.1'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -71,7 +65,7 @@ export class QuintRustWrapper {
     nsteps: number,
     ntraces: number
   ): Promise<Outcome> {
-    const exe = await fetchQuintSimulatorFromGitHubReleases()
+    const exe = await getRustSimulatorPath()
     const args = ['simulate-from-stdin']
     const input = JSONbig.stringify(
       {
@@ -123,39 +117,32 @@ export class QuintRustWrapper {
   }
 }
 
+/**
+ * Get the configuration directory for Quint.
+ * @returns {string} The path to the Quint configuration directory.
+ */
+function quintConfigDir(): string {
+  return path.join(os.homedir(), '.quint')
+}
+
+/**
+ * Get the path to the Rust simulator executable.
+ * @param {string} version - The version of the simulator.
+ * @returns {string} The path to the Quint simulator executable.
+ */
 function rustSimulatorDir(version: string): string {
   return path.join(quintConfigDir(), `rust-simulator-${version}`)
 }
 
-function rustVersionFile(): string {
-  return path.join(quintConfigDir(), 'rust-simulator-version')
-}
-
-interface GitHubAsset {
-  name: string
-  browser_download_url: string
-}
-
-interface GitHubReleaseInfo {
-  tag_name: string
-  assets: GitHubAsset[]
-}
-
-const QUINT_SIMULATOR_VERSION = '0.0.0-pre.1'
-
-/** Fetch the latest version of the Quint simulator from GitHub releases.
- *  The repository is `informalinformal/quint-simulator`.
- *  This function will check if the simulator is already downloaded and
- *  if not, it will download the latest version for the current platform and architecture.
- *  Then it will extract the binary and return the path to the executable.
+/**
+ * Get the path to the Rust simulator executable.
+ * @param {string} version - The version of the simulator.
+ * @returns {string} The path to the Quint simulator executable.
+ * @throws Will throw an error if the simulator is not found or cannot be downloaded.
  */
-async function fetchQuintSimulatorFromGitHubReleases(): Promise<string> {
-  const fs = require('fs')
+async function getRustSimulatorPath(version: string = QUINT_SIMULATOR_VERSION): Promise<string> {
   const path = require('path')
-  const { Readable } = require('stream')
-  const { finished } = require('stream/promises')
-  const { unlink, stat, readFile, mkdir, writeFile } = require('fs/promises')
-  const { execSync } = require('child_process')
+  const { stat } = require('fs/promises')
 
   async function exists(filePath: string): Promise<boolean> {
     return stat(filePath)
@@ -171,67 +158,88 @@ async function fetchQuintSimulatorFromGitHubReleases(): Promise<string> {
   let { assetName, executable } = inferAssetAndExecutableNames(platform, arch)
 
   // Check if the simulator is already downloaded
-  const versionFile = rustVersionFile()
-  if (await exists(versionFile)) {
-    const version = (await readFile(versionFile, 'utf-8')).trim()
-    const simulatorDir = rustSimulatorDir(version)
-    const executablePath = path.join(simulatorDir, executable)
-    if (await exists(executablePath)) {
-      return executablePath
-    }
-  }
-
-  // Fetch the latest release info
-  console.log('Fetching latest Quint Rust simulator release...')
-
-  const url = 'https://api.github.com/repos/informalsystems/quint-simulator/releases/latest'
-
-  const options: any = {
-    headers: {
-      'User-Agent': 'quint-simulator-fetch',
-      Accept: 'application/vnd.github+json',
-    },
-  }
-
-  // Add GitHub token if available
-  const githubToken = process.env.GITHUB_TOKEN
-  if (githubToken) {
-    options.headers['Authorization'] = `Bearer ${githubToken}`
-  }
-
-  const response = await fetch(url, options)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch latest release info: ${response.statusText} `)
-  }
-
-  const releaseInfo = (await response.json()) as GitHubReleaseInfo
-  const version = releaseInfo.tag_name
-
-  // Save the version to a file
-  await mkdir(quintConfigDir(), { recursive: true })
-  await writeFile(versionFile, version, 'utf-8')
-
   const simulatorDir = rustSimulatorDir(version)
   const executablePath = path.join(simulatorDir, executable)
-
-  // Check if the simulator is already downloaded
   if (await exists(executablePath)) {
     return executablePath
   }
 
+  // Otherwise, fetch it from GitHub releases
+  return await fetchSimulator(version, assetName, executable)
+}
+
+/**
+ *  Fetch the latest version of the Quint simulator from GitHub releases.
+ *  @param {string} version - The version of the simulator to fetch.
+ *  @param {string} assetName - The name of the asset to download.
+ *  @param {string} executable - The name of the executable file.
+ *  @return {Promise<string>} - The path to the downloaded simulator executable.
+ *  @throws Will throw an error if the download fails or the asset format is unsupported.
+ */
+async function fetchSimulator(version: string, assetName: string, executable: string): Promise<string> {
+  const path = require('path')
+  const { unlink, mkdir } = require('fs/promises')
+
+  // Fetch the latest release info
+  console.log(`Fetching Rust simulator ${version}...`)
+
+  const simulatorDir = rustSimulatorDir(version)
+  const executablePath = path.join(simulatorDir, executable)
+
   // Create the simulator directory if it doesn't exist
   await mkdir(simulatorDir, { recursive: true })
 
-  // Find the asset
-  const asset = releaseInfo.assets.find(a => a.name === assetName)
-  if (!asset) {
-    throw new Error(`Asset ${assetName} not found in the latest release`)
-  }
+  const assetPath = await downloadGitHubAsset(version, assetName, simulatorDir)
 
-  const downloadUrl = asset.browser_download_url
+  // Extract the asset
+  extractAsset(executable, assetName, assetPath, simulatorDir)
+
+  // Clean up the downloaded archive
+  await unlink(assetPath)
+
+  console.log(`Quint simulator installed at: ${executablePath}`)
+
+  return executablePath
+}
+
+async function extractAsset(executable: string, assetName: string, assetPath: string, simulatorDir: string) {
+  const util = require('util')
+  const exec = util.promisify(require('child_process').exec)
+
+  console.log(`Extracting ${assetPath} to ${simulatorDir}...`)
+
+  const executablePath = path.join(simulatorDir, executable)
+
+  if (assetName.endsWith('.tar.gz')) {
+    await exec(`tar - xzf ${assetPath} -C ${simulatorDir} `)
+    await exec(`chmod +x ${executablePath}`)
+
+    if (process.platform == 'darwin') {
+      // Remove quarantine attribute on macOS
+      await exec(`xattr -d com.apple.quarantine ${executablePath}`)
+    }
+  } else if (assetName.endsWith('.zip')) {
+    // For Windows, use a simple unzip command (requires unzip to be installed)
+    // You might want to use a JavaScript unzip library for better compatibility
+    const AdmZip = require('adm-zip')
+    const zip = new AdmZip(assetPath)
+    zip.extractAllTo(simulatorDir, true)
+  } else {
+    throw new Error(`Unsupported asset format: ${assetName}`)
+  }
+}
+
+async function downloadGitHubAsset(version: string, assetName: string, simulatorDir: string): Promise<string> {
+  const path = require('path')
+  const fs = require('fs')
+  const { unlink } = require('fs/promises')
+  const { Readable } = require('stream')
+  const { finished } = require('stream/promises')
+
+  const downloadUrl = `https://github.com/informalsystems/quint-simulator/releases/download/${version}/${assetName}`
 
   // Download the asset
-  console.log(`Downloading ${assetName} at ${downloadUrl}...`)
+  console.log(`Downloading Rust simulator from ${downloadUrl}...`)
 
   const downloadOptions: any = {
     headers: {
@@ -240,8 +248,10 @@ async function fetchQuintSimulatorFromGitHubReleases(): Promise<string> {
     },
   }
 
+  const githubToken = process.env.GITHUB_TOKEN
+
   if (githubToken) {
-    downloadOptions.headers['Authorization'] = `token ${githubToken} `
+    downloadOptions.headers['Authorization'] = `Bearer ${githubToken} `
   }
 
   const assetPath = path.join(simulatorDir, assetName)
@@ -259,28 +269,12 @@ async function fetchQuintSimulatorFromGitHubReleases(): Promise<string> {
     throw err
   }
 
-  // Extract the asset
-  console.log('Extracting...')
-  if (assetName.endsWith('.tar.gz')) {
-    execSync(`tar - xzf ${assetPath} -C ${simulatorDir} `)
-  } else if (assetName.endsWith('.zip')) {
-    // For Windows, use a simple unzip command (requires unzip to be installed)
-    // You might want to use a JavaScript unzip library for better compatibility
-    const AdmZip = require('adm-zip')
-    const zip = new AdmZip(assetPath)
-    zip.extractAllTo(simulatorDir, true)
-  }
-
-  // Clean up the downloaded archive
-  await unlink(assetPath)
-
-  console.log(`Quint simulator installed at: ${executablePath} `)
-  return executablePath
+  return assetPath
 }
 
 function inferAssetAndExecutableNames(platform: string, arch: string): { assetName: string; executable: string } {
   let assetName = ''
-  let executable = 'quint-simulator'
+  let executable = 'quint_simulator'
 
   if (platform === 'darwin') {
     // macOS
