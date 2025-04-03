@@ -173,34 +173,6 @@ async function getRustSimulatorPath(version: string = QUINT_SIMULATOR_VERSION): 
   return await fetchSimulator(version, assetName, executable)
 }
 
-async function fetchGitHubRelease(version: string): Promise<GitHubRelease> {
-  const url = `https://api.github.com/repos/informalsystems/quint-simulator/releases`
-  const options: any = {
-    headers: {
-      'User-Agent': 'quint-simulator-fetch',
-      Accept: 'application/vnd.github.v3+json',
-    },
-  }
-
-  const githubToken = process.env.GITHUB_TOKEN
-  if (githubToken) {
-    options.headers['Authorization'] = `Bearer ${githubToken} `
-  }
-
-  const response = await fetch(url, options)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch release: ${response.statusText}`)
-  }
-
-  const releases = (await response.json()) as GitHubRelease[]
-  const release = releases.find(release => release.tag_name === version)
-  if (!release) {
-    throw new Error(`Release ${version} not found`)
-  }
-
-  return release
-}
-
 /**
  *  Fetch the latest version of the Quint simulator from GitHub releases.
  *  @param {string} version - The version of the simulator to fetch.
@@ -215,8 +187,11 @@ async function fetchSimulator(version: string, assetName: string, executable: st
 
   console.log(chalk.gray(`Fetching Rust simulator ${version}...`))
 
+  // Create a GitHub client
+  const client = new GitHubClient(process.env.GITHUB_TOKEN)
+
   // Fetch the release from GitHub
-  const release = await fetchGitHubRelease(version)
+  const release = await client.fetchRelease(version)
 
   const simulatorDir = rustSimulatorDir(version)
   const executablePath = path.join(simulatorDir, executable)
@@ -225,7 +200,7 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   await mkdir(simulatorDir, { recursive: true })
 
   // Download the asset from GitHub
-  const assetPath = await downloadGitHubAsset(release, assetName, simulatorDir)
+  const assetPath = await downloadGitHubAsset(client, release, assetName, simulatorDir)
 
   // Extract the asset
   await extractAsset(executable, assetName, assetPath, simulatorDir)
@@ -233,7 +208,7 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   // Clean up the downloaded archive
   await unlink(assetPath)
 
-  console.log(chalk.green(`Quint simulator installed at: ${executablePath}`))
+  console.log(chalk.green(`  [ok] `) + `Rust simulator installed at: ${executablePath}\n`)
 
   return executablePath
 }
@@ -250,7 +225,7 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
   const util = require('util')
   const exec = util.promisify(require('child_process').exec)
 
-  console.log(chalk.gray(`Extracting ${assetPath}...`))
+  console.log(chalk.gray(`  Extracting ${assetPath}...`))
 
   const executablePath = path.join(simulatorDir, executable)
 
@@ -270,18 +245,20 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
 
 /**
  * Download a GitHub asset from a release.
+ * @param {GitHubClient} client - The GitHub client to use for downloading.
  * @param {GitHubRelease} release - The GitHub release object.
  * @param {string} assetName - The name of the asset to download.
  * @param {string} simulatorDir - The directory to save the downloaded asset.
  * @returns {Promise<string>} - The path to the downloaded asset.
  * @throws Will throw an error if the download fails or the asset is not found.
  */
-async function downloadGitHubAsset(release: GitHubRelease, assetName: string, simulatorDir: string): Promise<string> {
+async function downloadGitHubAsset(
+  client: GitHubClient,
+  release: GitHubRelease,
+  assetName: string,
+  simulatorDir: string
+): Promise<string> {
   const path = require('path')
-  const fs = require('fs')
-  const { unlink } = require('fs/promises')
-  const { Readable } = require('stream')
-  const { finished } = require('stream/promises')
 
   const version = release.tag_name
   const asset = release.assets.find(asset => asset.name === assetName)
@@ -290,48 +267,14 @@ async function downloadGitHubAsset(release: GitHubRelease, assetName: string, si
     throw new Error(`Asset ${assetName} not found in release ${version}`)
   }
 
-  const downloadUrl = asset.url
-
-  const downloadOptions: any = {
-    redirect: 'follow',
-    follow: 10,
-    headers: {
-      'User-Agent': 'quint-simulator-fetch',
-      Accept: 'application/octet-stream',
-    },
-  }
-
-  const githubToken = process.env.GITHUB_TOKEN
-
-  if (githubToken) {
-    downloadOptions.headers['Authorization'] = `Bearer ${githubToken} `
-  }
-
   const assetPath = path.join(simulatorDir, assetName)
   if (await exists(assetPath)) {
     console.log(chalk.gray(`File ${assetPath} already exists. Skipping download.`))
     return assetPath
   }
 
-  const fileStream = fs.createWriteStream(assetPath, { mode: 0o755, flags: 'wx' })
-
   // Download the asset
-  console.log(chalk.gray(`Downloading Rust simulator from ${downloadUrl}...`))
-
-  try {
-    const response = await fetch(downloadUrl, downloadOptions)
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    await finished(Readable.fromWeb(response.body).pipe(fileStream))
-  } catch (err) {
-    await unlink(assetPath).catch(() => {})
-    throw err
-  }
-
-  return assetPath
+  return await client.downloadAsset(asset, assetPath)
 }
 
 function inferAssetAndExecutableNames(platform: string, arch: string): { assetName: string; executable: string } {
@@ -370,4 +313,72 @@ async function exists(filePath: string): Promise<boolean> {
   return stat(filePath)
     .then(() => true)
     .catch(() => false)
+}
+
+class GitHubClient {
+  private token: string | undefined
+
+  constructor(token: string | undefined) {
+    this.token = token
+  }
+
+  async fetch(url: string, accept: string): Promise<Response> {
+    const options: any = {
+      redirect: 'follow',
+      follow: 10,
+      headers: {
+        'User-Agent': 'quint-simulator-fetch',
+        Accept: accept,
+      },
+    }
+
+    if (this.token) {
+      options.headers['Authorization'] = `Bearer ${this.token} `
+    }
+
+    const response = await fetch(url, options)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from GitHub: ${response.statusText}`)
+    }
+
+    return response
+  }
+
+  async fetchRelease(version: string): Promise<GitHubRelease> {
+    const url = `https://api.github.com/repos/informalsystems/quint-simulator/releases`
+    const response = await this.fetch(url, 'application/vnd.github.v3+json')
+    const releases = (await response.json()) as GitHubRelease[]
+    const release = releases.find(release => release.tag_name === version)
+    if (!release) {
+      throw new Error(`Release ${version} not found`)
+    }
+    return release
+  }
+
+  async downloadAsset(asset: GitHubAsset, path: string): Promise<string> {
+    const fs = require('fs')
+    const { unlink } = require('fs/promises')
+    const { Readable } = require('stream')
+    const { finished } = require('stream/promises')
+
+    const fileStream = fs.createWriteStream(path, { mode: 0o755, flags: 'wx' })
+
+    // Download the asset
+    console.log(chalk.gray(`  Downloading Rust simulator from ${asset.url}...`))
+
+    try {
+      const response = await this.fetch(asset.url, 'application/octet-stream')
+
+      if (!response.ok) {
+        throw new Error(`Failed to download Rust simulator: ${response.statusText}`)
+      }
+
+      await finished(Readable.fromWeb(response.body).pipe(fileStream))
+    } catch (err) {
+      await unlink(path).catch(() => {})
+      throw err
+    }
+
+    return path
+  }
 }
