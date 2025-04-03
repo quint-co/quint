@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
-use crate::ir::{ImmutableMap, QuintError};
-use crate::value::{ImmutableSet, ImmutableVec, Value};
+use crate::ir::QuintError;
+use crate::value::{ImmutableMap, ImmutableSet, ImmutableVec, Value};
 use fxhash::FxHashSet;
 use itertools::Itertools;
 

@@ -1,7 +1,4 @@
-use crate::{
-    ir::ImmutableMap,
-    value::{powerset_at_index, Value},
-};
+use crate::value::{powerset_at_index, ImmutableMap, Value};
 use std::convert::TryInto;
 
 impl Value {

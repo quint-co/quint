@@ -1,7 +1,7 @@
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::{ImmutableMap, QuintName};
+use crate::ir::QuintName;
 use imbl::shared_ptr::RcK;
-use imbl::{GenericHashSet, GenericVector};
+use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -11,6 +11,8 @@ use std::rc::Rc;
 
 pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
 pub type ImmutableVec<T> = GenericVector<T, RcK>;
+pub type ImmutableMap<K, V> = GenericHashMap<K, V, fxhash::FxBuildHasher, RcK>;
+
 pub type Str = hipstr::LocalHipStr<'static>;
 
 #[derive(Clone, Debug)]

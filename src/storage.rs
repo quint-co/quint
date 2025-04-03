@@ -1,5 +1,5 @@
 use crate::ir::QuintName;
-use crate::{ir::ImmutableMap, value::Value};
+use crate::value::{ImmutableMap, Value};
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
