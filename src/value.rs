@@ -1,3 +1,21 @@
+//! This module defines the [`Value`] enum, which represents the various types
+//! of values that can be created during evaluation of Quint expressions. All
+//! values can be converted to Quint expressions.
+//!
+//! Quint's evaluation is lazy in some intermediate steps, and will avoid
+//! enumerating as much as it can. For example, sometimes sets are created just
+//! to pick elements from them, so instead of enumerating the set, the evaluator
+//! just generates one element corresponding to that pick.
+//!
+//! All Quint's values are immutable by nature, so the `imbl` crate's data
+//! structures are used to represent those values and properly optimize
+//! opterations for immutability. This has significant performance impact.
+//!
+//! We use `fxhash::FxBuildHasher` for the hash maps and sets, as it guarantees
+//! that iterators over identical sets/maps will always return the same order,
+//! which is important for the `Hash` implementation (as identical sets/maps
+//! should have the same hash).
+
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::QuintName;
 use imbl::shared_ptr::RcK;
@@ -9,12 +27,25 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
+/// Quint values that hold sets are immutable, use `GenericHashSet` immutable
+/// structure to hold them
 pub type ImmutableSet<T> = GenericHashSet<T, fxhash::FxBuildHasher, RcK>;
+/// Quint values that hold vectors are immutable, use `GenericVector` immutable
+/// structure to hold them
 pub type ImmutableVec<T> = GenericVector<T, RcK>;
+/// Quint values that hold maps are immutable, use `GenericHashMap` immutable
+/// structure to hold them
 pub type ImmutableMap<K, V> = GenericHashMap<K, V, fxhash::FxBuildHasher, RcK>;
 
+/// Quint strings are immutable, use hipstr's LocalHipStr type, which provides
+/// inlined (stack allocated) strings of length up to 23 bytes, and cheap clones
+/// for longer strings.
 pub type Str = hipstr::LocalHipStr<'static>;
 
+/// A Quint value produced by evaluation of a Quint expression.
+///
+/// Can be seen as a normal form of the expression, except for the intermediate
+/// values that enable lazy evaluation of some potentially expensive expressions.
 #[derive(Clone, Debug)]
 pub enum Value {
     Int(i64),
@@ -36,6 +67,8 @@ pub enum Value {
 
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        // First, hash the discriminant, as we want hashes of Set(1, 2, 3) and
+        // List(1, 2, 3) to be different.
         let discr = core::mem::discriminant(self);
         discr.hash(state);
 
@@ -118,6 +151,7 @@ impl PartialEq for Value {
             (Value::CrossProduct(a), Value::CrossProduct(b)) => *a == *b,
             (Value::PowerSet(a), Value::PowerSet(b)) => *a == *b,
             (Value::MapSet(a1, b1), Value::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            // To compare two sets represented in different ways, we need to enumarate them both
             (a, b) if a.is_set() && b.is_set() => a.as_set() == b.as_set(),
             _ => false,
         }
@@ -127,6 +161,8 @@ impl PartialEq for Value {
 impl Eq for Value {}
 
 impl Value {
+    /// Calculate the cardinality of the value without having to enumarate it
+    /// (i.e. without calling `as_set`).
     pub fn cardinality(&self) -> usize {
         match self {
             Value::Set(set) => set.len(),
@@ -136,14 +172,22 @@ impl Value {
             Value::List(elems) => elems.len(),
             Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
             Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
-            Value::PowerSet(value) => 2_usize.pow(value.cardinality().try_into().unwrap()),
-            Value::MapSet(domain, range) => range
-                .cardinality()
-                .pow(domain.cardinality().try_into().unwrap()),
+            Value::PowerSet(value) => {
+                // 2^(cardinality of value)
+                2_usize.pow(value.cardinality().try_into().unwrap())
+            }
+            Value::MapSet(domain, range) => {
+                // (cardinality of range)^(cardinality of domain()
+                range
+                    .cardinality()
+                    .pow(domain.cardinality().try_into().unwrap())
+            }
             _ => panic!("Cardinality not implemented for {:?}", self),
         }
     }
 
+    /// Check for membership of a value in a set, without having to enumerate
+    /// the set.
     pub fn contains(&self, elem: &Value) -> bool {
         match (self, elem) {
             (Value::Set(elems), _) => elems.contains(elem),
@@ -166,6 +210,7 @@ impl Value {
         }
     }
 
+    /// Check if a set is a subset of another set, avoiding enumeration when possible
     pub fn subseteq(&self, superset: &Value) -> bool {
         match (self, superset) {
             (Value::Set(subset), Value::Set(superset)) => subset.is_subset(superset),
@@ -185,10 +230,13 @@ impl Value {
                 Value::MapSet(subset_domain, subset_range),
                 Value::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range),
+            // Fall back to the native implementation (`is_subset`) if no optimization is possible
             (subset, superset) => subset.as_set().is_subset(superset.as_set().as_ref()),
         }
     }
 
+    /// Convert an integer value to `i64`. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
     pub fn as_int(&self) -> i64 {
         match self {
             Value::Int(n) => *n,
@@ -196,6 +244,8 @@ impl Value {
         }
     }
 
+    /// Convert a boolean value to `bool`. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
     pub fn as_bool(&self) -> bool {
         match self {
             Value::Bool(b) => *b,
@@ -203,6 +253,8 @@ impl Value {
         }
     }
 
+    /// Convert a string value to `Str`. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
     pub fn as_str(&self) -> Str {
         match self {
             Value::Str(s) => s.clone(),
@@ -210,6 +262,8 @@ impl Value {
         }
     }
 
+    /// Checks whether a value is a set. This includes the intermediate values
+    /// that are also sets, just not enumerated yet.
     pub fn is_set(&self) -> bool {
         matches!(
             self,
@@ -221,6 +275,13 @@ impl Value {
         )
     }
 
+    /// Enumerate the value as a set. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
+    ///
+    /// Sometimes, we need to create a value from scratch, and other times, we
+    /// operate over the borroweed value (&self). So this returns a
+    /// clone-on-write (Cow) pointer, avoiding unnecessary clones that would be
+    /// required if we always wanted to return Owned data.
     pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value>> {
         match self {
             Value::Set(set) => Cow::Borrowed(set),
@@ -291,6 +352,8 @@ impl Value {
         }
     }
 
+    /// Convert a map value to a map. Panics if the wrong type is given, which
+    /// should never happen as input expressions are type-checked.
     pub fn as_map(&self) -> &ImmutableMap<Value, Value> {
         match self {
             Value::Map(map) => map,
@@ -298,6 +361,8 @@ impl Value {
         }
     }
 
+    /// Convert a list or a tuple value to a vector. Panics if the wrong type is
+    /// given, which should never happen as input expressions are type-checked.
     pub fn as_list(&self) -> &ImmutableVec<Value> {
         match self {
             Value::Tuple(elems) => elems,
@@ -306,6 +371,8 @@ impl Value {
         }
     }
 
+    /// Convert a record value to a map. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
     pub fn as_record_map(&self) -> &ImmutableMap<QuintName, Value> {
         match self {
             Value::Record(fields) => fields,
@@ -313,22 +380,25 @@ impl Value {
         }
     }
 
+    /// Convert a lambda value to a closure. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
     pub fn as_closure(&self) -> impl Fn(&mut Env, Vec<Value>) -> EvalResult + '_ {
         match self {
             Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value>| {
-                // TODO: Check number of arguments
-
                 args.into_iter().enumerate().for_each(|(i, arg)| {
                     *registers[i].borrow_mut() = Ok(arg);
                 });
 
                 body.execute(env)
-                // TODO: restore previous values
+                // FIXME: restore previous values (#1560)
             },
             _ => panic!("Expected lambda"),
         }
     }
 
+    /// Convert a variant value to a tuple like (label, value). Panics if the
+    /// wrong type is given, which should never happen as input expressions are
+    /// type-checked.
     pub fn as_variant(&self) -> (&QuintName, &Value) {
         match self {
             Value::Variant(label, value) => (label, value),
@@ -336,12 +406,28 @@ impl Value {
         }
     }
 
+    /// Convert a tuple value to a 2-element tuple. Panics if the wrong type is given,
+    /// which should never happen as input expressions are type-checked.
+    ///
+    /// Useful as some builtins expect tuples of 2 elements, so we have type
+    /// guarantees that this conversion will work and can avoid having to handle
+    /// other scenarios.
     pub fn as_tuple2(&self) -> (Value, Value) {
         let mut elems = self.as_list().iter();
         (elems.next().unwrap().clone(), elems.next().unwrap().clone())
     }
 }
 
+/// Get the corresponding element of a powerset of a set at a given index
+/// following a stable algorithm and avoiding enumeration. Calling this with the
+/// same index for the same set should yield the same result.
+///
+/// Powersets are not ordered, but the iterator over the set will always produce
+/// the same order (for identical sets), so this works. It doesn't matter which
+/// order this uses, as long as it is stable.
+///
+/// In practice, the index comes from a stateful random number generator, and we
+/// want the same seed to produce the same results.
 pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
@@ -353,6 +439,7 @@ pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     Value::Set(elems)
 }
 
+/// Display implementation, used for debugging only. Users should not need to see a [`Value`].
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
