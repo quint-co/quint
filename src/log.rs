@@ -1,3 +1,5 @@
+//! Logging module for the simulation, used by the CLI.
+
 use std::fmt;
 use std::sync::atomic::AtomicBool;
 

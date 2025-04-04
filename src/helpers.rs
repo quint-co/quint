@@ -1,3 +1,13 @@
+//! Helpers to be used in development environment.
+//!
+//! It's easier to test and benchmark things using Rust as an entrypoint. We
+//! still rely on the Quint typescript tool for parsing, name resolution and
+//! type/effect checking, but we can use the `compile` command to get Quint to
+//! produce a JSON with what we need and than evaluate from there. This module takes care of that.
+//!
+//! Quint users should never need this as they use the Typescript tooling as an
+//! entrypoint, which calls Rust with all the pre-processing already done.
+
 use crate::ir::OpDef;
 use crate::ir::{QuintDeclaration, QuintOutput};
 use crate::simulator::ParsedQuint;

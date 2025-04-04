@@ -1,6 +1,9 @@
-use std::rc::Rc;
+//! Normalization for [`Value`], which consists of enumerating sets. Used for
+//! map keys and set elements, to make sure we don't end up with something like
+//! `Map(Set(1, 2, 3) -> "a", 1.to(3) -> "b")` (the two keys are the same).
 
 use crate::value::Value;
+use std::rc::Rc;
 
 impl Value {
     #[allow(clippy::unnecessary_to_owned)]

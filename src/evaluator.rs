@@ -75,7 +75,11 @@ impl CompiledExprWithLazyArgs {
 }
 
 pub struct Env {
+    // The storage for state variables, holding their values on the current and
+    // next state. We need it in the enviroment for taking and restoring snapshots.
     pub var_storage: Rc<RefCell<Storage>>,
+
+    // The random number generator, used for nondeterministic choices. This is stateful.
     pub rand: Rand,
     // TODO: trace recorder (for --verbosity) and trace collector (for proper
     // trace tracking in runs)
@@ -120,8 +124,9 @@ pub struct Interpreter<'a> {
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
     const_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
 
-    // Cached values that need to be cleared after the current state, as the
-    // stored values may depend on state variables. Cleared on `shift()`.
+    // Cached values that need to be cleared after certain scopes, to be used in
+    // let-ins. We re-use the memory space and avoid lookups in runtime, but the
+    // value needs to be cleared when we exit the scope.
     scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult>>>>,
 
     // Memoization for the compilation, preventing the same expression to be

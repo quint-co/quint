@@ -1,3 +1,10 @@
+//! Conversion of Traces with [`Value`]s to ITF (Informal Trace Format).
+//!
+//! Read more about it [here](https://apalache-mc.org/docs/adr/015adr-trace.html).
+//!
+//! This format can be parsed by Quint's typescript tool and by the ITF trace
+//! viewer extension on VSCode.
+
 use crate::value::Value;
 use chrono::{self};
 use itf;
@@ -24,6 +31,8 @@ impl Trace {
             })
             .collect::<Vec<itf::State<itf::Value>>>();
 
+        // Find the variable names by taking the fields from the first state
+        // (which should be a record)
         let vars = if let Some(Value::Record(map)) = self.states.first() {
             map.keys().map(|v| v.to_string()).collect::<Vec<_>>()
         } else {

@@ -1,3 +1,13 @@
+//! Random number generator using the squares-rnd algorithm.
+//!
+//! This is stateful and stable. During a signle Quint simulation, this can be
+//! called many times. Whenever the same simulation (same Quint modules and
+//! parameters) is run again, if the same seed is used, it should yield the same
+//! results. It should also be possible to get the seed from intermediate
+//! states, as we often run many simulations and then only want to re-run a
+//! specific one (one of the samples), so we should be able to get the seed for
+//! that one.
+
 use rand::Rng;
 use squares_rnd::rand64;
 
