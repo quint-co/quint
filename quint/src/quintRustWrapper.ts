@@ -18,6 +18,7 @@ import JSONbig from 'json-bigint'
 import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
+const spawn = require('cross-spawn')
 
 import path from 'path'
 import os from 'os'
@@ -82,7 +83,7 @@ export class QuintRustWrapper {
     )
 
     debugLog(this.verbosityLevel, 'Starting Rust simulator synchronously')
-    const result = child_process.spawnSync(exe, args, {
+    const result = spawn.sync(exe, args, {
       shell: false,
       input: input,
       encoding: 'utf-8',
