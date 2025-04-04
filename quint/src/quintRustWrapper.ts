@@ -11,7 +11,6 @@
  *
  * @module
  */
-import child_process from 'child_process'
 import { QuintEx, QuintModule } from './ir/quintIr'
 import { Outcome } from './simulation'
 import { debugLog } from './verbosity'
@@ -21,6 +20,7 @@ import os from 'os'
 import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
+const spawn = require('cross-spawn')
 
 /**
  * Get the configuration directory for Quint.
@@ -87,7 +87,7 @@ export class QuintRustWrapper {
     )
 
     debugLog(this.verbosityLevel, 'Starting Rust simulator synchronously')
-    const result = child_process.spawnSync(exe, args, {
+    const result = spawn.sync(exe, args, {
       shell: false,
       input: input,
       encoding: 'utf-8',
