@@ -3,7 +3,7 @@ use std::process::Stdio;
 use std::{io::Write, time::Duration};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use quint_simulator::{evaluator::run, ir::QuintOutput};
+use quint_evaluator::{evaluator::run, ir::QuintOutput};
 use tempfile::NamedTempFile;
 
 fn run_in_rust(input: &str) -> Result<(), Box<dyn std::error::Error>> {

@@ -1,4 +1,4 @@
-use quint_simulator::ir::QuintOutput;
+use quint_evaluator::ir::QuintOutput;
 use std::{env, fs::File};
 
 #[test]

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use quint_simulator::helpers;
+use quint_evaluator::helpers;
 
 #[test]
 fn tictactoe_ok() {

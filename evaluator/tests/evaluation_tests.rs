@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use quint_simulator::{
+use quint_evaluator::{
     evaluator::{run, Env, EvalResult, Interpreter},
     helpers,
     value::Value,

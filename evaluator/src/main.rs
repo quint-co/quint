@@ -11,9 +11,9 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_simulator::ir::{QuintError, QuintEx};
-use quint_simulator::simulator::{ParsedQuint, SimulationResult};
-use quint_simulator::{helpers, log};
+use quint_evaluator::ir::{QuintError, QuintEx};
+use quint_evaluator::simulator::{ParsedQuint, SimulationResult};
+use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
 #[derive(FromArgs)]

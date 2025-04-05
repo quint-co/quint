@@ -4,7 +4,7 @@ use std::process::Stdio;
 use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use quint_simulator::helpers;
+use quint_evaluator::helpers;
 
 fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None)?;

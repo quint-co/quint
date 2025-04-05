@@ -1,5 +1,5 @@
 [package]
-name = "quint_simulator"
+name = "quint_evaluator"
 version = "0.1.0"
 edition = "2021"
 

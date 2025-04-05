@@ -1,4 +1,4 @@
-use quint_simulator::{
+use quint_evaluator::{
     evaluator::{Env, Interpreter},
     helpers,
     value::Value,
