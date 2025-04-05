@@ -4,9 +4,6 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - v[0-9]+.*
   workflow_dispatch:
     inputs:
       tag:
@@ -24,7 +21,7 @@ jobs:
       - uses: taiki-e/create-gh-release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.tag && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
+          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator-{0}', github.event.inputs.tag) || github.ref }}
 
   upload-assets:
     needs: create-release
@@ -53,4 +50,4 @@ jobs:
           bin: quint_simulator
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.tag && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
+          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator-{0}', github.event.inputs.tag) || github.ref }}

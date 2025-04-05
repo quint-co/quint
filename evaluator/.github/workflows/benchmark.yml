@@ -1,8 +1,12 @@
 name: Benchmark
 
 on:
+  push:
+    branches: main
+    paths: "evaluator/**"
   pull_request:
     types: [opened, synchronize]
+    paths: "evaluator/**"
     paths-ignore:
       - "**.md"
       - "**.nix"
