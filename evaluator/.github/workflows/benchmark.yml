@@ -1,0 +1,113 @@
+name: Benchmark
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - "**.md"
+      - "**.nix"
+      - "**.lock"
+      - ".gitignore"
+
+# If new code is pushed to a PR branch, then cancel in progress workflows for that PR.
+# Ensures that we don't waste CI time, and returns results quicker.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: short
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  GIT_LFS_SKIP_SMUDGE: 1
+
+jobs:
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed to fetch all history for comparison
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install cargo-critertion
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-criterion
+
+      - name: Install node
+        uses: actions/setup-node@v3
+
+      - name: Install Quint
+        run: |
+          git clone https://github.com/informalsystems/quint && cd quint/quint &&
+          git checkout gabriela/compile-optional-flattening &&
+          npm install && npm install -g
+
+      - name: Build benchmarks
+        run: cargo build --release --benches
+
+      - name: Run benchmark
+        run: |
+          # Run benchmarks and save results
+          cargo criterion --message-format=json > benchmark_results.json
+
+      - name: Process benchmark results
+        id: benchmark-processing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            function formatTime(nanoseconds) {
+              if (nanoseconds < 1000) {
+                return `${nanoseconds.toFixed(2)} ns`;
+              } else if (nanoseconds < 1000000) {
+                return `${(nanoseconds / 1000).toFixed(2)} µs`;
+              } else if (nanoseconds < 1000000000) {
+                return `${(nanoseconds / 1000000).toFixed(2)} ms`;
+              } else {
+                return `${(nanoseconds / 1000000000).toFixed(2)} s`;
+              }
+            }
+
+            const results = fs.readFileSync('benchmark_results.json', 'utf8')
+              .split('\n')
+              .filter(Boolean)
+              .map(JSON.parse);
+
+            let comment = '## Benchmark Results\n\n';
+            comment += '| Benchmark | Time |\n';
+            comment += '|-----------|------|\n';
+
+            results.forEach(result => {
+              if (result.reason === 'benchmark-complete') {
+                const name = result.id;
+                const time = formatTime(result.mean.estimate);
+                comment += `| ${name} | ${time} |\n`;
+              }
+            });
+
+            core.setOutput('benchmark-comment', comment);
+
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "Benchmark Results"
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.benchmark-processing.outputs.benchmark-comment }}
+          edit-mode: replace
