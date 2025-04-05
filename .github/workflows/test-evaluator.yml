@@ -1,9 +1,10 @@
-name: Test
+name: Test Evaluator
 
 on:
   push:
     branches: main
     paths: "evaluator/**"
+  merge_group:
   pull_request:
     paths: "evaluator/**"
 
