@@ -3,9 +3,13 @@ name: Lint Evaluator
 on:
   push:
     branches: main
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/lint-evaluator.yml"
   pull_request:
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/lint-evaluator.yml"
 
 permissions:
   contents: read
@@ -27,13 +31,14 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-Dwarnings"
 
+defaults:
+  run:
+    working-directory: ./evaluator
+
 jobs:
   fmt:
     name: Formatting
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./evaluator
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,9 +52,6 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./evaluator
     steps:
       - name: Checkout
         uses: actions/checkout@v4

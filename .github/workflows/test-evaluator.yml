@@ -3,10 +3,14 @@ name: Test Evaluator
 on:
   push:
     branches: main
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/test-evaluator.yml"
   merge_group:
   pull_request:
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/test-evaluator.yml"
 
 permissions:
   contents: read

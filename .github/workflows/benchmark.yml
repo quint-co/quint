@@ -3,11 +3,15 @@ name: Benchmark
 on:
   push:
     branches: main
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/benchmark.yml"
   merge_group:
   pull_request:
     types: [opened, synchronize]
-    paths: "evaluator/**"
+    paths:
+      - "evaluator/**"
+      - ".github/workflows/benchmark.yml"
     paths-ignore:
       - "**.md"
       - "**.nix"
