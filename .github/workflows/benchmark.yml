@@ -84,7 +84,7 @@ jobs:
               }
             }
 
-            const results = fs.readFileSync('benchmark_results.json', 'utf8')
+            const results = fs.readFileSync('evaluator/benchmark_results.json', 'utf8')
               .split('\n')
               .filter(Boolean)
               .map(JSON.parse);
