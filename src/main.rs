@@ -1,8 +1,8 @@
 //! The CLI has two main commands:
 //!  1. `run`: Runs the simulation on a file with specified parameters,
-//!    to be used for development and tests.
+//!     to be used for development and tests.
 //!  2. `simulate-from-stdin`: Reads input from standard input (STDIN) and
-//!    simulates based on that input, used in the integration with the `quint` typescript tool.
+//!     simulates based on that input, used in the integration with the `quint` typescript tool.
 
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
