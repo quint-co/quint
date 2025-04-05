@@ -12,11 +12,6 @@ on:
     paths:
       - "evaluator/**"
       - ".github/workflows/benchmark.yml"
-    paths-ignore:
-      - "**.md"
-      - "**.nix"
-      - "**.lock"
-      - ".gitignore"
 
 # If new code is pushed to a PR branch, then cancel in progress workflows for that PR.
 # Ensures that we don't waste CI time, and returns results quicker.
