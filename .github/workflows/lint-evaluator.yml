@@ -31,10 +31,6 @@ env:
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-Dwarnings"
 
-defaults:
-  run:
-    working-directory: ./evaluator
-
 jobs:
   fmt:
     name: Formatting
@@ -42,6 +38,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: evaluator
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -55,6 +53,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: evaluator
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
