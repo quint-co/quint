@@ -588,7 +588,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     }
 
     const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
-    outcome = quintRustWrapper.simulate(
+    outcome = await quintRustWrapper.simulate(
       { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant },
       prev.path,
       witnesses,
