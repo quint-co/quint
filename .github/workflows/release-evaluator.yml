@@ -14,6 +14,9 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./evaluator
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,6 +44,9 @@ jobs:
           - target: aarch64-apple-darwin
             os: macos-latest
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./evaluator
     steps:
       - uses: actions/checkout@v4
         with:

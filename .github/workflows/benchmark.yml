@@ -32,6 +32,9 @@ jobs:
   benchmark:
     name: Run benchmarks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./evaluator
 
     steps:
       - uses: actions/checkout@v4
