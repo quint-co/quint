@@ -9,7 +9,7 @@
 //!
 //! All Quint's values are immutable by nature, so the `imbl` crate's data
 //! structures are used to represent those values and properly optimize
-//! opterations for immutability. This has significant performance impact.
+//! operations for immutability. This has significant performance impact.
 //!
 //! We use `fxhash::FxBuildHasher` for the hash maps and sets, as it guarantees
 //! that iterators over identical sets/maps will always return the same order,
@@ -161,7 +161,7 @@ impl PartialEq for Value {
 impl Eq for Value {}
 
 impl Value {
-    /// Calculate the cardinality of the value without having to enumarate it
+    /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
     pub fn cardinality(&self) -> usize {
         match self {

@@ -1,6 +1,6 @@
 //! Random number generator using the squares-rnd algorithm.
 //!
-//! This is stateful and stable. During a signle Quint simulation, this can be
+//! This is stateful and stable. During a single Quint simulation, this can be
 //! called many times. Whenever the same simulation (same Quint modules and
 //! parameters) is run again, if the same seed is used, it should yield the same
 //! results. It should also be possible to get the seed from intermediate

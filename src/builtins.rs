@@ -1,4 +1,4 @@
-//! Compilation for Quint's built-in opearators.
+//! Compilation for Quint's built-in operators.
 //!
 //! Lazy and eager operators are compiled differently. Eager operators are those
 //! where the arguments are evaluated before the operator is applied, while lazy
@@ -175,7 +175,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 }
 
                 // TODO: The old simulator generates a limited bound for infinite sets
-                // Not sure if we wan't to keep this behavior
+                // Not sure if we want to keep this behavior
                 // Related: https://github.com/informalsystems/quint/issues/279
 
                 positions.push(env.rand.next(bound))
