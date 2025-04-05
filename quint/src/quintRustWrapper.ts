@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * A wrapper around the Rust simulator for Quint.
+ * A wrapper around the Rust evaluator for Quint.
  *
  * @author Gabriela Moreira
  *
@@ -24,7 +24,7 @@ import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 
-const QUINT_SIMULATOR_VERSION = 'v0.0.0-pre.1'
+const QUINT_EVALUATOR_VERSION = 'v0.0.0-pre.1'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -47,7 +47,7 @@ export class QuintRustWrapper {
   }
 
   /**
-   * Simulate the parsed Quint model using the Rust simulator
+   * Simulate the parsed Quint model using the Rust evaluator
    *
    * @param {ParsedQuint} parsed - The parsed Quint model.
    * @param {string} source - The source code of the Quint model.
@@ -57,7 +57,7 @@ export class QuintRustWrapper {
    * @param {number} ntraces - The number of traces to store.
    *
    * @returns {Outcome} The outcome of the simulation.
-   * @throws Will throw an error if the Rust simulator fails to launch or returns an error.
+   * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
    */
   async simulate(
     parsed: ParsedQuint,
@@ -67,7 +67,7 @@ export class QuintRustWrapper {
     nsteps: number,
     ntraces: number
   ): Promise<Outcome> {
-    const exe = await getRustSimulatorPath()
+    const exe = await getRustEvaluatorPath()
     const args = ['simulate-from-stdin']
     const input = JSONbig.stringify(
       {
@@ -81,7 +81,7 @@ export class QuintRustWrapper {
       replacer
     )
 
-    debugLog(this.verbosityLevel, 'Starting Rust simulator synchronously')
+    debugLog(this.verbosityLevel, 'Starting Rust evaluator synchronously')
     const result = spawn.sync(exe, args, {
       shell: false,
       input: input,
@@ -90,18 +90,18 @@ export class QuintRustWrapper {
     })
 
     if (result.error) {
-      throw new Error(`Failed to launch Rust simulator: ${result.error.message}`)
+      throw new Error(`Failed to launch Rust evaluator: ${result.error.message}`)
     }
 
     if (result.status !== 0) {
-      throw new Error(`Rust simulator exited with code ${result.status}`)
+      throw new Error(`Rust evaluator exited with code ${result.status}`)
     }
 
     if (!result.stdout) {
-      throw new Error('No output received from Rust simulator')
+      throw new Error('No output received from Rust evaluator')
     }
 
-    debugLog(this.verbosityLevel, `Received data from Rust simulator: ${result.stdout}`)
+    debugLog(this.verbosityLevel, `Received data from Rust evaluator: ${result.stdout}`)
 
     try {
       const parsed = JSONbig.parse(result.stdout)
@@ -114,7 +114,7 @@ export class QuintRustWrapper {
 
       return parsed
     } catch (error) {
-      throw new Error(`Failed to parse data from Rust simulator: ${JSONbig.stringify(error)}`)
+      throw new Error(`Failed to parse data from Rust evaluator: ${JSONbig.stringify(error)}`)
     }
   }
 }
@@ -138,21 +138,21 @@ function quintConfigDir(): string {
 }
 
 /**
- * Get the path to the Rust simulator executable.
- * @param {string} version - The version of the simulator.
- * @returns {string} The path to the Quint simulator executable.
+ * Get the path to the Rust evaluator executable.
+ * @param {string} version - The version of the evaluator.
+ * @returns {string} The path to the Quint evaluator executable.
  */
-function rustSimulatorDir(version: string): string {
-  return path.join(quintConfigDir(), `rust-simulator-${version}`)
+function rustEvaluatorDir(version: string): string {
+  return path.join(quintConfigDir(), `rust-evaluator-${version}`)
 }
 
 /**
- * Get the path to the Rust simulator executable.
- * @param {string} version - The version of the simulator.
- * @returns {string} The path to the Quint simulator executable.
- * @throws Will throw an error if the simulator is not found or cannot be downloaded.
+ * Get the path to the Rust evaluator executable.
+ * @param {string} version - The version of the evaluator.
+ * @returns {string} The path to the Quint evaluator executable.
+ * @throws Will throw an error if the evaluator is not found or cannot be downloaded.
  */
-async function getRustSimulatorPath(version: string = QUINT_SIMULATOR_VERSION): Promise<string> {
+async function getRustEvaluatorPath(version: string = QUINT_EVALUATOR_VERSION): Promise<string> {
   const path = require('path')
 
   // Determine platform and architecture
@@ -162,30 +162,30 @@ async function getRustSimulatorPath(version: string = QUINT_SIMULATOR_VERSION): 
   // Map platform and architecture to asset name
   let { assetName, executable } = inferAssetAndExecutableNames(platform, arch)
 
-  // Check if the simulator is already downloaded
-  const simulatorDir = rustSimulatorDir(version)
-  const executablePath = path.join(simulatorDir, executable)
+  // Check if the evaluator is already downloaded
+  const evaluatorDir = rustEvaluatorDir(version)
+  const executablePath = path.join(evaluatorDir, executable)
   if (await exists(executablePath)) {
     return executablePath
   }
 
   // Otherwise, fetch it from GitHub releases
-  return await fetchSimulator(version, assetName, executable)
+  return await fetchEvaluator(version, assetName, executable)
 }
 
 /**
- *  Fetch the latest version of the Quint simulator from GitHub releases.
- *  @param {string} version - The version of the simulator to fetch.
+ *  Fetch the latest version of the Quint evaluator from GitHub releases.
+ *  @param {string} version - The version of the evaluator to fetch.
  *  @param {string} assetName - The name of the asset to download.
  *  @param {string} executable - The name of the executable file.
- *  @return {Promise<string>} - The path to the downloaded simulator executable.
+ *  @return {Promise<string>} - The path to the downloaded evaluator executable.
  *  @throws Will throw an error if the download fails or the asset format is unsupported.
  */
-async function fetchSimulator(version: string, assetName: string, executable: string): Promise<string> {
+async function fetchEvaluator(version: string, assetName: string, executable: string): Promise<string> {
   const path = require('path')
   const { unlink, mkdir } = require('fs/promises')
 
-  console.log(chalk.gray(`Fetching Rust simulator ${version}...`))
+  console.log(chalk.gray(`Fetching Rust evaluator ${version}...`))
 
   // Create a GitHub client
   const client = new GitHubClient(process.env.GITHUB_TOKEN)
@@ -193,51 +193,51 @@ async function fetchSimulator(version: string, assetName: string, executable: st
   // Fetch the release from GitHub
   const release = await client.fetchRelease(version)
 
-  const simulatorDir = rustSimulatorDir(version)
-  const executablePath = path.join(simulatorDir, executable)
+  const evaluatorDir = rustEvaluatorDir(version)
+  const executablePath = path.join(evaluatorDir, executable)
 
-  // Create the simulator directory if it doesn't exist
-  await mkdir(simulatorDir, { recursive: true })
+  // Create the evaluator directory if it doesn't exist
+  await mkdir(evaluatorDir, { recursive: true })
 
   // Download the asset from GitHub
-  const assetPath = await downloadGitHubAsset(client, release, assetName, simulatorDir)
+  const assetPath = await downloadGitHubAsset(client, release, assetName, evaluatorDir)
 
   // Extract the asset
-  await extractAsset(executable, assetName, assetPath, simulatorDir)
+  await extractAsset(executable, assetName, assetPath, evaluatorDir)
 
   // Clean up the downloaded archive
   await unlink(assetPath)
 
-  console.log(chalk.green(`  [ok] `) + `Rust simulator installed at: ${executablePath}\n`)
+  console.log(chalk.green(`  [ok] `) + `Rust evaluator installed at: ${executablePath}\n`)
 
   return executablePath
 }
 
 /**
- * Extract the downloaded asset to the simulator directory.
+ * Extract the downloaded asset to the evaluator directory.
  * @param {string} executable - The name of the executable file.
  * @param {string} assetName - The name of the asset to extract.
  * @param {string} assetPath - The path to the downloaded asset.
- * @param {string} simulatorDir - The path to the simulator directory.
+ * @param {string} evaluatorDir - The path to the evaluator directory.
  * @throws Will throw an error if the asset format is unsupported.
  */
-async function extractAsset(executable: string, assetName: string, assetPath: string, simulatorDir: string) {
+async function extractAsset(executable: string, assetName: string, assetPath: string, evaluatorDir: string) {
   const util = require('util')
   const exec = util.promisify(require('child_process').exec)
 
   console.log(chalk.gray(`  Extracting ${assetPath}...`))
 
-  const executablePath = path.join(simulatorDir, executable)
+  const executablePath = path.join(evaluatorDir, executable)
 
   if (assetName.endsWith('.tar.gz')) {
-    await exec(`tar -xzf ${assetPath} -C ${simulatorDir} `)
+    await exec(`tar -xzf ${assetPath} -C ${evaluatorDir} `)
     await exec(`chmod +x ${executablePath}`)
   } else if (assetName.endsWith('.zip')) {
     // For Windows, use a simple unzip command (requires unzip to be installed)
     // You might want to use a JavaScript unzip library for better compatibility
     const AdmZip = require('adm-zip')
     const zip = new AdmZip(assetPath)
-    zip.extractAllTo(simulatorDir, true)
+    zip.extractAllTo(evaluatorDir, true)
   } else {
     throw new Error(`Unsupported asset format: ${assetName}`)
   }
@@ -248,7 +248,7 @@ async function extractAsset(executable: string, assetName: string, assetPath: st
  * @param {GitHubClient} client - The GitHub client to use for downloading.
  * @param {GitHubRelease} release - The GitHub release object.
  * @param {string} assetName - The name of the asset to download.
- * @param {string} simulatorDir - The directory to save the downloaded asset.
+ * @param {string} evaluatorDir - The directory to save the downloaded asset.
  * @returns {Promise<string>} - The path to the downloaded asset.
  * @throws Will throw an error if the download fails or the asset is not found.
  */
@@ -256,7 +256,7 @@ async function downloadGitHubAsset(
   client: GitHubClient,
   release: GitHubRelease,
   assetName: string,
-  simulatorDir: string
+  evaluatorDir: string
 ): Promise<string> {
   const path = require('path')
 
@@ -267,7 +267,7 @@ async function downloadGitHubAsset(
     throw new Error(`Asset ${assetName} not found in release ${version}`)
   }
 
-  const assetPath = path.join(simulatorDir, assetName)
+  const assetPath = path.join(evaluatorDir, assetName)
   if (await exists(assetPath)) {
     console.log(chalk.gray(`File ${assetPath} already exists. Skipping download.`))
     return assetPath
@@ -279,25 +279,25 @@ async function downloadGitHubAsset(
 
 function inferAssetAndExecutableNames(platform: string, arch: string): { assetName: string; executable: string } {
   let assetName = ''
-  let executable = 'quint_simulator'
+  let executable = 'quint_evaluator'
 
   if (platform === 'darwin') {
     // macOS
     if (arch === 'arm64') {
-      assetName = 'quint_simulator-aarch64-apple-darwin.tar.gz'
+      assetName = 'quint_evaluator-aarch64-apple-darwin.tar.gz'
     } else if (arch === 'x64') {
-      assetName = 'quint_simulator-x86_64-apple-darwin.tar.gz'
+      assetName = 'quint_evaluator-x86_64-apple-darwin.tar.gz'
     }
   } else if (platform === 'linux') {
     if (arch === 'arm64') {
-      assetName = 'quint_simulator-aarch64-unknown-linux-gnu.tar.gz'
+      assetName = 'quint_evaluator-aarch64-unknown-linux-gnu.tar.gz'
     } else if (arch === 'x64') {
-      assetName = 'quint_simulator-x86_64-unknown-linux-gnu.tar.gz'
+      assetName = 'quint_evaluator-x86_64-unknown-linux-gnu.tar.gz'
     }
   } else if (platform === 'win32') {
     if (arch === 'x64') {
-      assetName = 'quint_simulator-x86_64-pc-windows-msvc.zip'
-      executable = 'quint-simulator.exe'
+      assetName = 'quint_evaluator-x86_64-pc-windows-msvc.zip'
+      executable = 'quint-evaluator.exe'
     }
   }
 
@@ -327,7 +327,7 @@ class GitHubClient {
       redirect: 'follow',
       follow: 10,
       headers: {
-        'User-Agent': 'quint-simulator-fetch',
+        'User-Agent': 'quint-evaluator-fetch',
         Accept: accept,
       },
     }
@@ -345,10 +345,10 @@ class GitHubClient {
   }
 
   async fetchRelease(version: string): Promise<GitHubRelease> {
-    const url = `https://api.github.com/repos/informalsystems/quint-simulator/releases`
+    const url = `https://api.github.com/repos/informalsystems/quint/releases`
     const response = await this.fetch(url, 'application/vnd.github.v3+json')
     const releases = (await response.json()) as GitHubRelease[]
-    const release = releases.find(release => release.tag_name === version)
+    const release = releases.find(release => release.tag_name === `evaluator-${version}`)
     if (!release) {
       throw new Error(`Release ${version} not found`)
     }
@@ -364,13 +364,13 @@ class GitHubClient {
     const fileStream = fs.createWriteStream(path, { mode: 0o755, flags: 'wx' })
 
     // Download the asset
-    console.log(chalk.gray(`  Downloading Rust simulator from ${asset.url}...`))
+    console.log(chalk.gray(`  Downloading Rust evaluator from ${asset.url}...`))
 
     try {
       const response = await this.fetch(asset.url, 'application/octet-stream')
 
       if (!response.ok) {
-        throw new Error(`Failed to download Rust simulator: ${response.statusText}`)
+        throw new Error(`Failed to download Rust evaluator: ${response.statusText}`)
       }
 
       await finished(Readable.fromWeb(response.body).pipe(fileStream))
