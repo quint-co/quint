@@ -1,10 +1,14 @@
-use crate::{
-    ir::ImmutableMap,
-    value::{powerset_at_index, Value},
-};
+//! Picking values out of sets without enumerating the elements.
+
+use crate::value::{powerset_at_index, ImmutableMap, Value};
 use std::convert::TryInto;
 
 impl Value {
+    /// Pick a value from the set, using the given indexes, without enumerating
+    /// the elements (and thus avoiding expensive computations).
+    ///
+    /// The given indexes should have the same length as the length [`bounds`]
+    /// for this value, and each value should be within its respective bound.
     pub fn pick<T: Iterator<Item = usize>>(&self, indexes: &mut T) -> Value {
         match self {
             Value::Set(set) => {
@@ -35,7 +39,8 @@ impl Value {
                 let range_size = range.cardinality();
 
                 if domain_size == 0 {
-                    // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
+                    // To reflect the behaviour of TLC, an empty domain needs to give Set(Map()),
+                    // so the only element we can pick is Map().
                     return Value::Map(ImmutableMap::default());
                 }
 
@@ -53,6 +58,10 @@ impl Value {
         }
     }
 
+    // Some sets require multiple random numbers in order to pick an element efficiently.
+    // For example, a cross product will require one random number per set, and return a tuple like
+    // (set1.pick(r1), set2.pick(r2), ..., setn.pick(rn)). The `bounds` function will return the list of
+    // ranges (bounds) from which each of those numbers should be picked from.
     pub fn bounds(&self) -> Vec<usize> {
         match self {
             Value::Set(set) => vec![set.len()],

@@ -1,21 +1,30 @@
+//! The interpreter for the Quint language.
+//!
+//! Includes the compilation types and stateful datastructures used for
+//! memoization, caching, state variable storage, etc.
+
+use crate::rand::Rand;
+use crate::storage::{Storage, VariableRegister};
+use crate::{builtins::*, ir::*, value::*};
 use fxhash::FxHashMap;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::rand::Rand;
-use crate::storage::{Storage, VariableRegister};
-use crate::{builtins::*, ir::*, value::*};
-
+/// The result of evaluating a Quint expression: either a [`Value`] or an error.
 pub type EvalResult = Result<Value, QuintError>;
 
+/// A compiled expression that can be executed in a given environment.
 #[derive(Clone)]
 pub struct CompiledExpr(Rc<dyn Fn(&mut Env) -> EvalResult>);
 
+/// A compiled expression that takes arguments and can be executed in a given environment.
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
 pub struct CompiledExprWithArgs(Rc<dyn Fn(&mut Env, Vec<Value>) -> EvalResult>);
 
+/// A compiled expression that takes lazy (non-evaluated) arguments and can be
+/// executed in a given environment.
 #[derive(Clone)]
 pub struct CompiledExprWithLazyArgs(
     #[allow(clippy::type_complexity)] Rc<dyn Fn(&mut Env, &Vec<CompiledExpr>) -> EvalResult>,
@@ -66,11 +75,14 @@ impl CompiledExprWithLazyArgs {
 }
 
 pub struct Env {
+    // The storage for state variables, holding their values on the current and
+    // next state. We need it in the enviroment for taking and restoring snapshots.
     pub var_storage: Rc<RefCell<Storage>>,
+
+    // The random number generator, used for nondeterministic choices. This is stateful.
     pub rand: Rand,
-    // Other params from Typescript implementation, for future reference:
-    // recorder
-    // trace
+    // TODO: trace recorder (for --verbosity) and trace collector (for proper
+    // trace tracking in runs)
 }
 
 impl Env {
@@ -81,6 +93,7 @@ impl Env {
         }
     }
 
+    /// Create a new environment with a specific random state.
     pub fn with_rand_state(var_storage: Rc<RefCell<Storage>>, state: u64) -> Self {
         Self {
             var_storage,
@@ -88,30 +101,53 @@ impl Env {
         }
     }
 
+    /// Shift the state, moving `next_vars` to `vars`.
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
     }
 }
 
+/// A stateful interpreter, with memoization, caching, state variable storage
+/// and tracking of modules.
 pub struct Interpreter<'a> {
+    // The storage for state variables, holding their values on the current and
+    // next state.
+    pub var_storage: Rc<RefCell<Storage>>,
+
+    // The lookup table, read-only, used to resolve names
     table: &'a LookupTable,
+
+    // Registries hold values for specific names, and are used on references of
+    // those names. This way, we can re-use the memory space and avoid lookups
+    // in runtime. The lookup is done in compile time, and during runtime, we
+    // just read the value stored in that memory space.
     param_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
     const_registry: FxHashMap<QuintId, Rc<RefCell<EvalResult>>>,
-    scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult>>>>,
-    pub var_storage: Rc<RefCell<Storage>>,
-    memo: Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>,
-    memo_by_instance: FxHashMap<QuintId, Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>>,
-    namespaces: Vec<QuintName>,
-    // Other params from Typescript implementation, for future reference:
-    // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
-}
 
-fn builtin_value(name: &str) -> CompiledExpr {
-    match name {
-        "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
-        "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
-        _ => unimplemented!("Unknown builtin name: {}", name),
-    }
+    // Cached values that need to be cleared after certain scopes, to be used in
+    // let-ins. We re-use the memory space and avoid lookups in runtime, but the
+    // value needs to be cleared when we exit the scope.
+    scoped_cached_values: FxHashMap<QuintId, Rc<RefCell<Option<EvalResult>>>>,
+
+    // Memoization for the compilation, preventing the same expression to be
+    // compiled more than once (in the same module). This whole map changes as
+    // we enter and exit definitions that come from instances during evaluation.
+    memo: Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>,
+
+    // The same expression can be imported as many different instances. On which
+    // instance, its value can be different, so we keep separate memos for each
+    // instance.
+    memo_by_instance: FxHashMap<QuintId, Rc<RefCell<FxHashMap<QuintId, CompiledExpr>>>>,
+
+    // Different instances can also have variables that have the same `id` but
+    // different values, as they evolve independently (see the
+    // language-features/instances.qnt example). We differentiate those
+    // variables by their namespace, which is unique in relation to the
+    // import/instantiation history. Here, we track that history to know which
+    // variable from the storage to use during evaluation.
+    namespaces: Vec<QuintName>,
+    // TODO: Other params from Typescript implementation, for future reference:
+    // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
 }
 
 impl<'a> Interpreter<'a> {
@@ -128,6 +164,7 @@ impl<'a> Interpreter<'a> {
         }
     }
 
+    /// Shift the state, moving `next_vars` to `vars`.
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
     }
@@ -527,6 +564,7 @@ impl<'a> Interpreter<'a> {
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
         match self.table.get(id) {
             Some(def) => {
+                // A user-defined operator
                 let op = self.compile_def(def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
@@ -534,12 +572,28 @@ impl<'a> Interpreter<'a> {
                     closure(env, args)
                 })
             }
+            // A built-in. We already checked that this is not lazy before.
             None => compile_eager_op(op),
         }
     }
 
+    /// Utility to compile and evaluate an expression
     pub fn eval(&mut self, env: &mut Env, expr: QuintEx) -> EvalResult {
         self.compile(&expr).execute(env)
+    }
+}
+
+fn builtin_value(name: &str) -> CompiledExpr {
+    match name {
+        "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
+        "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
+        "Bool" => CompiledExpr::new(move |_| {
+            Ok(Value::Set(ImmutableSet::from(vec![
+                Value::Bool(true),
+                Value::Bool(false),
+            ])))
+        }),
+        _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }
 
@@ -560,11 +614,23 @@ fn var_with_namespaces(id: QuintId, namespaces: &[QuintName]) -> QuintName {
 
 #[derive(Debug, PartialEq)]
 enum Cache {
+    // Don't cache
     None,
+    // Cache and clear after a `shift()`
     ForState,
+    // Cache forever (never clear)
     Forever,
 }
 
+/// Find out how we can cache a definition based on its qualifier.
+///
+/// We know for sure that the qualifier is not less permissive than it needs to
+/// be since the input is effect-checked. However, it can me more permissive
+/// than it needs, i.e. when the users annotates everything as "action" for
+/// example, we won't be caching anything. This is OK as we intend to have
+/// automatic suggestions of less permissive qualifiers on a linter soon. We
+/// could used the inferred qualifier here instead, but there's currently no
+/// good interfaces for that.
 fn can_cache(def: &LookupDefinition) -> Cache {
     if let LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d)) = def {
         if d.qualifier == OpQualifier::Val && d.depth.is_none_or(|x| x == 0) {
@@ -578,6 +644,7 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
+/// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
     let mut interpreter = Interpreter::new(table);
     let mut env = Env::new(interpreter.var_storage.clone());

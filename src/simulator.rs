@@ -1,3 +1,5 @@
+//! Simulation for Quint models.
+
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{LookupTable, QuintError, QuintEx},
@@ -5,6 +7,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+/// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize)]
 pub struct ParsedQuint {
     pub init: QuintEx,
@@ -13,6 +16,7 @@ pub struct ParsedQuint {
     pub table: LookupTable,
 }
 
+/// Simulation output.
 pub struct SimulationResult {
     pub result: bool,
     pub best_traces: Vec<Trace>,
@@ -22,6 +26,17 @@ pub struct SimulationResult {
 }
 
 impl ParsedQuint {
+    /// Simulate a Quint model for a given number of steps and samples, storing
+    /// up to `n_traces` traces of the greates quality.
+    ///
+    /// Start evaluating `init` and check that it satisfies the `invariant`.
+    /// Then, evaluate `step` `steps` times, checking that `invariant` holds every time.
+    ///
+    /// Repeat this `samples` times, and return the best `n_traces` traces
+    ///
+    /// If `init` or `invariant` return false at any given point, simulation stops.
+    /// If `step` returns false, we continue, as that just means we failed to progress
+    /// in a specific setting.
     pub fn simulate(
         &self,
         steps: usize,
@@ -54,6 +69,7 @@ impl ParsedQuint {
                 trace.push(interpreter.var_storage.borrow().as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
+                    // Found a counterexample
                     collect_trace(
                         &mut best_traces,
                         n_traces,
@@ -94,6 +110,9 @@ impl ParsedQuint {
     }
 }
 
+/// Collect a trace of the simulation, up to a maximum of `n_traces`.
+///
+/// Assumes `best_traces` is sorted by quality.
 fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
     insert_trace_sorted_by_quality(best_traces, trace);
     if best_traces.len() > n_traces {
@@ -101,6 +120,12 @@ fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
     }
 }
 
+/// Compare two traces by quality.
+///
+/// Prefer short traces for error, and longer traces for non error.
+/// Therefore, trace a is better than trace b iff
+///  - when a has an error: a is shorter or b has no error;
+///  - when a has no error: a is longer and b has no error.
 fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
     match (a.violation, b.violation) {
         (true, true) => a.states.len().cmp(&b.states.len()),
@@ -110,6 +135,7 @@ fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
     }
 }
 
+/// Insert a trace into a sorted vector of traces, maintaining the order by quality.
 fn insert_trace_sorted_by_quality(best_traces: &mut Vec<Trace>, trace: Trace) {
     let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace));
     match index {

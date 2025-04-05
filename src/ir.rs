@@ -1,11 +1,11 @@
+//! Internal Representation (IR) of Quint, to be deserialized from the Quint compiler
+//! input.
+
 use fxhash::FxBuildHasher;
 use hipstr::LocalHipStr;
-use imbl::{shared_ptr::RcK, GenericHashMap};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-pub type ImmutableMap<K, V> = GenericHashMap<K, V, FxBuildHasher, RcK>;
 
 pub type QuintId = u64;
 pub type QuintName = LocalHipStr<'static>;
