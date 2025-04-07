@@ -238,7 +238,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       // For each key/value pair in the object, form the quint expressions representing
       // the record field and value
       const args = Object.keys(value)
-        .filter(key => key !== '#meta') // Must be removed from top-level ojects representing states
+        .filter(key => key !== '#meta' && !key.startsWith('__')) // Must be removed from top-level ojects representing states
         .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
         .flat() // flatten the converted pairs of fields into a single array
       return { id, kind: 'app', opcode: 'Rec', args }

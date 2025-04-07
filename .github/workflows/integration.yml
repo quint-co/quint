@@ -1,0 +1,116 @@
+name: Integration Tests
+
+on:
+  # Every pull request
+  pull_request:
+    path:
+      - "examples/**"
+      - "quint/**"
+      - "evaluator/**"
+      - ".github/workflows/quint-fixtures.yml"
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+    path:
+      - "examples/**"
+      - "quint/**"
+      - "evaluator/**"
+      - ".github/workflows/quint-fixtures.yml"
+
+jobs:
+  quint-integration-tests:
+    name: TXM tests
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        # Since txm may install additional deps, we ensure that
+        # we can run quint based on its package manifest
+        run: quint --version
+      - run: npm install -g txm
+      - name: Blackbox integration tests
+        run: cd ./quint && txm cli-tests.md
+      - uses: dcarbone/install-jq-action@v2
+      - name: Blackbox integration tests with I/O
+        # This tests fail on windows currently
+        # See https://github.com/anko/txm/issues/10
+        run: cd ./quint && txm io-cli-tests.md
+        if: matrix.operating-system != 'windows-latest'
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin" # See 'Supported distributions' for available options
+          java-version: "19"
+      - name: Apalache integration tests
+        run: |
+          cd ./quint
+          # Fetch the latest apalache release
+          make -C .. apalache
+          # Run the "disintegration" tests
+          npm run apalache-dist
+          # Start the server
+          _build/apalache/bin/apalache-mc server &
+          # Run the integration tests
+          npm run apalache-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # These tests fail on windows currently
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
+
+  quint-examples-dashboard:
+    name: Examples Dashboard
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        # Since txm may install additional deps, we ensure that
+        # we can run quint based on its package manifest
+        run: quint --version
+      - run: npm install -g txm
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin" # See 'Supported distributions' for available options
+          java-version: "19"
+      - name: Set up apalache
+        run: |
+          # Fetch the latest apalache release
+          make apalache
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: matrix.operating-system == 'macos-latest'
+        # TODO(#1004): Workaround for GNU parallel not being available on macOS
+        # We should find a better way of managing dev dependencies.
+        name: Install GNU parallel
+        run: brew install parallel
+      - name: Ensure the examples dashboard is up to date
+        run: |
+          # Update the examples dashboard
+          make examples
+          # Check that it is up to date
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" &&  exit 1)

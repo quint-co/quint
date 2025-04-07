@@ -50,6 +50,23 @@ module basicSpells {
     assert(max(-5, -3) == -3),
   }
 
+  /// Compute the minimum of two integers.
+  ///
+  /// - @param i first integer
+  /// - @param j second integer
+  /// - @returns the minimum of i and j
+  pure def min(i: int, j: int): int = {
+    if (i < j) i else j
+  }
+
+  run minTest = all {
+    assert(min(3, 4) == 3),
+    assert(min(6, 3) == 3),
+    assert(min(10, 10) == 10),
+    assert(min(-3, -5) == -5),
+    assert(min(-5, -3) == -5),
+  }
+
   /// Compute the absolute value of an integer
   ///
   /// - @param i : an integer whose absolute value we are interested in
