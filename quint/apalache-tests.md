@@ -188,7 +188,7 @@ quint verify --temporal eventuallyOne,eventuallyFive ./testFixture/apalache/temp
 ```
 output=$(quint verify --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt)
 exit_code=$?
-echo "$output" | egrep 'State|__InLoop:|n:'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
 exit $exit_code
 ```
 
@@ -201,30 +201,20 @@ error: found a counterexample
 <!-- !test out prints a trace on temporal violation -->
 ```
 An example execution:
-[State 0]
-  __InLoop: false,
-  __saved_n: 1,
-  n: 1
-[State 1]
-  __InLoop: true,
-  __saved_n: 1,
-  n: 2
-[State 2]
-  __InLoop: true,
-  __saved_n: 1,
-  n: 3
-[State 3]
-  __InLoop: true,
-  __saved_n: 1,
-  n: 4
-[State 4]
-  __InLoop: true,
-  __saved_n: 1,
-  n: 5
-[State 5]
-  __InLoop: true,
-  __saved_n: 1,
-  n: 1
+
+[State 0] { n: 1 }
+
+[State 1] { n: 2 }
+
+[State 2] { n: 3 }
+
+[State 3] { n: 4 }
+
+[State 4] { n: 5 }
+
+[State 5] { n: 1 }
+
+[violation] Found an issue (duration).
 ```
 
 ## Compiling to TLA+
