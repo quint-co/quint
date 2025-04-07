@@ -51,7 +51,7 @@ jobs:
           ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator/{0}', github.event.inputs.tag) || github.ref }}
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          working-directory: ./evaluator
+          manifest-path: ./evaluator/Cargo.toml
           bin: quint_evaluator
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
