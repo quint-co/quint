@@ -28,7 +28,6 @@ module ApalacheCompilation {
   // Tests whether we will sanitize identifiers
   def foo::bar(__123) = __123
 
-  // TODO: Tests that we remove primes from assignments in the init function
   action init = {
     x' = importedValue + instantiatedValue
   }
@@ -47,4 +46,6 @@ module ApalacheCompilation {
 
   // Tests that we can specify an alternative invariant via CLI args
   def altInv = x >= 0
+
+  run test = init.then(step)
 }

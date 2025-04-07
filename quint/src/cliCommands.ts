@@ -785,8 +785,14 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
   const verbosityLevel = deriveVerbosity(args)
   const target = (compiled.args.target as string).toLowerCase()
 
+  const removeRuns = (module: QuintModule): QuintModule => {
+    return { ...module, declarations: module.declarations.filter(d => d.kind !== 'def' || d.qualifier !== 'run') }
+  }
+
   const main =
-    target == 'tlaplus' ? convertInit(compiled.mainModule, compiled.table, compiled.modes) : right(compiled.mainModule)
+    target == 'tlaplus'
+      ? convertInit(removeRuns(compiled.mainModule), compiled.table, compiled.modes)
+      : right(compiled.mainModule)
 
   if (main.isLeft()) {
     return cliErr('Failed to convert init to predicate', {
