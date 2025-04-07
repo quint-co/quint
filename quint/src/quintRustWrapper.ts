@@ -348,7 +348,7 @@ class GitHubClient {
     const url = `https://api.github.com/repos/informalsystems/quint/releases`
     const response = await this.fetch(url, 'application/vnd.github.v3+json')
     const releases = (await response.json()) as GitHubRelease[]
-    const release = releases.find(release => release.tag_name === `evaluator-${version}`)
+    const release = releases.find(release => release.tag_name === `evaluator/${version}`)
     if (!release) {
       throw new Error(`Release ${version} not found`)
     }
