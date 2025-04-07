@@ -195,7 +195,7 @@ quint compile --target invalidTarget ../examples/language-features/booleans.qnt 
 
 <!-- !test err compile to invalid target -->
 ```
-Invalid option for --target: invalidTarget. Valid options: tlaplus, json
+  Argument: target, Given: "invalidTarget", Choices: "tlaplus", "json"
 ```
 
 
@@ -203,12 +203,37 @@ Invalid option for --target: invalidTarget. Valid options: tlaplus, json
 
 <!-- !test in compile booleans.qnt to json -->
 ```
-quint compile --target json ../examples/language-features/booleans.qnt  | jq '.modules[0].name'
+quint compile --target json ../examples/language-features/booleans.qnt  | jq '.main, .modules[0].name'
 ```
 
 <!-- !test out compile booleans.qnt to json -->
 ```
 "booleans"
+"booleans"
+```
+
+### Flattens modules on compile with `--flatten`
+
+<!-- !test in compile flatten=true -->
+```
+quint compile --target json --flatten ../examples/language-features/instances.qnt  | jq '.table | length'
+```
+
+<!-- !test out compile flatten=true -->
+```
+51
+```
+
+### Does not flatten modules on compile with `--flatten=false`
+
+<!-- !test in compile flatten=false -->
+```
+quint compile --target json --flatten=false ../examples/language-features/instances.qnt  | jq '.table | length'
+```
+
+<!-- !test out compile flatten=false -->
+```
+39
 ```
 
 ## Use of `repl`, `test`, and `run`

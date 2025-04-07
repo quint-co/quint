@@ -74,23 +74,32 @@ quint compile <input>
 compile a Quint specification into the target, the output is written to stdout
 
 Options:
-  --help       Show help                                               [boolean]
-  --version    Show version number                                     [boolean]
-  --out        output file (suppresses all console output)              [string]
-  --main       name of the main module (by default, computed from filename)
+  --help              Show help                                        [boolean]
+  --version           Show version number                              [boolean]
+  --out               output file (suppresses all console output)       [string]
+  --main              name of the main module (by default, computed from
+                      filename)                                         [string]
+  --init              name of the initializer action  [string] [default: "init"]
+  --step              name of the step action         [string] [default: "step"]
+  --invariant         the invariants to check, separated by commas      [string]
+  --temporal          the temporal properties to check, separated by commas
                                                                         [string]
-  --init       name of the initializer action         [string] [default: "init"]
-  --step       name of the step action                [string] [default: "step"]
-  --invariant  the invariants to check, separated by commas (e.g.)      [string]
-  --temporal   the temporal properties to check, separated by commas    [string]
-  --target     the compilation target. Supported values: tlaplus, json
-                                                      [string] [default: "json"]
-  --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
+  --target            the compilation target.
+                         [string] [choices: "tlaplus", "json"] [default: "json"]
+  --flatten           Whether or not to flatten the modules into one. Use
+                      --flatten=false to disable       [boolean] [default: true]
+  --verbosity         control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
+  --apalache-version  The version of Apalache to use, if no running server is
+                      found (using this option may result in incompatibility)
+                                                    [string] [default: "0.47.2"]
+  --server-endpoint   Apalache server endpoint hostname:port
+                                            [string] [default: "localhost:8822"]
 ```
 
 Given a quint specification as input, this command parses, resolves imports,
 typechecks, and then "flattens" the specification into on module containing just
-the needed definitions.
+the needed definitions (unless `--flatten=false` is given).
 
 The main module is determined as follows: If a module name is specified by
 `--main`, that takes precedence. Otherwise, if there is only one module in the
@@ -215,26 +224,31 @@ Simulate a Quint specification and (optionally) check invariants
 Options:
   --help         Show help                                             [boolean]
   --version      Show version number                                   [boolean]
+  --out          output file (suppresses all console output)            [string]
   --main         name of the main module (by default, computed from filename)
                                                                         [string]
-  --out          output file (suppresses all console output)            [string]
-  --out-itf      output the trace in the Informal Trace Format to file
-                 (suppresses all console output)                         [string]
-  --max-samples  the maximum on the number of traces to try
+  --out-itf      output the trace in the Informal Trace Format to file, e.g.,
+                 out_{seq}.itf.json where {seq} is the trace sequence number
+                 (suppresses all console output)                        [string]
+  --max-samples  the maximum number of runs to attempt before giving up
                                                        [number] [default: 10000]
   --n-traces     how many traces to generate (only affects output to out-itf)
-                                                           [number] [default: 1]                                                       
+                                                           [number] [default: 1]
   --max-steps    the maximum on the number of steps in every trace
                                                           [number] [default: 20]
   --init         name of the initializer action       [string] [default: "init"]
   --step         name of the step action              [string] [default: "step"]
   --invariant    invariant to check: a definition name or an expression
-                                                    [string] [default: ["true"]]
-  --seed         random seed to use for non-deterministic choice        [string]
+                                                      [string] [default: "true"]
   --witnesses    space separated list of witnesses to report on (counting for
                  how many traces the witness is true)      [array] [default: []]
+  --seed         random seed to use for non-deterministic choice        [string]
+  --verbosity    control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
   --mbt          (experimental) whether to produce metadata to be used by
                  model-based testing                  [boolean] [default: false]
+  --backend      the backend to use for simulation
+                [string] [choices: "typescript", "rust"] [default: "typescript"]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the

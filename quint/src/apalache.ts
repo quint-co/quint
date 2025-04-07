@@ -32,7 +32,7 @@ import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
-import { verbosity } from './verbosity'
+import { debugLog, verbosity } from './verbosity'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import { request as octokitRequest } from '@octokit/request'
 
@@ -505,16 +505,4 @@ export async function connect(
         })
     )
     .then(chain(() => tryConnect(serverEndpoint, true)))
-}
-
-/**
- * Log `msg` to the console if `verbosityLevel` implies debug output.
- *
- * @param verbosityLevel  the current verbosity level (set with --verbosity)
- * @param msg             the message to log
- */
-function debugLog(verbosityLevel: number, msg: string) {
-  if (verbosity.hasDebugInfo(verbosityLevel)) {
-    console.log(msg)
-  }
 }

@@ -91,3 +91,15 @@ export const verbosity = {
     return level >= 4
   },
 }
+
+/**
+ * Log `msg` to the console if `verbosityLevel` implies debug output.
+ *
+ * @param verbosityLevel  the current verbosity level (set with --verbosity)
+ * @param msg             the message to log
+ */
+export function debugLog(verbosityLevel: number, msg: string) {
+  if (verbosity.hasDebugInfo(verbosityLevel)) {
+    console.log(msg)
+  }
+}
