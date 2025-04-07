@@ -1,0 +1,77 @@
+name: Quint
+
+on:
+  # Every pull request
+  pull_request:
+    path:
+      - "quint/**"
+      - ".github/workflows/quint.yml"
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+    path:
+      - "quint/**"
+      - ".github/workflows/quint.yml"
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: npm install
+      - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
+
+  quint-unit-tests:
+    name: Unit Tests
+    runs-on: ${{ matrix.operating-system }}
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: npm install
+      - run: npm run compile
+      - run: npm test
+
+  quint-test-generated-up-to-date:
+    name: Generated files up-to-date
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: npm install
+      - name: Compile and update test fixtures
+        run: npm run generate
+      - name: Check that generated files are up to date
+        run: |
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Generated files are not up to date. Run 'npm run generate'" &&  exit 1)

@@ -1,0 +1,40 @@
+name: Lint VSCode Extension
+
+on:
+  # Every pull request
+  pull_request:
+    path:
+      - "vscode/**"
+      - ".github/workflows/lint-vscode.yml"
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+    path:
+      - "vscode/**"
+      - ".github/workflows/lint-vscode.yml"
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Install quint deps
+        run: cd ./quint && npm install
+      - name: Install yalc
+        run: npm i yalc -g
+      - name: Compile quint vscode plugin
+        run: make local
+      - name: Run formatting for the plugin
+        run: cd ./vscode/quint-vscode && npm run format-check || (echo "Run 'npm run format'" && exit 1)
