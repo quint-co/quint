@@ -24,7 +24,7 @@ jobs:
       - uses: taiki-e/create-gh-release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator-{0}', github.event.inputs.tag) || github.ref }}
+          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator/{0}', github.event.inputs.tag) || github.ref }}
 
   upload-assets:
     needs: create-release
@@ -56,4 +56,4 @@ jobs:
           bin: quint_evaluator
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator-{0}', github.event.inputs.tag) || github.ref }}
+          ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator/{0}', github.event.inputs.tag) || github.ref }}
