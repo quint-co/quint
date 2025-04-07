@@ -25,6 +25,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.inputs.tag && format('refs/tags/evaluator/{0}', github.event.inputs.tag) || github.ref }}
+          prefix: "evaluator\\/"
 
   upload-assets:
     needs: create-release
