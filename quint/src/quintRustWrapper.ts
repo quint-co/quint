@@ -24,7 +24,7 @@ import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 
-const QUINT_EVALUATOR_VERSION = 'v0.0.0-pre.1'
+const QUINT_EVALUATOR_VERSION = 'v0.0.0-pre.2'
 
 export type ParsedQuint = {
   modules: QuintModule[]
