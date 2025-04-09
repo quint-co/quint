@@ -20,7 +20,6 @@ import { Either, chain, left, right } from '@sweet-monads/either'
 import { ErrorMessage } from './ErrorMessage'
 import path from 'path'
 import fs from 'fs'
-import os from 'os'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import semver from 'semver'
 import { pipeline } from 'stream/promises'
@@ -38,6 +37,7 @@ import { debugLog, verbosity } from './verbosity'
 
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
+import { apalacheDistDir } from './config'
 
 /**
  * A server endpoint for establishing a connection with the Apalache server.
@@ -78,14 +78,6 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
 export const DEFAULT_APALACHE_VERSION_TAG = '0.47.2'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
-
-function quintConfigDir(): string {
-  return path.join(os.homedir(), '.quint')
-}
-
-function apalacheDistDir(apalacheVersion: string): string {
-  return path.join(quintConfigDir(), `apalache-dist-${apalacheVersion}`)
-}
 
 // The structure used to report errors
 type ApalacheError = {
