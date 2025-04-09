@@ -23,6 +23,7 @@ const spawn = require('cross-spawn')
 import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
+import { rustEvaluatorDir } from './config'
 
 const QUINT_EVALUATOR_VERSION = 'v0.1.0'
 
@@ -127,23 +128,6 @@ interface GitHubRelease {
 interface GitHubAsset {
   name: string
   url: string
-}
-
-/**
- * Get the configuration directory for Quint.
- * @returns {string} The path to the Quint configuration directory.
- */
-function quintConfigDir(): string {
-  return path.join(os.homedir(), '.quint')
-}
-
-/**
- * Get the path to the Rust evaluator executable.
- * @param {string} version - The version of the evaluator.
- * @returns {string} The path to the Quint evaluator executable.
- */
-function rustEvaluatorDir(version: string): string {
-  return path.join(quintConfigDir(), `rust-evaluator-${version}`)
 }
 
 /**
