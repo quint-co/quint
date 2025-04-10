@@ -3,9 +3,6 @@ name: Quint
 on:
   # Every pull request
   pull_request:
-    path:
-      - "quint/**"
-      - ".github/workflows/quint.yml"
   # When part of a merge queue
   # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
   merge_group:
@@ -16,12 +13,27 @@ on:
   push:
     branches:
       - main
-    path:
-      - "quint/**"
-      - ".github/workflows/quint.yml"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      quint: ${{ steps.filter.outputs.quint }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quint:
+              - 'quint/**'
+
   format-check:
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -3,11 +3,6 @@ name: Integration Tests
 on:
   # Every pull request
   pull_request:
-    path:
-      - "examples/**"
-      - "quint/**"
-      - "evaluator/**"
-      - ".github/workflows/quint-fixtures.yml"
   # When part of a merge queue
   # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
   merge_group:
@@ -18,15 +13,30 @@ on:
   push:
     branches:
       - main
-    path:
-      - "examples/**"
-      - "quint/**"
-      - "evaluator/**"
-      - ".github/workflows/quint-fixtures.yml"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'examples/**'
+              - 'quint/**'
+              - 'evaluator/**'
+
   quint-integration-tests:
     name: TXM tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -75,6 +85,8 @@ jobs:
 
   quint-examples-dashboard:
     name: Examples Dashboard
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false

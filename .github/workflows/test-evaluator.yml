@@ -3,14 +3,8 @@ name: Test Evaluator
 on:
   push:
     branches: main
-    paths:
-      - "evaluator/**"
-      - ".github/workflows/test-evaluator.yml"
   merge_group:
   pull_request:
-    paths:
-      - "evaluator/**"
-      - ".github/workflows/test-evaluator.yml"
 
 permissions:
   contents: read
@@ -32,8 +26,26 @@ env:
   GIT_LFS_SKIP_SMUDGE: 1
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      evaluator: ${{ steps.filter.outputs.evaluator }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            evaluator:
+              - 'evaluator/**'
+
   unit:
     name: Unit Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.evaluator == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     defaults:
       run:
