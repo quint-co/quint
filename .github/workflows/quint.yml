@@ -50,6 +50,8 @@ jobs:
 
   quint-unit-tests:
     name: Unit Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
     defaults:
       run:
@@ -69,6 +71,8 @@ jobs:
 
   quint-test-generated-up-to-date:
     name: Generated files up-to-date
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     defaults:
       run:
