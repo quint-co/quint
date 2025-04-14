@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.15.0 -- 2025-04-14
+
+### Added
 - Add new autocomplete options (#1616).
 ### Changed
 ### Deprecated
