@@ -10,7 +10,6 @@
  * @author Igor Konnov, konnov.phd, 2024
  */
 
-import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
@@ -100,7 +99,6 @@ const typecheckCmd = {
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
-const supportedTarges = ['tlaplus', 'json']
 // construct the compile subcommand
 const compileCmd = {
   command: 'compile <input>',
@@ -108,15 +106,15 @@ const compileCmd = {
   builder: (yargs: any) =>
     compileOpts(yargs)
       .option('target', {
-        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
+        desc: `the compilation target.`,
         type: 'string',
+        choices: ['tlaplus', 'json'],
         default: 'json',
       })
-      .coerce('target', (target: string): string => {
-        if (!supportedTarges.includes(target)) {
-          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
-        }
-        return target
+      .option('flatten', {
+        desc: 'Whether or not to flatten the modules into one. Use --flatten=false to disable',
+        type: 'boolean',
+        default: true,
       })
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
@@ -232,7 +230,7 @@ const testCmd = {
 // construct run commands with yargs
 const runCmd = {
   command: 'run <input>',
-  desc: 'Simulate a Quint specification and check invariants',
+  desc: 'Simulate a Quint specification and (optionally) check invariants',
   builder: (yargs: any) =>
     defaultOpts(yargs)
       .option('main', {
@@ -291,6 +289,12 @@ const runCmd = {
         desc: '(experimental) whether to produce metadata to be used by model-based testing',
         type: 'boolean',
         default: false,
+      })
+      .option('backend', {
+        desc: 'the backend to use for simulation',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633

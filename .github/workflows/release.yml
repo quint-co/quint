@@ -41,7 +41,20 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  arches:
+  wait-for-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for NPM
+        timeout-minutes: 30
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          while ! curl -s https://registry.npmjs.org/@informalsystems/quint | jq -er ".versions.\"${REF_NAME#v}\""; do
+            echo "Waiting for NPM to publish version ${REF_NAME#v}..."
+            sleep 30
+          done
+  check-on-arch:
     strategy:
       matrix:
         os:
@@ -55,7 +68,7 @@ jobs:
           - macos-13
           # pc-amd64
           - windows-2022
-    needs: release
+    needs: wait-for-npm
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Deno
@@ -63,19 +76,14 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Wait for NPM
+      - name: Check Quint
         timeout-minutes: 30
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          while ! curl -s https://registry.npmjs.org/@informalsystems/quint | jq -er ".versions.\"${REF_NAME#v}\""; do
-            echo "Waiting for NPM to publish version ${REF_NAME#v}..."
-            sleep 30
-          done
-
           deno run --allow-all --node-modules-dir=auto --allow-scripts "npm:@informalsystems/quint@${REF_NAME#v}" --version
-  binaries:
-    needs: arches
+  upload-binaries:
+    needs: check-on-arch
     runs-on: ubuntu-latest
     steps:
       - name: Install Deno

@@ -12,6 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.24.0 -- 2025-04-08
+
+### Added
+
+- Added a `--flatten` option to `quint compile` to enable compilation of unflattened modules (#1623)
+- Added a `main` field to the JSON output of `quint compile` (#1623)
+- Added a `--backend` option to `quint run` to enable running the new Rust simulator (#1623)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Init definitions are now properly transpiled into TLA+ without assignments (#1613)
 

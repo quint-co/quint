@@ -20,7 +20,6 @@ import { Either, chain, left, right } from '@sweet-monads/either'
 import { ErrorMessage } from './ErrorMessage'
 import path from 'path'
 import fs from 'fs'
-import os from 'os'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import semver from 'semver'
 import { pipeline } from 'stream/promises'
@@ -32,12 +31,13 @@ import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
-import { verbosity } from './verbosity'
+import { debugLog, verbosity } from './verbosity'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import { request as octokitRequest } from '@octokit/request'
 
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
+import { apalacheDistDir } from './config'
 
 /**
  * A server endpoint for establishing a connection with the Apalache server.
@@ -78,14 +78,6 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
 export const DEFAULT_APALACHE_VERSION_TAG = '0.47.2'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
-
-function quintConfigDir(): string {
-  return path.join(os.homedir(), '.quint')
-}
-
-function apalacheDistDir(apalacheVersion: string): string {
-  return path.join(quintConfigDir(), `apalache-dist-${apalacheVersion}`)
-}
 
 // The structure used to report errors
 type ApalacheError = {
@@ -219,6 +211,8 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
+const GRPC_TIMEOUT_MS = 5000
+
 async function loadProtoDefViaReflection(
   serverEndpoint: ServerEndpoint,
   retry: boolean
@@ -239,7 +233,9 @@ async function loadProtoDefViaReflection(
   type ServerReflectionResponse = ServerReflectionResponseSuccess | ServerReflectionResponseFailure
   type ServerReflectionService = {
     new (url: string, creds: grpc.ChannelCredentials): ServerReflectionService
-    ServerReflectionInfo: () => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
+    ServerReflectionInfo: (args: {
+      deadline: Date
+    }) => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
     getChannel: () => { getConnectivityState: (_: boolean) => grpc.connectivityState }
   }
   type ServerReflectionPkg = {
@@ -272,8 +268,12 @@ async function loadProtoDefViaReflection(
   }
 
   // Query reflection endpoint
-  return new Promise<ApalacheResult<ServerReflectionResponse>>((resolve, _) => {
-    const call = reflectionClient.ServerReflectionInfo()
+  return new Promise<ApalacheResult<ServerReflectionResponse>>((resolve, _reject) => {
+    // Add deadline to the call
+    const deadline = new Date()
+    deadline.setMilliseconds(deadline.getMilliseconds() + GRPC_TIMEOUT_MS)
+
+    const call = reflectionClient.ServerReflectionInfo({ deadline })
     call.on('data', (r: ServerReflectionResponse) => {
       call.end()
       resolve(right(r))
@@ -497,16 +497,4 @@ export async function connect(
         })
     )
     .then(chain(() => tryConnect(serverEndpoint, true)))
-}
-
-/**
- * Log `msg` to the console if `verbosityLevel` implies debug output.
- *
- * @param verbosityLevel  the current verbosity level (set with --verbosity)
- * @param msg             the message to log
- */
-function debugLog(verbosityLevel: number, msg: string) {
-  if (verbosity.hasDebugInfo(verbosityLevel)) {
-    console.log(msg)
-  }
 }

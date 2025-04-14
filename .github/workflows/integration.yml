@@ -1,8 +1,13 @@
-# This build configuration is adapted from Apalache
+name: Integration Tests
 
 on:
   # Every pull request
   pull_request:
+    path:
+      - "examples/**"
+      - "quint/**"
+      - "evaluator/**"
+      - ".github/workflows/quint-fixtures.yml"
   # When part of a merge queue
   # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
   merge_group:
@@ -13,82 +18,15 @@ on:
   push:
     branches:
       - main
-
-name: build
+    path:
+      - "examples/**"
+      - "quint/**"
+      - "evaluator/**"
+      - ".github/workflows/quint-fixtures.yml"
 
 jobs:
-  quint-linting:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./quint
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - run: npm install
-      - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
-
-  quint-vscode-linting:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - name: Install quint deps
-        run: cd ./quint && npm install
-      - name: Install yalc
-        run: npm i yalc -g
-      - name: Compile quint vscode plugin
-        run: make local
-      - name: Run formatting for the plugin
-        run: cd ./vscode/quint-vscode && npm run format-check || (echo "Run 'npm run format'" && exit 1)
-
-  quint-unit-tests:
-    runs-on: ${{ matrix.operating-system }}
-    defaults:
-      run:
-        working-directory: ./quint
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - run: npm install
-      - run: npm run compile
-      - run: npm test
-
-  quint-test-generated-up-to-date:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./quint
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - run: npm install
-      - name: Compile and update test fixtures
-        run: npm run generate
-      - name: Check that generated files are up to date
-        run: |
-          git diff --exit-code \
-            || ( echo ">>> ERROR: Generated files are not up to date. Run 'npm run generate'" &&  exit 1)
-
   quint-integration-tests:
+    name: TXM tests
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -136,6 +74,7 @@ jobs:
         if: matrix.operating-system != 'windows-latest'
 
   quint-examples-dashboard:
+    name: Examples Dashboard
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -175,49 +114,3 @@ jobs:
           # Check that it is up to date
           git diff --exit-code \
             || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" &&  exit 1)
-
-  quint-antlr-grammar:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - run: cd ./quint && npm install
-      - run: cd ./quint && npm run antlr
-
-  quint-vscode-plugin:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache nix store
-        # Workaround for cache action not playing well with permissions
-        # See https://github.com/actions/cache/issues/324
-        uses: john-shaffer/cache@59429c0461095f341a8cf7388e5d3aef37b95edd
-        with:
-          path: |
-            /nix/store
-            /nix/var/nix/profiles
-          key: ${{ runner.os }}-nix-${{ hashFiles('**.nix') }}
-          restore-keys: |
-            ${{ runner.os }}-nix-
-            ${{ runner.os }}-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v22
-        with:
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-      - name: Build dev-shell
-        run: nix develop -c bash -c exit
-      - name: Install quint deps
-        run: cd ./quint && nix develop -c npm install
-      - name: Compile quint vscode plugin
-        run: nix develop -c make local
-      - name: Run vscode unit tests
-        run: cd ./vscode/quint-vscode && nix develop -c npm test
-      - name: Check that we can create the vsix package
-        run: cd ./vscode/quint-vscode && nix develop -c vsce package
