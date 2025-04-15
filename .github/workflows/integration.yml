@@ -34,7 +34,7 @@ jobs:
               - 'evaluator/**'
 
   quint-integration-tests:
-    name: TXM tests
+    name: TXM tests by OS
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
@@ -82,6 +82,14 @@ jobs:
         # These tests fail on windows currently
         # See https://github.com/anko/txm/issues/10
         if: matrix.operating-system != 'windows-latest'
+
+  quint-integration-tests-aggregator:
+    name: TXM tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"
 
   quint-examples-dashboard:
     name: Examples Dashboard
