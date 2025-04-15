@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Errors from the Rust evaluator now show the corresponding location (#1648)
+
 ### Changed
 ### Deprecated
 ### Removed
