@@ -92,7 +92,7 @@ jobs:
       - run: echo "All OS tests completed successfully!"
 
   quint-examples-dashboard:
-    name: Examples Dashboard
+    name: Examples Dashboard by OS
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
@@ -134,3 +134,11 @@ jobs:
           # Check that it is up to date
           git diff --exit-code \
             || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" &&  exit 1)
+
+  quint-examples-dashboard-aggregator:
+    name: Examples Dashboard
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-examples-dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"

@@ -49,7 +49,7 @@ jobs:
       - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
   quint-unit-tests:
-    name: Unit Tests
+    name: Unit Tests by OS
     needs: changes
     if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
@@ -68,6 +68,14 @@ jobs:
       - run: npm install
       - run: npm run compile
       - run: npm test
+
+  quint-unit-tests-aggregator:
+    name: Unit Tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"
 
   quint-test-generated-up-to-date:
     name: Generated files up-to-date
