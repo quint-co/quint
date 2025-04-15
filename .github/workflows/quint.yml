@@ -3,9 +3,6 @@ name: Quint
 on:
   # Every pull request
   pull_request:
-    path:
-      - "quint/**"
-      - ".github/workflows/quint.yml"
   # When part of a merge queue
   # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
   merge_group:
@@ -16,12 +13,27 @@ on:
   push:
     branches:
       - main
-    path:
-      - "quint/**"
-      - ".github/workflows/quint.yml"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      quint: ${{ steps.filter.outputs.quint }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quint:
+              - 'quint/**'
+
   format-check:
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +49,9 @@ jobs:
       - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
   quint-unit-tests:
-    name: Unit Tests
+    name: Unit Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
     defaults:
       run:
@@ -55,8 +69,18 @@ jobs:
       - run: npm run compile
       - run: npm test
 
+  quint-unit-tests-aggregator:
+    name: Unit Tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"
+
   quint-test-generated-up-to-date:
     name: Generated files up-to-date
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     defaults:
       run:

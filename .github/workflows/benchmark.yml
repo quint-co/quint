@@ -1,17 +1,9 @@
 name: Benchmark
 
 on:
-  push:
-    branches: main
-    paths:
-      - "evaluator/**"
-      - ".github/workflows/benchmark.yml"
   merge_group:
   pull_request:
     types: [opened, synchronize]
-    paths:
-      - "evaluator/**"
-      - ".github/workflows/benchmark.yml"
 
 # If new code is pushed to a PR branch, then cancel in progress workflows for that PR.
 # Ensures that we don't waste CI time, and returns results quicker.
@@ -28,8 +20,26 @@ env:
   GIT_LFS_SKIP_SMUDGE: 1
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      evaluator: ${{ steps.filter.outputs.evaluator }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            evaluator:
+              - 'evaluator/**'
+
   benchmark:
     name: Run benchmarks
+    needs: changes
+    if: ${{ needs.changes.outputs.evaluator == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
