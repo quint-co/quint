@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem on `pure val`s referring to constants resulting in errors in the Rust evaluator (#1647)
+
 ### Security
 
 ## v0.24.0 -- 2025-04-08
