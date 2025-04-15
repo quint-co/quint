@@ -24,6 +24,7 @@ import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 import { rustEvaluatorDir } from './config'
+import { QuintError } from './quintError'
 
 const QUINT_EVALUATOR_VERSION = 'v0.1.0'
 
@@ -112,6 +113,9 @@ export class QuintRustWrapper {
 
       // Convert traces to ITF
       parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({ ...trace, states: ofItf(trace.states) }))
+
+      // Convert errors
+      parsed.errors = parsed.errors.map((err: any): QuintError => ({ ...err, reference: BigInt(err.reference) }))
 
       return parsed
     } catch (error) {
