@@ -3,11 +3,6 @@ name: Test VSCode Extension
 on:
   # Every pull request
   pull_request:
-    path:
-      - "vscode/**"
-      # Also run on Quint changes as this can catch integration issues
-      - "quint/**"
-      - ".github/workflows/vscode.yml"
   # When part of a merge queue
   # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
   merge_group:
@@ -18,16 +13,30 @@ on:
   push:
     branches:
       - main
-    path:
-      - "vscode/**"
-      # Also run on Quint changes as this can catch integration issues
-      - "quint/**"
-      - ".github/workflows/vscode.yml"
-
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      vscode: ${{ steps.filter.outputs.vscode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Also run on Quint changes as this can catch integration issues
+          filters: |
+            vscode:
+              - 'vscode/**'
+              - 'quint/**'
+
   quint-vscode-plugin:
-    name: Unit Tests
+    name: Unit Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.vscode == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -62,3 +71,11 @@ jobs:
         run: cd ./vscode/quint-vscode && nix develop -c npm test
       - name: Check that we can create the vsix package
         run: cd ./vscode/quint-vscode && nix develop -c vsce package
+
+  quint-vscode-plugin-aggregator:
+    name: Unit Tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-vscode-plugin
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!

@@ -5,6 +5,7 @@ module A {
 
   pure def f(a) = x + 1
   pure def g(b) = not(b)
+  pure val v = x
 }
 
 module withVar {
@@ -43,4 +44,6 @@ module instances {
 
   // The two variables should increment independently
   val inv = V1::counter == 0 or V2::counter > V1::counter
+  // pure val referencing constant works
+  val inv2 = A1::v == 33
 }
