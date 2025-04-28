@@ -31,7 +31,7 @@ result () {
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
-            "$file" =~ ^cryptography/ ||
+            "$file" =~ ^cryptography/hashes ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "tutorials/integers.qnt" ||
