@@ -41,7 +41,7 @@ parse_args() {
                 WORKERS="$1"
                 ;;
             --help)
-                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH]"
+                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH] [--workers N]"
                 exit 0
                 ;;
             *)
