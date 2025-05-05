@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/common.sh" || { echo "Error: Could not load common.sh"; exit
 APALACHE_JAR="$HOME/.quint/apalache-dist-0.47.2/apalache/lib/apalache.jar"
 JAVA_OPTS="-Xmx8G -Xss515m"
 FILE=""  # Mandatory: User must specify a file
+WORKERS=12  # Default worker count
 
 # Optional parameters
 INVARIANTS=()
@@ -35,8 +36,12 @@ parse_args() {
                 shift
                 APALACHE_JAR="$1"
                 ;;
+            --workers)
+                shift
+                WORKERS="$1"
+                ;;
             --help)
-                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH]"
+                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH] [--workers N]"
                 exit 0
                 ;;
             *)
@@ -89,18 +94,25 @@ create_cfg_file() {
     fi
 }
 
-# Function to run TLC model checker
+# Function to run TLC model checker with real-time output
 run_tlc() {
     local tla_file="$1"
-    local output
+    local output_file
+    output_file=$(mktemp)  # Create a temporary file to store output
 
     info "Running TLC for $tla_file..."
-    output=$(java $JAVA_OPTS -cp "$APALACHE_JAR" tlc2.TLC -deadlock "$tla_file" 2>&1)
 
-    if echo "$output" | grep -q "Model checking completed. No error has been found."; then
+    # Run TLC, writing to both stdout and the temp file
+    if ! java $JAVA_OPTS -cp "$APALACHE_JAR" tlc2.TLC -deadlock -workers "$WORKERS" "$tla_file" 2>&1 | tee "$output_file"; then
+        err_and_exit "TLC execution failed for $tla_file"
+    fi
+
+    # Check the saved output for success message
+    if grep -q "Model checking completed. No error has been found." "$output_file"; then
         info "Model checking succeeded for $tla_file"
+        rm "$output_file"  # Clean up temp file
     else
-        err_and_exit "Model checking failed for $tla_file\n$output"
+        err_and_exit "Model checking failed for $tla_file\n$(cat "$output_file")"
     fi
 }
 
