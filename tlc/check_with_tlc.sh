@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Resolve the script's directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -9,28 +7,44 @@ source "$SCRIPT_DIR/common.sh" || { echo "Error: Could not load common.sh"; exit
 # Default configurations
 APALACHE_JAR="$HOME/.quint/apalache-dist-0.47.2/apalache/lib/apalache.jar"
 JAVA_OPTS="-Xmx8G -Xss515m"
-FILE=""  # Mandatory: User must specify a file
-WORKERS=12  # Default worker count
 
-# Optional parameters
-INVARIANTS=()
-TEMPORAL_PROPS=()
+FILE=""  # Mandatory: User must specify a file
+MAIN=""  # Optional: Main module name
+INIT="init"  # Default initializer action
+STEP="step"  # Default step action
+INVARIANT="true"  # Default invariant
+TEMPORAL=""  # Default temporal properties
+WORKERS="auto"  # Default number of workers for TLC
 
 # Function to parse command-line arguments
 parse_args() {
+    # First argument is the input file (positional)
+    if [[ $# -gt 0 ]] && [[ "$1" != --* ]]; then
+        FILE="$1"
+        shift
+    fi
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --invariant)
                 shift
-                IFS=',' read -ra INVARIANTS <<< "$1"
+                INVARIANT="$1"
                 ;;
             --temporal)
                 shift
-                IFS=',' read -ra TEMPORAL_PROPS <<< "$1"
+                TEMPORAL="$1"
                 ;;
-            --file)
+            --main)
                 shift
-                FILE="$1"
+                MAIN="$1"
+                ;;
+            --init)
+                shift
+                INIT="$1"
+                ;;
+            --step)
+                shift
+                STEP="$1"
                 ;;
             --apalache-jar)
                 shift
@@ -41,7 +55,16 @@ parse_args() {
                 WORKERS="$1"
                 ;;
             --help)
-                echo "Usage: $0 --file FILE.qnt [--invariant INV1,INV2] [--temporal TEMP1,TEMP2] [--apalache-jar JAR_PATH] [--workers N]"
+                echo "Usage: $0 <input> [options]"
+                echo ""
+                echo "Options:"
+                echo "  --help         Show help"
+                echo "  --main         name of the main module (by default, computed from filename)"
+                echo "  --init         name of the initializer action [default: \"init\"]"
+                echo "  --step         name of the step action [default: \"step\"]"
+                echo "  --invariant    invariant to check: a definition name or an expression [default: \"true\"]"
+                echo "  --temporal     the temporal properties to check, separated by commas"
+                echo "  --workers      number of workers for TLC [default: auto]"
                 exit 0
                 ;;
             *)
@@ -54,20 +77,37 @@ parse_args() {
 
     # Ensure exactly one file is provided
     if [[ -z "$FILE" ]]; then
-        err_and_exit "You must specify a Quint file using --file FILE.qnt"
+        err_and_exit "You must specify a Quint file as the first argument"
     fi
 }
 
 # Function to generate the compilation arguments dynamically
 generate_compile_options() {
     local options=()
-    if [[ ${#INVARIANTS[@]} -gt 0 ]]; then
-        options+=("--invariant=$(IFS=,; echo "${INVARIANTS[*]}")")
+
+    if [[ -n "$MAIN" ]]; then
+        options+=("--main=$MAIN")
     fi
-    if [[ ${#TEMPORAL_PROPS[@]} -gt 0 ]]; then
-        options+=("--temporal=$(IFS=,; echo "${TEMPORAL_PROPS[*]}")")
+
+    options+=("--init=$INIT")
+    options+=("--step=$STEP")
+    options+=("--invariant=$INVARIANT")
+
+    if [[ -n "$TEMPORAL" ]]; then
+        options+=("--temporal=$TEMPORAL")
     fi
+
     echo "${options[*]}"
+}
+
+# Function to determine the base name for output files
+get_output_base_name() {
+    if [[ -n "$MAIN" ]]; then
+        echo "$MAIN"
+    else
+        local base_name="${FILE%.qnt}"
+        echo "$base_name"
+    fi
 }
 
 # Function to create a standard .cfg file
@@ -79,15 +119,15 @@ create_cfg_file() {
     echo "NEXT" >> "$cfg_file"
     echo "q_step" >> "$cfg_file"
 
-    # Add default invariant if invariants were specified
-    if [[ ${#INVARIANTS[@]} -gt 0 ]]; then
+    # Add default invariant if invariants were specified and not "true"
+    if [[ "$INVARIANT" != "true" ]]; then
         echo "" >> "$cfg_file"
         echo "INVARIANT" >> "$cfg_file"
         echo "q_inv" >> "$cfg_file"
     fi
 
     # Add default temporal properties if any were specified
-    if [[ ${#TEMPORAL_PROPS[@]} -gt 0 ]]; then
+    if [[ -n "$TEMPORAL" ]]; then
         echo "" >> "$cfg_file"
         echo "PROPERTY" >> "$cfg_file"
         echo "q_temporalProps" >> "$cfg_file"
@@ -118,7 +158,7 @@ run_tlc() {
 
 # Main function to process the file
 process_file() {
-    local base_name="${FILE%.qnt}"
+    local base_name=$(get_output_base_name)
     local tla_file="${base_name}.tla"
     local cfg_file="${base_name}.cfg"
 
