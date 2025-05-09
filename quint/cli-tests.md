@@ -310,7 +310,6 @@ fi
 <!-- !test check simplePonzi - Run progressInv -->
     quint run \
       --invariant=progressInv --main=simplePonziTest \
-      --seed=0x1f035d45bcece7 \
       ../examples/solidity/SimplePonzi/simplePonzi.qnt
 
 ### OK on run gradualPonzi::noNegativeInv

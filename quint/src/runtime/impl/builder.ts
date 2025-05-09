@@ -18,7 +18,7 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
@@ -27,6 +27,7 @@ import { QuintApp, QuintEx, QuintVar } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
+import { isEqual } from 'lodash'
 
 /**
  * The type returned by the builder in its methods, which can be called to get the
@@ -494,6 +495,83 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
       }
     }
     case 'let': {
+      if (expr.opdef.qualifier === 'nondet') {
+        // Special treatment
+        if (expr.opdef.expr.kind !== 'app') {
+          // impossible
+          throw new Error('Impossible case: nondet let expression is not an app')
+        }
+
+        const setEval = buildExpr(builder, expr.opdef.expr.args[0])
+
+        let cache: CachedValue = { value: undefined }
+        builder.scopedCachedValues.set(expr.opdef.id, cache)
+        builder.memo.set(expr.opdef.id, _ => cache.value!)
+        const bodyEval = buildExpr(builder, expr.expr)
+
+        return ctx => {
+          // TODO: if empty set, return false
+          return setEval(ctx).chain(set => {
+            if (set.cardinality().unwrap() === 0n) {
+              return right(rv.mkBool(false))
+            }
+
+            const bounds = set.bounds()
+            const positions: Either<QuintError, bigint[]> = mergeInMany(
+              bounds.map((b): Either<QuintError, bigint> => {
+                if (b.isJust()) {
+                  const sz = b.value
+
+                  if (sz === 0n) {
+                    return left({ code: 'QNT509', message: `Applied oneOf to an empty set` })
+                  }
+                  return right(ctx.rand(sz))
+                } else {
+                  // An infinite set, pick an integer from the range [-2^255, 2^255).
+                  // Note that pick on Nat uses the absolute value of the passed integer.
+                  // TODO: make it a configurable parameter:
+                  // https://github.com/informalsystems/quint/issues/279
+                  return right(-(2n ** 255n) + ctx.rand(2n ** 256n))
+                }
+              })
+            ).mapLeft(errors => errors[0])
+
+            let result: Either<QuintError, RuntimeValue> = right(rv.mkBool(false))
+            let newPositions = [...positions.unwrap()]
+
+            function increment(positions: bigint[], bounds: bigint[]): bigint[] {
+              const newPositions = [...positions]
+              for (let i = newPositions.length - 1; i >= 0; i--) {
+                if (newPositions[i] < bounds[i] - 1n) {
+                  newPositions[i]++
+                  return newPositions
+                } else {
+                  newPositions[i] = 0n
+                }
+              }
+              return newPositions
+            }
+
+            do {
+              const pickedValue = set.pick(newPositions.values())
+              cache.value = pickedValue
+              result = bodyEval(ctx)
+              cache.value = undefined
+              newPositions = increment(
+                newPositions,
+                bounds.map(b => b.unwrap())
+              )
+            } while (
+              result.isRight() &&
+              isEqual(result.value, rv.mkBool(false)) &&
+              !isEqual(newPositions, positions.unwrap())
+            )
+
+            return result
+          })
+        }
+      }
+
       // First, we create a cached value (a register with optional value) for the definition in this let expression
       let cachedValue = builder.scopedCachedValues.get(expr.opdef.id)
       if (!cachedValue) {
