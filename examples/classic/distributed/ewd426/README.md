@@ -8,8 +8,8 @@ This folder contains Quint specifications for the three different self-stabiliza
 Due to the presence of temporal properties and fairness, we need to use TLC to model check these specs. As the integration with TLC is not completed, we provide a script to automate running it for these specific specifications: [check_with_tlc.sh](../../../../tlc/check_with_tlc.sh). Usage:
 
 ```sh
-sh check_with_tlc.sh --file ewd426_3.qnt --temporal convergence,closure,persistence
-sh check_with_tlc.sh --file ewd426_4.qnt --temporal convergence,closure,persistence
+check_with_tlc.sh ewd426_3.qnt --temporal convergence,closure,persistence
+check_with_tlc.sh ewd426_4.qnt --temporal convergence,closure,persistence
 ```
 
 If you are trying to learn/understand these algorithms, we recommend playing with the Quint REPL. For that, pick one of the files (for example [ewd426.qnt](ewd426.qnt)) and run the following command in the terminal:
