@@ -22,7 +22,7 @@ that we have to describe two importants aspects of the protocol:
           
 
 If you would like to see the complete code before diving into
-the details, check [hello.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/hello.qnt).
+the details, check [hello.qnt](https://github.com/informalsystems/quint/blob/main/examples/tutorials/hello.qnt).
           
 ## 2. Declare a module
 
