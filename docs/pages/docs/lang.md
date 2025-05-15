@@ -1119,6 +1119,9 @@ S.allListsUpTo(2)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
 S.chooseSome()
+// Get the only element of a set with exactly one element.
+// Will cause an error if the set has zero or more than one element.
+S.getOnlyElement()
 // There is no special syntax for CHOOSE x \in S: P
 // Instead, you can filter a set and then pick an element of it.
 S.filter(x => P).chooseSome
