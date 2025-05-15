@@ -475,14 +475,14 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 }
 
 // Print a counterexample if the appropriate verbosity is set
-function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], frames: ExecutionFrame[] = []) {
+function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], frames: ExecutionFrame[] = [], hideVars: string[] = []) {
   if (verbosity.hasStateOutput(verbosityLevel)) {
     console.log(chalk.gray('An example execution:\n'))
     const myConsole = {
       width: terminalWidth(),
       out: (s: string) => process.stdout.write(s),
     }
-    printTrace(myConsole, states, frames)
+    printTrace(myConsole, states, frames, hideVars)
   }
 }
 
@@ -534,6 +534,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     rng,
     verbosity: verbosityLevel,
     storeMetadata: prev.args.mbt,
+    hideVars: prev.args.hide || [],
     numberOfTraces: prev.args.nTraces,
     onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
       const itfFile: string | undefined = prev.args.outItf
@@ -663,7 +664,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'ok':
-      maybePrintCounterExample(verbosityLevel, states, frames)
+      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
         if (verbosity.hasHints(verbosityLevel)) {
@@ -680,7 +681,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'violation':
-      maybePrintCounterExample(verbosityLevel, states, frames)
+      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
 
@@ -913,7 +914,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
         const status = trace !== undefined ? 'violation' : 'failure'
         if (trace !== undefined) {
           // Always print the conterexample, unless the output is being directed to one of the outfiles
-          maybePrintCounterExample(verbosityLevel, trace)
+          maybePrintCounterExample(verbosityLevel, trace, [], prev.args.hide || [])
 
           if (verbosity.hasResults(verbosityLevel)) {
             console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
