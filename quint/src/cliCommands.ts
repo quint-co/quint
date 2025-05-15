@@ -372,27 +372,29 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   const evaluator = new Evaluator(testing.table, newTraceRecorder(verbosityLevel, rng, 1), rng)
-  const results = testDefs.map((def, index) => {
-    return evaluator.test(def, maxSamples, options.onTrace(index))
-  })
+  const results: TestResult[] = []
+  let nFailures = 1
+
+  // Run each test and display results immediately
+  for (const def of testDefs) {
+    const result = evaluator.test(def, maxSamples, options.onTrace(results.length))
+    results.push(result)
+
+    // Display result immediately
+    if (verbosity.hasResults(verbosityLevel)) {
+      if (result.status === 'passed') {
+        out(`    ${chalk.green('ok')} ${result.name} passed ${result.nsamples} test(s)`)
+      }
+      if (result.status === 'failed') {
+        const errNo = chalk.red(nFailures)
+        out(`    ${errNo}) ${result.name} failed after ${result.nsamples} test(s)`)
+        nFailures++
+      }
+    }
+  }
 
   // We're finished running the tests
   const elapsedMs = Date.now() - startMs
-
-  // output the status for every test
-  let nFailures = 1
-  if (verbosity.hasResults(verbosityLevel)) {
-    results.forEach(res => {
-      if (res.status === 'passed') {
-        out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-      }
-      if (res.status === 'failed') {
-        const errNo = chalk.red(nFailures)
-        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
-        nFailures++
-      }
-    })
-  }
 
   const passed = results.filter(r => r.status === 'passed')
   const failed = results.filter(r => r.status === 'failed')
@@ -494,8 +496,7 @@ function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses
     outcome.witnessingTraces.forEach((n, i) => {
       const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
       console.log(
-        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
-          outcome.samples
+        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${outcome.samples
         } explored ${percentage}`
       )
     })
