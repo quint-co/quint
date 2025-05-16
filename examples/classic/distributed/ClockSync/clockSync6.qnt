@@ -1,14 +1,17 @@
+// -*- mode: Bluespec; -*-
 /**
  * Clock Synchronization Algorithm - Version 6 (from TLA+ ClockSync6)
  *
  * This specification is a Quint translation of the TLA+ model ClockSync6.tla
- * from the tla-apalache-workshop.
+ * from the tla-apalache-workshop [1].
  *
  * Version 6 features:
  * - Processes (Proc) as a parameter.
  * - ApaFoldSet logic (here implemented with Set::fold).
  * - Full set of actions: SendMsg, ReceiveMsg, AdvanceClocks.
  * - Clock adjustment logic based on received messages.
+ *
+ * [1]: https://github.com/informalsystems/tla-apalache-workshop/blob/main/examples/clock-sync/ClockSync6.tla
  */
 module ClockSync6Spec {
   // Constants
@@ -19,29 +22,29 @@ module ClockSync6Spec {
   // Assumptions
   assume _ = (t_min >= 0 and t_max > t_min)
 
+  // Define control state type
+  type ControlState = InitState | SentState | SyncState
+
   // State Variables
   var time: int
   var hc: str -> int
   var adj: str -> int
-  var diff: str -> (str -> int) // Represents TLA+ <<Str, Str>> -> Int
+  var diff: (str, str) -> int
   var msgs: Set[{ src: str, ts: int }]
   var rcvd: str -> Set[{ src: str, ts: int }]
-  var state: str -> str
+  var state: str -> ControlState
 
   // Definitions
 
   // The number of processes
   val NProc = Proc.size()
 
-  // Control states (as a set of string literals)
-  val ControlStates = Set("init", "sent", "sync")
-
   // The adjusted clock of process i_proc
   def AC(i_proc: str): int = hc.get(i_proc) + adj.get(i_proc)
 
   // Sum up the clock differences as observed by a process p_proc
-  pure def DiffSum(df: str -> (str -> int), p_proc: str): int = {
-    Proc.fold(0, (total, q_proc) => total + df.get(p_proc).get(q_proc))
+  pure def DiffSum(df: (str, str) -> int, p_proc: str): int = {
+    Proc.fold(0, (total, q_proc) => total + df.get((p_proc, q_proc)))
   }
 
   // Initialization
@@ -49,8 +52,11 @@ module ClockSync6Spec {
     time' = 0,
     hc' = Proc.mapBy(_ => 0),
     adj' = Proc.mapBy(_ => 0),
-    diff' = Proc.mapBy(_ => Proc.mapBy(_ => 0)),
-    state' = Proc.mapBy(_ => "init"),
+    // Create a mapping for all process pairs
+    diff' = Proc.fold(Proc.fold(Map(), (m, p) => 
+                Proc.fold(m, (m1, q) => m1.put((p, q), 0))), 
+              (m, p) => m),
+    state' = Proc.mapBy(_ => InitState),
     msgs' = Set(),
     rcvd' = Proc.mapBy(_ => Set()),
   }
@@ -59,9 +65,9 @@ module ClockSync6Spec {
 
   // Send the value of the hardware clock
   action SendMsg(p_proc: str): bool = all {
-    state.get(p_proc) == "init",
+    state.get(p_proc) == InitState,
     msgs' = msgs.union(Set({ src: p_proc, ts: hc.get(p_proc) })),
-    state' = state.set(p_proc, "sent"),
+    state' = state.set(p_proc, SentState),
     // Explicit unchanged for clarity, matching ReceiveMsg style
     time' = time,
     hc' = hc,
@@ -73,7 +79,7 @@ module ClockSync6Spec {
   // Receive a message sent by another process.
   // Adjust the clock if the message has been received from all other processes.
   action ReceiveMsg(p_proc: str): bool = all {
-    state.get(p_proc) == "sent", // Precondition
+    state.get(p_proc) == SentState, // Precondition
 
     nondet m = oneOf( // This choice implies a precondition that the filtered set is non-empty
       msgs.filter(cand_m =>
@@ -82,31 +88,27 @@ module ClockSync6Spec {
         hc.get(cand_m.src) >= cand_m.ts + t_min
       )
     )
-    // Use a block for LET-like bindings. The block's value is its last expression.
-    {
-      val delta_calc = m.ts - hc.get(p_proc) + (t_min + t_max) / 2;
-      val current_p_diffs_for_p = diff.get(p_proc);
-      val updated_p_diffs_for_p = current_p_diffs_for_p.set(m.src, delta_calc);
-      val newDiff_map_val = diff.set(p_proc, updated_p_diffs_for_p);
-      val newRcvd_set_for_p_val = rcvd.get(p_proc).union(Set(m));
+    
+    val delta_calc = m.ts - hc.get(p_proc) + (t_min + t_max) / 2;
+    val newDiff_map_val = diff.set((p_proc, m.src), delta_calc);
+    val newRcvd_set_for_p_val = rcvd.get(p_proc).union(Set(m));
 
-      val received_from_sources = newRcvd_set_for_p_val.map(msg_item => msg_item.src);
-      val expected_other_sources = Proc.exclude(Set(p_proc));
-      val fromAllOthers = received_from_sources == expected_other_sources;
+    val received_from_sources = newRcvd_set_for_p_val.map(msg_item => msg_item.src);
+    val expected_other_sources = Proc.exclude(Set(p_proc));
+    val fromAllOthers = received_from_sources == expected_other_sources;
 
-      val adj_prime_val = if (fromAllOthers) adj.set(p_proc, DiffSum(newDiff_map_val, p_proc) / NProc) else adj;
-      val state_prime_val = if (fromAllOthers) state.set(p_proc, "sync") else state.set(p_proc, "sent");
+    val adj_prime_val = if (fromAllOthers) adj.set(p_proc, DiffSum(newDiff_map_val, p_proc) / NProc) else adj;
+    val state_prime_val = if (fromAllOthers) state.set(p_proc, SyncState) else state.set(p_proc, SentState);
 
-      // Conjunction of effects (assignments)
-      all {
-        rcvd' = rcvd.set(p_proc, newRcvd_set_for_p_val),
-        diff' = newDiff_map_val,
-        adj' = adj_prime_val,
-        state' = state_prime_val,
-        time' = time,
-        hc' = hc,
-        msgs' = msgs
-      }
+    // Conjunction of effects (assignments)
+    all {
+      rcvd' = rcvd.set(p_proc, newRcvd_set_for_p_val),
+      diff' = newDiff_map_val,
+      adj' = adj_prime_val,
+      state' = state_prime_val,
+      time' = time,
+      hc' = hc,
+      msgs' = msgs
     }
   }
 
@@ -145,7 +147,7 @@ module ClockSync6Spec {
   // Theorem 6.15 from AW04:
   // Algorithm achieves u * (1 - 1/n)-synchronization for n processors.
   val SkewInv: bool = {
-    val allSync = Proc.forall(p_iter => state.get(p_iter) == "sync")
+    val allSync = Proc.forall(p_iter => state.get(p_iter) == SyncState)
 
     val boundedSkew = {
       // extend the bound by NProc to account for rounding errors
