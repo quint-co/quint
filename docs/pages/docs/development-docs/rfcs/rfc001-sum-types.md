@@ -308,7 +308,7 @@ $| v$.
 ### Quint's current type system
 
 The [current type system supported by
-quint](https://github.com/informalsystems/quint/tree/main/doc/adr005-type-system.md)
+quint](../architecture-decision-records/adr005-type-system.md)
 is based on a simplified version of the constraint-based system
 presented in ["Complete and Decidable Type Inference for
 GADTs"](https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/)
@@ -384,7 +384,7 @@ via injection are the simplest of the two pairs of rules.
 
     In our current system, typechecking the projection of a value out of
     a record
-    [implements](https://github.com/informalsystems/quint/blob/545b14fb8c19ac71d8f08fb8500ce9cc3cabf678/quint/src/types/specialConstraints.ts#L91-L120)
+    [implements](https://github.com/informalsystems/quint/blob/main/quint/src/types/specialConstraints.ts)
     the following rule
 
     $$
