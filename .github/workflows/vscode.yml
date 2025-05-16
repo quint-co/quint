@@ -78,4 +78,4 @@ jobs:
     needs: quint-vscode-plugin
     runs-on: ubuntu-latest
     steps:
-      - run: echo "All OS tests completed successfully!
+      - run: echo "All OS tests completed successfully!"
