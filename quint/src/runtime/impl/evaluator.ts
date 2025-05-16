@@ -149,16 +149,17 @@ export class Evaluator {
   ): Either<QuintError, SimulationResult> {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
+    const startTime = Date.now()
 
     const progressBar = new SingleBar(
       {
         clearOnComplete: true,
         forceRedraw: true,
-        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
       },
       Presets.rect
     )
-    progressBar.start(Number(nruns), 0)
+    progressBar.start(Number(nruns), 0, { speed: '0' })
 
     const initEval = buildExpr(this.builder, init)
     const stepEval = buildExpr(this.builder, step)
@@ -168,7 +169,9 @@ export class Evaluator {
 
     let runNo = 0
     for (; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
-      progressBar.update(runNo)
+      const elapsedSeconds = (Date.now() - startTime) / 1000
+      const speed = Math.round(runNo / elapsedSeconds)
+      progressBar.update(runNo, { speed })
       const traceWitnessed = new Array(witnesses.length).fill(false)
 
       this.recorder.onRunCall()
@@ -261,16 +264,17 @@ export class Evaluator {
     onTrace: (name: string, status: string, vars: string[], states: QuintEx[]) => void
   ): TestResult {
     const name = nameWithNamespaces(testDef.name, List(testDef.namespaces))
+    const startTime = Date.now()
     const progressBar = new SingleBar(
       {
         clearOnComplete: true,
         forceRedraw: true,
-        format: '     {test} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples',
+        format: '     {test} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
       },
       Presets.rect
     )
 
-    progressBar.start(maxSamples, 0, { test: name })
+    progressBar.start(maxSamples, 0, { test: name, speed: '0' })
 
     this.trace.reset()
     this.recorder.clear()
@@ -283,7 +287,9 @@ export class Evaluator {
     let nsamples = 1
     // run up to maxSamples, stop on the first failure
     for (; nsamples <= maxSamples; nsamples++) {
-      progressBar.update(nsamples, { test: name })
+      const elapsedSeconds = (Date.now() - startTime) / 1000
+      const speed = Math.round(nsamples / elapsedSeconds)
+      progressBar.update(nsamples, { test: name, speed })
       // record the seed value
       seed = this.rng.getState()
       this.recorder.onRunCall()
