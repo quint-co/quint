@@ -299,7 +299,12 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
 /**
  * Print a trace with chalk.
  */
-export function printTrace(console: ConsoleBox, states: QuintEx[], frames: ExecutionFrame[], hideVars: string[] = []): void {
+export function printTrace(
+  console: ConsoleBox,
+  states: QuintEx[],
+  frames: ExecutionFrame[],
+  hideVars: string[] = []
+): void {
   const b = chalk.bold
 
   states.forEach((state, index) => {
@@ -313,20 +318,20 @@ export function printTrace(console: ConsoleBox, states: QuintEx[], frames: Execu
     }
 
     // Filter out hidden variables from the state display
-    let filteredState = state;
+    let filteredState = state
     if (hideVars.length > 0 && state.kind === 'app' && state.opcode === 'Rec') {
       // A record is represented as [key1, value1, key2, value2, ...]
-      const filteredArgs: QuintEx[] = [];
+      const filteredArgs: QuintEx[] = []
       for (let i = 0; i < state.args.length; i += 2) {
-        const key = state.args[i];
-        const value = state.args[i + 1];
+        const key = state.args[i]
+        const value = state.args[i + 1]
         // Only include this key-value pair if the key is not in hideVars
         if (key.kind === 'str' && !hideVars.includes(key.value)) {
-          filteredArgs.push(key);
-          filteredArgs.push(value);
+          filteredArgs.push(key)
+          filteredArgs.push(value)
         }
       }
-      filteredState = { ...state, args: filteredArgs };
+      filteredState = { ...state, args: filteredArgs }
     }
 
     const stateDoc: Doc = [group([brackets(richtext(b, `State ${index}`)), line()]), prettyQuintEx(filteredState)]

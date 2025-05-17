@@ -475,7 +475,12 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
 }
 
 // Print a counterexample if the appropriate verbosity is set
-function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], frames: ExecutionFrame[] = [], hideVars: string[] = []) {
+function maybePrintCounterExample(
+  verbosityLevel: number,
+  states: QuintEx[],
+  frames: ExecutionFrame[] = [],
+  hideVars: string[] = []
+) {
   if (verbosity.hasStateOutput(verbosityLevel)) {
     console.log(chalk.gray('An example execution:\n'))
     const myConsole = {
