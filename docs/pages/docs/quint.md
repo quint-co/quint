@@ -242,6 +242,8 @@ Options:
                                                       [string] [default: "true"]
   --witnesses    space separated list of witnesses to report on (counting for
                  how many traces the witness is true)      [array] [default: []]
+  --hide         space separated list of variable names to hide from the terminal
+                 output (does not affect ITF output)       [array] [default: []]
   --seed         random seed to use for non-deterministic choice        [string]
   --verbosity    control how much output is produced (0 to 5)
                                                            [number] [default: 2]
