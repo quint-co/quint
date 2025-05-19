@@ -545,6 +545,33 @@ Use --seed=0xcc198528dea8b to reproduce.
 error: Invariant violated
 ```
 
+### Run can hide fields 
+
+<!-- !test in run can hide fields -->
+```
+output=$(quint run --seed=0xcc198528dea8b --mbt \
+  --hide balances mbt::nondetPicks \
+  --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run can hide fields -->
+```
+An example execution:
+
+[State 0] { mbt::actionTaken: "init" }
+
+[State 1] { mbt::actionTaken: "withdraw" }
+
+[violation] Found an issue (duration).
+Use --verbosity=3 to show executions.
+Use --seed=0xcc198528dea8b to reproduce.
+error: Invariant violated
+```
+
 ### Run finds an example
 
 The command `run` finds an example.
