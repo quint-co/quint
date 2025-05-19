@@ -1183,6 +1183,29 @@ export class ToIrListener implements QuintListener {
   // stack of expressions
   private pushApplication(ctx: any, name: string, args: QuintEx[]) {
     const id = this.getId(ctx)
+
+    // Special handling for q::debug with a single argument
+    if (name === 'q::debug' && args.length === 1) {
+      // Get the expression text from the context
+      const expressionText = ctx.text
+
+      // Create a string literal with the expression text
+      const expressionStrLiteral: QuintStr = {
+        id: this.idGen.nextId(),
+        kind: 'str',
+        value: expressionText,
+      }
+
+      // Create the application with two arguments: the expression text and the original argument
+      this.exprStack.push({
+        id,
+        kind: 'app',
+        opcode: name,
+        args: [expressionStrLiteral, args[0]],
+      })
+      return
+    }
+
     this.exprStack.push({
       id,
       kind: 'app',
