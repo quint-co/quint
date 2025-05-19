@@ -1203,3 +1203,14 @@ fn run_q_debug() -> Result<(), Box<dyn std::error::Error>> {
          run run1 = (n' = 1).then(n' = q::debug(\"n plus one\", n + 1))",
     )
 }
+
+#[test]
+fn run_q_debug_single_arg() -> Result<(), Box<dyn std::error::Error>> {
+    assert_var_after_run(
+        "n",
+        "2",
+        "run1",
+        "var n: int\n
+         run run1 = (n' = 1).then(n' = q::debug(n + 1))",
+    )
+}

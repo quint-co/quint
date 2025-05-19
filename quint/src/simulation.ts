@@ -25,6 +25,7 @@ export interface SimulatorOptions {
   rng: Rng
   verbosity: number
   storeMetadata: boolean
+  hideVars: string[]
   onTrace(index: number, status: string, vars: string[], states: QuintEx[]): void
 }
 

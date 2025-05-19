@@ -242,6 +242,8 @@ Options:
                                                       [string] [default: "true"]
   --witnesses    space separated list of witnesses to report on (counting for
                  how many traces the witness is true)      [array] [default: []]
+  --hide         space separated list of variable names to hide from the terminal
+                 output (does not affect ITF output)       [array] [default: []]
   --seed         random seed to use for non-deterministic choice        [string]
   --verbosity    control how much output is produced (0 to 5)
                                                            [number] [default: 2]
@@ -367,7 +369,7 @@ Options:
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
 By default, this command will automatically obtain and run Apalache. The only
-prerequisite is a [compatible installation of OpenJDK](../quint/README.md).
+prerequisite is a [compatible installation of OpenJDK](https://quint-lang.org/docs/getting-started).
 
 You may also manually obtain and run a distribution of Apalache, following these
 steps:
@@ -460,10 +462,10 @@ an output file in the Quint format.
 JSON format. This configuration files specifies the indentation rules. The
 exact format is to be specified in the future.
 
-[ADR002]: ./adr002-errors.md
+[ADR002]: ./development-docs/architecture-decision-records/adr002-errors.md
 [Working Backwards]: https://www.allthingsdistributed.com/2006/11/working_backwards.html
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-[Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/quintIr.ts
+[Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/ir/quintIr.ts
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [Informal Trace Format]: https://apalache-mc.org/docs/adr/015adr-trace.html
 [ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
