@@ -25,6 +25,9 @@ pub struct SimulationResult {
     // samples
 }
 
+/// Callback type for reporting simulation progress
+pub type ProgressCallback = Box<dyn FnMut(usize, usize)>;
+
 impl ParsedQuint {
     /// Simulate a Quint model for a given number of steps and samples, storing
     /// up to `n_traces` traces of the greates quality.
@@ -42,6 +45,7 @@ impl ParsedQuint {
         steps: usize,
         samples: usize,
         n_traces: usize,
+        mut progress_callback: Option<ProgressCallback>,
     ) -> Result<SimulationResult, QuintError> {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
@@ -53,7 +57,11 @@ impl ParsedQuint {
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
 
-        for _sample_number in 1..=samples {
+        for sample_number in 1..=samples {
+            if let Some(callback) = &mut progress_callback {
+                callback(sample_number, samples);
+            }
+
             let mut trace = Vec::with_capacity(steps + 1);
 
             if !init.execute(&mut env)?.as_bool() {

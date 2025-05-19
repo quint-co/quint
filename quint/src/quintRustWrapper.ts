@@ -18,13 +18,14 @@ import JSONbig from 'json-bigint'
 import { LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
-const spawn = require('cross-spawn')
-
+import { spawn } from 'child_process'
+import { SingleBar, Presets } from 'cli-progress'
 import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 import { rustEvaluatorDir } from './config'
 import { QuintError } from './quintError'
+import { spawnSync } from 'child_process'
 
 const QUINT_EVALUATOR_VERSION = 'v0.1.0'
 
@@ -84,24 +85,62 @@ export class QuintRustWrapper {
     )
 
     debugLog(this.verbosityLevel, 'Starting Rust evaluator synchronously')
-    const result = spawn.sync(exe, args, {
+
+    // Create progress bar
+    const progressBar = new SingleBar(
+      {
+        clearOnComplete: true,
+        forceRedraw: true,
+        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
+      },
+      Presets.rect
+    )
+    progressBar.start(nruns, 0, { speed: '0' })
+
+    const startTime = Date.now()
+
+    const result = spawnSync(exe, args, {
       shell: false,
       input: input,
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', process.stderr], // stdin, stdout, stderr
+      stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr
     })
 
     if (result.error) {
+      progressBar.stop()
       throw new Error(`Failed to launch Rust evaluator: ${result.error.message}`)
     }
 
     if (result.status !== 0) {
+      progressBar.stop()
       throw new Error(`Rust evaluator exited with code ${result.status}`)
     }
 
     if (!result.stdout) {
+      progressBar.stop()
       throw new Error('No output received from Rust evaluator')
     }
+
+    // Process stderr for progress updates
+    if (result.stderr) {
+      const stderrLines = result.stderr.split('\n')
+      for (const line of stderrLines) {
+        if (line.trim()) {
+          try {
+            const progress = JSON.parse(line)
+            if (progress.type === 'progress') {
+              const elapsedSeconds = (Date.now() - startTime) / 1000
+              const speed = Math.round(progress.current / elapsedSeconds)
+              progressBar.update(progress.current, { speed })
+            }
+          } catch (e) {
+            // Ignore non-JSON lines
+          }
+        }
+      }
+    }
+
+    progressBar.stop()
 
     debugLog(this.verbosityLevel, `Received data from Rust evaluator: ${result.stdout}`)
 

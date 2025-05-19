@@ -147,7 +147,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(args.max_steps, args.max_samples, args.n_traces);
+    let result = parsed.simulate(args.max_steps, args.max_samples, args.n_traces, None);
 
     let elapsed = start.elapsed();
 
@@ -182,7 +182,18 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     let input: SimulateInput = serde_json::from_str(&input)?;
     let parsed = input.parsed;
 
-    let result = parsed.simulate(input.nsteps, input.nruns, input.ntraces);
+    // Create a progress callback that writes progress to stderr in JSON format
+    let progress_callback = Box::new(|current: usize, total: usize| {
+        let progress = serde_json::json!({
+            "type": "progress",
+            "current": current,
+            "total": total,
+            "percentage": (current as f64 / total as f64 * 100.0).round() as u32
+        });
+        eprintln!("{}", progress);
+    });
+
+    let result = parsed.simulate(input.nsteps, input.nruns, input.ntraces, Some(progress_callback));
 
     // Transform the SimulationResult into the Outcome format expected by Quint
     let outcome = to_outcome(input.source, result);
