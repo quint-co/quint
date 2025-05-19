@@ -1043,7 +1043,16 @@ describe('compiling specs to runtime values', () => {
         |run run1 = (n' = 1).then(n' = q::debug("n plus one", n + 1))
         `
       )
+      assertVarAfterCall('n', '2', 'run1', input)
+    })
 
+    it('q::debug with single argument', () => {
+      // `q::debug(a)` returns `a` and shows the expression and its value
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 1).then(n' = q::debug(n + 1))
+        `
+      )
       assertVarAfterCall('n', '2', 'run1', input)
     })
 
