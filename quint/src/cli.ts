@@ -276,6 +276,11 @@ const runCmd = {
         type: 'array',
         default: [],
       })
+      .option('hide', {
+        desc: 'space separated list of variable names to hide from the terminal output (does not affect ITF output)',
+        type: 'array',
+        default: [],
+      })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
