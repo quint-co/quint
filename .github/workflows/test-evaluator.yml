@@ -60,10 +60,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
       - name: Install Quint
-        run: |
-          git clone https://github.com/informalsystems/quint && cd quint/quint &&
-          git checkout gabriela/compile-optional-flattening &&
-          npm install && npm install -g
+        run: cd ../quint && npm ci && npm run compile && npm link
       - name: Run tests
         run: |
           cargo nextest run \
