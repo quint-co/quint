@@ -216,7 +216,7 @@ The flattener adds missing definitions to a module by recursively fetching the l
 
 When adding a missing definition, if that definitions carries a namespace, we actually need to do a "deep" procedure to add that name to not only the definition name, but also to every other name appearing in it's body. This includes adding the namespace to lambda parameters and nested definitions (even though they cannot be referred), so flattening doesn't create name conflicts with them.
 
-This deep namespace-adding procedure is already done in the current implementation of flattening (see [`addNamespaceToDef`](https://github.com/informalsystems/quint/blob/main/quint/src/flattening.ts#L276C4-L276C4)), with the only difference being that we don't want to generate new ids in this case (we only create new ids in the Instance Flattener).
+This deep namespace-adding procedure is already done in the current implementation of flattening (see [`addNamespaceToDefinition`](https://github.com/informalsystems/quint/blob/main/quint/src/ir/namespacer.ts)), with the only difference being that we don't want to generate new ids in this case (we only create new ids in the Instance Flattener).
 
 ### Flattening imports/exports and instances
 
