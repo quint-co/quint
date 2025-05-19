@@ -496,7 +496,8 @@ function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses
     outcome.witnessingTraces.forEach((n, i) => {
       const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
       console.log(
-        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${outcome.samples
+        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+          outcome.samples
         } explored ${percentage}`
       )
     })
