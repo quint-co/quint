@@ -72,7 +72,9 @@ result () {
 get_main () {
   local file="$1"
   local main=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
+  if [[ "$file" == "classic/distributed/ClockSync/clockSync6.qnt" ]] ; then
+    main="--main=clock_sync4"
+  elif [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
   elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     main="--main=ReadersWriters_5"
@@ -130,7 +132,9 @@ get_test_args () {
 get_verify_args () {
   local file="$1"
   local args=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
+  if [[ "$file" == "classic/distributed/ClockSync/clockSync6.qnt" ]] ; then
+    main="--invariant=skew_inv"
+  elif [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
         "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ||
         "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     args="--init=Init --step=Next"
