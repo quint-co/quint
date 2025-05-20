@@ -25,12 +25,26 @@ pub struct SimulationResult {
     // samples
 }
 
+/// Simulation progress update.
+pub struct ProgressUpdate {
+    /// Current sample
+    pub current: usize,
+    /// Total number of samples
+    pub total: usize,
+}
+
+impl ProgressUpdate {
+    pub fn percentage(&self) -> u32 {
+        (self.current as f64 / self.total as f64 * 100.0).round() as u32
+    }
+}
+
 /// Callback type for reporting simulation progress
-pub type ProgressCallback = Box<dyn FnMut(usize, usize)>;
+pub type ProgressCallback = Box<dyn FnMut(ProgressUpdate)>;
 
 impl ParsedQuint {
     /// Simulate a Quint model for a given number of steps and samples, storing
-    /// up to `n_traces` traces of the greates quality.
+    /// up to `n_traces` traces of the greatest quality.
     ///
     /// Start evaluating `init` and check that it satisfies the `invariant`.
     /// Then, evaluate `step` `steps` times, checking that `invariant` holds every time.
@@ -59,7 +73,10 @@ impl ParsedQuint {
 
         for sample_number in 1..=samples {
             if let Some(callback) = &mut progress_callback {
-                callback(sample_number, samples);
+                callback(ProgressUpdate {
+                    current: sample_number,
+                    total: samples,
+                });
             }
 
             let mut trace = Vec::with_capacity(steps + 1);
