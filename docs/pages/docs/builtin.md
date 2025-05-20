@@ -911,7 +911,7 @@ This is the weak fairness condition.
 
 The weak fairness condition can be expressed in English as (from Specifying Systems):
 
-1. It’s always the case that, if A is enabled forever, then an A step eventually occurs.
+1. It's always the case that, if A is enabled forever, then an A step eventually occurs.
 1. A is infinitely often disabled, or infinitely many A steps occur.
 1. If A is eventually enabled forever, then infinitely many A steps occur.
 
@@ -1111,6 +1111,9 @@ separated by a space.
 It also returns the given value unchanged,
 so that it can be used directly within expressions.
 
+When called with a single argument as `q::debug(expr)`, it prints the
+expression itself as the message, followed by its value.
+
 ### Examples
 
 ```quint
@@ -1119,5 +1122,12 @@ var x: int
 > new x: 1
 > new x: 2
 > new x: 3
+true
+```
+
+```quint
+var x: int
+>>> (x' = 0).then(x' = q::debug(x + 1))
+> x + 1: 1
 true
 ```
