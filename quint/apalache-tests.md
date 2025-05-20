@@ -376,16 +376,16 @@ q_step == step
 ### Test that we can compile a module to TLA+ that instantiates but has no declarations
 
 
-<!-- !test in can convert clockSync3.qnt to TLA+ -->
+<!-- !test in can convert clockSync6.qnt to TLA+ -->
 ```
-quint compile --target tlaplus  ../examples/classic/distributed/ClockSync/clockSync3.qnt | head
+quint compile --target tlaplus ../examples/classic/distributed/ClockSync/clockSync6.qnt --main clock_sync4 | head
 ```
 
 The compiled module is not empty:
 
-<!-- !test out can convert clockSync3.qnt to TLA+ -->
+<!-- !test out can convert clockSync6.qnt to TLA+ -->
 ```
------------------------------- MODULE clockSync3 ------------------------------
+------------------------------ MODULE clock_sync4 ------------------------------
 
 EXTENDS Integers, Sequences, FiniteSets, TLC, Apalache, Variants
 
@@ -393,7 +393,7 @@ VARIABLE
   (*
     @type: Int;
   *)
-  clockSync3_clockSync3Spec_time
+  clock_sync4_clock_sync_time
 
 ```
 
