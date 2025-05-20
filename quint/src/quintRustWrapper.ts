@@ -413,7 +413,7 @@ class GitHubClient {
 
       await finished(Readable.fromWeb(response.body).pipe(fileStream))
     } catch (err) {
-      await unlink(path).catch(() => { })
+      await unlink(path).catch(() => {})
       throw err
     }
 
