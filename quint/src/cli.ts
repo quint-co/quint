@@ -266,8 +266,13 @@ const runCmd = {
         type: 'string',
         default: 'step',
       })
+      .option('invariants', {
+        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        type: 'array',
+        default: [],
+      })
       .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression',
+        desc: 'invariant to check: a definition name or an expression. Can be used together with --invariants',
         type: 'string',
         default: 'true',
       })
@@ -318,6 +323,11 @@ const verifyCmd = {
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     compileOpts(yargs)
+      .option('invariants', {
+        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        type: 'array',
+        default: [],
+      })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file, e.g., out.itf.json (suppresses all console output)',
         type: 'string',

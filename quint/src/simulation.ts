@@ -19,6 +19,7 @@ export interface SimulatorOptions {
   init: string
   step: string
   invariant: string
+  individualInvariants?: string[]
   maxSamples: number
   maxSteps: number
   numberOfTraces: number
