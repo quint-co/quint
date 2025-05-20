@@ -376,7 +376,7 @@ q_step == step
 ### Test that we can compile a module to TLA+ that instantiates but has no declarations
 
 
-<!-- !test in can convert clockSync3.qnt to TLA+ -->
+<!-- !test in can convert clockSync6.qnt to TLA+ -->
 ```
 quint compile --target tlaplus  ../examples/classic/distributed/ClockSync/clockSync3.qnt | head
 ```
