@@ -229,7 +229,6 @@ Options:
                                                                         [string]
   --out-itf      output the trace in the Informal Trace Format to file, e.g.,
                  out_{seq}.itf.json where {seq} is the trace sequence number
-                 (sets verbosity to 0 by default, can be overridden with --verbosity)
                                                                         [string]
   --max-samples  the maximum number of runs to attempt before giving up
                                                        [number] [default: 10000]
