@@ -322,8 +322,7 @@ export async function runRepl(_argv: any) {
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
   const testing = { ...prev, stage: 'testing' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
-  const guessedMainModule = guessMainModule(prev)
-  const mainName = prev.args.main || guessedMainModule
+  const mainName = guessMainModule(prev)
   const main = prev.modules.find(m => m.name === mainName)
   if (!main) {
     const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
@@ -521,8 +520,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const startMs = Date.now()
   // Force disable output if `--out-itf` is set
   const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
-  const guessedMainModule = guessMainModule(prev)
-  const mainName = prev.args.main || guessedMainModule
+  const mainName = guessMainModule(prev)
   const main = prev.modules.find(m => m.name === mainName)
   if (!main) {
     const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
@@ -544,18 +542,18 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     invariantsList = invariantsList.concat(prev.args.invariants)
   }
   // If no invariants specified, use the default 'true'
-  const invariant = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
+  const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
   // Keep track of individual invariants for reporting
   const individualInvariants = invariantsList.length > 0 ? invariantsList : ['true']
 
   // We use:
-  // - 'invariant' as the combined invariant string for the simulator to check
+  // - 'invariantString' as the combined invariant string for the simulator to check
   // - 'individualInvariants' for reporting which specific invariants were violated
 
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
-    invariant: invariant,
+    invariant: invariantString,
     individualInvariants: individualInvariants,
     maxSamples: prev.args.maxSamples,
     maxSteps: prev.args.maxSteps,
@@ -597,7 +595,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
 
   const argsParsingResult = mergeInMany(
-    [prev.args.init, prev.args.step, invariant, ...prev.args.witnesses].map(toExpr)
+    [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(toExpr)
   )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
@@ -617,7 +615,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     }
 
     // Parse the combined invariant for the Rust backend
-    const invariantExpr = toExpr(invariant)
+    const invariantExpr = toExpr(invariantString)
     if (invariantExpr.isLeft()) {
       return cliErr('Argument error', {
         ...simulator,
@@ -782,10 +780,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     invariantsList = invariantsList.concat(args.invariants)
   }
   // If no invariants specified, use the default 'true'
-  const invariant = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
+  const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
   
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
-  extraDefsAsText.push(`val q::inv = and(${invariant})`)
+  extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   
   if (args.temporal) {
     extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
