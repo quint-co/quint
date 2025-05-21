@@ -41,6 +41,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.evaluator == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     defaults:
       run:
         working-directory: ./evaluator

@@ -9,7 +9,7 @@ use quint_evaluator::helpers;
 fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None)?;
 
-    let result = parsed.simulate(10, 1_000, 0);
+    let result = parsed.simulate(10, 1_000, 0, None);
 
     match result {
         Ok(r) => assert!(r.result),
