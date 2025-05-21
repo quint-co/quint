@@ -265,4 +265,4 @@ true
 [#347]: https://github.com/informalsystems/quint/issues/347
 [#303]: https://github.com/informalsystems/quint/issues/303
 [#288]: https://github.com/informalsystems/quint/issues/288
-[kettle]: https://github.com/informalsystems/quint/blob/main/docs/repl/kettle.qnt
+[kettle]: https://github.com/informalsystems/quint/blob/main/examples/tutorials/repl/kettle.qnt
