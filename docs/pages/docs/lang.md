@@ -151,7 +151,6 @@ M`.
 | Stateless         | n/a                        |
 | State             | Stateless                  |
 | Non-determinism   | Stateless, State                    |
-| Action            | Stateless, State           |
 | Run               | Stateless, State, Action   |
 | Action            | Non-determinism, Stateless, State   |
 | Temporal          | Stateless, State           |
