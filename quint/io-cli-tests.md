@@ -783,6 +783,7 @@ error: Invariant violated
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
+  --verbosity=0 \
   ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
@@ -804,6 +805,7 @@ rm out-itf-example.itf.json
 ```
 quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv --mbt\
+  --verbosity=0 \
   ../examples/tutorials/coin.qnt
 cat out-itf-mbt-example.itf.json | jq '.states[1]'
 rm out-itf-mbt-example.itf.json
@@ -874,7 +876,7 @@ rm out-itf-mbt-example.itf.json
 
 <!-- !test in successful run itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  --verbosity=0 ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -893,7 +895,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123 --verbosity=0 ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.states[0]["mbt::actionTaken"]'
 rm out-itf-example*.itf.json
@@ -909,7 +911,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in run with n-traces itf violation -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt \
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123 --verbosity=0  ../examples/tutorials/coin.qnt \
    --invariant=totalSupplyDoesNotOverflowInv 
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.["#meta"].status'
@@ -928,7 +930,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in test itf -->
 ```
-output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' \
+output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' --verbosity=0 \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -1480,4 +1482,15 @@ Witnesses:
 won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
 stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
 Use --seed=0x2b442ab439177 to reproduce.
+```
+
+### NEW TEST: Run outputs ITF without verbosity flag (should show new default behavior)
+
+<!-- !test in run itf no verbosity -->
+```
+quint run --out-itf=out-itf-novb.itf.json --max-steps=5 --seed=123 \
+  --invariant=totalSupplyDoesNotOverflowInv \
+  ../examples/tutorials/coin.qnt
+cat out-itf-novb.itf.json | jq '.states[0]."balances"."#map"[0]'
+rm out-itf-novb.itf.json
 ```
