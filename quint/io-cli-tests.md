@@ -448,7 +448,7 @@ The command `run` finds an invariant violation.
 output=$(quint run --seed=0x308623f2a48e7 --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
 exit $exit_code
 ```
 
@@ -482,7 +482,7 @@ The command `run` finds an invariant violation and outputs metadata for MBT, whe
 output=$(quint run --seed=0x308623f2a4957 --mbt --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
 exit $exit_code
 ```
 
@@ -516,7 +516,7 @@ Make sure the bank spec we use at the Getting Started guide has correct tracking
 output=$(quint run --seed=0xcc198528dea8b --mbt \
   --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
 exit $exit_code
 ```
 
@@ -553,7 +553,7 @@ output=$(quint run --seed=0xcc198528dea8b --mbt \
   --hide balances mbt::nondetPicks \
   --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
 exit $exit_code
 ```
 
@@ -579,7 +579,7 @@ The command `run` finds an example.
 <!-- !test in run finds example -->
 ```
 quint run --seed=17 --max-steps=4 --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's/([0-9]*ms.*)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
 ```
 
@@ -598,6 +598,7 @@ An example execution:
 [State 4] { n: 3 }
 
 [ok] No violation found (duration).
+Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 Use --seed=0x11 to reproduce.
@@ -633,7 +634,7 @@ The command `run` finds an overflow in Coin.
 output=$(quint run --max-steps=5 --seed=0x1e352e160ffb15 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -695,7 +696,7 @@ output=$(quint run --max-steps=5 --seed=0x1786e678d460ed \
   --verbosity=3 \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -1149,7 +1150,7 @@ error: --seed must be a big integer, found: NotANumber
 ```
 output=$(quint run --seed=NotANumber ../examples/tutorials/coin.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -1223,7 +1224,7 @@ FIXME: this should not be a runtime error
 ```
 output=$(quint run testFixture/_1041compileConst.qnt --seed=1 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' \
   -e 's#^.*_1041compileConst.qnt#HOME/_1041compileConst.qnt#g'
 exit $exit_code
 ```
@@ -1469,7 +1470,7 @@ error: parsing failed
 ```
 output=$(quint run ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
 exit $exit_code
 ```
 
