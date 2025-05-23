@@ -1,4 +1,3 @@
-
 This is a suite of blackbox integration tests for the `quint` executable.
 The tests in this file check that particular output is produced when
 particular input is received.
@@ -943,12 +942,6 @@ exit $exit_code
 
 <!-- !test out test itf -->
 ```
-
-  coin
-    ok sendWithoutMintTest passed 10000 test(s)
-    ok mintSendTest passed 10000 test(s)
-
-  2 passing (duration)
 [
   [
     "alice",
@@ -1493,4 +1486,14 @@ quint run --out-itf=out-itf-novb.itf.json --max-steps=5 --seed=123 \
   ../examples/tutorials/coin.qnt
 cat out-itf-novb.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-novb.itf.json
+```
+
+<!-- !test out run itf no verbosity -->
+```
+[
+  "alice",
+  {
+    "#bigint": "0"
+  }
+]
 ```
