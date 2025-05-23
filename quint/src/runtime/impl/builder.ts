@@ -28,6 +28,7 @@ import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
 import { isEqual } from 'lodash'
+import { Maybe } from '@sweet-monads/maybe'
 
 /**
  * The type returned by the builder in its methods, which can be called to get the
@@ -562,6 +563,7 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
                 bounds.map(b => b.unwrap())
               )
             } while (
+              should_retry_nondet(bounds) &&
               result.isRight() &&
               isEqual(result.value, rv.mkBool(false)) &&
               !isEqual(newPositions, positions.unwrap())
@@ -638,4 +640,16 @@ function buildApp(
 export function nameWithNamespaces(name: string, namespaces: List<string>): string {
   const revertedNamespaces = namespaces.reverse()
   return revertedNamespaces.push(name).join('::')
+}
+
+const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '1000000')
+
+function should_retry_nondet(bounds: Maybe<bigint>[]): boolean {
+  return bounds.every(b => {
+    if (b.isJust()) {
+      return b.value < RETRY_NONDET_SMALLER_THAN
+    } else {
+      return false
+    }
+  })
 }
