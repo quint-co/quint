@@ -1483,6 +1483,7 @@ Use --seed=0x2b442ab439177 to reproduce.
 ```
 quint run --out-itf=out-itf-novb.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
+  --verbosity=0 \
   ../examples/tutorials/coin.qnt
 cat out-itf-novb.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-novb.itf.json
