@@ -37,7 +37,7 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator } from './idGenerator'
-import { Outcome, showTraceStatistics, SimulatorOptions } from './simulation'
+import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
@@ -615,7 +615,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
-      options.onTrace,
+      options.onTrace
     )
   }
 
@@ -637,8 +637,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     case 'ok':
       maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.green('[ok]') + ' No violation found '
-          + chalk.gray(`(${elapsedMs}ms at ${Math.round(1000 * outcome.samples / elapsedMs)} traces/second).`))
+        console.log(
+          chalk.green('[ok]') +
+            ' No violation found ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+        )
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
@@ -656,8 +659,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     case 'violation':
       maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.red(`[violation]`) + ' Found an issue '
-          + chalk.gray(`(${elapsedMs}ms at ${Math.round(1000 * outcome.samples / elapsedMs)} traces/second).`))
+        console.log(
+          chalk.red(`[violation]`) +
+            ' Found an issue ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+        )
 
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray('Use --verbosity=3 to show executions.'))

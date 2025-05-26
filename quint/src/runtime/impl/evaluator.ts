@@ -28,7 +28,7 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 import { Presets, SingleBar } from 'cli-progress'
-import { getTraceStatistics, Outcome, SimulationTrace } from '../../simulation'
+import { Outcome, SimulationTrace, getTraceStatistics } from '../../simulation'
 import assert from 'assert'
 
 /**
@@ -277,14 +277,13 @@ export class Evaluator {
 
     return {
       status: failure ? 'error' : errorsFound == 0 ? 'ok' : 'violation',
-      errors: (failure ? [failure, ...runtimeErrors] : runtimeErrors),
+      errors: failure ? [failure, ...runtimeErrors] : runtimeErrors,
       bestTraces: traces,
       witnessingTraces,
       samples: runNo,
-      traceStatistics: getTraceStatistics(traceLengths)
+      traceStatistics: getTraceStatistics(traceLengths),
     }
   }
-
 
   /**
    * Run a specified test definition a given number of times, and report the result.

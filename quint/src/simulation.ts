@@ -73,5 +73,7 @@ export function getTraceStatistics(traceLengths: number[]): TraceStatistics {
 }
 
 export function showTraceStatistics(stats: TraceStatistics): string {
-  return `Trace length statistics: max=${stats.maxTraceLength}, min=${stats.minTraceLength}, average=${stats.averageTraceLength.toFixed(2)}`
+  return `Trace length statistics: max=${stats.maxTraceLength}, min=${
+    stats.minTraceLength
+  }, average=${stats.averageTraceLength.toFixed(2)}`
 }
