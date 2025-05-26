@@ -553,21 +553,23 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
               return newPositions
             }
 
+            let shouldRetry: boolean
             do {
               const pickedValue = set.pick(newPositions.values())
+
               cache.value = pickedValue
               result = bodyEval(ctx)
               cache.value = undefined
-              newPositions = increment(
-                newPositions,
-                bounds.map(b => b.unwrap())
-              )
-            } while (
-              should_retry_nondet(bounds) &&
-              result.isRight() &&
-              isEqual(result.value, rv.mkBool(false)) &&
-              !isEqual(newPositions, positions.unwrap())
-            )
+
+              shouldRetry = shouldRetryNondet(bounds) && result.isRight() && isEqual(result.value, rv.mkBool(false))
+
+              if (shouldRetry) {
+                newPositions = increment(
+                  newPositions,
+                  bounds.map(b => b.unwrap())
+                )
+              }
+            } while (shouldRetry && !isEqual(newPositions, positions.unwrap()))
 
             return result
           })
@@ -644,7 +646,7 @@ export function nameWithNamespaces(name: string, namespaces: List<string>): stri
 
 const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '100')
 
-function should_retry_nondet(bounds: Maybe<bigint>[]): boolean {
+function shouldRetryNondet(bounds: Maybe<bigint>[]): boolean {
   return bounds.every(b => {
     if (b.isJust()) {
       return b.value < RETRY_NONDET_SMALLER_THAN
