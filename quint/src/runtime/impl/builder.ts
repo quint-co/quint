@@ -18,7 +18,7 @@
  * @module
  */
 
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
@@ -27,8 +27,7 @@ import { QuintApp, QuintEx, QuintVar } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
-import { isEqual } from 'lodash'
-import { Maybe } from '@sweet-monads/maybe'
+import { evalNondet } from './nondet'
 
 /**
  * The type returned by the builder in its methods, which can be called to get the
@@ -485,9 +484,11 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
     }
     case 'let': {
       if (expr.opdef.qualifier === 'nondet') {
-        // Special treatment
+        // For `nondet`, we want to retry the the `oneOf()` call in case the body returns false.
+        // So we take care of the compilation at the let-in level.
+
         if (expr.opdef.expr.kind !== 'app') {
-          // impossible
+          // impossible, added to make Typescript's type checker happy.
           throw new Error('Impossible case: nondet let expression is not an app')
         }
 
@@ -496,79 +497,16 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
         // Value is optional, and starts with undefined
         builder.initialNondetPicks.set(expr.opdef.name, undefined)
 
-        const setEval = buildExpr(builder, expr.opdef.expr.args[0])
-
+        // Set up cache and memo in the same way we do for regular let-ins.
+        // We don't need to add it to `scopedCachedValues` since we'll clear
+        // the cache in here
         let cache: CachedValue = { value: undefined }
-        builder.scopedCachedValues.set(expr.opdef.id, cache)
         builder.memo.set(expr.opdef.id, _ => cache.value!)
+
+        const setEval = buildExpr(builder, expr.opdef.expr.args[0])
         const bodyEval = buildExpr(builder, expr.expr)
 
-        return ctx => {
-          // TODO: if empty set, return false
-          return setEval(ctx).chain(set => {
-            if (set.cardinality().unwrap() === 0n) {
-              return right(rv.mkBool(false))
-            }
-
-            const bounds = set.bounds()
-            const positions: Either<QuintError, bigint[]> = mergeInMany(
-              bounds.map((b): Either<QuintError, bigint> => {
-                if (b.isJust()) {
-                  const sz = b.value
-
-                  if (sz === 0n) {
-                    return left({ code: 'QNT509', message: `Applied oneOf to an empty set` })
-                  }
-                  return right(ctx.rand(sz))
-                } else {
-                  // An infinite set, pick an integer from the range [-2^255, 2^255).
-                  // Note that pick on Nat uses the absolute value of the passed integer.
-                  // TODO: make it a configurable parameter:
-                  // https://github.com/informalsystems/quint/issues/279
-                  return right(-(2n ** 255n) + ctx.rand(2n ** 256n))
-                }
-              })
-            ).mapLeft(errors => errors[0])
-
-            let result: Either<QuintError, RuntimeValue> = right(rv.mkBool(false))
-            let newPositions = [...positions.unwrap()]
-
-            function increment(positions: bigint[], bounds: bigint[]): bigint[] {
-              const newPositions = [...positions]
-              for (let i = newPositions.length - 1; i >= 0; i--) {
-                if (newPositions[i] < bounds[i] - 1n) {
-                  newPositions[i]++
-                  return newPositions
-                } else {
-                  newPositions[i] = 0n
-                }
-              }
-              return newPositions
-            }
-
-            let shouldRetry: boolean
-            do {
-              const pickedValue = set.pick(newPositions.values())
-
-              cache.value = pickedValue
-              result = bodyEval(ctx)
-              cache.value = undefined
-
-              shouldRetry = shouldRetryNondet(bounds) && result.isRight() && isEqual(result.value, rv.mkBool(false))
-
-              if (shouldRetry) {
-                newPositions = increment(
-                  newPositions,
-                  bounds.map(b => b.unwrap())
-                )
-              } else {
-                pickedValue.map(value => ctx.varStorage.nondetPicks.set(expr.opdef.name, value))
-              }
-            } while (shouldRetry && !isEqual(newPositions, positions.unwrap()))
-
-            return result
-          })
-        }
+        return evalNondet(expr.opdef.name, cache, setEval, bodyEval)
       }
 
       // First, we create a cached value (a register with optional value) for the definition in this let expression
@@ -637,16 +575,4 @@ function buildApp(
 export function nameWithNamespaces(name: string, namespaces: List<string>): string {
   const revertedNamespaces = namespaces.reverse()
   return revertedNamespaces.push(name).join('::')
-}
-
-const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '100')
-
-function shouldRetryNondet(bounds: Maybe<bigint>[]): boolean {
-  return bounds.every(b => {
-    if (b.isJust()) {
-      return b.value < RETRY_NONDET_SMALLER_THAN
-    } else {
-      return false
-    }
-  })
 }
