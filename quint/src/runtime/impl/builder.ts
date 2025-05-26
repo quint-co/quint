@@ -642,7 +642,7 @@ export function nameWithNamespaces(name: string, namespaces: List<string>): stri
   return revertedNamespaces.push(name).join('::')
 }
 
-const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '1000000')
+const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '100')
 
 function should_retry_nondet(bounds: Maybe<bigint>[]): boolean {
   return bounds.every(b => {
