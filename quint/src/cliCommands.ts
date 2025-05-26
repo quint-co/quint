@@ -386,16 +386,13 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       if (res.status === 'passed') {
         out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
       }
-      if (result.status === 'failed') {
+      if (res.status === 'failed') {
         const errNo = chalk.red(nFailures)
-        out(`    ${errNo}) ${result.name} failed after ${result.nsamples} test(s)`)
+        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
         nFailures++
       }
-    }
+    })
   }
-
-  // We're finished running the tests
-  const elapsedMs = Date.now() - startMs
 
   const passed = results.filter(r => r.status === 'passed')
   const failed = results.filter(r => r.status === 'failed')
@@ -719,22 +716,22 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-        
+
         // Show which invariants were violated, if we had multiple
         if (individualInvariants.length > 1) {
           console.log(chalk.red('Violated invariants:'))
-          
+
           // For each individual invariant, check if it's violated in the final state
           for (const inv of individualInvariants) {
             // Skip the default 'true' invariant
             if (inv === 'true') continue
-            
+
             // Create a new evaluator to check just this invariant
             const singleInvResult = toExpr(inv)
             if (singleInvResult.isRight()) {
               const testEvaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
               const evalResult = testEvaluator.evaluate(singleInvResult.value)
-              
+
               // If we can evaluate it and it's false, it's violated
               if (evalResult.isRight() && evalResult.value.kind === 'bool' && !evalResult.value.value) {
                 console.log(chalk.red(`  - ${inv}`))
@@ -747,7 +744,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasHints(verbosityLevel)) {
         console.log(chalk.gray('Use --verbosity=3 to show executions.'))
       }
-      
+
       maybePrintWitnesses(verbosityLevel, outcome, prev.args.witnesses)
 
       return cliErr('Invariant violated', {
@@ -781,10 +778,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   }
   // If no invariants specified, use the default 'true'
   const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
-  
+
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
   extraDefsAsText.push(`val q::inv = and(${invariantString})`)
-  
+
   if (args.temporal) {
     extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
   }
