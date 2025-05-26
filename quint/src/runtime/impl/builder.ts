@@ -310,22 +310,10 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
       const cachedValue = builder.scopedCachedValues.get(def.id)!
 
       const bodyEval = buildExpr(builder, def.expr)
-      if (def.qualifier === 'nondet') {
-        // Create an entry in the map for this nondet pick,
-        // as we want the resulting record to be the same at every state.
-        // Value is optional, and starts with undefined
-        builder.initialNondetPicks.set(def.name, undefined)
-      }
 
       return ctx => {
         if (cachedValue.value === undefined) {
           cachedValue.value = bodyEval(ctx)
-        }
-
-        if (def.qualifier === 'nondet') {
-          cachedValue.value
-            .map(value => ctx.varStorage.nondetPicks.set(def.name, value))
-            .mapLeft(_ => ctx.varStorage.nondetPicks.set(def.name, undefined))
         }
 
         return cachedValue.value
@@ -503,6 +491,11 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
           throw new Error('Impossible case: nondet let expression is not an app')
         }
 
+        // Create an entry in the map for this nondet pick,
+        // as we want the resulting record to be the same at every state.
+        // Value is optional, and starts with undefined
+        builder.initialNondetPicks.set(expr.opdef.name, undefined)
+
         const setEval = buildExpr(builder, expr.opdef.expr.args[0])
 
         let cache: CachedValue = { value: undefined }
@@ -568,6 +561,8 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
                   newPositions,
                   bounds.map(b => b.unwrap())
                 )
+              } else {
+                pickedValue.map(value => ctx.varStorage.nondetPicks.set(expr.opdef.name, value))
               }
             } while (shouldRetry && !isEqual(newPositions, positions.unwrap()))
 
