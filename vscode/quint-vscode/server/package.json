@@ -1,7 +1,7 @@
 {
   "name": "@informalsystems/quint-language-server",
   "description": "Language Server for the Quint specification language",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "author": "Informal Systems",
   "contributors": [
     {
