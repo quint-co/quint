@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.25.0 -- 2025-05-28
+
+### Added
 
 - Added `--hide` option to hide specific variables from output (#1656)
 - Errors from the Rust evaluator now show the corresponding location (#1648)
