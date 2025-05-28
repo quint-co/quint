@@ -1,7 +1,7 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      RETRY_NONDET_SMALLER_THAN?: string
+      QUINT_RETRY_NONDET_SMALLER_THAN?: string
     }
   }
 }

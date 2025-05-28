@@ -30,7 +30,7 @@ import { isFalse } from './evaluator'
  * - If the set is empty, it returns false.
  * - If the set is infinite, it picks a random value from the range
  *   [-2^255, 2^255) for each position.
- * - If the set is to big (bigger than RETRY_NONDET_SMALLER_THAN), it
+ * - If the set is to big (bigger than QUINT_RETRY_NONDET_SMALLER_THAN), it
  *   does not retry and returns the first value picked from the set.
  *
  * @param name - The name of the nondeterministic expression.
@@ -123,14 +123,14 @@ function increment(newPositions: bigint[], bounds: bigint[]): undefined {
  * we set a pretty small value as default to avoid slowdowns even in those. If
  * there are several nested expression with big sets, this can still be slow,
  * but those are not common. The user can always change the value of the
- * environment variable `RETRY_NONDET_SMALLER_THAN`.
+ * environment variable `QUINT_RETRY_NONDET_SMALLER_THAN`.
  */
-const RETRY_NONDET_SMALLER_THAN = BigInt(process.env.RETRY_NONDET_SMALLER_THAN ?? '100')
+const QUINT_RETRY_NONDET_SMALLER_THAN = BigInt(process.env.QUINT_RETRY_NONDET_SMALLER_THAN ?? '100')
 
 function shouldRetryNondet(bounds: Maybe<bigint>[]): boolean {
   return bounds.every(b => {
     if (b.isJust()) {
-      return b.value < RETRY_NONDET_SMALLER_THAN
+      return b.value < QUINT_RETRY_NONDET_SMALLER_THAN
     } else {
       return false
     }
