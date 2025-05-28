@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `--hide` option to hide specific variables from output (#1656)
 - Errors from the Rust evaluator now show the corresponding location (#1648)
 - Added support for calling `q::debug` with a single argument, which shows both the expression and its value (#1660)
+- `quint run` now reports statistics on trace length and the simulation speec in traces/second (#1669)
 
 ### Changed
 ### Deprecated
