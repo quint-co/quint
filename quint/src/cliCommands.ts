@@ -517,8 +517,8 @@ function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<TracingStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
   const startMs = Date.now()
-  // Force disable output if `--out-itf` is set
-  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
+  // Verboity level controls how much of the output is shown
+  const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
   const main = prev.modules.find(m => m.name === mainName)
   if (!main) {

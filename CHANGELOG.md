@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664) 
+
 ### Deprecated
 ### Removed
 ### Fixed

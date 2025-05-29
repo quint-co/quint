@@ -1,4 +1,3 @@
-
 This is a suite of blackbox integration tests for the `quint` executable.
 The tests in this file check that particular output is produced when
 particular input is received.
@@ -778,6 +777,7 @@ error: Invariant violated
 ```
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
+  --verbosity=0 \
   ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
@@ -799,6 +799,7 @@ rm out-itf-example.itf.json
 ```
 quint run --out-itf=out-itf-mbt-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv --mbt\
+  --verbosity=0 \
   ../examples/tutorials/coin.qnt
 cat out-itf-mbt-example.itf.json | jq '.states[1]'
 rm out-itf-mbt-example.itf.json
@@ -869,7 +870,7 @@ rm out-itf-mbt-example.itf.json
 
 <!-- !test in successful run itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123  --verbosity=0 ../examples/tutorials/coin.qnt
 cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
@@ -888,7 +889,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --mbt --max-steps=5 --seed=123 --verbosity=0 ../examples/tutorials/coin.qnt
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.states[0]["mbt::actionTaken"]'
 rm out-itf-example*.itf.json
@@ -904,7 +905,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in run with n-traces itf violation -->
 ```
-quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123  ../examples/tutorials/coin.qnt \
+quint run --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123 --verbosity=0  ../examples/tutorials/coin.qnt \
    --invariant=totalSupplyDoesNotOverflowInv 
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.["#meta"].status'
@@ -1475,4 +1476,32 @@ Witnesses:
 won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
 stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
 Use --seed=0x2b442ab439177 to reproduce.
+```
+
+### Run produces normal output on `--out-itf` with default verbosity
+
+<!-- !test exit 1 -->
+<!-- !test in run itf default verbosity -->
+```
+output=$(quint run --out-itf=out.itf.json --max-steps=5 --seed=123 \
+  --invariant=totalSupplyDoesNotOverflowInv \
+  ../examples/tutorials/coin.qnt 2>&1)
+exit_code=$?
+rm out.itf.json
+echo "$output" | head
+exit $exit_code
+```
+
+<!-- !test out run itf default verbosity -->
+```
+An example execution:
+
+[State 0]
+{
+  balances:
+    Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
+  minter: "null"
+}
+
+[State 1]
 ```

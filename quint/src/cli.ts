@@ -238,7 +238,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file, e.g., out_{seq}.itf.json where {seq} is the trace sequence number (suppresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file, e.g., out_{seq}.itf.json where {seq} is the trace sequence number',
         type: 'string',
       })
       .option('max-samples', {
