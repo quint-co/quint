@@ -924,7 +924,7 @@ rm out-itf-example*.itf.json
 
 <!-- !test in test itf -->
 ```
-output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' --verbosity=0 \
+output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -937,6 +937,10 @@ exit $exit_code
 
 <!-- !test out test itf -->
 ```
+coin
+  ok sendWithoutMintTest passed 10000 test(s)
+  ok mintSendTest passed 10000 test(s)
+2 passing (duration)
 [
   [
     "alice",
@@ -1472,24 +1476,48 @@ stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
 Use --seed=0x2b442ab439177 to reproduce.
 ```
 
-### NEW TEST: Run outputs ITF without verbosity flag (should show new default behavior)
+### Run produces normal output on `--out-itf` with default verbosity
 
-<!-- !test in run itf no verbosity -->
+<!-- !test in run itf default verbosity -->
 ```
-quint run --out-itf=out-itf-novb.itf.json --max-steps=5 --seed=123 \
+output=$(
+quint run --out-itf=out-itf.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
-  --verbosity=0 \
-  ../examples/tutorials/coin.qnt
-cat out-itf-novb.itf.json | jq '.states[0]."balances"."#map"[0]'
-rm out-itf-novb.itf.json
+  ../examples/tutorials/coin.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+exit $exit_code
 ```
 
-<!-- !test out run itf no verbosity -->
+<!-- !test out run itf default verbosity -->
 ```
-[
-  "alice",
-  {
-    "#bigint": "0"
-  }
-]
+An example execution:
+[State 0] { balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0), minter: "eve" }
+[State 1]
+{
+  balances:
+    Map(
+      "alice" -> 0,
+      "bob" -> 0,
+      "charlie" -> 79626045751699704635016553258820412024546765398372583361896346889345270192783,
+      "eve" -> 0,
+      "null" -> 0
+    ),
+  minter: "eve"
+}
+[State 2]
+{
+  balances:
+    Map(
+      "alice" -> 83321907610300220474867519876600740409894229411597278747663373810657625704680,
+      "bob" -> 0,
+      "charlie" -> 79626045751699704635016553258820412024546765398372583361896346889345270192783,
+      "eve" -> 0,
+      "null" -> 0
+    ),
+  minter: "eve"
+}
+[violation] Found an issue (14ms).
+Use --verbosity=3 to show executions.
+Use --seed=0xa2 to reproduce.
 ```
