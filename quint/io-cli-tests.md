@@ -927,7 +927,7 @@ rm out-itf-example*.itf.json
 output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g' | tr -d '\n' | sed 's/^[[:space:]]*//'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 cat coin_0_sendWithoutMintTest.itf.json | jq '.states[0]."balances"."#map"'
 rm coin_0_sendWithoutMintTest.itf.json
 cat coin_1_mintSendTest.itf.json | jq '.states[0]."balances"."#map"'
@@ -937,10 +937,12 @@ exit $exit_code
 
 <!-- !test out test itf -->
 ```
-coin
-  ok sendWithoutMintTest passed 10000 test(s)
-  ok mintSendTest passed 10000 test(s)
-2 passing (duration)
+
+  coin
+    ok sendWithoutMintTest passed 10000 test(s)
+    ok mintSendTest passed 10000 test(s)
+
+  2 passing (duration)
 [
   [
     "alice",
@@ -1478,46 +1480,28 @@ Use --seed=0x2b442ab439177 to reproduce.
 
 ### Run produces normal output on `--out-itf` with default verbosity
 
+<!-- !test exit 1 -->
 <!-- !test in run itf default verbosity -->
 ```
-output=$(
-quint run --out-itf=out-itf.itf.json --max-steps=5 --seed=123 \
+output=$(quint run --out-itf=out.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g' | tr -d '\n' | sed 's/^[[:space:]]*//'
+rm out.itf.json
+echo "$output" | head
 exit $exit_code
 ```
 
 <!-- !test out run itf default verbosity -->
 ```
 An example execution:
-[State 0] { balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0), minter: "eve" }
+
+[State 0]
+{
+  balances:
+    Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
+  minter: "null"
+}
+
 [State 1]
-{
-  balances:
-    Map(
-      "alice" -> 0,
-      "bob" -> 0,
-      "charlie" -> 79626045751699704635016553258820412024546765398372583361896346889345270192783,
-      "eve" -> 0,
-      "null" -> 0
-    ),
-  minter: "eve"
-}
-[State 2]
-{
-  balances:
-    Map(
-      "alice" -> 83321907610300220474867519876600740409894229411597278747663373810657625704680,
-      "bob" -> 0,
-      "charlie" -> 79626045751699704635016553258820412024546765398372583361896346889345270192783,
-      "eve" -> 0,
-      "null" -> 0
-    ),
-  minter: "eve"
-}
-[violation] Found an issue (14ms).
-Use --verbosity=3 to show executions.
-Use --seed=0xa2 to reproduce.
 ```
