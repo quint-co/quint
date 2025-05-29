@@ -927,7 +927,7 @@ rm out-itf-example*.itf.json
 output=$(quint test --out-itf='coin_{seq}_{test}.itf.json' \
   ../examples/tutorials/coin.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g' | tr -d '\n' | sed 's/^[[:space:]]*//'
 cat coin_0_sendWithoutMintTest.itf.json | jq '.states[0]."balances"."#map"'
 rm coin_0_sendWithoutMintTest.itf.json
 cat coin_1_mintSendTest.itf.json | jq '.states[0]."balances"."#map"'
@@ -1485,7 +1485,7 @@ quint run --out-itf=out-itf.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g' | tr -d '\n' | sed 's/^[[:space:]]*//'
 exit $exit_code
 ```
 
