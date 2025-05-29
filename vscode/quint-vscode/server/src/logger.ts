@@ -5,6 +5,7 @@
  */
 import * as fs from 'fs'
 import * as path from 'path'
+import * as os from 'os'
 
 /**
  * Defines available log levels.
@@ -32,7 +33,12 @@ const logLevels: Record<LogLevel, number> = {
 /**
  * Path to the log file. Defaults to user's home directory or `/tmp`.
  */
-const logFile = path.join(process.env.HOME || '/tmp', 'quint-lsp.log')
+const logFile = path.join(
+  process.env.HOME ?? // Unix-like systems
+    process.env.USERPROFILE ?? // Windows
+    os.tmpdir(), // Fallback to system temp directory
+  'quint-lsp.log'
+)
 
 /**
  * Writable stream to append log messages.

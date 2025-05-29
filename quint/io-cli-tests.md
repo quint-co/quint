@@ -447,7 +447,7 @@ The command `run` finds an invariant violation.
 output=$(quint run --seed=0x308623f2a48e7 --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
 exit $exit_code
 ```
 
@@ -481,7 +481,7 @@ The command `run` finds an invariant violation and outputs metadata for MBT, whe
 output=$(quint run --seed=0x308623f2a4957 --mbt --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
 exit $exit_code
 ```
 
@@ -515,7 +515,7 @@ Make sure the bank spec we use at the Getting Started guide has correct tracking
 output=$(quint run --seed=0xcc198528dea8b --mbt \
   --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
 exit $exit_code
 ```
 
@@ -533,9 +533,9 @@ An example execution:
 
 [State 1]
 {
-  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> -75),
+  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> -53),
   mbt::actionTaken: "withdraw",
-  mbt::nondetPicks: { account: Some("charlie"), amount: Some(75) }
+  mbt::nondetPicks: { account: Some("charlie"), amount: Some(53) }
 }
 
 [violation] Found an issue (duration).
@@ -552,7 +552,7 @@ output=$(quint run --seed=0xcc198528dea8b --mbt \
   --hide balances mbt::nondetPicks \
   --invariant=no_negatives ./testFixture/simulator/gettingStarted.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*gettingStarted.qnt#      HOME/gettingStarted.qnt#g'
 exit $exit_code
 ```
 
@@ -578,7 +578,7 @@ The command `run` finds an example.
 <!-- !test in run finds example -->
 ```
 quint run --seed=17 --max-steps=4 --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's/([0-9]*ms.*)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
 ```
 
@@ -597,6 +597,7 @@ An example execution:
 [State 4] { n: 3 }
 
 [ok] No violation found (duration).
+Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 Use --seed=0x11 to reproduce.
@@ -629,10 +630,10 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1e352e160ffb15 --invariant=totalSupplyDoesNotOverflowInv \
+output=$(quint run --max-steps=5 --seed=0x1e352e16100007 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -645,41 +646,41 @@ An example execution:
 {
   balances:
     Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-  minter: "alice"
+  minter: "bob"
 }
 
 [State 1]
 {
   balances:
     Map(
-      "alice" ->
-        94541396474536885635239092281406920580729946306097367569491485195445962194366,
+      "alice" -> 0,
       "bob" -> 0,
       "charlie" -> 0,
-      "eve" -> 0,
+      "eve" ->
+        111865848465544047420411899136876802528313267264666266547206011867817131473571,
       "null" -> 0
     ),
-  minter: "alice"
+  minter: "bob"
 }
 
 [State 2]
 {
   balances:
     Map(
-      "alice" ->
-        94541396474536885635239092281406920580729946306097367569491485195445962194366,
+      "alice" -> 0,
       "bob" ->
-        53481678647226234506653603827987361074517460680431655489916483293654777859474,
+        106835923319054853476296948761788592011112700034147492144754744060268203518249,
       "charlie" -> 0,
-      "eve" -> 0,
+      "eve" ->
+        111865848465544047420411899136876802528313267264666266547206011867817131473571,
       "null" -> 0
     ),
-  minter: "alice"
+  minter: "bob"
 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x1e352e160ffb15 to reproduce.
+Use --seed=0x1e352e16100007 to reproduce.
 error: Invariant violated
 ```
 
@@ -689,12 +690,12 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 
 <!-- !test in run shows calls -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1786e678d460ed \
+output=$(quint run --max-steps=5 --seed=0x136507ae9037f5 \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
   ../examples/tutorials/coin.qnt 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -712,67 +713,61 @@ q::initAndInvariant => true
 {
   balances:
     Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-  minter: "alice"
+  minter: "eve"
 }
 
 [Frame 1]
 q::stepAndInvariant => true
 ├─ step => true
 │  └─ send(
+│       "eve",
 │       "alice",
-│       "null",
-│       78071281284846825193495013785477188646129629244112530489195111677146856342020
+│       10060541798179252735561881697278111912297141188982098138305297944456003639647
 │     ) => false
 │     └─ require(false) => false
 └─ isUInt(
-     78071281284846825193495013785477188646129629244112530489195111677146856342020
+     10060541798179252735561881697278111912297141188982098138305297944456003639647
    ) => true
 
 [State 1]
 {
   balances:
     Map(
-      "alice" -> 0,
+      "alice" ->
+        10060541798179252735561881697278111912297141188982098138305297944456003639647,
       "bob" -> 0,
       "charlie" -> 0,
       "eve" -> 0,
-      "null" ->
-        78071281284846825193495013785477188646129629244112530489195111677146856342020
+      "null" -> 0
     ),
-  minter: "alice"
+  minter: "eve"
 }
 
 [Frame 2]
 q::stepAndInvariant => false
 ├─ step => true
-│  └─ send(
-│       "alice",
-│       "charlie",
-│       71516992819340132902114648681722204450273946921092387316973942850220744245470
-│     ) => false
-│     └─ require(false) => false
 └─ isUInt(
-     149588274104186958095609662467199393096403576165204917806169054527367600587490
+     119924674537974698230049391428816171173783073186451018303718372310243659214259
    ) => false
 
 [State 2]
 {
   balances:
     Map(
-      "alice" -> 0,
+      "alice" ->
+        10060541798179252735561881697278111912297141188982098138305297944456003639647,
       "bob" -> 0,
       "charlie" ->
-        71516992819340132902114648681722204450273946921092387316973942850220744245470,
+        109864132739795445494487509731538059261485931997468920165413074365787655574612,
       "eve" -> 0,
-      "null" ->
-        78071281284846825193495013785477188646129629244112530489195111677146856342020
+      "null" -> 0
     ),
-  minter: "alice"
+  minter: "eve"
 }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x1786e678d460ed to reproduce.
+Use --seed=0x136507ae9037f5 to reproduce.
 error: Invariant violated
 ```
 
@@ -833,13 +828,13 @@ rm out-itf-mbt-example.itf.json
       [
         "charlie",
         {
-          "#bigint": "79626045751699704635016553258820412024546765398372583361896346889345270192783"
+          "#bigint": "0"
         }
       ],
       [
         "eve",
         {
-          "#bigint": "0"
+          "#bigint": "20086964742617499085873481662929437057498704222762050481882156750446625292787"
         }
       ],
       [
@@ -855,19 +850,19 @@ rm out-itf-mbt-example.itf.json
     "amount": {
       "tag": "Some",
       "value": {
-        "#bigint": "79626045751699704635016553258820412024546765398372583361896346889345270192783"
+        "#bigint": "20086964742617499085873481662929437057498704222762050481882156750446625292787"
       }
     },
     "receiver": {
       "tag": "Some",
-      "value": "charlie"
+      "value": "eve"
     },
     "sender": {
       "tag": "Some",
-      "value": "eve"
+      "value": "null"
     }
   },
-  "minter": "eve"
+  "minter": "null"
 }
 ```
 
@@ -1056,7 +1051,7 @@ cd - > /dev/null
 <!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
-output=$(quint test --seed=0x1286bf2e1dacb3 --match=mintTwiceThenSendError \
+output=$(quint test --seed=0x1286bf2e1dad07 --match=mintTwiceThenSendError \
   --verbosity=3 ../examples/tutorials/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -1080,45 +1075,45 @@ init => true
 
 [Frame 1]
 mint(
-  "bob",
+  "alice",
   "eve",
-  74252675173190743514494160784973331842148624838292266741626378055869698233769
+  59566460029516684323034576273723724420849386347074116311626296723707538074470
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        74252675173190743514494160784973331842148624838292266741626378055869698233769
+        59566460029516684323034576273723724420849386347074116311626296723707538074470
       ) => true
 
 [Frame 2]
 mint(
+  "alice",
   "bob",
-  "bob",
-  97700478479458321253548605902971263977055085704583752584562220159652816914987
+  93368484419625019040077192713095698377461332472838851169076929942152020904440
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        97700478479458321253548605902971263977055085704583752584562220159652816914987
+        93368484419625019040077192713095698377461332472838851169076929942152020904440
       ) => true
 
 [Frame 3]
 send(
   "eve",
   "bob",
-  47769583726968424739901588588333904197787985995488944788698867328177315688645
+  58557567944388148967996441447677399573201687288362292728576564719669790227709
 ) => false
 ├─ require(true) => true
 ├─ require(true) => true
 │  └─ isUInt(
-│       26483091446222318774592572196639427644360638842803321952927510727692382545124
+│       1008892085128535355038134826046324847647699058711823583049732004037747846761
 │     ) => true
 └─ require(false) => false
    └─ isUInt(
-        145470062206426745993450194491305168174843071700072697373261087487830132603632
+        151926052364013168008073634160773097950663019761201143897653494661821811132149
       ) => false
 
-    Use --seed=0x1286bf2e1dacb3 --match=mintTwiceThenSendError to repeat.
+    Use --seed=0x1286bf2e1dad07 --match=mintTwiceThenSendError to repeat.
 ```
 
 ### test fails on invalid seed
@@ -1144,7 +1139,7 @@ error: --seed must be a big integer, found: NotANumber
 ```
 output=$(quint run --seed=NotANumber ../examples/tutorials/coin.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
 exit $exit_code
 ```
 
@@ -1218,7 +1213,7 @@ FIXME: this should not be a runtime error
 ```
 output=$(quint run testFixture/_1041compileConst.qnt --seed=1 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' \
   -e 's#^.*_1041compileConst.qnt#HOME/_1041compileConst.qnt#g'
 exit $exit_code
 ```
@@ -1464,7 +1459,7 @@ error: parsing failed
 ```
 output=$(quint run ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
 exit $exit_code
 ```
 

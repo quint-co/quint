@@ -14,7 +14,7 @@
  * @module
  */
 
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { List, Map, Range, Set } from 'immutable'
 import { isFalse, isTrue } from './evaluator'
@@ -238,33 +238,6 @@ export function lazyBuiltinLambda(
         })
       }
 
-    case 'oneOf':
-      // Randomly selects one element of the set.
-      return (ctx, args) => {
-        return args[0](ctx).chain(set => {
-          const bounds = set.bounds()
-          const positions: Either<QuintError, bigint[]> = mergeInMany(
-            bounds.map((b): Either<QuintError, bigint> => {
-              if (b.isJust()) {
-                const sz = b.value
-
-                if (sz === 0n) {
-                  return left({ code: 'QNT509', message: `Applied oneOf to an empty set` })
-                }
-                return right(ctx.rand(sz))
-              } else {
-                // An infinite set, pick an integer from the range [-2^255, 2^255).
-                // Note that pick on Nat uses the absolute value of the passed integer.
-                // TODO: make it a configurable parameter:
-                // https://github.com/informalsystems/quint/issues/279
-                return right(-(2n ** 255n) + ctx.rand(2n ** 256n))
-              }
-            })
-          ).mapLeft(errors => errors[0])
-
-          return positions.chain(ps => set.pick(ps.values()))
-        })
-      }
     case 'then':
       // Compose two actions, executing the second one only if the first one results in true.
       return (ctx, args) => {
