@@ -66,7 +66,7 @@ import { strict as assert } from 'assert'
 
 import { IdGenerator, zerog } from '../../idGenerator'
 import { expressionToString } from '../../ir/IRprinting'
-import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
+import { QuintEx, QuintLambdaParameter, QuintStr } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { EvalFunction } from './builder'
@@ -349,7 +349,7 @@ export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
         }
 
         case 'variant': {
-          const label = (ex.args[0] as QuintName).name
+          const label = (ex.args[0] as QuintStr).value
           return fromQuintEx(ex.args[1]).map(v => rv.mkVariant(label, v))
         }
 
