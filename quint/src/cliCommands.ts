@@ -752,11 +752,12 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   if (args.invariants && args.invariants.length > 0) {
     invariantsList = invariantsList.concat(args.invariants)
   }
-  // If no invariants specified, use the default 'true'
-  const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
 
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
-  extraDefsAsText.push(`val q::inv = and(${invariantString})`)
+
+  if (invariantsList.length > 0) {
+    extraDefsAsText.push(`val q::inv = and(${invariantsList.join(',')})`)
+  }
 
   if (args.temporal) {
     extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
