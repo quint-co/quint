@@ -499,8 +499,7 @@ function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses
     outcome.witnessingTraces.forEach((n, i) => {
       const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
       console.log(
-        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
-          outcome.samples
+        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${outcome.samples
         } explored ${percentage}`
       )
     })
@@ -576,23 +575,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-  function toExpr(input: string): Either<QuintError, QuintEx> {
-    const parseResult = parseExpressionOrDeclaration(input, '<input>', prev.idGen, prev.sourceMap)
-    if (parseResult.kind !== 'expr') {
-      return left({ code: 'QNT501', message: `Expected ${input} to be a valid expression` })
-    }
-
-    prev.resolver.switchToModule(mainName)
-    walkExpression(prev.resolver, parseResult.expr)
-    if (prev.resolver.errors.length > 0) {
-      return left(prev.resolver.errors[0])
-    }
-
-    return right(parseResult.expr)
-  }
 
   const argsParsingResult = mergeInMany(
-    [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(toExpr)
+    [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e))
   )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
@@ -612,7 +597,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     }
 
     // Parse the combined invariant for the Rust backend
-    const invariantExpr = toExpr(invariantString)
+    const invariantExpr = toExpr(prev, invariantString)
     if (invariantExpr.isLeft()) {
       return cliErr('Argument error', {
         ...simulator,
@@ -664,8 +649,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
-            ' No violation found ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+          ' No violation found ' +
+          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
@@ -686,38 +671,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +
-            ' Found an issue ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+          ' Found an issue ' +
+          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
-        // Show which invariants were violated, if we had multiple
-        if (individualInvariants.length > 1) {
-          console.log(chalk.red('Violated invariants:'))
-
-          const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
-
-          // For each individual invariant, check if it's violated in the final state
-          for (const inv of individualInvariants) {
-            // Skip the default 'true' invariant
-            if (inv === 'true') continue
-
-            // Create a new evaluator to check just this invariant
-            const singleInvResult = toExpr(inv)
-            if (singleInvResult.isRight()) {
-              // Evaluate the invariant to create the registers
-              evaluator.evaluate(singleInvResult.value)
-              // Set the registers with the last state
-              evaluator.updateState(states[states.length - 1])
-              // Now actually evaluate the invariant
-              const evalResult = evaluator.evaluate(singleInvResult.value)
-
-              // If we can evaluate it and it's false, it's violated
-              if (evalResult.isRight() && evalResult.value.kind === 'bool' && !evalResult.value.value) {
-                console.log(chalk.red(`  - ${inv}`))
-              }
-            }
-          }
-        }
+        printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
       }
 
       if (verbosity.hasHints(verbosityLevel)) {
@@ -732,6 +690,45 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         trace: states,
         errors: [],
       })
+  }
+}
+function toExpr(prev: TypecheckedStage, input: string): Either<QuintError, QuintEx> {
+  const mainName = guessMainModule(prev)
+  const parseResult = parseExpressionOrDeclaration(input, '<input>', prev.idGen, prev.sourceMap)
+  if (parseResult.kind !== 'expr') {
+    return left({ code: 'QNT501', message: `Expected ${input} to be a valid expression` })
+  }
+
+  prev.resolver.switchToModule(mainName)
+  walkExpression(prev.resolver, parseResult.expr)
+  if (prev.resolver.errors.length > 0) {
+    return left(prev.resolver.errors[0])
+  }
+
+  return right(parseResult.expr)
+}
+
+function printViolatedInvariants(state: QuintEx, invariants: string[], prev: TypecheckedStage) {
+  if (invariants.length <= 1) {
+    return
+  }
+
+  const evaluator = new Evaluator(prev.resolver.table, newTraceRecorder(0, newRng()), newRng(), false)
+
+  // For each individual invariant, check if it's violated in the final state
+  for (const inv of invariants) {
+    const invExpr = toExpr(prev, inv).unwrap()
+    // Evaluate the invariant to create the registers
+    evaluator.evaluate(invExpr)
+    // Set the registers with the last state
+    evaluator.updateState(state)
+    // Now actually evaluate the invariant
+    const evalResult = evaluator.evaluate(invExpr)
+
+    // If we can evaluate it and it's false, it's violated
+    if (evalResult.isRight() && evalResult.value.kind === 'bool' && !evalResult.value.value) {
+      console.log(chalk.red(`  ❌ ${inv}`))
+    }
   }
 }
 
@@ -909,13 +906,13 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
-  // Process both invariant and invariants options for verification
-  let hasInvariants = false
-  if (args.invariant && args.invariant !== 'true') {
-    hasInvariants = true
+  // Process both invariant and invariants options
+  let invariantsList: string[] = []
+  if (prev.args.invariant && prev.args.invariant !== 'true') {
+    invariantsList.push(prev.args.invariant)
   }
-  if (args.invariants && args.invariants.length > 0) {
-    hasInvariants = true
+  if (prev.args.invariants && prev.args.invariants.length > 0) {
+    invariantsList = invariantsList.concat(prev.args.invariants)
   }
 
   // We need to insert the data form CLI args into their appropriate locations
@@ -935,7 +932,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
       length: args.maxSteps,
       init: 'q::init',
       next: 'q::step',
-      inv: hasInvariants ? ['q::inv'] : undefined,
+      inv: invariantsList.length > 0 ? ['q::inv'] : undefined,
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
         ...(loadedConfig.checker?.tuning ?? {}),
@@ -968,6 +965,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
           if (verbosity.hasResults(verbosityLevel)) {
             console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+            printViolatedInvariants(trace[trace.length - 1], invariantsList, prev)
           }
 
           if (prev.args.outItf && err.traces) {
