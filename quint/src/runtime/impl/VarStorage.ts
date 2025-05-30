@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Either, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { Map as ImmutableMap } from 'immutable'
@@ -131,6 +131,27 @@ export class VarStorage {
     }
 
     return rv.mkRecord(map)
+  }
+
+  fromRecord(record: RuntimeValue) {
+    this.reset()
+
+    record.toOrderedMap().forEach((value, key) => {
+    const regToSet = this.vars
+      .valueSeq()
+      .toArray()
+      .find(r => r.name === key)
+
+      if (regToSet != undefined) {
+        regToSet.value = right(value)
+      } else if (key === NONDET_PICKS && this.storeMetadata) {
+        value.toOrderedMap().forEach((v, k) => {
+          this.nondetPicks.set(k, v.toVariant()[0] == 'None' ? undefined : v)
+        })
+      } else if (key === ACTION_TAKEN && this.storeMetadata) {
+        this.actionTaken = value.toStr()
+      }
+    })
   }
 
   /**

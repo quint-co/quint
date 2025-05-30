@@ -694,6 +694,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         if (individualInvariants.length > 1) {
           console.log(chalk.red('Violated invariants:'))
 
+          const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
+
           // For each individual invariant, check if it's violated in the final state
           for (const inv of individualInvariants) {
             // Skip the default 'true' invariant
@@ -702,8 +704,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
             // Create a new evaluator to check just this invariant
             const singleInvResult = toExpr(inv)
             if (singleInvResult.isRight()) {
-              const testEvaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
-              const evalResult = testEvaluator.evaluate(singleInvResult.value)
+              // Evaluate the invariant to create the registers
+              evaluator.evaluate(singleInvResult.value)
+              // Set the registers with the last state
+              evaluator.updateState(states[states.length - 1])
+              // Now actually evaluate the invariant
+              const evalResult = evaluator.evaluate(singleInvResult.value)
 
               // If we can evaluate it and it's false, it's violated
               if (evalResult.isRight() && evalResult.value.kind === 'bool' && !evalResult.value.value) {
