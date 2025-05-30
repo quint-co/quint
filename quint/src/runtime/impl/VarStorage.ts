@@ -137,10 +137,10 @@ export class VarStorage {
     this.reset()
 
     record.toOrderedMap().forEach((value, key) => {
-    const regToSet = this.vars
-      .valueSeq()
-      .toArray()
-      .find(r => r.name === key)
+      const regToSet = this.vars
+        .valueSeq()
+        .toArray()
+        .find(r => r.name === key)
 
       if (regToSet != undefined) {
         regToSet.value = right(value)

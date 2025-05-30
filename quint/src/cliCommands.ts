@@ -499,7 +499,8 @@ function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses
     outcome.witnessingTraces.forEach((n, i) => {
       const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
       console.log(
-        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${outcome.samples
+        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+          outcome.samples
         } explored ${percentage}`
       )
     })
@@ -575,7 +576,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-
   const argsParsingResult = mergeInMany(
     [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e))
   )
@@ -649,8 +649,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
-          ' No violation found ' +
-          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+            ' No violation found ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
@@ -671,8 +671,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +
-          ' Found an issue ' +
-          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+            ' Found an issue ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
         printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
