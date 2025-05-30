@@ -71,6 +71,10 @@ export class Evaluator {
     this.builder.table = table
   }
 
+  updateState(state: QuintEx) {
+    this.ctx.varStorage.fromRecord(rv.fromQuintEx(state))
+  }
+
   /**
    * Shift the context to the next state. That is, updated variables in the next state are moved to the current state,
    * and the trace is extended.

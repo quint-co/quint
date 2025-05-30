@@ -1505,3 +1505,23 @@ An example execution:
 
 [State 1]
 ```
+
+### Prints violated invariants when multiple invariants are given 
+
+<!-- !test exit 1 -->
+<!-- !test in multiple invariants -->
+```
+output=$(quint run ../examples/games/tictactoe/tictactoe.qnt --invariants="not(won(X))" "not(stalemate)" --max-samples=100 --seed=0x2b442ab439177)
+exit_code=$?
+echo "$output" | tail -n4 | sed -e 's/([0-9]*ms.*)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out multiple invariants -->
+```
+[violation] Found an issue (duration).
+  ❌ not(won(X))
+Use --verbosity=3 to show executions.
+Use --seed=0x2b442ab439177 to reproduce.
+```
+

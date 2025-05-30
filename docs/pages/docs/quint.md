@@ -238,8 +238,12 @@ Options:
                                                           [number] [default: 20]
   --init         name of the initializer action       [string] [default: "init"]
   --step         name of the step action              [string] [default: "step"]
-  --invariant    invariant to check: a definition name or an expression
-                                                      [string] [default: "true"]
+  --invariants   space separated list of invariants to check (definition names).
+                 When specified, all invariants are combined with AND and
+                 checked together, with detailed reporting of which ones were
+                 violated                                  [array] [default: []]
+  --invariant    invariant to check: a definition name or an expression. Can be
+                 used together with --invariants      [string] [default: "true"]
   --witnesses    space separated list of witnesses to report on (counting for
                  how many traces the witness is true)      [array] [default: []]
   --hide         space separated list of variable names to hide from the terminal
@@ -351,10 +355,13 @@ Options:
                         filename)                                       [string]
   --init                name of the initializer action[string] [default: "init"]
   --step                name of the step action       [string] [default: "step"]
-  --invariant           the invariants to check, separated by commas (e.g.)
-                                                                        [string]
+  --invariant           the invariants to check, separated by commas    [string]
   --temporal            the temporal properties to check, separated by commas
                                                                         [string]
+  --invariants          space separated list of invariants to check (definition
+                        names). When specified, all invariants are combined with
+                        AND and checked together, with detailed reporting of
+                        which ones were violated           [array] [default: []]
   --out-itf             output the trace in the Informal Trace Format to file
                         (suppresses all console output)                 [string]
   --max-steps           the maximum number of steps in every trace

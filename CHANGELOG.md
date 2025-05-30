@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint run` and `quint verify` can now receive multiple invariants through
+  `--invariants` and Quint prints which ones were violated in the found
+  violation (#1662)
+
 ### Changed
 
 - `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664) 
