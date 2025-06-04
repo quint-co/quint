@@ -28,7 +28,7 @@ import { spawn } from 'child_process'
 import { rustEvaluatorDir } from './config'
 import { QuintError } from './quintError'
 
-const QUINT_EVALUATOR_VERSION = 'v0.1.0'
+const QUINT_EVALUATOR_VERSION = 'v0.2.0'
 
 export type ParsedQuint = {
   modules: QuintModule[]

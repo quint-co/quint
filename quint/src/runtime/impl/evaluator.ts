@@ -189,6 +189,7 @@ export class Evaluator {
 
       const initResult = initEval(this.ctx).mapLeft(error => (failure = error))
       if (!isTrue(initResult)) {
+        traceLengths.push(0)
         this.recorder.onUserOperatorReturn(initApp, [], initResult)
       } else {
         this.shift()
@@ -197,6 +198,7 @@ export class Evaluator {
         this.recorder.onUserOperatorReturn(initApp, [], invResult)
         if (!isTrue(invResult)) {
           errorsFound++
+          traceLengths.push(this.trace.get().length)
         } else {
           // check all { step, shift(), inv } in a loop
           for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
