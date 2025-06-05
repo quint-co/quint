@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.25.1 -- 2025-06-05
+
+### Added
 
 - `quint run` and `quint verify` can now receive multiple invariants through
   `--invariants` and Quint prints which ones were violated in the found
@@ -20,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed issue on integration with the rust backend (#1683)
+
 ### Security
 
 ## v0.25.0 -- 2025-05-28
