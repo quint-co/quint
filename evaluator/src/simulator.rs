@@ -161,6 +161,13 @@ impl ParsedQuint {
 
 /// Get statistics about the lengths of traces collected during simulation.
 fn get_trace_statistics(trace_lengths: &[usize]) -> TraceStatistics {
+    if trace_lengths.is_empty() {
+        return TraceStatistics {
+            average_trace_length: 0.0,
+            max_trace_length: 0,
+            min_trace_length: 0,
+        };
+    }
     TraceStatistics {
         average_trace_length: trace_lengths.iter().sum::<usize>() as f64
             / trace_lengths.len() as f64,
