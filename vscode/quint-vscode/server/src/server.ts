@@ -58,7 +58,7 @@ import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { parseDocument } from './parsing'
 import { getDeclRegExp } from './rename'
-import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
 export class QuintLanguageServer {
@@ -239,7 +239,7 @@ export class QuintLanguageServer {
               end: { line: lineNum + 1, character: 0 },
             })
 
-            const matchResult = line.match(new RegExp(fix.original))
+            const matchResult = line.match(stringToRegex(fix.original))
             if (!matchResult) {
               return actions
             }

@@ -19,6 +19,24 @@ export function lowercaseTypeError(id: bigint, name: string, prefix: string[]): 
   }
 }
 
+export function mapSyntaxError(id: bigint, keyType: string, valueType: string): QuintError {
+  const original = `Map[${keyType}, ${valueType}]`
+  const replacement = `${keyType} -> ${valueType}`
+
+  return {
+    code: 'QNT015',
+    message: `Use '${replacement}' instead of '${original}' for map types`,
+    reference: id,
+    data: {
+      fix: {
+        kind: 'replace',
+        original,
+        replacement,
+      },
+    },
+  }
+}
+
 export function tooManySpreadsError(id: bigint): QuintError {
   return {
     code: 'QNT012',

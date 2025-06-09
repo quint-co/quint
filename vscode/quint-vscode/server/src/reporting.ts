@@ -194,3 +194,13 @@ function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFil
 
   return sortedResults.map(([_loc, result]) => result)
 }
+
+export function stringToRegex(input: string): RegExp {
+  // 1. Escape special regex characters
+  const escaped = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  // 2. Replace spaces with \s+
+  const withSpaces = escaped.replace(/\s+/g, '\\s*')
+
+  return new RegExp(withSpaces)
+}

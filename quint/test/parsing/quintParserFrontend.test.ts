@@ -247,7 +247,6 @@ describe('syntax errors', () => {
   })
 
   it('error on type declarations with undeclared variables', () => {
-    // we should use double quotes
     const code = `module singleQuotes {  type T = (List[a], Set[b]) }`
     const [error] = parseErrorsFrom(defaultSourceName, code)
     assert.deepEqual(error.code, 'QNT014')
@@ -262,6 +261,18 @@ type variable 'a' is unbound. To fix it, write
 
    type T[a] = List[a]`
     )
+  })
+
+  it('error on type declarations with undeclared variables', () => {
+    const code = `module mapSyntax { type WrongMap = Map[int, str] }`
+    const [error] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error.code, 'QNT015')
+    assert.deepEqual(error.message, `Use 'int -> str' instead of 'Map[int, str]' for map types`)
+    assert.deepEqual(error.data?.fix, {
+      kind: 'replace',
+      original: 'Map[int, str]',
+      replacement: 'int -> str',
+    })
   })
 })
 
@@ -339,5 +350,9 @@ describe('parse errors', () => {
 
   it('errors on invalid record fields', () => {
     parseAndCompare('_1042qualifiersInRecordsFieldsError')
+  })
+
+  it('error on map syntax', () => {
+    parseAndCompare('_1070mapSyntax')
   })
 })
