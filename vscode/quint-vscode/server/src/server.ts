@@ -33,8 +33,6 @@ import {
   TextEdit,
   WorkspaceEdit,
   createConnection,
-  Diagnostic,
-  DiagnosticSeverity,
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
@@ -60,7 +58,7 @@ import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { parseDocument } from './parsing'
 import { getDeclRegExp } from './rename'
-import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
 export class QuintLanguageServer {
@@ -114,11 +112,6 @@ export class QuintLanguageServer {
 
           const sourceFile = URI.parse(change.document.uri).path
           const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
-          
-          // Add custom diagnostics for Map[a, b] syntax
-          const mapSyntaxDiagnostics = this.findMapSyntaxIssues(change.document)
-          diagnostics.push(...mapSyntaxDiagnostics)
-          
           this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
 
           if (diagnosticsByFile.size === 0) {
@@ -246,7 +239,7 @@ export class QuintLanguageServer {
               end: { line: lineNum + 1, character: 0 },
             })
 
-            const matchResult = line.match(new RegExp(fix.original))
+            const matchResult = line.match(stringToRegex(fix.original))
             if (!matchResult) {
               return actions
             }
@@ -526,50 +519,6 @@ export class QuintLanguageServer {
     } catch (e) {
       this.connection.console.error(`Error during analysis: ${e}`)
     }
-  }
-
-  /**
-   * Find instances of `Map[a, b]` syntax in the document text and create diagnostics with quick fixes
-   */
-  private findMapSyntaxIssues(document: TextDocument): Diagnostic[] {
-    const text = document.getText()
-    const diagnostics: Diagnostic[] = []
-    
-    // Regular expression to match Map[a, b] pattern
-    // This will match Map[any_text, any_text] while handling spaces
-    const mapRegExp = /Map\s*\[\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\]/g
-    
-    let match: RegExpExecArray | null
-    
-    while ((match = mapRegExp.exec(text)) !== null) {
-      const keyType = match[1]
-      const valueType = match[2]
-      const replacement = `${keyType} -> ${valueType}`
-      const startPos = document.positionAt(match.index)
-      const endPos = document.positionAt(match.index + match[0].length)
-      
-      const diagnostic: Diagnostic = {
-        severity: DiagnosticSeverity.Warning,
-        range: {
-          start: startPos,
-          end: endPos
-        },
-        message: `Use '${keyType} -> ${valueType}' instead of 'Map[${keyType}, ${valueType}]' for map types in Quint.`,
-        source: 'quint',
-        code: 'map-syntax',
-        data: {
-          fix: {
-            kind: 'replace',
-            original: match[0],
-            replacement: replacement
-          }
-        }
-      }
-      
-      diagnostics.push(diagnostic)
-    }
-    
-    return diagnostics
   }
 }
 
