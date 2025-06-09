@@ -287,7 +287,6 @@ AND             :   'and' ;
 OR              :   'or'  ;
 IFF             :   'iff' ;
 IMPLIES         :   'implies' ;
-MAP             :   'Map' ;
 MATCH           :   'match' ;
 PLUS            :   '+' ;
 MINUS           :   '-' ;

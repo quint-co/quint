@@ -53,6 +53,8 @@ export type ErrorCode =
   | 'QNT013'
   /* QNT014: Type variables in a type declaration are not declared as parameters */
   | 'QNT014'
+  /* QNT015: use a -> b instead of Map[a, b] */
+  | 'QNT015'
   /* QNT098: Cyclic imports */
   | 'QNT098'
   /* QNT099: Found cyclic definitions */

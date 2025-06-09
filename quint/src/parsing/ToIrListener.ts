@@ -38,9 +38,10 @@ import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
-import { lowercaseTypeError, tooManySpreadsError, undeclaredTypeParamsError, mapSyntaxError } from './parseErrors'
+import { lowercaseTypeError, mapSyntaxError, tooManySpreadsError, undeclaredTypeParamsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
 import assert, { fail } from 'assert'
+import { typeToString } from '../ir/IRprinting'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -1045,41 +1046,22 @@ export class ToIrListener implements QuintListener {
     // The next type on the stack after the args should be the applied
     // type constructor
     const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name: ctx._typeCtor.text }
-    
+
     // Check for Map[a, b] syntax
     if (ctor.name === 'Map' && args.length === 2) {
       // Extract the key and value type names
-      const keyType = this.getTypeName(args[0]);
-      const valueType = this.getTypeName(args[1]);
-      
+      const keyType = typeToString(args[0])
+      const valueType = typeToString(args[1])
+
       // Add error with fix suggestion
-      this.errors.push(mapSyntaxError(id, keyType, valueType));
-      
+      this.errors.push(mapSyntaxError(id, keyType, valueType))
+
       // Create a function type instead (which is the correct representation for maps)
-      const funType: QuintType = { id, kind: 'fun', arg: args[0], res: args[1] };
-      this.typeStack.push(funType);
+      const funType: QuintType = { id, kind: 'fun', arg: args[0], res: args[1] }
+      this.typeStack.push(funType)
     } else {
       const typeApp: QuintAppType = { id, kind: 'app', ctor, args }
       this.typeStack.push(typeApp)
-    }
-  }
-
-  // Helper method to get a simple string representation of a type
-  private getTypeName(type: QuintType): string {
-    switch (type.kind) {
-      case 'const': 
-        return type.name;
-      case 'var':
-        return type.name;
-      case 'int':
-        return 'int';
-      case 'bool':
-        return 'bool';
-      case 'str':
-        return 'str';
-      default:
-        // For complex types, default to a simple representation
-        return type.kind;
     }
   }
 
