@@ -12,7 +12,7 @@ use std::time::Instant;
 use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{QuintError, QuintEx};
-use quint_evaluator::simulator::{ParsedQuint, ProgressUpdate, SimulationResult};
+use quint_evaluator::simulator::{ParsedQuint, ProgressUpdate, SimulationResult, TraceStatistics};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -99,6 +99,7 @@ struct Outcome {
     status: SimulationStatus,
     errors: Vec<QuintError>,
     best_traces: Vec<SimulationTrace>,
+    trace_statistics: TraceStatistics,
     witnessing_traces: Vec<usize>,
     samples: usize,
 }
@@ -243,8 +244,12 @@ fn to_outcome(source: String, result: Result<SimulationResult, QuintError>) -> O
         status,
         errors,
         best_traces,
+        trace_statistics: result
+            .as_ref()
+            .ok()
+            .map_or_else(TraceStatistics::default, |r| r.trace_statistics.clone()),
+        samples: result.as_ref().map_or(0, |r| r.samples),
         // TODO: This simulator is not tracking witnesses yet
         witnessing_traces: vec![],
-        samples: 0,
     }
 }

@@ -20,9 +20,22 @@ pub struct ParsedQuint {
 pub struct SimulationResult {
     pub result: bool,
     pub best_traces: Vec<Trace>,
+    pub trace_statistics: TraceStatistics,
+    pub samples: usize,
     // TODO
     // witnessing_traces
-    // samples
+}
+
+/// Statistics about the length of traces collected during simulation.
+#[derive(Serialize, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TraceStatistics {
+    /// The average length of the traces
+    pub average_trace_length: f64,
+    /// The maximum length of the traces
+    pub max_trace_length: usize,
+    /// The minimum length of the traces
+    pub min_trace_length: usize,
 }
 
 /// Simulation progress update.
@@ -70,6 +83,7 @@ impl ParsedQuint {
 
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
+        let mut trace_lengths = Vec::with_capacity(n_traces + 1);
 
         for sample_number in 1..=samples {
             if let Some(callback) = &mut progress_callback {
@@ -82,9 +96,12 @@ impl ParsedQuint {
             let mut trace = Vec::with_capacity(steps + 1);
 
             if !init.execute(&mut env)?.as_bool() {
+                trace_lengths.push(0);
                 return Ok(SimulationResult {
                     result: false,
                     best_traces,
+                    trace_statistics: get_trace_statistics(&trace_lengths),
+                    samples: sample_number,
                 });
             }
 
@@ -94,6 +111,7 @@ impl ParsedQuint {
                 trace.push(interpreter.var_storage.borrow().as_record());
 
                 if !invariant.execute(&mut env)?.as_bool() {
+                    trace_lengths.push(trace.len());
                     // Found a counterexample
                     collect_trace(
                         &mut best_traces,
@@ -106,6 +124,8 @@ impl ParsedQuint {
                     return Ok(SimulationResult {
                         result: false,
                         best_traces,
+                        trace_statistics: get_trace_statistics(&trace_lengths),
+                        samples: sample_number,
                     });
                 }
 
@@ -116,9 +136,11 @@ impl ParsedQuint {
                     // the run. Hence, do not report an error here, but simply
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
+                    trace_lengths.push(trace.len());
                     break;
                 }
             }
+            trace_lengths.push(trace.len());
             collect_trace(
                 &mut best_traces,
                 n_traces,
@@ -131,7 +153,26 @@ impl ParsedQuint {
         Ok(SimulationResult {
             result: true,
             best_traces,
+            trace_statistics: get_trace_statistics(&trace_lengths),
+            samples,
         })
+    }
+}
+
+/// Get statistics about the lengths of traces collected during simulation.
+fn get_trace_statistics(trace_lengths: &[usize]) -> TraceStatistics {
+    if trace_lengths.is_empty() {
+        return TraceStatistics {
+            average_trace_length: 0.0,
+            max_trace_length: 0,
+            min_trace_length: 0,
+        };
+    }
+    TraceStatistics {
+        average_trace_length: trace_lengths.iter().sum::<usize>() as f64
+            / trace_lengths.len() as f64,
+        max_trace_length: *trace_lengths.iter().max().unwrap_or(&0),
+        min_trace_length: *trace_lengths.iter().min().unwrap_or(&0),
     }
 }
 

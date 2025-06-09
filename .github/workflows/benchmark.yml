@@ -61,7 +61,7 @@ jobs:
           tool: cargo-criterion
 
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
 
       - name: Install Quint
         run: cd ../quint && npm ci && npm run compile && npm link

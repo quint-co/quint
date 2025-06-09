@@ -58,7 +58,7 @@ jobs:
       - name: Install cargo-nextest
         uses: taiki-e/install-action@cargo-nextest
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
       - name: Install Quint
         run: cd ../quint && npm ci && npm run compile && npm link
       - name: Run tests
