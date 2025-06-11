@@ -73,15 +73,11 @@ for target_config in "${TARGETS[@]}"; do
     --output "quint-$SUFFIX" \
     "npm:@informalsystems/quint@$VERSION"
 
-  echo "Generating SHA256 hash for quint-$SUFFIX"
-  sha256sum "quint-$SUFFIX" > "quint-$SUFFIX.sha256"
-
   if [ "$DRY_RUN" == true ]; then
-    echo "[dry run] gh release upload \"$RELEASE_TAG\" \"quint-$SUFFIX\" \"quint-$SUFFIX.sha256\" --repo \"$REPO\" --clobber"
+    echo "[dry run] gh release upload \"$RELEASE_TAG\" \"quint-$SUFFIX\" --repo \"$REPO\" --clobber"
   else
     gh release upload "$RELEASE_TAG" \
       "quint-$SUFFIX" \
-      "quint-$SUFFIX.sha256" \
       --repo "$REPO" \
       --clobber
   fi
