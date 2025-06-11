@@ -13,15 +13,15 @@ same principles in Quint, see [Contributing to Apalache][].
 ## Developer docs
 
  - [roadmap](./docs/roadmap.md)
- - [ADR001: Transpiler architecture](./docs/pages/docs/architecture-decision-records/adr001-transpiler-architecture.md)
- - [ADR002: Error codes](./docs/pages/docs/architecture-decision-records/adr002-errors.md)
+ - [ADR001: Transpiler architecture](./docs/pages/docs/development-docs/architecture-decision-records/adr001-transpiler-architecture.md)
+ - [ADR002: Error codes](./docs/pages/docs/development-docs/architecture-decision-records/adr002-errors.md)
  - [ADR003: Interface to visit Internal Representation
-   components](./docs/pages/docs/architecture-decision-records/adr003-visiting-ir-components.md)
- - [ADR004: An Effect System for Quint](./docs/pages/docs/architecture-decision-records/adr004-effect-system.md)
- - [ADR005: A Type System for Quint](./docs/pages/docs/architecture-decision-records/adr005-type-system.md)
- - [ADR006: Design of modules and lookup tables](./docs/pages/docs/architecture-decision-records/adr006-modules.lit.md)
- - [ADR007: Flattening](./docs/pages/docs/architecture-decision-records/adr007-flattening.md)
- - [ADR008: Obtaining and Launching Apalache from Quint](./docs/pages/docs/architecture-decision-records/adr008-managing-apalache.md) 
+   components](./docs/pages/docs/development-docs/architecture-decision-records/adr003-visiting-ir-components.md)
+ - [ADR004: An Effect System for Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr004-effect-system.md)
+ - [ADR005: A Type System for Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./docs/pages/docs/development-docs/architecture-decision-records/adr006-modules.lit.md)
+ - [ADR007: Flattening](./docs/pages/docs/development-docs/architecture-decision-records/adr007-flattening.md)
+ - [ADR008: Obtaining and Launching Apalache from Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr008-managing-apalache.md) 
 
 ## Coordinating work
 
@@ -34,14 +34,14 @@ attention.
 Currently, the project consists of two npm packages:
 
  - [quint](./quint) is the transpiler package, see the [quint manual][].
- - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quint`.
+ - [vscode/quint-vscode](./vscode/quint-vscode) is the VSCode plugin for Quint, depends on `quint`.
    This plugin has two subpackages:
 
-   - [vscode/quint/server](./vscode/quint/server) is the server-side package,
+   - [vscode/quint-vscode/server](./vscode/quint-vscode/server) is the server-side package,
      implementing [Language server protocol][] used by VSCode and other
      code editors.
 
-   - [vscode/quint/client](./vscode/quint/client) is the client-side package,
+   - [vscode/quint-vscode/client](./vscode/quint-vscode/client) is the client-side package,
      implementing the language extension for VSCode.
 
 ## Dependencies
@@ -297,7 +297,7 @@ Between installing the plugin from different sources, you may end up with multip
 [Apalache]: https://github.com/apalache-mc/apalache
 [Contributing to Apalache]: https://github.com/apalache-mc/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
-[quint manual]: ./docs/pages/docs/architecture-decision-records/quint.md
+[quint manual]: ./docs/pages/docs/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
 [quint unit tests]: https://github.com/informalsystems/quint/blob/main/quint/README.md#unit-tests
