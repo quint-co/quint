@@ -1,5 +1,9 @@
+<!-- Review CONTRIBUTING.md for contribution guidelines and helpful material -->
+
 <!-- Please ensure that your PR includes the following, as needed -->
 
+- [ ] Changes manually tested locally and confirmed to work as described
+      (including screenshots is helpful)
 - [ ] Tests added for any new code
 - [ ] Documentation added for any new functionality
 - [ ] Entries added to the respective `CHANGELOG.md` for any new functionality
