@@ -115,10 +115,15 @@ describe('parseType', () => {
   })
 
   it('throws error when type is invalid', () => {
-    const type = parseType('Set(int)')
+    const type = parseType('Set(int, bool)')
 
     assert.isTrue(type.isLeft())
-    type.mapLeft(error => assert.deepEqual(error[0].explanation, "missing '[' at '('"))
+    type.mapLeft(error =>
+      assert.deepEqual(
+        error[0].explanation,
+        '[QNT009] Use square brackets instead of parenthesis for type application: Set[int, bool]'
+      )
+    )
   })
 
   it('throws error when row separators are invalid', () => {
@@ -130,7 +135,7 @@ describe('parseType', () => {
         {
           // TODO We should not expect a '=>' here,
           // but do because of https://github.com/informalsystems/quint/issues/456
-          explanation: "mismatched input '|' expecting '}'",
+          explanation: "missing '}' at '|'",
           locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
         },
       ])

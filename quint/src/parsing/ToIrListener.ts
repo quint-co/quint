@@ -1036,8 +1036,16 @@ export class ToIrListener implements QuintListener {
 
   // E.g., Result[int, str]
   exitTypeApp(ctx: p.TypeAppContext) {
+    this.processTypeApp(ctx, ctx.typeApplication()._typeCtor.text, ctx.typeApplication().typeArgs()._typeArg)
+  }
+
+  exitWrongTypeApp(ctx: p.WrongTypeAppContext) {
+    this.processTypeApp(ctx, ctx.wrongTypeApplication()._typeCtor.text, ctx.wrongTypeApplication().typeArgs()._typeArg)
+  }
+
+  private processTypeApp(ctx: ParserRuleContext, name: string, types: any[]) {
     const id = this.getId(ctx)
-    const args: QuintType[] = ctx._typeArg
+    const args = types
       .map(_ =>
         // We require that there is one parsed type for each typeArg recorded
         this.popType().unwrap()
@@ -1045,7 +1053,7 @@ export class ToIrListener implements QuintListener {
       .reverse()
     // The next type on the stack after the args should be the applied
     // type constructor
-    const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name: ctx._typeCtor.text }
+    const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name }
 
     // Check for Map[a, b] syntax
     if (ctor.name === 'Map' && args.length === 2) {

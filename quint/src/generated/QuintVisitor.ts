@@ -66,6 +66,7 @@ import { OperContext } from "./QuintParser";
 import { TypeDefsContext } from "./QuintParser";
 import { ImportDefContext } from "./QuintParser";
 import { ExportDefContext } from "./QuintParser";
+import { WrongTypeAppContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
 import { DocumentedDeclarationContext } from "./QuintParser";
@@ -84,9 +85,14 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
+import { WrongTypeContext } from "./QuintParser";
+import { PermissiveTypeContext } from "./QuintParser";
 import { TypeVarContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
+import { TypeArgsContext } from "./QuintParser";
+import { TypeApplicationContext } from "./QuintParser";
+import { WrongTypeApplicationContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
 import { MatchSumExprContext } from "./QuintParser";
 import { MatchSumCaseContext } from "./QuintParser";
@@ -108,6 +114,8 @@ import { LiteralContext } from "./QuintParser";
 import { QualIdContext } from "./QuintParser";
 import { SimpleIdContext } from "./QuintParser";
 import { IdentifierContext } from "./QuintParser";
+import { KeywordAsIDContext } from "./QuintParser";
+import { ReservedContext } from "./QuintParser";
 
 
 /**
@@ -575,6 +583,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitExportDef?: (ctx: ExportDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `wrongTypeApp`
+	 * labeled alternative in `QuintParser.wrongType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitWrongTypeApp?: (ctx: WrongTypeAppContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.modules`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -701,6 +717,20 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitType?: (ctx: TypeContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.wrongType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitWrongType?: (ctx: WrongTypeContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.permissiveType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPermissiveType?: (ctx: PermissiveTypeContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.typeVar`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -720,6 +750,27 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitRowLabel?: (ctx: RowLabelContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.typeArgs`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeArgs?: (ctx: TypeArgsContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.typeApplication`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeApplication?: (ctx: TypeApplicationContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.wrongTypeApplication`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitWrongTypeApplication?: (ctx: WrongTypeApplicationContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.expr`.
@@ -867,5 +918,19 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitIdentifier?: (ctx: IdentifierContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.keywordAsID`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitKeywordAsID?: (ctx: KeywordAsIDContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.reserved`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReserved?: (ctx: ReservedContext) => Result;
 }
 

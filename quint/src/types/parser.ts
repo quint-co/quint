@@ -20,7 +20,6 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { QuintType, Row } from '../ir/quintTypes'
 import { newIdGenerator } from '../idGenerator'
-
 import { Either, left, right } from '@sweet-monads/either'
 
 /**
@@ -58,7 +57,7 @@ export function parseType(typeString: string): Either<any[], QuintType> {
   parser.removeErrorListeners()
   parser.addErrorListener(errorListener)
   // run the parser
-  const tree = parser.type()
+  const tree = parser.permissiveType()
   if (errorMessages.length > 0) {
     // report the errors
     return left(errorMessages)
