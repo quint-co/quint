@@ -3,7 +3,6 @@
 - [ ] Tests added for any new code
 - [ ] Documentation added for any new functionality
 - [ ] Entries added to the respective `CHANGELOG.md` for any new functionality
-- [ ] Feature table on [`README.md`](../README.md#roadmap) updated for any listed functionality
 
 <!--
 Some common CI checks and how to fix them (if failing):

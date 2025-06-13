@@ -16,5 +16,4 @@
 ## Design and Development
 
 - [Design Principles](./pages/docs/design-principles.md)
-- [Roadmap](./roadmap.md)
 - [Frequently asked questions](./pages/docs/faq.mdx)

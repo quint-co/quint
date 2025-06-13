@@ -77,57 +77,7 @@ Additionally, if you want to compile the vscode plugin:
     ```
 
 
-### Code
 
-Extend the code in [src](./src).
-
-### Unit tests
-
-Write unit tests in [test](./test), add test data to
-[testFixture](./testFixture). To run the tests and check code coverage, run the
-following commands:
-
- 1. Compile and test the parser:
-
-    ```sh
-    npm run compile && npm run test
-    ```
-
- 1. Check code coverage with tests:
-
-    ```sh
-    npm run coverage
-    ```
-
-#### Updating the source map test fixtures
-
-``` sh
-npm run update-fixtures
-```
-
-### Integration tests
-
-All development dependencies should be tracked in the `package.json` and
-`package-lock.json`. These will be installed when you run `npm install` on
-this project (unless you have [explicitly told
-npm](https://docs.npmjs.com/cli/v9/commands/npm-install#description) to use
-production settings).
-
-To [add a new dependency for integration tests or other development
-purposes](https://docs.npmjs.com/specifying-dependencies-and-devdependencies-in-a-package-json-file)
-run
-
-``` sh
-npm install <dep> --save-dev
-```
-
- 1. Update tests in [cli-tests.md](./cli-tests.md).
-
- 1. Run integration tests:
-
-    ```sh
-    npm run compile && npm link && npm run integration
-    ```
 
 [npm]: https://en.wikipedia.org/wiki/Npm_(software)
 [yalc]: https://www.npmjs.com/package/yalc
