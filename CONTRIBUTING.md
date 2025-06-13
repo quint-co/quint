@@ -18,21 +18,25 @@ Quint, whether it is by reporting issues, suggesting features, or writing code.
 - [Formatting](#formatting)
   - [Typescript](#typescript)
   - [Rust](#rust)
+- [Developing](#developing)
+  - [Developing the Quint CLI](#developing-the-quint-cli)
+  - [Developing the Quint Language Server](#developing-the-quint-language-server)
+  - [Developing the Evaluator](#developing-the-evaluator)
+  - [Developing the VSCode extension](#developing-the-vscode-extension)
+    - [Using the VSCode extension with an unpublished version of quint](#using-the-vscode-extension-with-an-unpublished-version-of-quint)
 - [Testing](#testing)
   - [Tests](#tests)
     - [Unit tests for quint](#unit-tests-for-quint)
     - [Updating the source map test fixtures](#updating-the-source-map-test-fixtures)
     - [Integration tests for quint](#integration-tests-for-quint)
   - [Adding dependencies](#adding-dependencies)
+    - [Typescript development dependencies](#typescript-development-dependencies)
     - [Rust development dependencies](#rust-development-dependencies)
-    - [Unit tests for the Language Server](#unit-tests-for-the-language-server)
     - [Unit tests for the Language Server](#unit-tests-for-the-language-server)
 - [Coding practices](#coding-practices)
   - [Ensure exhaustive matches](#ensure-exhaustive-matches)
   - [Using Maybe](#using-maybe)
   - [Using Either](#using-either)
-- [Using the VSCode extension from source](#using-the-vscode-extension-from-source)
-  - [Using the VSCode extension with an unpublished version of quint](#using-the-vscode-extension-with-an-unpublished-version-of-quint)
 - [Release](#release)
   - [Quint CLI](#quint-cli)
   - [Evaluator](#evaluator)
@@ -187,6 +191,106 @@ cargo clippy --fix
 rustfmt src/*.rs tests/*.rs
 ```
 
+## Developing
+
+### Developing the Quint CLI
+
+Install the project dependencies with:
+
+```sh
+cd quint
+npm install
+```
+
+Compile with
+
+```sh
+npm run compile && npm link
+```
+
+You'll only need to run `npm link` once, as it will create a global symlink to
+the `quint` CLI tool, so you can use it from anywhere in your system.
+
+You'll need to re-run `npm run compile` whenever you change the source code of
+the Quint CLI, so that the changes are reflected in the global symlink.
+
+### Developing the Quint Language Server
+
+The Quint Language Server is a separate package from the Quint CLI, so you'll
+need to install its dependencies separately:
+
+```sh
+cd vscode/quint-vscode/server
+npm install
+```
+
+You can then compile the Quint Language Server with:
+
+```sh
+npm run compile && npm link
+```
+
+You don't need `npm link` for using it inside the VSCode extension, but do for
+using it in other code editors.
+
+### Developing the Evaluator
+
+The Quint evaluator is a rust project, and Quint uses its binary when the flag
+`--backend=rust` is given. Install the dependencies and compile with:
+
+```sh
+cd evaluator
+cargo build
+```
+
+In order for the Quint CLI to pick up the updated evaluator, you need to
+copy/link the binary to the proper folder:
+
+```sh
+cp target/debug/quint_evaluator /home/gabriela/.quint/rust-evaluator-vX.Y.Z/quint_evaluator
+```
+
+where `X.Y.Z` is the version of the evaluator you are using
+(`QUINT_EVALUATOR_VERSION` in the Quint CLI codebase).
+
+### Developing the VSCode extension
+
+There are many ways to use the VSCode extension from source. You also may want
+to use it with an unpublished version of `quint`. This section is a suggestion
+on how to do it, and its also how we do it.
+
+To build the vscode extension, run the `vscode` make target from [the root of
+this repo](../../):
+
+```sh
+make vscode
+```
+
+To install the extension for use, link the combined extension into your vscode
+extensions. From the root of this repo, you can run:
+
+```sh
+ln -s $PWD/vscode/quint-vscode/ $HOME/.vscode/extensions/informal.quint-vscode-X.Y.Z
+```
+
+#### Using the VSCode extension with an unpublished version of `quint`
+
+We use `yalc` to manage unpublished packages. To install it, run
+
+``` sh
+npm i yalc -g
+```
+
+Then use the `local` make target to replace the published version of `quint`
+with the local one and build the extension:
+
+``` sh
+make local
+```
+
+Make sure you have the folder linked to your vscode extensions as described
+above.
+
 ## Testing
 
 ### Tests
@@ -304,7 +408,7 @@ cargo add <dep> --dev
 We have very basic unit tests for the Language Server, which can be run with:
 
 ```sh
-cd vscode/quint-vscode/serverr
+cd vscode/quint-vscode/server
 npm test
 ```
 
@@ -470,44 +574,6 @@ if (all_good(expr)) {
   return left({ code: 'QNT500', message: `${expr} is not good!`, reference: expr.id })
 }
 ```
-
-## Using the VSCode extension from source
-
-There are many ways to use the VSCode extension from source. You also may want
-to use it with an unpublished version of `quint`. This section is a suggestion
-on how to do it, and its also how we do it.
-
-To build the vscode extension, run the `vscode` make target from [the root of
-this repo](../../):
-
-```sh
-make vscode
-```
-
-To install the extension for use, link the combined extension into your vscode
-extensions. From the root of this repo, you can run:
-
-```sh
-ln -s $PWD/vscode/quint-vscode/ $HOME/.vscode/extensions/informal.quint-vscode-X.Y.Z
-```
-
-### Using the VSCode extension with an unpublished version of `quint`
-
-We use `yalc` to manage unpublished packages. To install it, run
-
-``` sh
-npm i yalc -g
-```
-
-Then use the `local` make target to replace the published version of `quint`
-with the local one and build the extension:
-
-``` sh
-make local
-```
-
-Make sure you have the folder linked to your vscode extensions as described
-above.
 
 [eslint]: https://eslint.org/
 [Mocha]: https://mochajs.org/
