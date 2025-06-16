@@ -57,7 +57,7 @@ export function parseType(typeString: string): Either<any[], QuintType> {
   parser.removeErrorListeners()
   parser.addErrorListener(errorListener)
   // run the parser
-  const tree = parser.permissiveType()
+  const tree = parser.type()
   if (errorMessages.length > 0) {
     // report the errors
     return left(errorMessages)

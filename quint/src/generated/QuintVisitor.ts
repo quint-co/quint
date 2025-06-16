@@ -23,9 +23,10 @@ import { TypeVarCaseContext } from "./QuintParser";
 import { TypeConstContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
 import { TypeAppContext } from "./QuintParser";
+import { WrongTypeAppContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
-import { TypeAliasDefContext } from "./QuintParser";
 import { TypeSumDefContext } from "./QuintParser";
+import { TypeAliasDefContext } from "./QuintParser";
 import { DotCallContext } from "./QuintParser";
 import { LambdaConsContext } from "./QuintParser";
 import { OperAppContext } from "./QuintParser";
@@ -66,7 +67,6 @@ import { OperContext } from "./QuintParser";
 import { TypeDefsContext } from "./QuintParser";
 import { ImportDefContext } from "./QuintParser";
 import { ExportDefContext } from "./QuintParser";
-import { WrongTypeAppContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
 import { DocumentedDeclarationContext } from "./QuintParser";
@@ -85,8 +85,6 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
-import { WrongTypeContext } from "./QuintParser";
-import { PermissiveTypeContext } from "./QuintParser";
 import { TypeVarContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
@@ -239,6 +237,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeApp?: (ctx: TypeAppContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `wrongTypeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitWrongTypeApp?: (ctx: WrongTypeAppContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `typeAbstractDef`
 	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
@@ -247,20 +253,20 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeAbstractDef?: (ctx: TypeAbstractDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `typeAliasDef`
-	 * labeled alternative in `QuintParser.typeDef`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypeAliasDef?: (ctx: TypeAliasDefContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by the `typeSumDef`
 	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitTypeSumDef?: (ctx: TypeSumDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `typeAliasDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeAliasDef?: (ctx: TypeAliasDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`
@@ -583,14 +589,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitExportDef?: (ctx: ExportDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `wrongTypeApp`
-	 * labeled alternative in `QuintParser.wrongType`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitWrongTypeApp?: (ctx: WrongTypeAppContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `QuintParser.modules`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -715,20 +713,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitType?: (ctx: TypeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `QuintParser.wrongType`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitWrongType?: (ctx: WrongTypeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `QuintParser.permissiveType`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPermissiveType?: (ctx: PermissiveTypeContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.typeVar`.

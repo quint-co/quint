@@ -391,6 +391,23 @@ export class ToIrListener implements QuintListener {
     // val a: T = A(42)
     // val b: T = B
     // ```
+    if (fields.length == 1 && isUnitType(fields[0].fieldType)) {
+      // A single type constructor with no parameters is parsed as an alias:
+      // type T = A
+      // The only proper way to disambiguate it between an alias and
+      // a constructor over the unit type would be to use name resolution.
+      const variantCtx = ctx.sumTypeDefinition().typeSumVariant()[0]
+      const def: QuintTypeDef = {
+        id: id,
+        kind: 'typedef',
+        name,
+        type: { id: this.getId(variantCtx), kind: 'const', name: variantCtx.text },
+      }
+
+      this.declarationStack.push(def)
+      return
+    }
+
     const constructors: QuintOpDef[] = zip(fields, ctx.sumTypeDefinition().typeSumVariant()).map(
       ([{ fieldName, fieldType }, variantCtx]) => {
         // Mangle the parameter name to avoid clashes

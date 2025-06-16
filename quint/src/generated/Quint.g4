@@ -60,9 +60,8 @@ operDef
 
 typeDef
     : 'type' qualId                             # typeAbstractDef
-    | 'type' typeDefHead '=' type               # typeAliasDef
     | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
-    | 'type' typeDefHead '=' wrongType          # typeAliasDef
+    | 'type' typeDefHead '=' type               # typeAliasDef
     ;
 
 typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
@@ -125,11 +124,8 @@ type
     | qualId                                                     # typeConst
     | '(' type ')'                                               # typeParen
     | typeApplication                                            # typeApp
+    | wrongTypeApplication # wrongTypeApp
     ;
-
-wrongType : wrongTypeApplication # wrongTypeApp;
-
-permissiveType : type | wrongType ;
 
 typeVar: LOW_ID;
 row : (rowLabel ':' type) (',' rowLabel ':' type)* (',' | '|' (rowVar=identifier))?

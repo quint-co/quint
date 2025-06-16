@@ -135,7 +135,7 @@ describe('parseType', () => {
         {
           // TODO We should not expect a '=>' here,
           // but do because of https://github.com/informalsystems/quint/issues/456
-          explanation: "missing '}' at '|'",
+          explanation: "mismatched input '|' expecting '}'",
           locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
         },
       ])
