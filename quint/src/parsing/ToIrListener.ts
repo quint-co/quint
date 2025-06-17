@@ -1060,7 +1060,7 @@ export class ToIrListener implements QuintListener {
     this.processTypeApp(ctx, ctx.wrongTypeApplication()._typeCtor.text, ctx.wrongTypeApplication().typeArgs()._typeArg)
   }
 
-  private processTypeApp(ctx: ParserRuleContext, name: string, types: any[]) {
+  private processTypeApp(ctx: ParserRuleContext, name: string, types: ParserRuleContext[]) {
     const id = this.getId(ctx)
     const args = types
       .map(_ =>
