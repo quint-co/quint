@@ -274,6 +274,15 @@ type variable 'a' is unbound. To fix it, write
       replacement: 'int -> str',
     })
   })
+
+  it('error on using reserved keywords', () => {
+    const code = `module reservedKeyword { type Reserved = { and: int, export: bool } }`
+    const [error1, error2] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error1.code, 'QNT008')
+    assert.deepEqual(error1.message, `Reserved keyword 'and' cannot be used as an identifier.`)
+    assert.deepEqual(error2.code, 'QNT008')
+    assert.deepEqual(error2.message, `Reserved keyword 'export' cannot be used as an identifier.`)
+  })
 })
 
 // Test the JSON error output. Most of the tests here should migrate to the
@@ -338,6 +347,10 @@ describe('parse errors', () => {
 
   it('error on overriding values that are not constants', () => {
     parseAndCompare('_1016nonConstOverride')
+  })
+
+  it('success on keywords that are allowed as identifiers', () => {
+    parseAndCompare('_1017keywordsAsIdentifiers')
   })
 
   it('error on cyclic definitions', () => {

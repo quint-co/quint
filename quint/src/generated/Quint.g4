@@ -124,7 +124,7 @@ type
     | qualId                                                     # typeConst
     | '(' type ')'                                               # typeParen
     | typeApplication                                            # typeApp
-    | wrongTypeApplication # wrongTypeApp
+    | wrongTypeApplication                                       # wrongTypeApp
     ;
 
 typeVar: LOW_ID;
@@ -135,7 +135,10 @@ row : (rowLabel ':' type) (',' rowLabel ':' type)* (',' | '|' (rowVar=identifier
 rowLabel : simpleId["record"] ;
 
 typeArgs : typeArg+=type (',' typeArg+=type)*;
+
 typeApplication : typeCtor=qualId '[' typeArgs ']';
+
+// A common mistake is to use parenthesis instead of square brackets
 wrongTypeApplication : typeCtor=qualId '(' typeArgs ')' {
         const err = quintErrorToString(
           { code: 'QNT009',
