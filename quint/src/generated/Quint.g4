@@ -6,7 +6,7 @@
  *  2. Make it expressive enough to capture all of the TLA logic.
  *
  * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec, Thomas Pani
- *          Informal Systems, 2021-2024
+ *          Informal Systems, 2021-2025
  */
 grammar Quint;
 
@@ -60,8 +60,8 @@ operDef
 
 typeDef
     : 'type' qualId                             # typeAbstractDef
-    | 'type' typeDefHead '=' type               # typeAliasDef
     | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
+    | 'type' typeDefHead '=' type               # typeAliasDef
     ;
 
 typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
@@ -82,22 +82,22 @@ qualifier : 'val'
           | 'nondet'
           ;
 
-importMod : 'import' name '.' identOrStar ('from' fromSource)?
-          | 'import' name ('as' name)? ('from' fromSource)?
+importMod : 'import' name '.' identOrStar (FROM fromSource)?
+          | 'import' name (AS name)? (FROM fromSource)?
           ;
 
-exportMod : 'export' name '.' identOrStar
-          | 'export' name ('as' name)?
+exportMod : EXPORT name '.' identOrStar
+          | EXPORT name (AS name)?
           ;
 
 // an instance may have a special parameter '*',
 // which means that the missing parameters are identity, e.g., x = x, y = y
 instanceMod :   // creating an instance and importing all names introduced in the instance
                 'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' '.' '*'
-                  ('from' fromSource)?
+                  (FROM fromSource)?
                 // creating an instance and importing all names with a prefix
-            |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' 'as' qualifiedName
-                  ('from' fromSource)?
+            |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ','? ')' AS qualifiedName
+                  (FROM fromSource)?
         ;
 
 moduleName : qualId;
@@ -105,7 +105,6 @@ name: qualId;
 qualifiedName : qualId;
 fromSource: STRING;
 
-// Types in Type System 1.2 of Apalache
 type
     : <assoc=right> type '->' type                               # typeFun
     | <assoc=right> type '=>' type                               # typeOper
@@ -124,7 +123,8 @@ type
     | typeVar                                                    # typeVarCase
     | qualId                                                     # typeConst
     | '(' type ')'                                               # typeParen
-    | typeCtor=qualId ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
+    | typeApplication                                            # typeApp
+    | wrongTypeApplication                                       # wrongTypeApp
     ;
 
 typeVar: LOW_ID;
@@ -133,6 +133,21 @@ row : (rowLabel ':' type) (',' rowLabel ':' type)* (',' | '|' (rowVar=identifier
     ;
 
 rowLabel : simpleId["record"] ;
+
+typeArgs : typeArg+=type (',' typeArg+=type)*;
+
+typeApplication : typeCtor=qualId '[' typeArgs ']';
+
+// A common mistake is to use parenthesis instead of square brackets
+wrongTypeApplication : typeCtor=qualId '(' typeArgs ')' {
+        const err = quintErrorToString(
+          { code: 'QNT009',
+            message: "Use square brackets instead of parenthesis for type application: "
+                  + $qualId.text + "[" + $typeArgs.text?.replace(/,/g, ', ') + "]"
+          },
+        )
+        this.notifyErrorListeners(err)
+      };
 
 // A Quint expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
@@ -233,14 +248,14 @@ recElem : simpleId["record"] ':' expr
 
 // operators in the normal call may use a few reserved names,
 // which are not recognized as identifiers.
-normalCallName :   qualId
-        |       op=(AND | OR | IFF | IMPLIES | SET | LIST | MAP)
+normalCallName : op=(AND | OR | IFF | IMPLIES | SET | LIST)
+        | qualId
         ;
 
 // A few infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-nameAfterDot :  qualId
-        |       op=(AND | OR | IFF | IMPLIES)
+nameAfterDot : op=(AND | OR | IFF | IMPLIES)
+        | qualId
         ;
 
 // special operators
@@ -269,7 +284,27 @@ simpleId[context: string]
       }
     ;
 
-identifier : LOW_ID | CAP_ID;
+identifier : LOW_ID
+           | CAP_ID
+           | keywordAsID
+           | reserved {
+               const err = quintErrorToString(
+                 { code: 'QNT008',
+                   message: "Reserved keyword '" + $reserved.text + "' cannot be used as an identifier."
+                 },
+               )
+               this.notifyErrorListeners(err)
+             };
+
+keywordAsID : FROM | AS | SET | LIST;
+reserved: AND
+    | OR
+    | IFF
+    | IMPLIES
+    | MATCH
+    | IMPORT
+    | EXPORT;
+
 
 // TOKENS
 
@@ -304,11 +339,16 @@ LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 SET             :   'Set';
 LIST            :   'List';
+IMPORT          :   'import';
+EXPORT          :   'export';
+FROM            :   'from';
+AS              :   'as';
 
 // An identifier starting with lowercase
-LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+);
+
 // An identifier starting with uppercase
-CAP_ID : ([A-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+CAP_ID : ([A-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+);
 
 // Unix script prefix, only valid as the first line of a file
 HASHBANG_LINE : '#!' .*? '\n';
