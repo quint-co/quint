@@ -56,6 +56,7 @@ import { walkExpression } from './ir/IRVisitor'
 import { convertInit } from './ir/initToPredicate'
 import { QuintRustWrapper } from './quintRustWrapper'
 import { replacer } from './jsonHelper'
+import { ApalacheResult } from './apalache'
 
 export type stage =
   | 'loading'
@@ -918,7 +919,24 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
-  const config = {
+  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList);
+  const startMs = Date.now()
+
+  return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
+    return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList, prev)
+  })
+}
+
+function createConfig(
+  loadedConfig: any,
+  parsedSpec: string,
+  args: any,
+  invariantsList: any[],
+  init: string = 'q::init',
+  next: string = 'q::step',
+  inv: string = 'q::inv'
+): any {
+  return {
     ...loadedConfig,
     input: {
       ...(loadedConfig.input ?? {}),
@@ -931,54 +949,61 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     checker: {
       ...(loadedConfig.checker ?? {}),
       length: args.maxSteps,
-      init: 'q::init',
-      next: 'q::step',
-      inv: invariantsList.length > 0 ? ['q::inv'] : undefined,
+      init: init,
+      next: next,
+      inv: invariantsList.length > 0 ? [inv] : undefined,
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
         ...(loadedConfig.checker?.tuning ?? {}),
         'search.simulation': args.randomTransitions ? 'true' : 'false',
       },
     },
-  }
+  };
+}
 
-  const startMs = Date.now()
+function processVerifyResult(
+  res: ApalacheResult<void>,
+  startMs: number,
+  verbosityLevel: number,
+  verifying: TracingStage,
+  invariantsList: any[],
+  prev: any
+): CLIProcedure<TracingStage> {
+  const elapsedMs = Date.now() - startMs;
 
-  return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
-    const elapsedMs = Date.now() - startMs
-    return res
-      .map(_ => {
+  return res
+    .map(_ => {
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`));
+        if (verbosity.hasHints(verbosityLevel)) {
+          console.log(chalk.gray('You may increase --max-steps.'));
+          console.log(chalk.gray('Use --verbosity to produce more (or less) output.'));
+        }
+      }
+      return { ...verifying, status: 'ok', errors: [] } as TracingStage;
+    })
+    .mapLeft(err => {
+      const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined;
+      const status = trace !== undefined ? 'violation' : 'failure';
+
+      if (trace !== undefined) {
+        // Always print the counterexample, unless the output is being directed to one of the outfiles
+        maybePrintCounterExample(verbosityLevel, trace, [], prev.args.hide || []);
+
         if (verbosity.hasResults(verbosityLevel)) {
-          console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-          if (verbosity.hasHints(verbosityLevel)) {
-            console.log(chalk.gray('You may increase --max-steps.'))
-            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
-          }
+          console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`));
+          printViolatedInvariants(trace[trace.length - 1], invariantsList, prev);
         }
-        return { ...verifying, status: 'ok', errors: [] } as TracingStage
-      })
-      .mapLeft(err => {
-        const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
-        const status = trace !== undefined ? 'violation' : 'failure'
-        if (trace !== undefined) {
-          // Always print the conterexample, unless the output is being directed to one of the outfiles
-          maybePrintCounterExample(verbosityLevel, trace, [], prev.args.hide || [])
 
-          if (verbosity.hasResults(verbosityLevel)) {
-            console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-            printViolatedInvariants(trace[trace.length - 1], invariantsList, prev)
-          }
-
-          if (prev.args.outItf && err.traces) {
-            writeToJson(prev.args.outItf, err.traces[0])
-          }
+        if (prev.args.outItf && err.traces) {
+          writeToJson(prev.args.outItf, err.traces[0]);
         }
-        return {
-          msg: err.explanation,
-          stage: { ...verifying, status, errors: err.errors, trace },
-        }
-      })
-  })
+      }
+      return {
+        msg: err.explanation,
+        stage: { ...verifying, status, errors: err.errors, trace },
+      };
+    });
 }
 
 /**
