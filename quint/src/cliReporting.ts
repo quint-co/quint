@@ -298,11 +298,7 @@ export function outputTestResults(results: TestResult[], verbosityLevel: number,
   }
 }
 
-export function outputTestErrors(
-  prev: ParsedStage,
-  verbosityLevel: number,
-  failed: TestResult[],
-  ): void {
+export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, failed: TestResult[]): void {
   const namedErrors: [TestResult, ErrorMessage][] = failed.reduce(
     (acc: [TestResult, ErrorMessage][], failure) =>
       acc.concat(failure.errors.map(e => [failure, mkErrorMessage(prev.sourceMap)(e)])),

@@ -66,6 +66,40 @@ export function parseServerEndpoint(input: string): Either<string, ServerEndpoin
   }
 }
 
+export function createConfig(
+  loadedConfig: any,
+  parsedSpec: string,
+  args: any,
+  invariantsList: string[],
+  init: string = 'q::init',
+  next: string = 'q::step',
+  inv: string = 'q::inv'
+): ApalacheConfig {
+  return {
+    ...loadedConfig,
+    input: {
+      ...(loadedConfig.input ?? {}),
+      source: {
+        type: 'string',
+        format: 'qnt',
+        content: parsedSpec,
+      },
+    },
+    checker: {
+      ...(loadedConfig.checker ?? {}),
+      length: args.maxSteps,
+      init: init,
+      next: next,
+      inv: invariantsList.length > 0 ? [inv] : undefined,
+      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
+      tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
+        'search.simulation': args.randomTransitions ? 'true' : 'false',
+      },
+    },
+  }
+}
+
 /**
  * Convert an endpoint to a GRPC connection string.
  * @param endpoint an endpoint

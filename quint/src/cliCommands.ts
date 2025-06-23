@@ -62,17 +62,11 @@ import {
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import {
-  PLACEHOLDERS,
-  deriveVerbosity,
-  guessMainModule,
-  isMatchingTest,
-  mkErrorMessage,
-  toExpr,
-} from './cliHelpers'
+import { PLACEHOLDERS, deriveVerbosity, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions } from './runtime/testing'
+import { createConfig } from './apalache'
 
 export type stage =
   | 'loading'
@@ -337,7 +331,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     return right(stage)
   }
 
-  outputTestErrors(stage, verbosityLevel, failed);
+  outputTestErrors(stage, verbosityLevel, failed)
 
   return cliErr('Tests failed', stage)
 }
@@ -648,39 +642,6 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   })
 }
 
-function createConfig(
-  loadedConfig: any,
-  parsedSpec: string,
-  args: any,
-  invariantsList: any[],
-  init: string = 'q::init',
-  next: string = 'q::step',
-  inv: string = 'q::inv'
-): any {
-  return {
-    ...loadedConfig,
-    input: {
-      ...(loadedConfig.input ?? {}),
-      source: {
-        type: 'string',
-        format: 'qnt',
-        content: parsedSpec,
-      },
-    },
-    checker: {
-      ...(loadedConfig.checker ?? {}),
-      length: args.maxSteps,
-      init: init,
-      next: next,
-      inv: invariantsList.length > 0 ? [inv] : undefined,
-      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
-      tuning: {
-        ...(loadedConfig.checker?.tuning ?? {}),
-        'search.simulation': args.randomTransitions ? 'true' : 'false',
-      },
-    },
-  }
-}
 /** output a compiled spec in the format specified in the `compiled.args.target` to stdout
  *
  * @param compiled The result of a preceding compile stage
