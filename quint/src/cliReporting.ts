@@ -1,21 +1,33 @@
 import chalk from 'chalk'
-import { printTrace, terminalWidth } from './graphics'
+import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
-import { QuintEx } from './ir/quintIr'
+import { QuintEx, QuintModule } from './ir/quintIr'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { Outcome } from './simulation'
 import JSONbig from 'json-bigint'
 import { Evaluator } from './runtime/impl/evaluator'
 import { newRng } from './rng'
-import { CLIProcedure, ErrResult, ErrorData, ProcedureStage, TracingStage } from './cliCommands'
+import {
+  CLIProcedure,
+  ErrResult,
+  ErrorData,
+  ParsedStage,
+  ProcedureStage,
+  TestedStage,
+  TracingStage,
+} from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { ofItf } from './itf'
-import { toExpr } from './cliHelpers'
+import { ofItf, toItf } from './itf'
+import { addItfHeader, expandNamedOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
 import { ApalacheResult } from './apalache'
+import { QuintError } from './quintError'
+import { TestResult } from './runtime/testing'
+import { createFinders, formatError } from './errorReporter'
+import { ErrorMessage } from './ErrorMessage'
 
 /**
  * Print a counterexample if the appropriate verbosity is set.
@@ -208,4 +220,127 @@ const pickOutputStage = ({
 
 export function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })
+}
+
+/**
+ * Find the main module by name.
+ */
+export function findMainModule(prev: ParsedStage, mainName: string): QuintModule | undefined {
+  return prev.modules.find(m => m.name === mainName)
+}
+
+/**
+ * Handle errors when the main module is not found.
+ */
+export function handleMainModuleError(prev: ParsedStage, mainName: string): CLIProcedure<TestedStage> {
+  const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
+  return cliErr('Argument error', { ...prev, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+}
+
+export function prepareOnTrace(
+  source: string,
+  outputTemplate: string | undefined,
+  nTraces: number
+): (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => void {
+  return (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => {
+    if (outputTemplate) {
+      const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: nTraces > 1 })
+      const trace = toItf(vars, states)
+      if (trace.isRight()) {
+        const jsonObj = addItfHeader(source, status, trace.value)
+        writeToJson(filename, jsonObj)
+      } else {
+        console.error(`ITF conversion failed on ${name}: ${trace.value}`)
+      }
+    }
+  }
+}
+/**
+ * Output test results.
+ */
+export function outputTestResults(results: TestResult[], verbosityLevel: number, elapsedMs: number): void {
+  const out = console.log
+  let nFailures = 1
+
+  if (verbosity.hasResults(verbosityLevel)) {
+    results.forEach(res => {
+      if (res.status === 'passed') {
+        out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
+      }
+      if (res.status === 'failed') {
+        const errNo = chalk.red(nFailures)
+        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+        nFailures++
+      }
+    })
+
+    const passed = results.filter(r => r.status === 'passed')
+    const failed = results.filter(r => r.status === 'failed')
+    const ignored = results.filter(r => r.status === 'ignored')
+
+    out('')
+    if (passed.length > 0) {
+      out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
+    }
+    if (failed.length > 0) {
+      out(chalk.red(`  ${failed.length} failed`))
+    }
+    if (ignored.length > 0) {
+      out(chalk.gray(`  ${ignored.length} ignored`))
+    }
+  }
+}
+
+export function outputTestErrors(
+  prev: ParsedStage,
+  verbosityLevel: number,
+  failed: TestResult[],
+  ): void {
+  const namedErrors: [TestResult, ErrorMessage][] = failed.reduce(
+    (acc: [TestResult, ErrorMessage][], failure) =>
+      acc.concat(failure.errors.map(e => [failure, mkErrorMessage(prev.sourceMap)(e)])),
+    []
+  )
+  const out = console.log
+
+  // We know that there are errors, so report as required by the verbosity configuration
+  if (verbosity.hasTestDetails(verbosityLevel)) {
+    const code = prev.sourceCode!
+    const finders = createFinders(code)
+    const columns = !prev.args.out ? terminalWidth() : 80
+    out('')
+    namedErrors.forEach(([testResult, err], index) => {
+      const details = formatError(code, finders, err)
+      // output the header
+      out(`  ${index + 1}) ${testResult.name}:`)
+      const lines = details.split('\n')
+      // output the first two lines in red
+      lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
+
+      if (verbosity.hasActionTracking(verbosityLevel)) {
+        out('')
+        testResult.frames.forEach((f, index) => {
+          out(`[${chalk.bold('Frame ' + index)}]`)
+          const console = {
+            width: columns,
+            out: (s: string) => process.stdout.write(s),
+          }
+          printExecutionFrameRec(console, f, [])
+          out('')
+        })
+
+        if (testResult.frames.length == 0) {
+          out('    [No execution]')
+        }
+      }
+      // output the seed
+      out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
+    })
+    out('')
+  }
+
+  if (verbosity.hasHints(verbosityLevel) && !verbosity.hasActionTracking(verbosityLevel)) {
+    out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
+    out(chalk.gray(`  Further debug with: quint test --verbosity=3 ${prev.args.input}`))
+  }
 }

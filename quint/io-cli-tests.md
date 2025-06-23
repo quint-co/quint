@@ -1127,15 +1127,12 @@ send(
 <!-- !test exit 1 -->
 <!-- !test in test invalid seed -->
 ```
-output=$(quint test --seed=NotANumber ../examples/tutorials/coin.qnt)
-exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
-exit $exit_code
+quint test --seed=NotANumber ../examples/tutorials/coin.qnt
 ```
 
 <!-- !test err test invalid seed -->
 ```
-error: --seed must be a big integer, found: NotANumber
+--seed must be a big integer, found: NotANumber
 ```
 
 ### run fails on invalid seed
@@ -1143,15 +1140,12 @@ error: --seed must be a big integer, found: NotANumber
 <!-- !test exit 1 -->
 <!-- !test in run invalid seed -->
 ```
-output=$(quint run --seed=NotANumber ../examples/tutorials/coin.qnt)
-exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
-exit $exit_code
+quint run --seed=NotANumber ../examples/tutorials/coin.qnt
 ```
 
 <!-- !test err run invalid seed -->
 ```
-error: --seed must be a big integer, found: NotANumber
+--seed must be a big integer, found: NotANumber
 ```
 
 ### OK on compile imports

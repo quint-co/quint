@@ -32,11 +32,9 @@ import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError } from './quintError'
-import { TestOptions, TestResult } from './runtime/testing'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { toItf } from './itf'
-import { printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
@@ -52,9 +50,14 @@ import { convertInit } from './ir/initToPredicate'
 import { QuintRustWrapper } from './quintRustWrapper'
 import {
   cliErr,
+  findMainModule,
+  handleMainModuleError,
   maybePrintCounterExample,
   maybePrintWitnesses,
   outputJson,
+  outputTestErrors,
+  outputTestResults,
+  prepareOnTrace,
   printViolatedInvariants,
   processVerifyResult,
   writeOutputToJson,
@@ -64,15 +67,14 @@ import {
   PLACEHOLDERS,
   addItfHeader,
   deriveVerbosity,
-  expandNamedOutputTemplate,
   expandOutputTemplate,
   guessMainModule,
   isMatchingTest,
   mkErrorMessage,
-  mkRng,
   toExpr,
 } from './cliHelpers'
 import { fail } from 'assert'
+import { newRng } from './rng'
 
 export type stage =
   | 'loading'
@@ -284,103 +286,46 @@ export async function runRepl(_argv: any) {
  *
  * @param typedStage the procedure stage produced by `typecheck`
  */
+/**
+ * Main function to run tests.
+ */
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
   const testing = { ...prev, stage: 'testing' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
   const mainName = guessMainModule(prev)
-  const main = prev.modules.find(m => m.name === mainName)
+  const main = findMainModule(prev, mainName)
+
   if (!main) {
-    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
-    return cliErr('Argument error', { ...testing, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+    return handleMainModuleError(prev, mainName)
   }
 
-  const rngOrError = mkRng(prev.args.seed)
-  if (rngOrError.isLeft()) {
-    return cliErr(rngOrError.value, { ...testing, errors: [] })
-  }
-  const rng = rngOrError.unwrap()
-
-  const matchFun = (n: string): boolean => isMatchingTest(prev.args.match, n)
-  const maxSamples = prev.args.maxSamples
-  const options: TestOptions = {
-    testMatch: matchFun,
+  const options = {
+    testMatch: (n: string) => isMatchingTest(prev.args.match, n),
     maxSamples: prev.args.maxSamples,
-    rng,
+    rng: newRng(prev.args.seed),
     verbosity: verbosityLevel,
-    onTrace: (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => {
-      if (outputTemplate) {
-        const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: prev.args.nTraces > 1 })
-        const trace = toItf(vars, states)
-        if (trace.isRight()) {
-          const jsonObj = addItfHeader(prev.args.input, status, trace.value)
-          writeToJson(filename, jsonObj)
-        } else {
-          console.error(`ITF conversion failed on ${name}: ${trace.value}`)
-        }
-      }
-    },
+    onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces),
   }
 
-  const out = console.log
-
-  const outputTemplate = prev.args.outItf
-
-  // Start the Timer and being running the tests
   const startMs = Date.now()
 
   if (verbosity.hasResults(verbosityLevel)) {
-    out(`\n  ${mainName}`)
+    console.log(`\n  ${mainName}`)
   }
 
   const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
     .flat()
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
-  const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, rng, 1), rng)
-  const results = testDefs.map((def, index) => {
-    return evaluator.test(def, maxSamples, options.onTrace(index))
-  })
+  const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
+  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, options.onTrace(index)))
 
-  // We're finished running the tests
   const elapsedMs = Date.now() - startMs
-
-  // output the status for every test
-  let nFailures = 1
-  if (verbosity.hasResults(verbosityLevel)) {
-    results.forEach(res => {
-      if (res.status === 'passed') {
-        out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-      }
-      if (res.status === 'failed') {
-        const errNo = chalk.red(nFailures)
-        out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
-        nFailures++
-      }
-    })
-  }
+  outputTestResults(results, verbosityLevel, elapsedMs)
 
   const passed = results.filter(r => r.status === 'passed')
   const failed = results.filter(r => r.status === 'failed')
   const ignored = results.filter(r => r.status === 'ignored')
-  const namedErrors: [TestResult, ErrorMessage][] = failed.reduce(
-    (acc: [TestResult, ErrorMessage][], failure) =>
-      acc.concat(failure.errors.map(e => [failure, mkErrorMessage(prev.sourceMap)(e)])),
-    []
-  )
-
-  // output the statistics banner
-  if (verbosity.hasResults(verbosityLevel)) {
-    out('')
-    if (passed.length > 0) {
-      out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
-    }
-    if (failed.length > 0) {
-      out(chalk.red(`  ${failed.length} failed`))
-    }
-    if (ignored.length > 0) {
-      out(chalk.gray(`  ${ignored.length} ignored`))
-    }
-  }
 
   const stage = {
     ...testing,
@@ -390,51 +335,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     errors: [],
   }
 
-  // Nothing failed, so we are OK, and can exit early
   if (failed.length === 0) {
     return right(stage)
   }
 
-  // We know that there are errors, so report as required by the verbosity configuration
-  if (verbosity.hasTestDetails(verbosityLevel)) {
-    const code = prev.sourceCode!
-    const finders = createFinders(code)
-    const columns = !prev.args.out ? terminalWidth() : 80
-    out('')
-    namedErrors.forEach(([testResult, err], index) => {
-      const details = formatError(code, finders, err)
-      // output the header
-      out(`  ${index + 1}) ${testResult.name}:`)
-      const lines = details.split('\n')
-      // output the first two lines in red
-      lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
-
-      if (verbosity.hasActionTracking(verbosityLevel)) {
-        out('')
-        testResult.frames.forEach((f, index) => {
-          out(`[${chalk.bold('Frame ' + index)}]`)
-          const console = {
-            width: columns,
-            out: (s: string) => process.stdout.write(s),
-          }
-          printExecutionFrameRec(console, f, [])
-          out('')
-        })
-
-        if (testResult.frames.length == 0) {
-          out('    [No execution]')
-        }
-      }
-      // output the seed
-      out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
-    })
-    out('')
-  }
-
-  if (verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
-    out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
-    out(chalk.gray(`  Further debug with: quint test --verbosity=3 ${prev.args.input}`))
-  }
+  outputTestErrors(stage, verbosityLevel, failed);
 
   return cliErr('Tests failed', stage)
 }
@@ -456,11 +361,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     return cliErr('Argument error', { ...prev, errors: [mkErrorMessage(prev.sourceMap)(error)] })
   }
 
-  const rngOrError = mkRng(prev.args.seed)
-  if (rngOrError.isLeft()) {
-    return cliErr(rngOrError.value, { ...simulator, errors: [] })
-  }
-  const rng = rngOrError.unwrap()
+  const rng = newRng(prev.args.seed)
 
   // Process both invariant and invariants options
   let invariantsList: string[] = []
@@ -853,7 +754,7 @@ export async function outputCompilationTarget(compiled: CompiledStage): Promise<
 /** Write the OutputStage of the procedureStage as JSON, if --out is set
  * Otherwise, report any stage errors to STDOUT
  */
-export function outputResult(result: CLIProcedure<ProcedureStage>) {
+export function outputResult(result: CLIProcedure<ProcedureStage>): void {
   result
     .map(stage => {
       const verbosityLevel = deriveVerbosity(stage.args)

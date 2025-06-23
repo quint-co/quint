@@ -6,7 +6,6 @@ import { ErrorMessage } from './ErrorMessage'
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintEx } from './ir/quintIr'
 import { QuintError, quintErrorToString } from './quintError'
-import { Rng, newRng } from './rng'
 import { walkExpression } from './ir/IRVisitor'
 
 import { TypecheckedStage } from './cliCommands'
@@ -48,25 +47,6 @@ export function guessMainModule(stage: TypecheckedStage): string {
   }
   // guess the name from the filename
   return basename(stage.args.input, '.qnt')
-}
-
-/**
- * Produce a random-number generator: Either a predictable one using a seed,
- * or a reasonably unpredictable one.
- */
-export function mkRng(seedText?: string): Either<string, Rng> {
-  let seed
-  if (seedText !== undefined) {
-    // since yargs does not has a type for big integers,
-    // we do it with a fallback
-    try {
-      seed = BigInt(seedText)
-    } catch (SyntaxError) {
-      return left(`--seed must be a big integer, found: ${seedText}`)
-    }
-  }
-
-  return right(seed ? newRng(seed) : newRng())
 }
 
 export function addItfHeader(source: string, status: string, traceInJson: any): any {
