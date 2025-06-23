@@ -19,7 +19,7 @@ import {
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { ofItf, toItf } from './itf'
-import { addItfHeader, expandNamedOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
+import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
@@ -28,6 +28,8 @@ import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
 import { ErrorMessage } from './ErrorMessage'
+
+export type TraceHook = (index: number, status: string, vars: string[], states: QuintEx[], name?: string) => void
 
 /**
  * Print a counterexample if the appropriate verbosity is set.
@@ -240,21 +242,26 @@ export function handleMainModuleError(prev: ParsedStage, mainName: string): CLIP
 export function prepareOnTrace(
   source: string,
   outputTemplate: string | undefined,
-  nTraces: number
-): (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => void {
-  return (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => {
+  nTraces: number,
+  metadata: boolean
+): TraceHook {
+  return (index: number, status: string, vars: string[], states: QuintEx[], name: string | undefined) => {
     if (outputTemplate) {
-      const filename = expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: nTraces > 1 })
-      const trace = toItf(vars, states)
+      const filename = name
+        ? expandNamedOutputTemplate(outputTemplate, name, index, { autoAppend: nTraces > 1 })
+        : expandOutputTemplate(outputTemplate, index, { autoAppend: nTraces > 1 })
+
+      const trace = toItf(vars, states, metadata)
       if (trace.isRight()) {
         const jsonObj = addItfHeader(source, status, trace.value)
         writeToJson(filename, jsonObj)
       } else {
-        console.error(`ITF conversion failed on ${name}: ${trace.value}`)
+        console.error(`ITF conversion failed on ${index}: ${trace.value}`)
       }
     }
   }
 }
+
 /**
  * Output test results.
  */

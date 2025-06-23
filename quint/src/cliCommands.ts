@@ -34,7 +34,6 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError } from './quintError'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
-import { toItf } from './itf'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
@@ -65,9 +64,7 @@ import {
 } from './cliReporting'
 import {
   PLACEHOLDERS,
-  addItfHeader,
   deriveVerbosity,
-  expandOutputTemplate,
   guessMainModule,
   isMatchingTest,
   mkErrorMessage,
@@ -75,6 +72,7 @@ import {
 } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
+import { TestOptions } from './runtime/testing'
 
 export type stage =
   | 'loading'
@@ -299,12 +297,12 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     return handleMainModuleError(prev, mainName)
   }
 
-  const options = {
+  const options: TestOptions = {
     testMatch: (n: string) => isMatchingTest(prev.args.match, n),
     maxSamples: prev.args.maxSamples,
     rng: newRng(prev.args.seed),
     verbosity: verbosityLevel,
-    onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces),
+    onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces, false),
   }
 
   const startMs = Date.now()
@@ -318,7 +316,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
-  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, options.onTrace(index)))
+  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
 
   const elapsedMs = Date.now() - startMs
   outputTestResults(results, verbosityLevel, elapsedMs)
@@ -392,19 +390,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     storeMetadata: prev.args.mbt,
     hideVars: prev.args.hide || [],
     numberOfTraces: prev.args.nTraces,
-    onTrace: (index: number, status: string, vars: string[], states: QuintEx[]) => {
-      const itfFile: string | undefined = prev.args.outItf
-      if (itfFile) {
-        const filename = expandOutputTemplate(itfFile, index, { autoAppend: prev.args.nTraces > 1 })
-        const trace = toItf(vars, states, prev.args.mbt)
-        if (trace.isRight()) {
-          const jsonObj = addItfHeader(prev.args.input, status, trace.value)
-          writeToJson(filename, jsonObj)
-        } else {
-          console.error(`ITF conversion failed on ${index}: ${trace.value}`)
-        }
-      }
-    },
+    onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces, prev.args.mbt),
   }
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)

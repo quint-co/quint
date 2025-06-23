@@ -11,6 +11,7 @@
 import { QuintEx } from './ir/quintIr'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
+import { TraceHook } from './cliReporting'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -27,7 +28,7 @@ export interface SimulatorOptions {
   verbosity: number
   storeMetadata: boolean
   hideVars: string[]
-  onTrace(index: number, status: string, vars: string[], states: QuintEx[]): void
+  onTrace?: TraceHook
 }
 
 export interface SimulationTrace {
