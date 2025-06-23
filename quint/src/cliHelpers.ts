@@ -92,10 +92,12 @@ export function addItfHeader(source: string, status: string, traceInJson: any): 
   }
 }
 
-export function loadApalacheConfig(stage: CompiledStage, apalacheConfig?: string): ApalacheConfig {
+export function loadApalacheConfig(stage: CompiledStage, apalacheConfig: string | undefined): ApalacheConfig {
   try {
     if (apalacheConfig) {
       return JSON.parse(readFileSync(apalacheConfig, 'utf-8'))
+    } else {
+      return {}
     }
   } catch (err: any) {
     return cliErr(`failed to read Apalache config: ${err.message}`, { ...stage, errors: [], sourceCode: new Map() })

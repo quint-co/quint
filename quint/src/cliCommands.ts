@@ -518,7 +518,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 
   const [invariantString, invariantsList] = getInvariants(typechecked.args)
   if (invariantsList.length > 0) {
-    extraDefsAsText.push(`val q::inv = ${invariantString}`)
+    extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   }
 
   if (args.temporal) {
@@ -598,7 +598,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     }
   }
 
-  const loadedConfig = loadApalacheConfig(args.apalacheConfig)
+  const loadedConfig = loadApalacheConfig(verifying, args.apalacheConfig)
   const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = outputJson(veryfiyingFlat)
 
