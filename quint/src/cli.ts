@@ -31,7 +31,6 @@ import { verbosity } from './verbosity'
 
 import { version } from './version'
 import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
-import { Either, left, right } from '@sweet-monads/either'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -202,14 +201,7 @@ const testCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
-      .coerce('seed', (arg: string) => {
-        const errorOrSeed = parseSeed(arg)
-        if (errorOrSeed.isLeft()) {
-          throw new Error(errorOrSeed.value)
-        } else {
-          return errorOrSeed.value
-        }
-      })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -299,14 +291,7 @@ const runCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
-      .coerce('seed', (arg: string) => {
-        const errorOrSeed = parseSeed(arg)
-        if (errorOrSeed.isLeft()) {
-          throw new Error(errorOrSeed.value)
-        } else {
-          return errorOrSeed.value
-        }
-      })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -414,13 +399,13 @@ const validate = (_argv: any) => {
   return true
 }
 
-function parseSeed(seedText: string): Either<string, bigint> {
+function coerceSeed(seedText: string): BigInt {
   // since yargs does not has a type for big integers,
   // we do it with a fallback
   try {
-    return right(BigInt(seedText))
+    return BigInt(seedText)
   } catch (SyntaxError) {
-    return left(`--seed must be a big integer, found: ${seedText}`)
+    throw new Error(`--seed must be a big integer, found: ${seedText}`)
   }
 }
 
