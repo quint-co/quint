@@ -124,7 +124,7 @@ export type ApalacheResult<T> = Either<ApalacheError, T>
 
 // An object representing the Apalache configuration
 // See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
-type ApalacheConfig = any
+export type ApalacheConfig = any
 
 // Interface to the apalache server
 // This is likely to be expanded in the future

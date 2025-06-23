@@ -31,7 +31,6 @@ import { OpQualifier, QuintEx, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
-import { QuintError } from './quintError'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { verbosity } from './verbosity'
@@ -62,7 +61,16 @@ import {
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import { PLACEHOLDERS, deriveVerbosity, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
+import {
+  PLACEHOLDERS,
+  deriveVerbosity,
+  getInvariants,
+  guessMainModule,
+  isMatchingTest,
+  loadApalacheConfig,
+  mkErrorMessage,
+  toExpr,
+} from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions } from './runtime/testing'
@@ -349,28 +357,16 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const mainName = guessMainModule(prev)
   const main = prev.modules.find(m => m.name === mainName)
   if (!main) {
-    const error: QuintError = { code: 'QNT405', message: `Main module ${mainName} not found` }
-    return cliErr('Argument error', { ...prev, errors: [mkErrorMessage(prev.sourceMap)(error)] })
+    return handleMainModuleError(prev, mainName)
   }
 
   const rng = newRng(prev.args.seed)
 
-  // Process both invariant and invariants options
-  let invariantsList: string[] = []
-  if (prev.args.invariant && prev.args.invariant !== 'true') {
-    invariantsList.push(prev.args.invariant)
-  }
-  if (prev.args.invariants && prev.args.invariants.length > 0) {
-    invariantsList = invariantsList.concat(prev.args.invariants)
-  }
-  // If no invariants specified, use the default 'true'
-  const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
-  // Keep track of individual invariants for reporting
-  const individualInvariants = invariantsList.length > 0 ? invariantsList : ['true']
-
   // We use:
   // - 'invariantString' as the combined invariant string for the simulator to check
   // - 'individualInvariants' for reporting which specific invariants were violated
+  const [invariantString, invariantsList] = getInvariants(prev.args)
+  const individualInvariants = invariantsList.length > 0 ? invariantsList : ['true']
 
   const options: SimulatorOptions = {
     init: prev.args.init,
@@ -518,19 +514,11 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
   }
 
-  // Process both invariant and invariants options
-  let invariantsList: string[] = []
-  if (args.invariant && args.invariant !== 'true') {
-    invariantsList.push(args.invariant)
-  }
-  if (args.invariants && args.invariants.length > 0) {
-    invariantsList = invariantsList.concat(args.invariants)
-  }
-
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
 
+  const [invariantString, invariantsList] = getInvariants(typechecked.args)
   if (invariantsList.length > 0) {
-    extraDefsAsText.push(`val q::inv = and(${invariantsList.join(',')})`)
+    extraDefsAsText.push(`val q::inv = ${invariantString}`)
   }
 
   if (args.temporal) {
@@ -597,8 +585,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  // Force disable output if `--out-itf` is set
-  const verbosityLevel = prev.args.outItf ? 0 : deriveVerbosity(prev.args)
+  const verbosityLevel = deriveVerbosity(prev.args)
 
   const itfFile: string | undefined = prev.args.outItf
   if (itfFile) {
@@ -611,26 +598,11 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     }
   }
 
-  let loadedConfig: any = {}
-  try {
-    if (args.apalacheConfig) {
-      loadedConfig = JSON.parse(readFileSync(args.apalacheConfig, 'utf-8'))
-    }
-  } catch (err: any) {
-    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: new Map() })
-  }
-
+  const loadedConfig = loadApalacheConfig(args.apalacheConfig)
   const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = outputJson(veryfiyingFlat)
 
-  // Process both invariant and invariants options
-  let invariantsList: string[] = []
-  if (prev.args.invariant && prev.args.invariant !== 'true') {
-    invariantsList.push(prev.args.invariant)
-  }
-  if (prev.args.invariants && prev.args.invariants.length > 0) {
-    invariantsList = invariantsList.concat(prev.args.invariants)
-  }
+  const [_, invariantsList] = getInvariants(prev.args)
 
   // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config

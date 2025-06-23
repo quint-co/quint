@@ -8,7 +8,10 @@ import { QuintEx } from './ir/quintIr'
 import { QuintError, quintErrorToString } from './quintError'
 import { walkExpression } from './ir/IRVisitor'
 
-import { TypecheckedStage } from './cliCommands'
+import { CompiledStage, TypecheckedStage } from './cliCommands'
+import { readFileSync } from 'fs'
+import { ApalacheConfig } from './apalache'
+import { cliErr } from './cliReporting'
 
 export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
   return error => {
@@ -49,6 +52,32 @@ export function guessMainModule(stage: TypecheckedStage): string {
   return basename(stage.args.input, '.qnt')
 }
 
+/**
+ * Process invariants from arguments and return the combined invariant string
+ * and individual invariants list.
+ *
+ * @param args The arguments containing invariant and invariants options.
+ * @returns A tuple [invariantString, individualInvariants].
+ */
+export function getInvariants(args: { invariant?: string; invariants?: string[] }): [string, string[]] {
+  let invariantsList: string[] = []
+
+  // Add single invariant if specified and not 'true'
+  if (args.invariant && args.invariant !== 'true') {
+    invariantsList.push(args.invariant)
+  }
+
+  // Add multiple invariants if specified
+  if (args.invariants && args.invariants.length > 0) {
+    invariantsList = invariantsList.concat(args.invariants)
+  }
+
+  // Determine the combined invariant string and individual invariants
+  const invariantString = invariantsList.length > 0 ? invariantsList.join(' and ') : 'true'
+
+  return [invariantString, invariantsList]
+}
+
 export function addItfHeader(source: string, status: string, traceInJson: any): any {
   return {
     '#meta': {
@@ -60,6 +89,16 @@ export function addItfHeader(source: string, status: string, traceInJson: any): 
       timestamp: Date.now(),
     },
     ...traceInJson,
+  }
+}
+
+export function loadApalacheConfig(stage: CompiledStage, apalacheConfig?: string): ApalacheConfig {
+  try {
+    if (apalacheConfig) {
+      return JSON.parse(readFileSync(apalacheConfig, 'utf-8'))
+    }
+  } catch (err: any) {
+    return cliErr(`failed to read Apalache config: ${err.message}`, { ...stage, errors: [], sourceCode: new Map() })
   }
 }
 
