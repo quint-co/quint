@@ -8,10 +8,10 @@
  * See LICENSE in the project root for license information.
  */
 
-import { QuintEx } from '../ir/quintIr'
 import { ExecutionFrame } from './trace'
 import { Rng } from '../rng'
 import { QuintError } from '../quintError'
+import { TraceHook } from '../cliReporting'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -21,7 +21,7 @@ export interface TestOptions {
   maxSamples: number
   rng: Rng
   verbosity: number
-  onTrace: (index: number) => (name: string, status: string, vars: string[], states: QuintEx[]) => void
+  onTrace: TraceHook
 }
 
 /**

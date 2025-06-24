@@ -14,7 +14,7 @@ import { lf } from 'eol'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { mkErrorMessage } from '../../src/cliCommands'
+import { mkErrorMessage } from '../../src/cliHelpers'
 import { QuintError } from '../../src'
 
 // the name that we are using by default

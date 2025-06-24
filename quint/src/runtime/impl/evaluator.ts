@@ -30,6 +30,7 @@ import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 import { Presets, SingleBar } from 'cli-progress'
 import { Outcome, SimulationTrace, getTraceStatistics } from '../../simulation'
 import assert from 'assert'
+import { TraceHook } from '../../cliReporting'
 
 /**
  * An evaluator for Quint in Node TS runtime.
@@ -151,7 +152,7 @@ export class Evaluator {
     nruns: number,
     nsteps: number,
     ntraces: number,
-    onTrace?: (index: number, status: string, vars: string[], states: QuintEx[]) => void
+    onTrace?: TraceHook
   ): Outcome {
     let errorsFound = 0
     let failure: QuintError | undefined = undefined
@@ -300,11 +301,7 @@ export class Evaluator {
    * @returns The result of the test, including its name, status, any errors, the seed used, frames,
               and the number of samples run.
    */
-  test(
-    testDef: LookupDefinition,
-    maxSamples: number,
-    onTrace: (name: string, status: string, vars: string[], states: QuintEx[]) => void
-  ): TestResult {
+  test(testDef: LookupDefinition, maxSamples: number, index: number, onTrace: TraceHook): TestResult {
     const name = nameWithNamespaces(testDef.name, List(testDef.namespaces))
     const startTime = Date.now()
     const progressBar = new SingleBar(
@@ -385,7 +382,7 @@ export class Evaluator {
           message: `Test ${name} returned false`,
           reference: testDef.id,
         }
-        onTrace(name, 'failed', this.varNames(), states)
+        onTrace(index, 'failed', this.varNames(), states, name)
         progressBar.stop()
         return {
           name,
@@ -400,7 +397,7 @@ export class Evaluator {
           // This successful test did not use non-determinism.
           // Running it one time is sufficient.
 
-          onTrace(name, 'passed', this.varNames(), states)
+          onTrace(index, 'passed', this.varNames(), states, name)
           progressBar.stop()
           return {
             name,
@@ -418,7 +415,7 @@ export class Evaluator {
     const states = this.recorder.bestTraces[0]?.frame?.args?.map(rv.toQuintEx)
     const frames = this.recorder.bestTraces[0]?.frame?.subframes ?? []
 
-    onTrace(name, 'passed', this.varNames(), states)
+    onTrace(index, 'passed', this.varNames(), states, name)
 
     progressBar.stop()
     return {
