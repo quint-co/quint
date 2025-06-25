@@ -70,10 +70,9 @@ export function createConfig(
   loadedConfig: any,
   parsedSpec: string,
   args: any,
-  invariantsList: string[],
+  inv: string = 'q::inv',
   init: string = 'q::init',
   next: string = 'q::step',
-  inv: string = 'q::inv'
 ): ApalacheConfig {
   return {
     ...loadedConfig,
@@ -90,7 +89,7 @@ export function createConfig(
       length: args.maxSteps,
       init: init,
       next: next,
-      inv: invariantsList.length > 0 ? [inv] : undefined,
+      inv: [inv],
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
         ...(loadedConfig.checker?.tuning ?? {}),

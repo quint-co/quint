@@ -330,7 +330,7 @@ const verifyCmd = {
         type: 'array',
         default: [],
       })
-      .option('inductive_invariant', {
+      .option('inductive-invariant', {
         desc: 'inductive invariant to check. Can be used together with regular invariants.',
         type: 'string',
       })

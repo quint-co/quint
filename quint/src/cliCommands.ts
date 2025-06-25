@@ -458,8 +458,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
-            ' No violation found ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+          ' No violation found ' +
+          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
@@ -480,8 +480,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +
-            ' Found an issue ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+          ' Found an issue ' +
+          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
         printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
@@ -519,6 +519,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   const [invariantString, invariantsList] = getInvariants(typechecked.args)
   if (invariantsList.length > 0) {
     extraDefsAsText.push(`val q::inv = and(${invariantString})`)
+  }
+
+  if (args.inductiveInvariant) {
+    extraDefsAsText.push(`val q::inductiveInv = ${args.inductiveInvariant}`)
   }
 
   if (args.temporal) {
@@ -599,14 +603,45 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   }
 
   const loadedConfig = loadApalacheConfig(verifying, args.apalacheConfig)
+
   const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = outputJson(veryfiyingFlat)
 
-  const [_, invariantsList] = getInvariants(prev.args)
+  const [invariantsString, invariantsList] = getInvariants(prev.args)
+
+  if (args.inductiveInvariant) {
+    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, 'q::inductiveInv')
+    console.log(chalk.gray(`Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`))
+    const startMs = Date.now()
+    return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
+      if (res.isLeft()) {
+        return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+      }
+
+      console.log(chalk.gray(`Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`))
+      const stepConfig = createConfig(
+        loadedConfig, parsedSpec, { ...args, maxSteps: 1 }, 'q::inductiveInv', 'q::inductiveInv'
+      )
+
+      return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
+        if (res.isLeft()) {
+          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+        }
+
+        console.log(chalk.gray(`Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`))
+        const propConfig = createConfig(
+          loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, 'q::inv', 'q::inductiveInv'
+        )
+        return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
+          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+        })
+      })
+    })
+  }
 
   // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
-  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList)
+  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? 'q::inv' : undefined)
   const startMs = Date.now()
 
   return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
