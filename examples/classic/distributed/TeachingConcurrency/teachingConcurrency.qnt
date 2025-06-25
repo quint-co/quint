@@ -8,10 +8,10 @@
  * gineers or computer scientists have learned to think in terms of invariants.
  * Here is a simple example. Consider N processes numbered from 0 through
  * N − 1 in which each process i executes
- *   x [i] : = 1;
- *   y[i] : = x [(i − 1) mod N ]
- * and stops, where each x [i] initially equals 0. (The reads and writes of
- * each x [i] are assumed to be atomic.) This algorithm satisfies the following
+ *   x[i] : = 1;
+ *   y[i] : = x[(i − 1) mod N]
+ * and stops, where each x[i] initially equals 0. (The reads and writes of
+ * each x[i] are assumed to be atomic.) This algorithm satisfies the following
  * property: after every process has stopped, y[i] equals 1 for at least one
  * process i. It is easy to see that the algorithm satisfies this property; the last
  * process i to write y[i] must set it to 1. But that process doesn’t set y[i] to 1
@@ -20,7 +20,7 @@
  * satisfies this property because it maintains an inductive invariant
  *
  * Run in verifier with:
- * quint verify teachingConcurrency.qnt --invariant yContainsOne --inductive-invariant inv
+ *   quint verify teachingConcurrency.qnt --invariant yContainsOne --inductive-invariant inv
  */
 
 // An example instance of the algorithm with N=5.
