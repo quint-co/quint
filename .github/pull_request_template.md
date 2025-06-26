@@ -1,7 +1,7 @@
 <!-- Review CONTRIBUTING.md for contribution guidelines and helpful material -->
 
 <!-- Please ensure that your PR includes the following, as needed -->
-
+- [ ] I have read and I understand the [Note on AI-assisted contributions](/CONTRIBUTING.md#note-on-ai-assisted-contributions)
 - [ ] Changes manually tested locally and confirmed to work as described
       (including screenshots is helpful)
 - [ ] Tests added for any new code
