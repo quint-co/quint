@@ -610,21 +610,23 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const [invariantsString, invariantsList] = getInvariants(prev.args)
 
   if (args.inductiveInvariant) {
+    const hasOrdinaryInvariant = invariantsList.length > 0
+    const nPhases = hasOrdinaryInvariant ? 3 : 2
     const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, 'q::inductiveInv')
-    console.log(chalk.gray(`> [1/3] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`))
+    console.log(chalk.gray(`> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`))
     const startMs = Date.now()
     return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
       if (res.isLeft()) {
         return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
       }
 
-      console.log(chalk.gray(`> [2/3] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`))
+      console.log(chalk.gray(`> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`))
       const stepConfig = createConfig(
         loadedConfig, parsedSpec, { ...args, maxSteps: 1 }, 'q::inductiveInv', 'q::inductiveInv'
       )
 
       return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
-        if (res.isLeft()) {
+        if (res.isLeft() || !hasOrdinaryInvariant) {
           return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
         }
 
