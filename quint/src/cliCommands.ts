@@ -612,7 +612,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   if (args.inductiveInvariant) {
     const hasOrdinaryInvariant = invariantsList.length > 0
     const nPhases = hasOrdinaryInvariant ? 3 : 2
-    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, 'q::inductiveInv')
+    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
     console.log(chalk.gray(`> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`))
     const startMs = Date.now()
     return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
@@ -622,7 +622,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
       console.log(chalk.gray(`> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`))
       const stepConfig = createConfig(
-        loadedConfig, parsedSpec, { ...args, maxSteps: 1 }, 'q::inductiveInv', 'q::inductiveInv'
+        loadedConfig, parsedSpec, { ...args, maxSteps: 1 }, ['q::inductiveInv'], 'q::inductiveInv'
       )
 
       return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
@@ -632,7 +632,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
         console.log(chalk.gray(`> [3/3] Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`))
         const propConfig = createConfig(
-          loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, 'q::inv', 'q::inductiveInv'
+          loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inv'], 'q::inductiveInv'
         )
         return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
           return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
@@ -643,7 +643,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
-  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? 'q::inv' : undefined)
+  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? ['q::inv'] : [])
   const startMs = Date.now()
 
   return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
