@@ -115,10 +115,15 @@ describe('parseType', () => {
   })
 
   it('throws error when type is invalid', () => {
-    const type = parseType('Set(int)')
+    const type = parseType('Set(int, bool)')
 
     assert.isTrue(type.isLeft())
-    type.mapLeft(error => assert.deepEqual(error[0].explanation, "missing '[' at '('"))
+    type.mapLeft(error =>
+      assert.deepEqual(
+        error[0].explanation,
+        '[QNT009] Use square brackets instead of parenthesis for type application: Set[int, bool]'
+      )
+    )
   })
 
   it('throws error when row separators are invalid', () => {

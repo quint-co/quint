@@ -118,7 +118,7 @@ An example execution:
 
 <!-- !test in writes an ITF trace to file -->
 ```
-quint verify --out-itf violateOnFive.itf.json --invariant inv ./testFixture/apalache/violateOnFive.qnt
+output=$(quint verify --out-itf violateOnFive.itf.json --invariant inv ./testFixture/apalache/violateOnFive.qnt)
 jq '."#meta".format' violateOnFive.itf.json
 rm ./violateOnFive.itf.json
 ```

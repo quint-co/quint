@@ -20,7 +20,6 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { QuintType, Row } from '../ir/quintTypes'
 import { newIdGenerator } from '../idGenerator'
-
 import { Either, left, right } from '@sweet-monads/either'
 
 /**

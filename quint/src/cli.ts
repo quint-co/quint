@@ -201,6 +201,7 @@ const testCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -290,6 +291,7 @@ const runCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -397,9 +399,20 @@ const validate = (_argv: any) => {
   return true
 }
 
+function coerceSeed(seedText: string): BigInt {
+  // since yargs does not has a type for big integers,
+  // we do it with a fallback
+  try {
+    return BigInt(seedText)
+  } catch (SyntaxError) {
+    throw new Error(`--seed must be a big integer, found: ${seedText}`)
+  }
+}
+
 async function main() {
   // parse the command-line arguments and execute the handlers
   await yargs(process.argv.slice(2))
+    .showHelpOnFail(false)
     .command(parseCmd)
     .command(typecheckCmd)
     .command(compileCmd)

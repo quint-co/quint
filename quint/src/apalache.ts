@@ -66,6 +66,40 @@ export function parseServerEndpoint(input: string): Either<string, ServerEndpoin
   }
 }
 
+export function createConfig(
+  loadedConfig: any,
+  parsedSpec: string,
+  args: any,
+  invariantsList: string[],
+  init: string = 'q::init',
+  next: string = 'q::step',
+  inv: string = 'q::inv'
+): ApalacheConfig {
+  return {
+    ...loadedConfig,
+    input: {
+      ...(loadedConfig.input ?? {}),
+      source: {
+        type: 'string',
+        format: 'qnt',
+        content: parsedSpec,
+      },
+    },
+    checker: {
+      ...(loadedConfig.checker ?? {}),
+      length: args.maxSteps,
+      init: init,
+      next: next,
+      inv: invariantsList.length > 0 ? [inv] : undefined,
+      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
+      tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
+        'search.simulation': args.randomTransitions ? 'true' : 'false',
+      },
+    },
+  }
+}
+
 /**
  * Convert an endpoint to a GRPC connection string.
  * @param endpoint an endpoint
@@ -90,7 +124,7 @@ export type ApalacheResult<T> = Either<ApalacheError, T>
 
 // An object representing the Apalache configuration
 // See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
-type ApalacheConfig = any
+export type ApalacheConfig = any
 
 // Interface to the apalache server
 // This is likely to be expanded in the future
