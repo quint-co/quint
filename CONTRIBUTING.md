@@ -153,6 +153,8 @@ If you want to contribute to the Quint evaluator in Rust, you'll need `cargo`
 and `rustc`. You'll probably want `rust-analyzer` as well, and you'll need
 `cargo-insta` to run our snapshot tests.
 
+[Check out the official website](https://www.rust-lang.org/tools/install) for more information on how to install Rust.
+
 ### Website, without nix
 
 Quint's website is built with the [Nextra][] framework, which uses Next.js.
@@ -183,12 +185,13 @@ npm run format
 
 ### Rust
 
-We use `clippy` and `rustfmt`:
+We use `clippy` for linting and `rustfmt` for formatting:
 
 ```sh
 cargo clippy --fix
 # or cargo clippy --fix --allow-dirty
-rustfmt src/*.rs tests/*.rs
+
+cargo fmt --all
 ```
 
 ## Developing
