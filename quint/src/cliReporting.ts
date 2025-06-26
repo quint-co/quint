@@ -86,7 +86,7 @@ export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, wi
  * @param prev The previous stage context.
  */
 export function printViolatedInvariants(state: QuintEx, invariants: string[], prev: any): void {
-  if (invariants.length <= 1) {
+  if (invariants.length <= 1 && prev.args.inductiveInvariant === undefined) {
     return
   }
 
