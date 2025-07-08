@@ -22,7 +22,7 @@ import { IRVisitor, walkDefinition, walkModule } from './IRVisitor'
 import { OpQualifier, QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
 
 /**
- * Converts the the action named as "q::init" and all its dependencies to
+ * Converts the action named as "q::init" and all its dependencies to
  * predicates (transforming assignments into equalities). If one of the
  * converted dependencies is also used outside of init, this produces an error
  * as that case would be more complicated to handle.
