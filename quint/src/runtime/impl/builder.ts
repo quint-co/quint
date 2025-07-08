@@ -484,7 +484,7 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
     }
     case 'let': {
       if (expr.opdef.qualifier === 'nondet') {
-        // For `nondet`, we want to retry the the `oneOf()` call in case the body returns false.
+        // For `nondet`, we want to retry the `oneOf()` call in case the body returns false.
         // So we take care of the compilation at the let-in level.
 
         if (expr.opdef.expr.kind !== 'app') {
