@@ -56,6 +56,7 @@ import {
   outputTestErrors,
   outputTestResults,
   prepareOnTrace,
+  printInductiveInvariantProgress,
   printViolatedInvariants,
   processVerifyResult,
   writeOutputToJson,
@@ -613,22 +614,19 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     const hasOrdinaryInvariant = invariantsList.length > 0
     const nPhases = hasOrdinaryInvariant ? 3 : 2
     const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
-    console.log(
-      chalk.gray(
-        `> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`
-      )
-    )
+
+    // Checking whether the inductive invariant holds in the initial state(s)
+    printInductiveInvariantProgress(verbosityLevel, args, 1, nPhases)
+
     const startMs = Date.now()
     return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
       if (res.isLeft()) {
         return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
       }
 
-      console.log(
-        chalk.gray(
-          `> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`
-        )
-      )
+      // Checking whether the inductive invariant is preserved by the step
+      printInductiveInvariantProgress(verbosityLevel, args, 2, nPhases)
+
       const stepConfig = createConfig(
         loadedConfig,
         parsedSpec,
@@ -642,11 +640,9 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
           return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
         }
 
-        console.log(
-          chalk.gray(
-            `> [3/3] Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`
-          )
-        )
+        // Checking whether the inductive invariant implies the ordinary invariant
+        printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
+
         const propConfig = createConfig(
           loadedConfig,
           parsedSpec,
@@ -654,6 +650,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
           ['q::inv'],
           'q::inductiveInv'
         )
+
         return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
           return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
         })
