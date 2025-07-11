@@ -1,6 +1,47 @@
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
 # Model-based Testing
+
+One of the most asked questions when it comes to writing specifications is "what about the code?". Or, in a more expressive problem statement:
+> How to bridge the gap between the specification and the implementation?
+
+That is, even if we verify that some model is correct, there could still be problems in the code that is ran in production, which is what actually matters. This specially likely to happen if the specification is burried deep into some project sub-sub-sub-folder and no one dares to open it, let alone update it as the code evolves.
+
+The perfect solution would be: verify your code! But that is far from easy, and can most likely only be accomplished with a fat budget (or some really smart volunteers). Other people might say: write the spec in several layers of abstraction until you are really close to the implementation, proving the refinement between each of them - but that is also hard, and doesn't even address the problem of keeping code and spec in sync. Finally, there's code generation (or extracting code from the formal spec), which is great for some sequential algorithms, but get's weird in many ways when you start having multiple processes - and that discussion doesn't fit in this page.
+
+Let's focus on more practical solutions:
+  1. Model-based Testing (MBT)
+  2. Trace validation
+
+Both of these won't give you a proof that your code is correct, but they will make you more confident that the behavior between the model (specification) and the code (implementation) matches, even throughout changes to the code base (or the spec, which tends to change way less).
+
+## MBT in one paragraph
+
+Produce a bunch of traces (executions) from your model, which should be valid traces in your system. For example: Bob deposits $100 and then transfers $60 to Alice, and then Alice withdraws $20. A trace is just a JSON file with all the data you need. You then write a test driver to call the respective functions (`deposit("Bob", 100)`, `transfer("Bob", "Alice", 60)`, `withdraw("Alice", 20)`) in your implementation, and optionally check things between each call or at the very end (such as asserting a property or comparing the state). That's it, you use the model to generate test data (inputs and expectations) for you in a very efficient way.
+
+| Data  | Expectations |
+| :---  | :---         |
+| Model | Model        |
+
+
+## Trace validation in one paragraph
+
+Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't.
+
+| Data       | Expectations |
+| :---       | :---         |
+| Production | Model        |
+
+## MBT in a concrete example
+
+Let's use a toy bank application written in Rust to go through the process. Code is available [here](https://github.com/informalsystems/quint-sandbox/tree/main/SimpleBank). Assuming we already have the code (under `src`) and the model (`bank.qnt`), this is how we'd set up model-based testing for the code.
+
+<Steps>
+### Generate traces from the model
+### Parse the traces in the test driver
+### Write code to replay the trace
+### Add assertions
+</Steps>
 
 <Callout type="warning" emoji="🚧️">
   This page is under construction.
