@@ -145,7 +145,11 @@ get_verify_args () {
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   elif [[ "$file" == "classic/distributed/TeachingConcurrency/teachingConcurrency.qnt" ]] ; then
-    args="--temporal correct"
+    args="--invariant yContainsOne --inductive-invariant inv"
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/mutex.qnt" ]] ; then
+    args="--invariant=correctness --inductive-invariant=inv"
+  elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
+    args="--invariant TerminationDetection --inductive-invariant \"TypeOK and Inv\" --main ewd840_3"
   fi
   echo "${args}"
 }
