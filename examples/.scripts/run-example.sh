@@ -45,7 +45,7 @@ result () {
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
     local succeeded=false
-    if ($quint_cmd &> /dev/null)
+    if (eval "$quint_cmd &> /dev/null")
     then
         printf ":white_check_mark:"
         succeeded=true
@@ -149,9 +149,10 @@ get_verify_args () {
   elif [[ "$file" == "classic/distributed/TeachingConcurrency/mutex.qnt" ]] ; then
     args="--invariant=correctness --inductive-invariant=inv"
   elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
-    args="--invariant TerminationDetection --inductive-invariant \"TypeOK and Inv\" --main ewd840_3"
+    args='--invariant TerminationDetection --inductive-invariant "TypeOK and Inv"'
   fi
   echo "${args}"
+
 }
 
 file="$1"

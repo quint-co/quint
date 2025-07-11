@@ -183,6 +183,8 @@ module ewd840 {
     Nodes.exists(j => j <= tpos and color.get(j) == "black"),
     tcolor == "black",
   }
+
+  val IndInv = TypeOK and Inv
 }
 
 module ewd840_3 {
