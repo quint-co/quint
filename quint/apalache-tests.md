@@ -417,3 +417,72 @@ HOME/ApalacheCompilationError.qnt:20:5 - error: [QNT409] Action parameterizedAct
 
 error: Failed to convert init to predicate
 ```
+
+### Test error case when the inductive invariant "uses" variables before they are "assigned" 
+
+Here we pass only `Inv` without the `TypeOK` definition
+
+<!-- !test in bad inductive invariant -->
+```
+quint verify ../examples/classic/distributed/ewd840/ewd840.qnt --invariant TerminationDetection --inductive-invariant Inv --main ewd840_3
+```
+
+<!-- !test exit 1 -->
+<!-- !test err bad inductive invariant -->
+```
+error: tpos is used before it is assigned. You need to have either `tpos == <expr>` or `tpos.in(<set>)` before doing anything else with `tpos` in your predicate.
+```
+
+### Shows which property broke when checking inductive invariants
+
+Here we pass only `TypeOK` as the inductive invariant, which is not strong enough to imply `TerminationDetection`. 
+
+<!-- !test in weak inductive invariant -->
+```
+output=$(quint verify ../examples/classic/distributed/ewd840/ewd840.qnt --invariant TerminationDetection --inductive-invariant TypeOK --main ewd840_3)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
+
+```
+
+<!-- !test exit 1 -->
+<!-- !test out weak inductive invariant -->
+```
+> [1/3] Checking whether the inductive invariant 'TypeOK' holds in the initial state(s) defined by 'init'...
+> [2/3] Checking whether 'step' preserves the inductive invariant 'TypeOK'...
+> [3/3] Checking whether the inductive invariant 'TypeOK' implies 'TerminationDetection'...
+An example execution:
+
+[State 0]
+{
+  ewd840_3::ewd840::active: Map(0 -> false, 1 -> true, 2 -> false),
+  ewd840_3::ewd840::color: Map(0 -> "white", 1 -> "black", 2 -> "white"),
+  ewd840_3::ewd840::tcolor: "white",
+  ewd840_3::ewd840::tpos: 0
+}
+
+[violation] Found an issue (duration).
+  ❌ TerminationDetection
+```
+
+### Can properly check an inductive invariant
+
+<!-- !test in good inductive invariant -->
+```
+output=$(quint verify ../examples/classic/distributed/ewd840/ewd840.qnt --invariant TerminationDetection --inductive-invariant "TypeOK and Inv" --main ewd840_3)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
+```
+
+<!-- !test exit 0 -->
+<!-- !test out good inductive invariant -->
+```
+> [1/3] Checking whether the inductive invariant 'TypeOK and Inv' holds in the initial state(s) defined by 'init'...
+> [2/3] Checking whether 'step' preserves the inductive invariant 'TypeOK and Inv'...
+> [3/3] Checking whether the inductive invariant 'TypeOK and Inv' implies 'TerminationDetection'...
+[ok] No violation found (duration).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
+```
