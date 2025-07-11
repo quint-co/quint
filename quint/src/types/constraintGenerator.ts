@@ -133,7 +133,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
-    // For each override, ensure that the the type for the name and the type of
+    // For each override, ensure that the type for the name and the type of
     // the value are the same
     def.overrides.forEach(([name, ex]) => {
       this.addToResults(name.id, this.typeForName(name.name, name.id, 2).map(toScheme))
