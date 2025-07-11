@@ -458,8 +458,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
-          ' No violation found ' +
-          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+            ' No violation found ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
@@ -480,8 +480,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +
-          ' Found an issue ' +
-          chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+            ' Found an issue ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
         printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
@@ -613,16 +613,28 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     const hasOrdinaryInvariant = invariantsList.length > 0
     const nPhases = hasOrdinaryInvariant ? 3 : 2
     const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
-    console.log(chalk.gray(`> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`))
+    console.log(
+      chalk.gray(
+        `> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`
+      )
+    )
     const startMs = Date.now()
     return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
       if (res.isLeft()) {
         return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
       }
 
-      console.log(chalk.gray(`> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`))
+      console.log(
+        chalk.gray(
+          `> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`
+        )
+      )
       const stepConfig = createConfig(
-        loadedConfig, parsedSpec, { ...args, maxSteps: 1 }, ['q::inductiveInv'], 'q::inductiveInv'
+        loadedConfig,
+        parsedSpec,
+        { ...args, maxSteps: 1 },
+        ['q::inductiveInv'],
+        'q::inductiveInv'
       )
 
       return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
@@ -630,9 +642,17 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
           return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
         }
 
-        console.log(chalk.gray(`> [3/3] Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`))
+        console.log(
+          chalk.gray(
+            `> [3/3] Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`
+          )
+        )
         const propConfig = createConfig(
-          loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inv'], 'q::inductiveInv'
+          loadedConfig,
+          parsedSpec,
+          { ...args, maxSteps: 0 },
+          ['q::inv'],
+          'q::inductiveInv'
         )
         return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
           return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)

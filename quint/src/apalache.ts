@@ -72,7 +72,7 @@ export function createConfig(
   args: any,
   inv: string[] = ['q::inv'],
   init: string = 'q::init',
-  next: string = 'q::step',
+  next: string = 'q::step'
 ): ApalacheConfig {
   return {
     ...loadedConfig,
@@ -168,6 +168,18 @@ async function handleResponse(response: RunResponse): Promise<ApalacheResult<any
     switch (response.failure.errorType) {
       case 'UNEXPECTED': {
         const errData = JSON.parse(response.failure.data)
+
+        // Check for the specific assignment error pattern
+        const assignmentErrorMatch = errData.msg.match(
+          /Assignment error: <\[UNKNOWN\]>: (\w+)::\w+::(\w+)' is used before it is assigned/
+        )
+        if (assignmentErrorMatch) {
+          const [, , variableName] = assignmentErrorMatch
+          return err(
+            `${variableName} is used before it is assigned. You need to have either \`${variableName} == <expr>\` or \`${variableName}.in(<set>)\` before doing anything else with \`${variableName}\` in your predicate.`
+          )
+        }
+
         return err(errData.msg)
       }
       case 'PASS_FAILURE':
