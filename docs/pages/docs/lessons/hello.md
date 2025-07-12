@@ -13,7 +13,7 @@ In our protocol, two parties are communicating:
  - the user who reads "Hello, world!" from the console.
 
 We describe the protocol in terms of a state machine. This means
-that we have to describe two importants aspects of the protocol:
+that we have to describe two important aspects of the protocol:
 
  - What constitutes a state of the state machine.
  - What kinds of transitions can be made by the state machine.
