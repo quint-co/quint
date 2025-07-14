@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.16.0 -- 2025-07-14
+
+### Added
 
 - Quick fix for common syntax error on map type definitions (#1682)
 
