@@ -38,13 +38,176 @@ Let's use a toy bank application written in Rust to go through the process. Code
 
 <Steps>
 ### Generate traces from the model
+
+We can create a folder called `traces` to hold all of our trace files an then generate as many as we want using `--n-traces`:
+```sh
+quint run bank.qnt --mbt --n-traces=10000 --out-itf=traces/out.itf.json
+```
+
+Explaining the command:
+- `quint run` is the subcommand for the Quint simulator
+- `bank.qnt` is the file holding the model for which we want to generate traces from
+- `--mbt` says we want extra info in the traces that are very useful for model based testing
+  - `mbt::actionTaken` which will hold which action was used to reach the given state
+  - `mbt::nondetPicks` which will hold what value was chosen for each relevant non-deterministic choice leading to that state
+- `--n-traces` determines how many traces the simulator will hold in memory. It will hold the `N` longest traces in case there is no violation, or the shortest ones if they represent violations to given properties (not the case in this example).
+  - Note: if you want more than 10k traces, you need to also increase `--max-samples`, as 10k is the default for that.
+  - Troubleshooting: If you run out of node memory while running this, you can increase it with `NODE_OPTIONS="--max-old-space-size=8192"`. Shouldn't be the case for 10k on modern computers.
+- `--out-itf` specifies that we want to dump all those traces to JSON, and where to put them. 
+
+This will create files from `traces/out0.itf.json` to `traces/out9999.itf.json` with a bunch of executions that our model allows.
+
+
 ### Parse the traces in the test driver
+
+Now we need to get all that data into our implementation language structures, so we can use them in tests. In this example, this is Rust, which makes things super easy as we can use the [`itf-rs`](https://github.com/informalsystems/itf-rs) library, which takes care of all the boring parts for us. It should not be hard to set it up in other languages as well - people have done it in Go, C++ and Java, for instance.
+
+In Rust, all we have to do is define the types we are parsing. Some type definitions can be re-used from the implementation (under `src`) as they match the Quint types. Usually this is not the case, but this is a toy example:
+```rust
+#[derive(Clone, Debug, Deserialize)]
+pub struct Investment {
+    pub owner: String,
+    pub amount: BigInt,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct BankState {
+    pub balances: HashMap<String, BigInt>,
+    pub investments: HashMap<BigInt, Investment>,
+    pub next_id: BigInt,
+}
+```
+
+For the rest, we also only define their types, and add some `serde` annotations on the `Option` types and on the `mbt::*` metadata:
+```rust
+    use itf::de::{self, As};
+
+    #[derive(Clone, Debug, Deserialize)]
+    pub struct NondetPicks {
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub depositor: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub withdrawer: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub sender: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub receiver: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub amount: Option<BigInt>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub buyer: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub seller: Option<String>,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub id: Option<BigInt>,
+    }
+
+    #[derive(Clone, Debug, Deserialize)]
+    pub struct State {
+        pub bank_state: BankState,
+
+        #[serde(with = "As::<de::Option::<_>>")]
+        pub error: Option<String>,
+
+        #[serde(rename = "mbt::actionTaken")]
+        pub action_taken: String,
+        #[serde(rename = "mbt::nondetPicks")]
+        pub nondet_picks: NondetPicks,
+    }
+```
+
+Inspecting one of the JSON files should be helpful in understanding which fields are there. [You can use the ITF Trace Viewer]() VSCode extension to view a formatted version of them in VSCode, or use some JSON tool like `jq`.
+
 ### Write code to replay the trace
+
+We then have to write the core of our driver. For each trace we generated, we try to replay it in the implementation. This means calling the function or series of functions that correspond to the action we took in the model (`action_taken`) with the proper parameters, which will either be derived from the state or registered in `nondet_picks`.
+
+The `"init"` action is a bit special, as it is always (and, in this case, only) called at the first state. So instead of initializing things inside the matching statement, it is easier to do it before that, to not have to handle the possibility of `bank_state` being undefined (`None`). In this example, we don't need to call anything from the implementation as both the code and the implementation always start in the same fixed state (where all balances are zero and there are no investments).
+
+It's also useful to add print statements (or any other logging) here so we can have enough information if something goes wrong.
+
+```rust
+#[test]
+fn model_test() {
+    for i in 0..10000 {
+        println!("Trace #{}", i);
+        let data = fs::read_to_string(format!("traces/out{}.itf.json", i)).unwrap();
+        let trace: itf::Trace<State> = trace_from_str(data.as_str()).unwrap();
+
+        let mut bank_state = trace.states[0].value.bank_state.clone();
+
+        for state in trace.states {
+            let action_taken = state.value.action_taken;
+            let nondet_picks = state.value.nondet_picks;
+
+            match action_taken.as_str() {
+                "init" => {
+                    println!("initializing");
+                }
+                "deposit_action" => {
+                    let depositor = nondet_picks.depositor.clone().unwrap();
+                    let amount = nondet_picks.amount.clone().unwrap();
+                    println!("deposit({}, {})", depositor, amount);
+
+                    let res = deposit(&mut bank_state, depositor, amount);
+                    // TODO: check things
+                }
+                // ... other actions
+            }
+        }
+    }
+}
+```
+
 ### Add assertions
+
+Now we have many inputs to our implementation, which accumulate over several steps. This already brings some assurance as we could be hitting some `panic!` statements or failures in code assertions. But we'll have much more confidence by checking the outputs.
+
+We can assert different things, for example:
+1. That the state (current balances and investments) in the implementation matches the one in the trace
+2. That the implementation function returns an error if and only if the trace also has an error registered for that state (i.e. "Could not withdraw because you don't have enough balance").
+3. That some property holds (i.e. no balances are negative)
+
+For the bank example, we check (2) by defining this auxiliary function:
+```rust
+fn compare_error(trace_error: Option<String>, app_error: Option<String>) {
+    if trace_error.is_some() {
+        assert!(
+            app_error.is_some(),
+            "Expected action to fail with error: {:?}, but it succeeded",
+            trace_error
+        );
+        println!("Action failed as expected");
+    } else {
+        assert!(
+            app_error.is_none(),
+            "Expected action to succeed, but it failed with error: {:?}",
+            app_error
+        );
+        println!("Action successful as expected");
+    }
+}
+```
+
+And then call it after each function invocation (all of them return a `Option<String>` like `deposit`):
+```rust
+"deposit_action" => {
+    // ...
+    let res = deposit(&mut bank_state, depositor, amount);
+    compare_error(state.value.error.clone(), res)
+}
+```
 </Steps>
 
-<Callout type="warning" emoji="🚧️">
-  This page is under construction.
-</Callout>
+### Running the complete example
 
-For now, refer to Informal System's page on Model-Based Techniques: [mbt.informal.systems](https://mbt.informal.systems/)
+The repository includes a shell script file that will both generate the traces for you and run `cargo test`. The example includes a mismatch between model and implementation, where the implementation has a bug that allows a user to sell the same investment more than once, potentially draining funds from the bank. The model-based test we wrote identifies this issue. We can be much more confident that the model is correct as we can formally verify that this sort of draining never happens - and model-based testing transfers some of that confidence to the code. 
+
+**Read also:** Informal System's page on Model-Based Techniques: [mbt.informal.systems](https://mbt.informal.systems/).
