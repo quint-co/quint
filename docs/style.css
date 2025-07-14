@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'nextra-theme-docs/style.css';
+@import 'tailwindcss';
+@variant dark (&:where(.dark *));
+
+@theme {
+  --color-quint-purple: #9d6ce5;
+  --color-quint-dark: #2d0075;
+  --color-quint-orange: #ffab70;
+}
 
 dl {
   margin-top: 1rem;
@@ -16,6 +22,14 @@ dd {
 
 footer {
   max-height: 10%;
+}
+
+.x\:text-primary-600 {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
+}
+
+:is(html[class~="dark"] .x\:text-primary-600) {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
 }
 
 .nx-text-primary-600 {

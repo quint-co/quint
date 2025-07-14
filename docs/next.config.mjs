@@ -1,8 +1,9 @@
-const { getHighlighter, BUNDLED_LANGUAGES } = require('shiki')
+import nextra from 'nextra'
+import { bundledLanguages, getHighlighter } from 'shiki';
 
-const withNextra = require('nextra')({
-  theme: 'nextra-theme-docs',
-  themeConfig: './theme.config.jsx',
+const withNextra = nextra({
+  // theme: 'nextra-theme-docs',
+  // themeConfig: './theme.config.jsx',
   latex: true,
   mdxOptions: {
     rehypePrettyCodeOptions: {
@@ -10,7 +11,7 @@ const withNextra = require('nextra')({
         return getHighlighter({
           ...options,
           langs: [
-            ...BUNDLED_LANGUAGES,
+            bundledLanguages,
             // custom grammar options, see the Shiki documentation for how to provide these options
             {
               id: 'quint',
@@ -25,5 +26,5 @@ const withNextra = require('nextra')({
   }
 })
 
-module.exports = withNextra()
-module.exports = withNextra({ output: 'export', images: { unoptimized: true } })
+// export default withNextra()
+export default withNextra({ output: 'export', images: { unoptimized: true } })

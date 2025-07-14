@@ -1,3 +1,5 @@
+'use client'
+
 import { Code, Pre } from 'nextra/components'
 
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
