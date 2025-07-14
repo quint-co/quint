@@ -4,7 +4,7 @@
   "steps": [
     {
       "title": "Introduction",
-      "description": "\nThis lesson introduces the standard \"Hello, world!\" example.\nSince Quint is designed for distributed protocols, we introduce\na barebone protocol, instead of just printing \"Hello, world\".\n\nIn our protocol, two parties are communicating:\n\n - the computer that outputs \"Hello, world!\" to the console, and\n - the user who reads \"Hello, world!\" from the console.\n\nWe describe the protocol in terms of a state machine. This means\nthat we have to describe two importants aspects of the protocol:\n\n - What constitutes a state of the state machine.\n - What kinds of transitions can be made by the state machine.\n\n          \n          ",
+      "description": "\nThis lesson introduces the standard \"Hello, world!\" example.\nSince Quint is designed for distributed protocols, we introduce\na barebone protocol, instead of just printing \"Hello, world\".\n\nIn our protocol, two parties are communicating:\n\n - the computer that outputs \"Hello, world!\" to the console, and\n - the user who reads \"Hello, world!\" from the console.\n\nWe describe the protocol in terms of a state machine. This means\nthat we have to describe two important aspects of the protocol:\n\n - What constitutes a state of the state machine.\n - What kinds of transitions can be made by the state machine.\n\n          \n          ",
       "line": 4,
       "file": "lesson0-helloworld/hello.qnt"
     },
