@@ -56,6 +56,7 @@ import {
   outputTestErrors,
   outputTestResults,
   prepareOnTrace,
+  printInductiveInvariantProgress,
   printViolatedInvariants,
   processVerifyResult,
   writeOutputToJson,
@@ -521,6 +522,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   }
 
+  if (args.inductiveInvariant) {
+    extraDefsAsText.push(`val q::inductiveInv = ${args.inductiveInvariant}`)
+  }
+
   if (args.temporal) {
     extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
   }
@@ -599,14 +604,63 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   }
 
   const loadedConfig = loadApalacheConfig(verifying, args.apalacheConfig)
+
   const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
   const parsedSpec = outputJson(veryfiyingFlat)
 
-  const [_, invariantsList] = getInvariants(prev.args)
+  const [invariantsString, invariantsList] = getInvariants(prev.args)
+
+  if (args.inductiveInvariant) {
+    const hasOrdinaryInvariant = invariantsList.length > 0
+    const nPhases = hasOrdinaryInvariant ? 3 : 2
+    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
+
+    // Checking whether the inductive invariant holds in the initial state(s)
+    printInductiveInvariantProgress(verbosityLevel, args, 1, nPhases)
+
+    const startMs = Date.now()
+    return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
+      if (res.isLeft()) {
+        return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+      }
+
+      // Checking whether the inductive invariant is preserved by the step
+      printInductiveInvariantProgress(verbosityLevel, args, 2, nPhases)
+
+      const stepConfig = createConfig(
+        loadedConfig,
+        parsedSpec,
+        { ...args, maxSteps: 1 },
+        ['q::inductiveInv'],
+        'q::inductiveInv'
+      )
+
+      return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
+        if (res.isLeft() || !hasOrdinaryInvariant) {
+          return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+        }
+
+        // Checking whether the inductive invariant implies the ordinary invariant
+        printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
+
+        const propConfig = createConfig(
+          loadedConfig,
+          parsedSpec,
+          { ...args, maxSteps: 0 },
+          ['q::inv'],
+          'q::inductiveInv'
+        )
+
+        return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
+          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+        })
+      })
+    })
+  }
 
   // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
-  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList)
+  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? ['q::inv'] : [])
   const startMs = Date.now()
 
   return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
