@@ -331,7 +331,7 @@ const verifyCmd = {
         default: [],
       })
       .option('inductive-invariant', {
-        desc: 'inductive invariant to check. Can be used together with regular invariants.',
+        desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
         type: 'string',
       })
       .option('out-itf', {
