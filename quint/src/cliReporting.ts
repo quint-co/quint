@@ -86,7 +86,7 @@ export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, wi
  * @param prev The previous stage context.
  */
 export function printViolatedInvariants(state: QuintEx, invariants: string[], prev: any): void {
-  if (invariants.length <= 1) {
+  if (invariants.length <= 1 && prev.args.inductiveInvariant === undefined) {
     return
   }
 
@@ -345,5 +345,39 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
   if (verbosity.hasHints(verbosityLevel) && !verbosity.hasActionTracking(verbosityLevel)) {
     out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
     out(chalk.gray(`  Further debug with: quint test --verbosity=3 ${prev.args.input}`))
+  }
+}
+
+export function printInductiveInvariantProgress(
+  verbosityLevel: number,
+  args: any,
+  phase: number,
+  nPhases: number,
+  invariantsString: string = ''
+): void {
+  if (verbosity.hasProgress(verbosityLevel)) {
+    switch (phase) {
+      case 1:
+        console.log(
+          chalk.gray(
+            `> [1/${nPhases}] Checking whether the inductive invariant '${args.inductiveInvariant}' holds in the initial state(s) defined by '${args.init}'...`
+          )
+        )
+        break
+      case 2:
+        console.log(
+          chalk.gray(
+            `> [2/${nPhases}] Checking whether '${args.step}' preserves the inductive invariant '${args.inductiveInvariant}'...`
+          )
+        )
+        break
+      case 3:
+        console.log(
+          chalk.gray(
+            `> [3/3] Checking whether the inductive invariant '${args.inductiveInvariant}' implies '${invariantsString}'...`
+          )
+        )
+        break
+    }
   }
 }

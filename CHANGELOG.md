@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better diagnostics for common syntax error on map type definitions (#1682)
 - Better diagnostics for using reserved keywords and common syntax error on type application (#1696)
 - Keywords `from`, `as`, `List` and `Set` can now be used as identifiers (#1696)
+- Support for verifying inductive invariants through `quint verify --inductive-invariant my_inv`
 
 ### Changed
 ### Deprecated

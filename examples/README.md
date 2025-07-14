@@ -60,6 +60,7 @@ listed without any additional command line arguments.
 | [classic/distributed/Paxos/Paxos.qnt](./classic/distributed/Paxos/Paxos.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/1284</sup> |
 | [classic/distributed/Paxos/Voting.qnt](./classic/distributed/Paxos/Voting.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
 | [classic/distributed/ReadersWriters/ReadersWriters.qnt](./classic/distributed/ReadersWriters/ReadersWriters.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/TeachingConcurrency/mutex.qnt](./classic/distributed/TeachingConcurrency/mutex.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/TeachingConcurrency/teachingConcurrency.qnt](./classic/distributed/TeachingConcurrency/teachingConcurrency.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/TwoLayeredCache/two_layered_cache.qnt](./classic/distributed/TwoLayeredCache/two_layered_cache.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/TwoPhaseCommit/two_phase_commit.qnt](./classic/distributed/TwoPhaseCommit/two_phase_commit.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |

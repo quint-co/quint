@@ -57,6 +57,13 @@ export const verbosity = {
   },
 
   /**
+   * Shall the tool write info on its progress.
+   */
+  hasProgress: (level: number): boolean => {
+    return level >= 2
+  },
+
+  /**
    * Shall the tool output states, e.g., in counterexamples.
    */
   hasStateOutput: (level: number): boolean => {

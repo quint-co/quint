@@ -152,6 +152,8 @@ export class VarStorage {
         this.actionTaken = value.toStr()
       }
     })
+
+    this.clearCaches()
   }
 
   /**
