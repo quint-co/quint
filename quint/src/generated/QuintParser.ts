@@ -810,7 +810,7 @@ export class QuintParser extends Parser {
 			if (_la === QuintParser.T__12) {
 				{
 				this.state = 234;
-				this.match(QuintParser.T__12);
+				_localctx._separator = this.match(QuintParser.T__12);
 				}
 			}
 
@@ -5093,6 +5093,7 @@ export class TypeDefHeadContext extends ParserRuleContext {
 
 
 export class SumTypeDefinitionContext extends ParserRuleContext {
+	public _separator!: Token;
 	public typeSumVariant(): TypeSumVariantContext[];
 	public typeSumVariant(i: number): TypeSumVariantContext;
 	public typeSumVariant(i?: number): TypeSumVariantContext | TypeSumVariantContext[] {
