@@ -66,7 +66,7 @@ typeDef
 
 typeDefHead : typeName=qualId ('[' typeVars+=LOW_ID(',' typeVars+=LOW_ID)* ']')?;
 
-sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
+sumTypeDefinition : separator='|'? typeSumVariant ('|' typeSumVariant)* ;
 
 // A single variant case in a sum type definition or match statement.
 // E.g., `A(t)` or `A`.
