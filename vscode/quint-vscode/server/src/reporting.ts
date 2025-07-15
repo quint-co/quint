@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Formating of errors and results to LSP-friendly structures
+ * Formatting of errors and results to LSP-friendly structures
  *
  * @author Gabriela Moreira
  *
@@ -21,7 +21,7 @@ import { compact } from 'lodash'
  * using a source map
  *
  * @param errors the errors to be transformed
- * @param sourceMap the source map for the document in which the errors occured
+ * @param sourceMap the source map for the document in which the errors occurred
  *
  * @returns a map with a list of diagnostics grouped by file
  */

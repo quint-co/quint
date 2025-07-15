@@ -879,7 +879,7 @@ describe('walkModule', () => {
       assert.deepEqual(visitor.exited.map(typeToString), expectedTypes)
     })
 
-    it('finds paramater type annotations', () => {
+    it('finds parameter type annotations', () => {
       class TestVisitor implements IRVisitor {
         typesVisited: QuintType[] = []
         exitType(t: QuintType) {

@@ -190,7 +190,7 @@ export class EffectInferrer implements IRVisitor {
                 this.addToResults(id, r)
               })
             )
-            // For every free name we are binding in the substitutions, the names occuring in the value of the
+            // For every free name we are binding in the substitutions, the names occurring in the value of the
             // substitution have to become free as well.
             this.addBindingsToFreeNames(s)
 
@@ -283,7 +283,7 @@ export class EffectInferrer implements IRVisitor {
     if (this.errors.size > 0) {
       return
     }
-    // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+    // For every free name we are binding in the substitutions, the names occurring in the value of the substitution
     // have to become free as well.
     this.addBindingsToFreeNames(this.substitutions)
 

@@ -368,7 +368,7 @@ export function compactSourceMap(sourceMap: SourceMap): { sourceIndex: any; map:
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
-  // Initialized two structures to be outputed
+  // Initialized two structures to be outputted
   const compactedSourceMap: Map<bigint, any[]> = new Map<bigint, number[]>()
   const sourcesIndex: Map<number, string> = new Map<number, string>()
 

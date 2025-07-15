@@ -186,7 +186,7 @@ export function unifyRows(table: LookupTable, r1: Row, r2: Row): Either<ErrorTre
       // This call will fit in the above case of row unification
       const tailSubs = unifyRows(table, { ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
 
-      // Sort shared fields by field name, and get the their types
+      // Sort shared fields by field name, and get their types
       const fieldTypes: [QuintType, QuintType][] = sharedFieldNames.map(n => {
         const f1 = ra.fields.find(f => f.fieldName === n)!
         const f2 = rb.fields.find(f => f.fieldName === n)!

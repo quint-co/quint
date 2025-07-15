@@ -300,7 +300,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     if (this.constraints.length > 0) {
       this.solveConstraints().map(subs => {
-        // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+        // For every free name we are binding in the substitutions, the names occurring in the value of the substitution
         // have to become free as well.
         addBindingsToFreeTypes(tvs_before, subs)
 
