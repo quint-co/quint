@@ -9,7 +9,7 @@
       in {
         devShell = pkgs.mkShell {
           buildInputs = [
-            pkgs.nodejs_18
+            pkgs.nodejs_20
             pkgs.jre # for antlr4ts
             pkgs.nodePackages.yalc
             pkgs.vsce

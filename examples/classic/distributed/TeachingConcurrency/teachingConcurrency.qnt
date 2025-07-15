@@ -3,96 +3,100 @@
  * A simple algorithm from Lamport's "Teaching Concurrency" paper:
  * https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf
  *
+ * Lamport writes:
+ * Invariance is the key to understanding concurrent systems, but few en-
+ * gineers or computer scientists have learned to think in terms of invariants.
+ * Here is a simple example. Consider N processes numbered from 0 through
+ * N − 1 in which each process i executes
+ *   x[i] : = 1;
+ *   y[i] : = x[(i − 1) mod N]
+ * and stops, where each x[i] initially equals 0. (The reads and writes of
+ * each x[i] are assumed to be atomic.) This algorithm satisfies the following
+ * property: after every process has stopped, y[i] equals 1 for at least one
+ * process i. It is easy to see that the algorithm satisfies this property; the last
+ * process i to write y[i] must set it to 1. But that process doesn’t set y[i] to 1
+ * because it was the last process to write y. What a process does depends only
+ * on the current state, not on what processes wrote before it. The algorithm
+ * satisfies this property because it maintains an inductive invariant
+ *
  * Run in verifier with:
- * quint verify --temporal correct teachingConcurrency.qnt
+ *   quint verify teachingConcurrency.qnt --invariant yContainsOne --inductive-invariant inv
  */
 
 // An example instance of the algorithm with N=5.
 module teachingConcurrency {
-    import teachingConcurrencyN(NUM_PROCS=5).*
+  import teachingConcurrencyN(NUM_PROCS=5).*
 }
 
 // A concurrency algorithm providing a basic form of mutual
 // exclusion. For details and proofs see section 7.2 of
 // https://lamport.azurewebsites.net/tla/proving-safety.pdf
 module teachingConcurrencyN {
-    // N processes (numbered from 0 to N-1).
-    const NUM_PROCS: int
-    assume nonEmpty = NUM_PROCS >= 1
+  import basicSpells.* from "../../../spells/basicSpells"
 
-    var x: List[int]
-    var y: List[int]
+  // N processes (numbered from 0 to N-1).
+  const NUM_PROCS: int
 
-    // Set of processes yet to be executed.
-    var pendingProcs: Set[int]
+  pure val PROCS = 0.to(NUM_PROCS - 1)
 
-    // Initial state:
-    //  - x and y zeroed for all processes
-    //  - all processes pending scheduling
-    action init = all {
-        x' = zeroes(NUM_PROCS),
-        y' = zeroes(NUM_PROCS),
-        pendingProcs' = 0.to(NUM_PROCS-1),
-    }
+  type Stage = Init | Processing | Done
 
-    // Stepping action: randomly pick a pending process (if
-    // any) and execute it. Otherwise stutter forever, as
-    // every process has stopped.
-    action step = {
-        if (termination) {
-            allStopped
-        } else {    
-            processUpdate
-        }
-    }
+  var x: int -> int
+  var y: int -> int
+  var stages: int -> Stage
 
-    // Execute the algorithm for a pending process.
-    action processUpdate = {
-        nondet proc = pendingProcs.oneOf()
+  action init = all {
+    x' = PROCS.mapBy(_ => 0),
+    y' = PROCS.mapBy(_ => 0),
+    stages' = PROCS.mapBy(_ => Init),
+  }
 
-        val nextX = x.replaceAt(proc, 1)
-        val index = circularIndex(proc, NUM_PROCS)
-        val yValue = nextX[index]
-
-        all {
-            x' = nextX,
-            y' = y.replaceAt(proc, yValue),
-            pendingProcs' = pendingProcs.exclude(Set(proc)),
-        }
-    }
-
-    // All processes have stopped.
-    action allStopped = all {
+  action step = {
+    nondet p = PROCS.oneOf()
+    any {
+      all {
+        stages.get(p) == Init,
+        x' = x.set(p, 1),
+        y' = y,
+        stages' = stages.set(p, Processing),
+      },
+      all {
+        stages.get(p) == Processing,
+        x' = x,
+        y' = y.set(p, x.get((p - 1) % NUM_PROCS)),
+        stages' = stages.set(p, Done),
+      },
+      all {
         x' = x,
         y' = y,
-        pendingProcs' = pendingProcs,
+        stages' = stages,
+      },
     }
+  }
 
-    // Return a List of 0s, with the given length.
-    pure def zeroes(len: int): List[int] = {
-        0.to(len-1).fold(List(), (l, _) => l.append(0))
-    }
+  // Correctness invariant: (after every process has
+  // stopped) y[i] == 1 for at least one process.
+  val yContainsOne = {
+    stages.values() == Set(Done) implies y.values().contains(1)
+  }
 
-    // Calculate the circular index `(i-1) mod N`.
-    pure def circularIndex(i: int, N: int): int = {
-        if (i == 0) {
-            N-1
-        } else {
-            i-1
-        }
-    }
+  val typeOK = and {
+    x.in(setOfMaps(PROCS, Set(0,1))),
+    y.in(setOfMaps(PROCS, Set(0,1))),
+    stages.in(setOfMaps(PROCS, Set(Init, Processing, Done))),
+  }
 
-    // Correctness invariant: (after every process has
-    // stopped) y[i] == 1 for at least one process.
-    val yContainsOne = {
-        y.select(v => v == 1).length() >= 1
-    }
+  val inv = and {
+    typeOK,
+    PROCS.forall(p => stages.get(p) != Init implies x.get(p) == 1),
+    yContainsOne
+  }
 
-    // Termination invariant: all processes have stopped
-    // (i.e. none is pending scheduling).
-    val termination = {
-        pendingProcs.size() == 0
-    }
+  // Termination invariant: all processes have stopped
+  // (i.e. none is pending scheduling).
+  val termination = {
+    stages.values() == Set(Done)
+  }
 
-    temporal correct = eventually(termination and yContainsOne)
+  temporal correct = eventually(termination and yContainsOne)
 }
