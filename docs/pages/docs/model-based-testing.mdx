@@ -5,19 +5,19 @@ import { Callout, Steps } from 'nextra/components'
 One of the most asked questions when it comes to writing specifications is "what about the code?". Or, in a more expressive problem statement:
 > How to bridge the gap between the specification and the implementation?
 
-That is, even if we verify that some model is correct, there could still be problems in the code that is ran in production, which is what actually matters. This specially likely to happen if the specification is burried deep into some project sub-sub-sub-folder and no one dares to open it, let alone update it as the code evolves.
+That is, even if we verify that some model is correct, there could still be problems in the code that is run in production, which is what actually matters. This is specially likely to happen if the specification is buried deep into some project sub-sub-sub-folder and no one dares to open it, let alone update it as the code evolves.
 
-The perfect solution would be: verify your code! But that is far from easy, and can most likely only be accomplished with a fat budget (or some really smart volunteers). Other people might say: write the spec in several layers of abstraction until you are really close to the implementation, proving the refinement between each of them - but that is also hard, and doesn't even address the problem of keeping code and spec in sync. Finally, there's code generation (or extracting code from the formal spec), which is great for some sequential algorithms, but get's weird in many ways when you start having multiple processes - and that discussion doesn't fit in this page.
+The perfect solution would be: verify your code! But that is far from easy, and can most likely only be accomplished with a fat budget (or some really smart volunteers). Other people might say: write the spec in several layers of abstraction until you are really close to the implementation, proving the refinement between each of them - but that is also hard, and doesn't even address the problem of keeping code and spec in sync. Finally, there's code generation (or extracting code from the formal spec), which is great for some sequential algorithms, but gets weird in many ways when you start having multiple processes - and that discussion doesn't fit in this page.
 
 Let's focus on more practical solutions:
   1. Model-based Testing (MBT)
   2. Trace validation
 
-Both of these won't give you a proof that your code is correct, but they will make you more confident that the behavior between the model (specification) and the code (implementation) matches, even throughout changes to the code base (or the spec, which tends to change way less).
+Both of these won't give you a proof that your code is correct, but they will make you more confident that the behavior between the model (specification) and the code (implementation) match, even throughout changes to the code base (or to the spec, which tends to change way less).
 
 ## MBT in one paragraph
 
-Produce a bunch of traces (executions) from your model, which should be valid traces in your system. For example: Bob deposits $100 and then transfers $60 to Alice, and then Alice withdraws $20. A trace is just a JSON file with all the data you need. You then write a test driver to call the respective functions (`deposit("Bob", 100)`, `transfer("Bob", "Alice", 60)`, `withdraw("Alice", 20)`) in your implementation, and optionally check things between each call or at the very end (such as asserting a property or comparing the state). That's it, you use the model to generate test data (inputs and expectations) for you in a very efficient way.
+Produce a bunch of traces (executions) from your model, which should be valid traces in your system. For example: Bob deposits \$100 and then transfers \$60 to Alice, and then Alice withdraws \$20. A trace is just a JSON file with all the data you need. You then write a test driver to call the respective functions (`deposit("Bob", 100)`, `transfer("Bob", "Alice", 60)`, `withdraw("Alice", 20)`) in your implementation, and optionally check things between each call or at the very end (such as asserting a property or comparing the state). That's it: you use the model to generate test data (inputs and expectations) for you in a very efficient way.
 
 | Data  | Expectations |
 | :---  | :---         |
@@ -26,7 +26,7 @@ Produce a bunch of traces (executions) from your model, which should be valid tr
 
 ## Trace validation in one paragraph
 
-Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't.
+Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc.) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't.
 
 | Data       | Expectations |
 | :---       | :---         |
@@ -34,21 +34,21 @@ Trace validation can be seen as the other way around (from MBT). Instead of usin
 
 ## MBT in a concrete example
 
-Let's use a toy bank application written in Rust to go through the process. Code is available [here](https://github.com/informalsystems/quint-sandbox/tree/main/SimpleBank). Assuming we already have the code (under `src`) and the model (`bank.qnt`), this is how we'd set up model-based testing for the code.
+Let's use a toy bank application written in Rust to go through the process. Everything is available [here](https://github.com/informalsystems/quint-sandbox/tree/main/SimpleBank). Assuming we already have the implementation (under `src`) and the model (`bank.qnt`), this is how we'd set up model-based testing for the code.
 
 <Steps>
 ### Generate traces from the model
 
-We can create a folder called `traces` to hold all of our trace files an then generate as many as we want using `--n-traces`:
+We can create a folder called `traces` to hold all of our trace files and then generate as many as we want using `--n-traces`:
 ```sh
 quint run bank.qnt --mbt --n-traces=10000 --out-itf=traces/out.itf.json
 ```
 
 Explaining the command:
 - `quint run` is the subcommand for the Quint simulator
-- `bank.qnt` is the file holding the model for which we want to generate traces from
-- `--mbt` says we want extra info in the traces that are very useful for model based testing
-  - `mbt::actionTaken` which will hold which action was used to reach the given state
+- `bank.qnt` is the file holding the model for which we want to generate traces
+- `--mbt` says we want extra info in the traces that is very useful for model-based testing:
+  - `mbt::actionTaken` which will hold the name of the action that was used to reach the given state
   - `mbt::nondetPicks` which will hold what value was chosen for each relevant non-deterministic choice leading to that state
 - `--n-traces` determines how many traces the simulator will hold in memory. It will hold the `N` longest traces in case there is no violation, or the shortest ones if they represent violations to given properties (not the case in this example).
   - Note: if you want more than 10k traces, you need to also increase `--max-samples`, as 10k is the default for that.
@@ -80,56 +80,56 @@ pub struct BankState {
 
 For the rest, we also only define their types, and add some `serde` annotations on the `Option` types and on the `mbt::*` metadata:
 ```rust
-    use itf::de::{self, As};
+use itf::de::{self, As};
 
-    #[derive(Clone, Debug, Deserialize)]
-    pub struct NondetPicks {
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub depositor: Option<String>,
+#[derive(Clone, Debug, Deserialize)]
+pub struct NondetPicks {
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub depositor: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub withdrawer: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub withdrawer: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub sender: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub sender: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub receiver: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub receiver: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub amount: Option<BigInt>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub amount: Option<BigInt>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub buyer: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub buyer: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub seller: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub seller: Option<String>,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub id: Option<BigInt>,
-    }
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub id: Option<BigInt>,
+}
 
-    #[derive(Clone, Debug, Deserialize)]
-    pub struct State {
-        pub bank_state: BankState,
+#[derive(Clone, Debug, Deserialize)]
+pub struct State {
+    pub bank_state: BankState,
 
-        #[serde(with = "As::<de::Option::<_>>")]
-        pub error: Option<String>,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub error: Option<String>,
 
-        #[serde(rename = "mbt::actionTaken")]
-        pub action_taken: String,
-        #[serde(rename = "mbt::nondetPicks")]
-        pub nondet_picks: NondetPicks,
-    }
+    #[serde(rename = "mbt::actionTaken")]
+    pub action_taken: String,
+    #[serde(rename = "mbt::nondetPicks")]
+    pub nondet_picks: NondetPicks,
+}
 ```
 
-Inspecting one of the JSON files should be helpful in understanding which fields are there. [You can use the ITF Trace Viewer]() VSCode extension to view a formatted version of them in VSCode, or use some JSON tool like `jq`.
+Inspecting one of the JSON files should be helpful in understanding which fields are there. You can use the [ITF Trace Viewer](https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer) VSCode extension to view a formatted version of them in VSCode, or use some JSON tool like `jq`.
 
 ### Write code to replay the trace
 
 We then have to write the core of our driver. For each trace we generated, we try to replay it in the implementation. This means calling the function or series of functions that correspond to the action we took in the model (`action_taken`) with the proper parameters, which will either be derived from the state or registered in `nondet_picks`.
 
-The `"init"` action is a bit special, as it is always (and, in this case, only) called at the first state. So instead of initializing things inside the matching statement, it is easier to do it before that, to not have to handle the possibility of `bank_state` being undefined (`None`). In this example, we don't need to call anything from the implementation as both the code and the implementation always start in the same fixed state (where all balances are zero and there are no investments).
+The `"init"` action is a bit special, as it is always (and, in this case, only) called at the first state. So instead of initializing things inside the match statement, it is easier to do it before that, to not have to handle the possibility of `bank_state` being undefined (`None`). In this example, we don't need to call anything from the implementation as both the code and the implementation always start in the same fixed state (where all balances are zero and there are no investments).
 
 It's also useful to add print statements (or any other logging) here so we can have enough information if something goes wrong.
 
@@ -173,7 +173,7 @@ Now we have many inputs to our implementation, which accumulate over several ste
 We can assert different things, for example:
 1. That the state (current balances and investments) in the implementation matches the one in the trace
 2. That the implementation function returns an error if and only if the trace also has an error registered for that state (i.e. "Could not withdraw because you don't have enough balance").
-3. That some property holds (i.e. no balances are negative)
+3. That some property holds (i.e. no balances are negative).
 
 For the bank example, we check (2) by defining this auxiliary function:
 ```rust
@@ -208,6 +208,6 @@ And then call it after each function invocation (all of them return a `Option<St
 
 ### Running the complete example
 
-The repository includes a shell script file that will both generate the traces for you and run `cargo test`. The example includes a mismatch between model and implementation, where the implementation has a bug that allows a user to sell the same investment more than once, potentially draining funds from the bank. The model-based test we wrote identifies this issue. We can be much more confident that the model is correct as we can formally verify that this sort of draining never happens - and model-based testing transfers some of that confidence to the code. 
+The repository includes a shell script file that will both generate the traces for you and run `cargo test`. The example includes a mismatch between model and implementation, where the implementation has a bug that allows a user to sell the same investment more than once, potentially draining funds from the bank. The model-based test we wrote identifies this issue. We can be much more confident that the model is correct as we can formally verify that this sort of draining never happens - and model-based testing transfers some of that confidence to the implementation.
 
 **Read also:** Informal System's page on Model-Based Techniques: [mbt.informal.systems](https://mbt.informal.systems/).
