@@ -1,26 +1,40 @@
 import nextra from 'nextra'
-import { bundledLanguages, getHighlighter } from 'shiki';
+import { bundledLanguages, createHighlighter } from 'shiki';
+import fs from 'fs'
+
+const quintGrammar = JSON.parse(fs.readFileSync('../vscode/quint-vscode/syntaxes/quint.tmLanguage.json', 'utf8'))
+let highlighter
 
 const withNextra = nextra({
-  // theme: 'nextra-theme-docs',
-  // themeConfig: './theme.config.jsx',
   latex: true,
   mdxOptions: {
     rehypePrettyCodeOptions: {
+      themes: {
+        dark: 'nord',
+        light: 'min-light'
+      },
       getHighlighter: options => {
-        return getHighlighter({
+        if (highlighter) {
+          return highlighter
+        }
+
+        highlighter = createHighlighter({
           ...options,
           langs: [
-            bundledLanguages,
+            ...Object.values(bundledLanguages),
             // custom grammar options, see the Shiki documentation for how to provide these options
             {
-              id: 'quint',
+              name: 'quint',
               scopeName: 'source.quint',
-              aliases: ['qnt'], // Along with id, aliases will be included in the allowed names you can use when writing markdown.
-              path: '../../../vscode/quint-vscode/syntaxes/quint.tmLanguage.json'
+
+              embeddedLangs: [],
+              ...quintGrammar
             }
-          ]
+          ],
+          langAlias: { quint : 'Quint' },
         })
+
+        return highlighter
       }
     }
   }
