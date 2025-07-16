@@ -1,55 +1,3 @@
-// {
-//   "-- Introduction": {
-//     "type": "separator",
-//     "title": "Introduction"
-//   },
-//   "why": "Why?",
-//   "what-does-quint-do": "What does Quint do?",
-//   "getting-started": "Getting Started",
-//   "faq": "FAQ",
-//   "-- Writing specifications": {
-//     "type": "separator",
-//     "title": "Writing specifications"
-//   },
-//   "language-basics": "Language Basics",
-//   "lessons": "Interactive lessons",
-//   "blogposts": "Blog Posts",
-//   "cheatsheet-link": {
-//     "title": "Cheatsheet ↵",
-//     "href": "/quint-cheatsheet.pdf"
-//   },
-//   "examples-link": {
-//     "title": "Examples ↵",
-//     "href": "https://github.com/informalsystems/quint/tree/main/examples"
-//   },
-//   "-- Using specifications": {
-//     "type": "separator",
-//     "title": "Using specifications"
-//   },
-//   "checking-properties": "Checking properties",
-//   "repl": "Interacting with REPL",
-//   "literate": "Literate Specifications",
-//   "model-based-testing": "Model-Based Testing",
-//   "-- How the tools work": {
-//     "type": "separator",
-//     "title": "How the tools work"
-//   },
-//   "model-checkers": "Model Checkers",
-//   "simulator": "Understanding the Simulator",
-//   "-- Reference Documentation": {
-//     "type": "separator",
-//     "title": "Reference Documentation"
-//   },
-//   "lang": "Language Manual",
-//   "quint": "CLI Manual",
-//   "builtin": "Built-in Operators",
-//   "-- Development": {
-//     "type": "separator",
-//     "title": "Design & Development"
-//   },
-//   "design-principles": "",
-//   "development-docs": "Development Docs"
-// }
 import type { FC, ReactNode } from 'react'
 
 export const Separator: FC<{ children: ReactNode }> = ({ children }) => {
@@ -61,9 +9,56 @@ export const Separator: FC<{ children: ReactNode }> = ({ children }) => {
 }
 
 export default {
+  index: {
+    display: 'hidden',
+  },
   _: {
     title: <Separator>Introduction</Separator>,
     type: 'separator'
   },
-  why: ''
+  why: '',
+  'what-does-quint-do': '',
+  'getting-started': '',
+  faq: 'FAQ',
+  '-- Writing specifications': {
+    type: 'separator',
+    title: 'Writing specifications'
+  },
+  'language-basics': '',
+  lessons: '',
+  'cheatsheet-link': {
+    title: 'Cheatsheet ↵',
+    href: '/quint-cheatsheet.pdf'
+  },
+  'examples-link': {
+    title: 'Examples',
+    href: 'https://github.com/informalsystems/quint/tree/main/examples'
+  },
+  '-- Using specifications': {
+    type: 'separator',
+    title: 'Using specifications'
+  },
+  'checking-properties': '',
+  repl: 'Interacting with REPL',
+  literate: '',
+  'model-based-testing': '',
+  '-- How the tools work': {
+    type: 'separator',
+    title: 'How the tools work'
+  },
+  'model-checkers': '',
+  simulator: '',
+  '-- Reference Documentation': {
+    type: 'separator',
+    title: 'Reference Documentation'
+  },
+  lang: 'Language Manual',
+  quint: 'CLI Manual',
+  builtin: 'Built-in Operators',
+  '-- Development': {
+    type: 'separator',
+    title: 'Design & Development'
+  },
+  'design-principles': '',
+  'development-docs': ''
 }

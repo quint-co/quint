@@ -1,4 +1,4 @@
-# Literate Specification
+# Literate Specifications
 
 We have developed a workflow for writing literate, executable formal specs using
 the tool [lmt](https://github.com/driusan/lmt). This allows us to embed the
