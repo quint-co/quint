@@ -6,5 +6,5 @@ export default {
   'adr005-type-system': 'Type System',
   'adr006-modules.lit': 'Modules',
   'adr007-flattening': 'Flattening',
-  'adr008-managing-apalache': 'Managing Apalache'
+  'adr008-managing-apalache': 'Managing Apalache',
 }

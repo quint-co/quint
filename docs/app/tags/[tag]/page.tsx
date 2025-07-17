@@ -6,7 +6,7 @@ import '../../../style.css'
 export async function generateMetadata(props) {
   const params = await props.params
   return {
-    title: `Posts Tagged with "${decodeURIComponent(params.tag)}"`
+    title: `Posts Tagged with "${decodeURIComponent(params.tag)}"`,
   }
 }
 
@@ -22,21 +22,19 @@ export default async function TagPage(props) {
   return (
     <Layout>
       <div data-pagefind-ignore="all" className="max-w-3xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">{title}</h2>
-      <div className="space-y-16">
-      {posts
-        .filter(post =>
-          post.frontMatter.tags.includes(decodeURIComponent(params.tag))
-        )
-        .map(post => (
-            <PostCard
-              key={post.route}
-              route={post.route}
-              title={post.title}
-              excerpt={post.frontMatter.excerpt}
-              date={post.frontMatter.date}
-            />
-          ))}
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">{title}</h2>
+        <div className="space-y-16">
+          {posts
+            .filter(post => post.frontMatter.tags.includes(decodeURIComponent(params.tag)))
+            .map(post => (
+              <PostCard
+                key={post.route}
+                route={post.route}
+                title={post.title}
+                excerpt={post.frontMatter.excerpt}
+                date={post.frontMatter.date}
+              />
+            ))}
         </div>
       </div>
     </Layout>

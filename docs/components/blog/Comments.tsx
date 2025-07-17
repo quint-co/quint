@@ -1,15 +1,15 @@
 'use client'
 
-import Giscus from '@giscus/react';
-import { useTheme } from 'next-themes';
+import Giscus from '@giscus/react'
+import { useTheme } from 'next-themes'
 
 export const Comments = () => {
   const { setTheme: _, resolvedTheme } = useTheme()
-  const theme = resolvedTheme === 'dark' ? 'noborder_dark' : 'noborder_light';
+  const theme = resolvedTheme === 'dark' ? 'noborder_dark' : 'noborder_light'
 
   return (
     <>
-      <br/>
+      <br />
       <Giscus
         id="comments"
         repo="informalsystems/quint"

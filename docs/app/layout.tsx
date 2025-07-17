@@ -1,5 +1,5 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
-import { Banner, Head } from 'nextra/components'
+import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import { useThemeConfig } from 'nextra-theme-docs'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
@@ -13,13 +13,13 @@ export const metadata = {
     description: 'A modern and executable specification language',
     images: [{ url: '/og.png' }],
     url: 'https://quint-lang.org',
-    type: 'website'
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     site: '@quint_lang',
     creator: '@informalsystems',
-    images: '/og.png'
+    images: '/og.png',
   },
 }
 
@@ -27,7 +27,9 @@ const QuintLogo = () => {
   const theme = useThemeConfig
   return (
     <img
-      src={`https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-${theme.darkMode ? 'light' : 'dark'}.svg`}
+      src={`https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-${
+        theme.darkMode ? 'light' : 'dark'
+      }.svg`}
       alt="Quint"
       width="150px"
     />
@@ -52,12 +54,10 @@ const navbar = (
 )
 
 const footer = (
-  <Footer >
+  <Footer>
     <div className="flex w-full flex-col gap-6 items-center text-center sm:items-start">
       <InformalSystemsLogo />
-      <p className="mt-6 text-xs">
-        © {new Date().getFullYear()} Informal Systems.
-      </p>
+      <p className="mt-6 text-xs">© {new Date().getFullYear()} Informal Systems.</p>
     </div>
   </Footer>
 )
@@ -66,7 +66,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <Head
-        color= {{
+        color={{
           hue: { dark: 264, light: 264 },
           saturation: { dark: 52, light: 90 },
         }}
@@ -74,12 +74,7 @@ export default async function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta httpEquiv="Content-Language" content="en" />
         <link rel="icon" href="/icon-light.png" type="image/png" />
-        <link
-          rel="icon"
-          href="/icon-dark.png"
-          type="image/png"
-          media="(prefers-color-scheme: dark)"
-        />
+        <link rel="icon" href="/icon-dark.png" type="image/png" media="(prefers-color-scheme: dark)" />
       </Head>
       <body>
         <Layout
@@ -89,7 +84,7 @@ export default async function RootLayout({ children }) {
           docsRepositoryBase="https://github.com/informalsystems/quint/blob/main/docs"
           sidebar={{
             defaultMenuCollapseLevel: 1,
-            toggleButton: true
+            toggleButton: true,
           }}
         >
           {children}

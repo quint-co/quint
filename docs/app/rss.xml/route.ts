@@ -4,7 +4,7 @@ const CONFIG = {
   title: 'Quint Blog',
   siteUrl: 'https://quint-lang.org',
   description: 'Stories, tutorials, and insights about Quint specifications',
-  lang: 'en-us'
+  lang: 'en-us',
 }
 
 export async function GET() {
@@ -33,7 +33,7 @@ ${posts}
 
   return new Response(xml, {
     headers: {
-      'Content-Type': 'application/rss+xml'
-    }
+      'Content-Type': 'application/rss+xml',
+    },
   })
 }

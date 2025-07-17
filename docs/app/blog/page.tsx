@@ -5,7 +5,7 @@ import { getPosts, getTags } from './get-posts'
 import '../../style.css'
 
 export const metadata = {
-  title: 'Blog'
+  title: 'Blog',
 }
 export default async function PostsPage() {
   const tags = await getTags()

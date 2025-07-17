@@ -1,7 +1,7 @@
 export default {
   index: {
     type: 'page',
-    href: '/blog'
+    href: '/blog',
   },
   secret_santa: '',
 }

@@ -17,9 +17,7 @@ export const PostCard: React.FC<PostCardProps> = ({ route, title, excerpt, date 
             {title}
           </h3>
 
-          <p className="mb-6 text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
-            {excerpt}
-          </p>
+          <p className="mb-6 text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">{excerpt}</p>
 
           {date ? (
             <time
@@ -29,7 +27,7 @@ export const PostCard: React.FC<PostCardProps> = ({ route, title, excerpt, date 
               {new Date(date).toLocaleDateString('en', {
                 month: 'long',
                 day: 'numeric',
-                year: 'numeric'
+                year: 'numeric',
               })}
             </time>
           ) : (

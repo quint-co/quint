@@ -4,7 +4,7 @@ import { getPageMap } from 'nextra/page-map'
 export async function getPosts() {
   const { directories } = normalizePages({
     list: await getPageMap('/blog'),
-    route: '/blog'
+    route: '/blog',
   })
   return directories
     .filter(post => post.frontMatter)

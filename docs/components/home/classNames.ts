@@ -84,4 +84,4 @@ export const classNames = {
   conIcon: `
     text-amber-400
   `,
-};
+}

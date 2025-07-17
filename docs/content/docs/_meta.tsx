@@ -1,11 +1,7 @@
 import type { FC, ReactNode } from 'react'
 
 export const Separator: FC<{ children: ReactNode }> = ({ children }) => {
-  return (
-    <div className="flex items-center gap-2">
-      {children}
-    </div>
-  )
+  return <div className="flex items-center gap-2">{children}</div>
 }
 
 export default {
@@ -14,7 +10,7 @@ export default {
   },
   _: {
     title: <Separator>Introduction</Separator>,
-    type: 'separator'
+    type: 'separator',
   },
   why: '',
   'what-does-quint-do': '',
@@ -22,21 +18,21 @@ export default {
   faq: 'FAQ',
   '-- Writing specifications': {
     type: 'separator',
-    title: 'Writing specifications'
+    title: 'Writing specifications',
   },
   'language-basics': '',
   lessons: '',
   'cheatsheet-link': {
     title: 'Cheatsheet ↵',
-    href: '/quint-cheatsheet.pdf'
+    href: '/quint-cheatsheet.pdf',
   },
   'examples-link': {
     title: 'Examples',
-    href: 'https://github.com/informalsystems/quint/tree/main/examples'
+    href: 'https://github.com/informalsystems/quint/tree/main/examples',
   },
   '-- Using specifications': {
     type: 'separator',
-    title: 'Using specifications'
+    title: 'Using specifications',
   },
   'checking-properties': '',
   repl: 'Interacting with REPL',
@@ -44,21 +40,21 @@ export default {
   'model-based-testing': '',
   '-- How the tools work': {
     type: 'separator',
-    title: 'How the tools work'
+    title: 'How the tools work',
   },
   'model-checkers': '',
   simulator: '',
   '-- Reference Documentation': {
     type: 'separator',
-    title: 'Reference Documentation'
+    title: 'Reference Documentation',
   },
   lang: 'Language Manual',
   quint: 'CLI Manual',
   builtin: 'Built-in Operators',
   '-- Development': {
     type: 'separator',
-    title: 'Design & Development'
+    title: 'Design & Development',
   },
   'design-principles': '',
-  'development-docs': ''
+  'development-docs': '',
 }
