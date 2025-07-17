@@ -100,8 +100,9 @@ export function Home() {
               <CodeSample components={components} />
               <div className="flex justify-center">
                 <Button
+                  style={{ display: isViolationVisible ? 'none' : 'inline-flex' }}
+                  className="mt-8 sm:mt-10"
                   as="button"
-                  className={isViolationVisible ? 'hidden' : 'visible'}
                   variant="secondary"
                   onClick={handleToggleVisibility}
                 >
