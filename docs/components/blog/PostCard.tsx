@@ -11,7 +11,7 @@ interface PostCardProps {
 export const PostCard: React.FC<PostCardProps> = ({ route, title, excerpt, date }) => {
   return (
     <Link href={route} className="text-quint-purple dark:text-quint-purple font-medium">
-      <article className="group relative bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 dark:border-gray-800">
+      <article className="group relative bg-white dark:bg-gray-900 p-6 mb-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 dark:border-gray-800">
         <div className="flex flex-col items-center text-center">
           <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white group-hover:text-quint-purple dark:group-hover:text-quint-purple transition-colors">
             {title}
