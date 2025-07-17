@@ -1,0 +1,16 @@
+export default {
+  docs: {
+    type: 'page',
+    title: 'Documentation',
+    href: '/resources/documentation',
+  },
+  blog: {
+    type: 'page',
+    title: 'Blog',
+    href: '/blog',
+  },
+  community: {
+    type: 'page',
+    title: 'Community',
+  },
+}

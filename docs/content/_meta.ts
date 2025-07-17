@@ -1,8 +1,3 @@
-import type { MetaRecord } from 'nextra'
-import { LinkArrowIcon } from 'nextra/icons'
-import type { FC, ReactNode } from 'react'
-import { useMDXComponents } from '../mdx-components'
-
 export default {
   index: {
     type: 'page',
@@ -17,10 +12,7 @@ export default {
   },
   blog: {
     type: 'page',
-    theme: {
-      typesetting: 'article',
-      toc: false
-    }
+    title: 'Blog',
   },
   community: {
     type: 'page',
