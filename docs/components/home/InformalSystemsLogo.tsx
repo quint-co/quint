@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 
 export function InformalSystemsLogo() {
   const { setTheme: _, resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
+  const isDark = resolvedTheme == 'dark'
 
   return (
     <a href="https://informal.systems">

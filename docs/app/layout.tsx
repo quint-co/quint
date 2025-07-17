@@ -52,8 +52,8 @@ const navbar = (
 )
 
 const footer = (
-  <Footer>
-    <div className="flex w-full flex-col gap-6 items-center sm:items-start">
+  <Footer >
+    <div className=" items-center text-center sm:items-start">
       <InformalSystemsLogo />
       <p className="mt-6 text-xs">
         © {new Date().getFullYear()} Informal Systems.
