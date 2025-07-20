@@ -294,7 +294,7 @@ PS: See the definition for `propagateComponents` in the next section.
 
 Lambda parameters have an effect variable with a name built from the parameter
 name and its reference, which can always be found in the context. This way, we
-ensure that the effect is the same for all ocurrences of that parameter.
+ensure that the effect is the same for all occurrences of that parameter.
 
 ```
  { kind: 'param', identifier: p, reference: ref } ∈ Γ
