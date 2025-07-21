@@ -65,45 +65,23 @@ export function NewsletterSignupBanner() {
         target="_blank"
         noValidate
       >
-        <FontAwesomeIcon
-          icon={faEnvelope}
-          className="text-quint-purple text-6xl"
-        />
+        <FontAwesomeIcon icon={faEnvelope} className="text-quint-purple text-6xl" />
 
-        <p className="text-2xl">
-          Subscribe to our newsletter for the latest
-          updates&nbsp;and&nbsp;features
-        </p>
+        <p className="text-2xl">Subscribe to our newsletter for the latest updates&nbsp;and&nbsp;features</p>
 
         <div className="flex items-center gap-3 w-full">
           <label className="w-full">
             <span className="sr-only">First Name</span>
-            <Input
-              type="text"
-              name="FNAME"
-              id="mce-FNAME"
-              placeholder="First Name"
-              className="w-full"
-            />
+            <Input type="text" name="FNAME" id="mce-FNAME" placeholder="First Name" className="w-full" />
           </label>
 
           <label className="w-full">
             <span className="sr-only">Email Address</span>
-            <Input
-              type="email"
-              name="EMAIL"
-              id="mce-EMAIL"
-              required
-              className="w-full"
-              placeholder="Email Address"
-            />
+            <Input type="email" name="EMAIL" id="mce-EMAIL" required className="w-full" placeholder="Email Address" />
           </label>
         </div>
 
-        <div
-          style={{ position: 'absolute', left: '-5000px' }}
-          aria-hidden="true"
-        >
+        <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
           <input
             type="checkbox"
             id="gdpr_41607"
@@ -113,19 +91,8 @@ export function NewsletterSignupBanner() {
             checked={true}
             onChange={() => {}}
           />
-          <input
-            type="text"
-            name="b_0f6ea1a79dbcc56e2f4c22ec8_06adecf928"
-            tabIndex={-1}
-            value=""
-            onChange={() => {}}
-          />
-          <input
-            type="hidden"
-            name="tags"
-            value="8032881"
-            onChange={() => {}}
-          />
+          <input type="text" name="b_0f6ea1a79dbcc56e2f4c22ec8_06adecf928" tabIndex={-1} value="" onChange={() => {}} />
+          <input type="hidden" name="tags" value="8032881" onChange={() => {}} />
         </div>
 
         <Button
