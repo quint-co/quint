@@ -1,9 +1,6 @@
 import { ComponentProps, ElementType } from 'react'
 
-type InputProps<T extends 'input' | 'textarea'> = Omit<
-  ComponentProps<T>,
-  'children'
-> & {
+type InputProps<T extends 'input' | 'textarea'> = Omit<ComponentProps<T>, 'children'> & {
   as?: T
   variant?: keyof typeof classNamesByVariant
 }

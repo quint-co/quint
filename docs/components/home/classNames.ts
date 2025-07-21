@@ -61,7 +61,7 @@ export const classNames = {
 
   proOrConContainer: `
     grid
-    grid-cols-[min-content,auto]
+    grid-cols-[min-content_auto]
     gap-2
     w-full
   `,
@@ -84,4 +84,4 @@ export const classNames = {
   conIcon: `
     text-amber-400
   `,
-};
+}

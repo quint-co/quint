@@ -1,3 +1,5 @@
+'use client'
+
 import { Code, Pre } from 'nextra/components'
 
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
@@ -54,41 +56,25 @@ export function Home() {
           <div className="grid grid-cols-1 py-8 gap-y-4 gap-x-8 lg:mt-8 lg:items-start lg:grid-cols-2 xl:grid-cols-2">
             <div className="xl:col-span-1">
               <div className={classNames.container}>
-                {benefits.map(
-                  ([label, [prosLabel, pros], [consLabel, cons]]) => (
-                    <div className={classNames.benefitContainer}>
-                      <h1 className={classNames.benefitTitle}>
-                        <div className={classNames.benefitIcon}>
-                          <FontAwesomeIcon icon={faCheckCircle} />
-                        </div>
-                        {label}
-                      </h1>
-
-                      <div className={classNames.prosAndConsContainer}>
-                        <ProsOrConsList
-                          items={pros}
-                          label={prosLabel}
-                          type="pro"
-                        />
-                        <ProsOrConsList
-                          items={cons}
-                          label={consLabel}
-                          type="con"
-                        />
+                {benefits.map(([label, [prosLabel, pros], [consLabel, cons]]) => (
+                  <div className={classNames.benefitContainer}>
+                    <h1 className={classNames.benefitTitle}>
+                      <div className={classNames.benefitIcon}>
+                        <FontAwesomeIcon icon={faCheckCircle} />
                       </div>
+                      {label}
+                    </h1>
+
+                    <div className={classNames.prosAndConsContainer}>
+                      <ProsOrConsList items={pros} label={prosLabel} type="pro" />
+                      <ProsOrConsList items={cons} label={consLabel} type="con" />
                     </div>
-                  ),
-                )}
+                  </div>
+                ))}
               </div>
 
               <div className="mt-4 mb-8 flex justify-center">
-                <Button
-                  as="a"
-                  href="/docs/getting-started"
-                  className="mt-8 sm:mt-10"
-                  role="button"
-                  variant="primary"
-                >
+                <Button as="a" href="/docs/getting-started" className="mt-8 sm:mt-10" role="button" variant="primary">
                   Get started
                 </Button>
               </div>
@@ -98,8 +84,11 @@ export function Home() {
               <CodeSample components={components} />
               <div className="flex justify-center">
                 <Button
+                  style={{
+                    display: isViolationVisible ? 'none' : 'inline-flex',
+                  }}
+                  className="mt-8 sm:mt-10"
                   as="button"
-                  className={isViolationVisible ? 'hidden' : 'visible'}
                   variant="secondary"
                   onClick={handleToggleVisibility}
                 >
@@ -108,9 +97,7 @@ export function Home() {
               </div>
               <div
                 className={`transition-all duration-1000 ease-out overflow-hidden ${
-                  isViolationVisible
-                    ? 'opacity-100 max-h-screen'
-                    : 'opacity-0 max-h-0'
+                  isViolationVisible ? 'opacity-100 max-h-screen' : 'opacity-0 max-h-0'
                 }`}
               >
                 <ViolationSample components={components} />

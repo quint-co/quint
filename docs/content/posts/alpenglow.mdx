@@ -1,0 +1,443 @@
+---
+title: "Understanding Solana's Alpenglow with Quint"
+date: 2025-07-21
+excerpt: Use the Quint spec we have written for the Alpenglow consensus algorithm to learn about it in an interactive way, while also learning how to use the Quint tools like we do.
+authors:
+    - name: Josef Widder
+    - name: Gabriela Moreira
+tags:
+    - intermediate
+---
+
+import AlpenglowViolation from './assets/alpenglow_violation.mdx'
+import AlpenglowViolationMBT from './assets/alpenglow_violation_mbt.mdx'
+import { Callout, Cards } from 'nextra/components'
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+
+# Understanding Solana's Alpenglow with Quint
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+If you are interested in understanding the next Solana consensus algorithm, this is for you. We are not going to explain the algorithm to you, but will show you an efficient way how you can figure it out for yourself using the Quint toolset to interact with the specification.
+
+
+Recently, Anza research shared the [exciting news](https://www.anza.xyz/blog/alpenglow-a-new-consensus-for-solana) that they propose Alpenglow consensus as a replacement for Solana's current consensus engine. As we at Informal Systems are currently working on a library that aims at speeding up specifying protocols for distributed systems, we are implementing several consensus engines to collect benchmarks, and define rules on how to specify distributed protocols for different needs (checking the protocol vs. checking the code).
+
+While this is useful for our research, we believe the Alpenglow Quint specification will be a great tool for you to deep dive into Alpenglow.
+
+<br />
+<Cards.Card
+  icon=""
+  title="Check out the spec"
+  href="https://github.com/informalsystems/Alpenglow-spec"
+  target="_blank"
+  arrow
+/>
+
+## Doing is better than reading
+
+Contrary to our natural perception, struggling to find answers makes us learn much more than reading or listening to other people's experience. This post gives you the opportunity to be **hands-on** (but we'll also give you the outputs in case you prefer just reading).
+
+For the hands-on experience, you'll need:
+- [Install](../getting-started) Quint (TLDR: `npm i @informalsystems/quint -g`)
+- Give Quint a star on [GitHub](https://github.com/informalsystems/quint) (this is a very important step!)
+- Clone our [Alpenglow repository](https://github.com/informalsystems/Alpenglow-spec)
+
+## Alpenglow's components
+
+Alpenglow is separated into several components:
+- Block Propagation (Rotor)
+- Voting (Votor)
+  - Pool
+  - Consensus logic
+
+We focus on **Votor** in this post. The Alpenglow paper describes a modular architecture: The **Pool** component collects messages, does bookkeeping, and generates events as input to the consensus logic, which we call consensus inputs. These consensus inputs are e.g., "I have received a quorum of votes" or "I have received a quorum of skip messages". The consensus logic then reacts to these by generating consensus outputs, such as broadcasting messages or starting timeouts. (We have a very similar architecture for our own Malachite consensus engine, where the driver uses the vote keeper to collect messages and sends consensus inputs to the consensus state machine. Our Quint spec of Malachite can be found [here](https://github.com/informalsystems/malachite/tree/main/specs/consensus/quint)).
+
+We have specified:
+- The **consensus** logic in a very detailed way. The spec is close to the paper, and potentially quite similar to the implementation.
+- The **pool** quite abstractly. The state machine we defined with Quint doesn't make a transition for each single message it receives, counting them locally until there is some quorum. Rather, we model conditions on the messages globally sent that are required for consensus inputs to occur.
+
+<Callout type="info">
+We are going into a deep dive into this soon, when we publish the first version of our library mentioned in the beginning. But observe that, in a distributed protocol, the received messages that you store locally, are the node's imperfect perception of the messages sent to the node by others in the system.
+
+</Callout>
+
+- The **Rotor** not at all. We were interested in the novel voting mechanism that enables fast finalization. This can be studied by just having blocks preloaded in the simulation environment and allowing the Block consensus input to occur at any time.
+
+## Interacting with the specification
+
+Quint is a toolset that helps designing and understanding protocols. The REPL allows you to interact with the specification. So let's go: We have modeled the voting mechanism in a parameterized way, and have already set up an instance called `some_byz` with 5 correct validators, and 1 Byzantine one. You can start the Quint REPL requiring the `statemachine.qnt` model and loading the `some_byz` instance in one single command:
+
+```sh
+quint -r statemachine.qnt::some_byz
+```
+
+You can then check that the validators are here as promised:
+
+```ansi
+[90mQuint REPL 0.25.1[39m
+[90m[39m[90mType ".exit" to exit, or ".help" for more information[39m
+[90m[39m>>> correct
+
+[32mSet[39m([32m"v1"[39m, [32m"v2"[39m, [32m"v3"[39m, [32m"v4"[39m, [32m"v5"[39m)
+>>> byzantine
+
+[32mSet[39m([32m"b1"[39m)
+```
+
+This instance also preloads a few blocks for us to use:
+
+```ansi
+>>> allBlocks
+
+[32mSet[39m(
+  { hash[90m:[39m [33m42[39m, parent[90m:[39m [33m-1[39m, slot[90m:[39m [33m0[39m },
+  { hash[90m:[39m [33m43[39m, parent[90m:[39m [33m42[39m, slot[90m:[39m [33m1[39m },
+  { hash[90m:[39m [33m44[39m, parent[90m:[39m [33m43[39m, slot[90m:[39m [33m2[39m },
+  { hash[90m:[39m [33m46[39m, parent[90m:[39m [33m42[39m, slot[90m:[39m [33m1[39m },
+  { hash[90m:[39m [33m47[39m, parent[90m:[39m [33m45[39m, slot[90m:[39m [33m1[39m },
+  { hash[90m:[39m [33m48[39m, parent[90m:[39m [33m43[39m, slot[90m:[39m [33m2[39m },
+  { hash[90m:[39m [33m49[39m, parent[90m:[39m [33m45[39m, slot[90m:[39m [33m2[39m }
+)
+```
+
+Now, let's try to call `init` to initialize the global state of the system (called `s` to save us all some keystrokes), and then inspect it:
+
+```ansi
+>>> init
+
+[33mtrue[39m
+>>> s
+
+{
+  activeTimeouts[90m:[39m [32mMap[39m([32m"v1"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v2"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v3"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v4"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v5"[39m[90m ->[39m [32mSet[39m([33m0[39m)),
+  msgBuffer[90m:[39m [32mSet[39m(),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"v1"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v2"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v3"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v4"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v5"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] }
+    )
+}
+```
+
+### Moving the state machine
+
+Alright, enough viewing. Let's now control the system and let validator `v1` receive a block (one of the blocks we have already preloaded in the model, that we could observe with `allBlocks`):
+
+```ansi
+>>> receiveSpecificBlock("v1", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+```
+As a result, we see that, v1 sends a notar vote message:
+
+```ansi {4}
+>>> s
+
+{
+  activeTimeouts[90m:[39m [32mMap[39m([32m"v1"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v2"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v3"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v4"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v5"[39m[90m ->[39m [32mSet[39m([33m0[39m)),
+  msgBuffer[90m:[39m [32mSet[39m({ msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v1"[39m }),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"v1"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v2"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v3"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v4"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v5"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] }
+    )
+}
+```
+
+We can also call `s.msgBuffer` to inspect only this part of the state. The state is simply a record:
+```ansi
+>>> s.msgBuffer
+
+[32mSet[39m({ msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v1"[39m })
+```
+
+### Fast Finalization
+
+`fastFinalized(0, s.msgBuffer)` checks whether enough messages are sent such that processes can fast finalize. That doesn't seem to be the case. Try and let all other honest validators (`"v2"`, `"v3"`, `"v4"` and `"v5"`) also receive the block and check again.
+
+<details>
+<summary>Here are the results if you don't want to try it yourself</summary>
+```ansi
+>>> receiveSpecificBlock("v1", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+>>> fastFinalized(0, allMessages)
+
+[32mSet[39m()
+>>> receiveSpecificBlock("v2", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+>>> receiveSpecificBlock("v3", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+>>> receiveSpecificBlock("v4", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+>>> receiveSpecificBlock("v5", { hash: 42, parent: -1, slot: 0 })
+
+[33mtrue[39m
+>>> fastFinalized(0, s.msgBuffer)
+
+[32mSet[39m([33m42[39m)
+```
+</details>
+
+There are four more actions:
+- `blockNotarizedAction(v, slot)`,
+- `parentReadyAction(v, slot)`,
+- `safeToNotarAction(v, slot)`,
+- `safeToSkipAction(v, slot)`,
+
+These actions will check whether a consensus input is enabled based on the messages in the message buffer. If this is the case, they will execute consensus with the input. For instance, the consensus input `BlockNotarizedInput` needs 60% of the voting power to have sent a notar vote for a slot and a block. If you managed above to get `fastFinalized(0, s.msgBuffer)` evaluate to true, you can call `blockNotarizedAction("v3", 0)` in this state and see that `"v3"` has learned that the block has been notarized.
+
+
+<details>
+<summary>Here are the results if you don't want to try it yourself</summary>
+```ansi {8,19}
+>>> blockNotarizedAction("v3", 0)
+
+[33mtrue[39m
+>>> s
+
+{
+  activeTimeouts[90m:[39m [32mMap[39m([32m"v1"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v2"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v3"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v4"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v5"[39m[90m ->[39m [32mSet[39m([33m0[39m)),
+  msgBuffer[90m:[39m
+    [32mSet[39m(
+      { msg[90m:[39m [32mFinalVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"v3"[39m },
+      { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v1"[39m },
+      { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v2"[39m },
+      { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v3"[39m },
+      { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v4"[39m },
+      { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"v5"[39m }
+    ),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"v1"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v2"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v3"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mBlockNotarized[39m([33m42[39m), [32mItsOver[39m, [32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v4"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v5"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m), [32mVoted[39m, [32mVotedNotar[39m([33m42[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] }
+    )
+}
+```
+</details>
+
+### Timeouts
+
+Receiving blocks or messages is just one functionality of the Votor. Handling timeouts is another. Let's reset the system with `init`, and see what happens when `v2`'s timeout for slot `0` expires:
+
+<Callout type="info">
+Controlling timeouts is usually hard and prone to a lot of interference, but we avoid all of that thanks to being in a more **abstract** environment. A timeout is just something that can non-deterministically expire, and we can control at which point of the state machine evolution that happens when using the REPL.
+</Callout>
+
+```ansi {25-28, 37} /"v2" -> Set(0)/ /"v2" -> Set()/
+[90mQuint REPL 0.25.1[39m
+[90m[39m[90mType ".exit" to exit, or ".help" for more information[39m
+[90m[39m>>> init
+
+[33mtrue[39m
+>>> s
+
+{
+  activeTimeouts[90m:[39m [32mMap[39m([32m"v1"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v2"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v3"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v4"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v5"[39m[90m ->[39m [32mSet[39m([33m0[39m)),
+  msgBuffer[90m:[39m [32mSet[39m(),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"v1"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v2"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v3"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v4"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v5"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] }
+    )
+}
+>>> fireTimeoutEvent("v2", 0)
+
+[33mtrue[39m
+>>> s
+
+{
+  activeTimeouts[90m:[39m [32mMap[39m([32m"v1"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v2"[39m[90m ->[39m [32mSet[39m(), [32m"v3"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v4"[39m[90m ->[39m [32mSet[39m([33m0[39m), [32m"v5"[39m[90m ->[39m [32mSet[39m([33m0[39m)),
+  msgBuffer[90m:[39m
+    [32mSet[39m(
+      { msg[90m:[39m [32mSkipVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"v2"[39m },
+      { msg[90m:[39m [32mSkipVoteMsg[39m([33m1[39m), sender[90m:[39m [32m"v2"[39m },
+      { msg[90m:[39m [32mSkipVoteMsg[39m([33m2[39m), sender[90m:[39m [32m"v2"[39m },
+      { msg[90m:[39m [32mSkipVoteMsg[39m([33m3[39m), sender[90m:[39m [32m"v2"[39m }
+    ),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"v1"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v2"[39m[90m ->[39m
+        {
+          pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m],
+          state[90m:[39m
+            [[32mSet[39m([32mBadWindow[39m, [32mParentReady[39m([33m-1[39m), [32mVoted[39m), [32mSet[39m([32mBadWindow[39m, [32mVoted[39m), [32mSet[39m([32mBadWindow[39m, [32mVoted[39m), [32mSet[39m([32mBadWindow[39m, [32mVoted[39m), [32mSet[39m()]
+        },
+      [32m"v3"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v4"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] },
+      [32m"v5"[39m[90m ->[39m { pendingBlocks[90m:[39m [[32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m, [32mNone[39m], state[90m:[39m [[32mSet[39m([32mParentReady[39m([33m-1[39m)), [32mSet[39m(), [32mSet[39m(), [32mSet[39m(), [32mSet[39m()] }
+    )
+}
+>>> 
+```
+
+We see that the effect is much bigger. Rather than timing out on Slot 0, and sending a skip message just for that slot, validator `"v2"` sent skip messages for slots `0..3`. Actually what happens here is that `v2` gives up on the proposer and thus sends skip messages for the whole proposer window consisting of slots `0..3`.
+
+With these actions you now can unroll the protocol step-by-step and investigate different scenarios of interest.
+
+### Understanding Disagreement
+
+To understand why and how a protocol works, it is useful to understand when it doesn't work. For instance, the `too_many_byz` model defines a setting in which there are more faults than the protocol is designed for (more than a fifth of the voting power). In the model we have already sent a couple of messages and blocks that Byzantine nodes may send. You can investigate them as follows:
+
+```sh
+quint -r statemachine.qnt::too_many_byz
+```
+
+```ansi
+[90mQuint REPL 0.25.1[39m
+[90m[39m[90mType ".exit" to exit, or ".help" for more information[39m
+>>> correct
+
+[32mSet[39m([32m"v1"[39m, [32m"v2"[39m, [32m"v3"[39m, [32m"v4"[39m)
+>>> byzantine
+
+[32mSet[39m([32m"b1"[39m, [32m"b2"[39m)
+>>> init
+
+[33mtrue[39m
+>>> allMessages
+
+[32mSet[39m(
+  { msg[90m:[39m [32mFinalVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mFinalVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mNotarFallBackVoteMsg[39m({ hash[90m:[39m [33m41[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mNotarFallBackVoteMsg[39m({ hash[90m:[39m [33m41[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mNotarFallBackVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mNotarFallBackVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m41[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m41[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mNotarVoteMsg[39m({ hash[90m:[39m [33m42[39m, slot[90m:[39m [33m0[39m }), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mSkipFallbackVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mSkipFallbackVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b2"[39m },
+  { msg[90m:[39m [32mSkipVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b1"[39m },
+  { msg[90m:[39m [32mSkipVoteMsg[39m([33m0[39m), sender[90m:[39m [32m"b2"[39m }
+)
+>>> allBlocks
+
+[32mSet[39m({ hash[90m:[39m [33m41[39m, parent[90m:[39m [33m-1[39m, slot[90m:[39m [33m0[39m }, { hash[90m:[39m [33m42[39m, parent[90m:[39m [33m-1[39m, slot[90m:[39m [33m0[39m })
+```
+
+You can now try to use the REPL and the actions we introduce above to construct an execution where processes receive such Byzantine messages and messages sent by correct processes so that two conflicting blocks are finalized. You can check that by evaluating the agreement property in a global state. It evaluates to false in a state with at least conflicting finalized blocks. The precise definitions of "agreement" and "finalized" are not so complicated. You can look them up in the [statemachine.qnt](https://github.com/informalsystems/Alpenglow-spec/blob/main/statemachine.qnt) file.
+
+Did you succeed? Was it easy? There is an easier way of doing it!
+
+#### Using Quint to find out how disagreement happens
+
+```sh
+quint run statemachine.qnt --main too_many_byz --invariant agreement
+```
+
+This does random simulation, and it typically finds and prints an execution trace that ends in a state where agreement is violated. If you are unlucky, try again, if you are still unlucky then run
+
+```sh
+quint run statemachine.qnt --main too_many_byz --invariant agreement --seed=0x184321e08ff45d
+```
+<details>
+<summary>See results</summary>
+<AlpenglowViolation />
+</details>
+
+The trace you get is a sequence of global states that, in state 8, violated agreement. It might be hard to see what happened between any two states. To get that information run
+
+```sh
+quint run statemachine.qnt --main too_many_byz --invariant agreement --seed=0x184321e08ff45d --mbt
+```
+Don't worry about what mbt means! If you still worry, go [here](../model-based-testing).
+
+<details>
+<summary>See results</summary>
+<AlpenglowViolationMBT />
+</details>
+
+This last command lets you derive a sequence of actions that takes the system from the initial state to an interesting state. It gives you the actions (`mbt::actionTaken`) and the non-deterministic choices (`mbt::nondetPicks`) that will inform which validator receives what block/message (which is chosen non-deterministically at each step). You will see there are some repeating actions. In our example, States 2 and 3 are the result of validator `"v3"` receiving the same block twice. Our models allow this at the moment. If you want more precision, you could restrict the actions in the model as an exercise.
+
+#### Documenting the disagreement scenario
+
+You can now extract the useful actions to arrive at the following run (we added some `expect` statements to check the global state).
+
+```quint {19}
+run disagreementExampleTest =
+  init
+  .then(receiveSpecificBlock("v3", { hash: 41, parent: -1, slot: 0 }))
+  .then(receiveSpecificBlock("v4", { hash: 41, parent: -1, slot: 0 }))
+  .expect(
+    s.msgBuffer == Set(
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "v3" },
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "v4" },
+    ))
+  .then(receiveSpecificBlock("v2", { hash: 42, parent: -1, slot: 0 }))
+  .then(blockNotarizedAction("v3", 0))
+  .then(blockNotarizedAction("v4", 0))
+  .expect(
+    Set(
+      { msg: FinalVoteMsg(0), sender: "v3" },
+      { msg: FinalVoteMsg(0), sender: "v4" },
+    ).subseteq(s.msgBuffer))
+  .then(receiveSpecificBlock("v1", { hash: 42, parent: -1, slot: 0 }))
+  .expect(not(agreement))
+  .expect(
+    Set(
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "v3" },
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "v4" },
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "b1" },
+      { msg: NotarVoteMsg({ hash: 41, slot: 0 }), sender: "b2" },
+      { msg: NotarVoteMsg({ hash: 42, slot: 0 }), sender: "v1" },
+      { msg: NotarVoteMsg({ hash: 42, slot: 0 }), sender: "v2" },
+      { msg: NotarVoteMsg({ hash: 42, slot: 0 }), sender: "b1" },
+      { msg: NotarVoteMsg({ hash: 42, slot: 0 }), sender: "b2" },
+      { msg: FinalVoteMsg(0), sender: "v3" },
+      { msg: FinalVoteMsg(0), sender: "v4" },
+      { msg: FinalVoteMsg(0), sender: "b1" },
+      { msg: FinalVoteMsg(0), sender: "b2" },
+    ).subseteq(allMessages))
+```
+
+We see that, at first, validators `v4` and `v3` receive a block with hash `41` (and then their `NotarVote` messages are in-flight), and then validator `v2` receives a conflicting block with hash `42`. Because there are many messages from Byzantine nodes flying around, `v3` and `v4` then actually observe that slot `0` can be notarized (and their `FinalVote` messages are in-flight after that). Then `v1` also receives the conflicting block, and now **agreement is violated** as there are also many final vote messages from Byzantine processes in the system.
+
+
+### Runs as the modern version of diagrams
+
+For me, this run is like a space/time diagram that I would draw on a whiteboard to explain our protocol ideas or scenarios. For instance, the picture is taken from the whiteboard on our office. It shows a space time diagram where there is one line per process (from bottom to top: `v1`, `v2`, `b1`, `b2`, `v3`, `v4`), time moves from left to right, arrows between lines depict message transfers, and at the beginning and end of arrows we have send and receive events. Green lines are final vote messages. Red lines are blocks and notar vote messages (I only have two whiteboard markers at the moment):
+
+<Image src="/alpenglow_whiteboard.jpg" alt="Whiteboard with a space/time diagram" width={500} height={500} />
+
+The Quint run is like this drawing but saved within a file in the repository as an executable artifact. Indeed, you can call `disagreementExampleTest` from within the REPL, which will execute the run. You will now be in the final state of this run, and you can use `s` to explore it.
+
+From the command line (outside of the REPL), you can also call `quint test statemachine.qnt` that will execute the test and show the result. You can use `quint test` in CI within Github to make sure that changing the specification didn't introduce weird behaviors.
+
+
+So, Quint runs are executable whiteboard drawings! You can use the run above to explain to your friends why Alpenglow needs more than ⅘ of correct voting power!
+
+
+So we promised to give you a guide to understand Alpenglow. Now you are even at a position where you can explain it to your friends 😉 have fun!
+
+## Writing specs is easier than you think
+
+If you think you don't have time to set up something like this for your protocol, think again! The full Quint specification for Alpenglow's Votor, including properties and runs, is less than 1 KLOC, and could be derived pretty directly from the (very well written) [paper](https://drive.google.com/file/d/1y_7ddr8oNOknTQYHzXeeMD2ProQ0WjMs/view?usp=sharing) - take a [look](https://github.com/informalsystems/Alpenglow-spec/blob/main/alpenglow.qnt). There are several resources to learn how to write specifications like this - you can start [here](/docs/language-basics).
+
+If you liked this post, you might also like [Understanding Mysticeti Consensus with Quint](https://informal.systems/blog/understanding-mysticeti-consensus-with-quint-2025).
+
+<Comments/>

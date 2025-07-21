@@ -1,7 +1,7 @@
-import { ComponentProps, ElementType } from 'react'
+import { ComponentProps, ElementType, ReactNode } from 'react'
 
 type ButtonProps<T extends 'a' | 'button'> = ComponentProps<T> & {
-  children: React.ReactNode
+  children: ReactNode
   as?: T
   variant?: keyof typeof classNamesByVariant
 }

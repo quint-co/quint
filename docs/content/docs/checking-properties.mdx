@@ -1,0 +1,126 @@
+import { Callout } from 'nextra/components'
+
+# Checking Properties
+
+<Callout type="warning" emoji="🚧️">
+  This page is under construction.
+</Callout>
+
+The main way to interact with a Quint model is by checking properties. The [simulator](./simulator) can be used to increase the confidence on a property, and [model checkers](./model-checkers) can be used to formally verify them. Properties can also be used to query the model and understand it better, finding interesting scenarios.
+
+## Actual properties
+
+Thinking about a system's properties is not an easy task, but can often be useful to increase understanding in many ways. Writing those properties in Quint enables using the tools (simulator or model checkers) to check that property, or to find out where it doesn't hold and adjust the model or the expectations about it.
+
+A system might have safety and/or liveness properties.
+- Safety: something *bad* never happens
+  - Examples: balances should never be negative, two different wallets may never hold the same NFT, honest consensus parties may never agree on different values.
+- Liveness: something *good* eventually happens
+  - Examples: eventually all parties decide on a value, eventually termination is detected, eventually a system stabilizes.
+
+It is much easier to write and check safety properties, which can be written as invariants. Liveness properties require temporal formulas, which often rely on assumptions about fairness to be useful, and that may require some hours of study time if you are not familiar already. Also, there are other, more practical, ways to convince ourselves that good things are happening (see below). Safety properties go a long way, start with those. Writing a safety property is as simple as writing a boolean expression:
+
+```quint
+val no_negatives = ADDRESSES.forall(addr => balances.get(addr) >= 0)
+```
+
+`balances` in this expression (considering the model from the [Getting Started](./getting-started) guide) is a state variable. While checking `no_negatives` as an invariant, Quint's tools will check this expression on every state, meaning it will evaluate it for different values of `balances` and expect it to always be true. It needs to be true in the initial state and in every possible state that comes from it - it cannot *vary*, as it is an *invariant*.
+
+## Non-properties to find interesting scenarios
+
+While invariants are things that need to hold on **every** state, sometimes we want to check that something is true in **some** state - a sort of sanity check. For that, we define witness properties.
+
+<Callout type="warning" emoji="🚧️">
+  Quint's built-in support for witness properties is under design. Expect more features in the near future.
+</Callout>
+
+There are currently two ways to define and check witness properties:
+1. Through the `--witnesses` flag of the simulator
+2. Through an invariant (`--invariant`) of the simulator (or the model checker, but you probably won't need it)
+
+### Counting interesting traces with `--witnesses`
+For (1), you define something that you want to be possible:
+
+```quint
+val alice_more_than_bob = balances.get("alice") > balances.get("bob")
+```
+
+The example above states that it should be possible for Alice to have more balance than Bob. This for sure won't be true for every possible state, but it needs to hold for some of them.
+
+Let's ask the simulator to check this witness:
+```sh
+quint run gettingStarted.qnt --witnesses=alice_more_than_bob --max-steps=5
+```
+
+Quint reports:
+```ansi
+[32m[ok][39m No violation found [90m(599ms).[39m
+[90mYou may increase --max-samples and --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+[32mWitnesses:[39m
+[33malice_more_than_bob[39m was witnessed in [32m7094[39m trace(s) out of 10000 explored [90m(70.94%)[39m
+[90mUse --seed=0x1c8a2137939c73 to reproduce.[39m
+```
+
+And that informs us that, in most executions, there is a state where Alice has a larger balance than that of Bob.
+
+<Callout>
+  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios. 
+</Callout>
+
+### Inspecting interesting traces with `--invariant`
+
+If we concretely want to see the trace witnessing our property, we can negate that property (add a `not` in front of it) and ask the simulator to check that as an invariant. This is like asking the simulator "is the property false in all states?" to which it may reply "no! Here's a scenario in where it is true".
+
+```sh
+quint run gettingStarted.qnt --invariant="not(alice_more_than_bob)" --max-steps=5
+```
+
+Quint reports:
+```ansi
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m9[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[31m[violation][39m Found an issue [90m(8ms).[39m
+[90mUse --verbosity=3 to show executions.[39m
+[90mUse --seed=0xa0bbf64f2c03 to reproduce.[39m
+error: Invariant violated
+```
+
+Although it says "Invariant violated", this is exactly what we wanted: an example where Alice has more balance than Bob.
+
+### Using multiple invariants with `--invariants`
+
+If you want to check multiple invariants at once and determine which ones are violated, you can use the `--invariants` option:
+
+```sh
+quint run bank.qnt --invariants no_negatives accounts_match total_positive
+```
+
+Quint will check all three invariants and report which specific ones are violated:
+
+```ansi
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m-63[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[31m[violation][39m Found an issue [90m(44ms).[39m
+[31m  ❌ no_negatives[39m
+[31m  ❌ total_positive[39m
+[90mUse --verbosity=3 to show executions.[39m
+[90mUse --seed=0x4e85b3a53f7ef to reproduce.[39m
+error: Invariant violated
+```
+
+This makes it easier to identify which specific properties are being violated when you have multiple invariants to check.
+
+The `--invariants` option also works with the `verify` command, allowing you to check multiple invariants with formal verification:
+
+```sh
+quint verify bank.qnt --invariants no_negatives accounts_match total_positive
+```
