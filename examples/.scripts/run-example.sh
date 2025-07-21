@@ -45,7 +45,7 @@ result () {
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
     local succeeded=false
-    if ($quint_cmd &> /dev/null)
+    if (eval "$quint_cmd &> /dev/null")
     then
         printf ":white_check_mark:"
         succeeded=true
@@ -145,9 +145,14 @@ get_verify_args () {
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   elif [[ "$file" == "classic/distributed/TeachingConcurrency/teachingConcurrency.qnt" ]] ; then
-    args="--temporal correct"
+    args="--invariant yContainsOne --inductive-invariant inv"
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/mutex.qnt" ]] ; then
+    args="--invariant=correctness --inductive-invariant=inv"
+  elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
+    args='--invariant TerminationDetection --inductive-invariant "TypeOK and Inv"'
   fi
   echo "${args}"
+
 }
 
 file="$1"

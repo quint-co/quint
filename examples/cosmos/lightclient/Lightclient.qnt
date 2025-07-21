@@ -110,7 +110,7 @@ module Lightclient {
             fetchedLightBlocks' = Map(TRUSTED_HEIGHT -> trustedLightBlock),
             // initially, lightBlockStatus is a function of one element, i.e., TRUSTED_HEIGHT
             lightBlockStatus' = Map(TRUSTED_HEIGHT -> "StateVerified"),
-            // the latest verified block the the trusted block
+            // the latest verified block the trusted block
             latestVerified' = trustedLightBlock,
             MonitorTransition(trustedLightBlock, trustedLightBlock, API::localClock, "SUCCESS")
         }

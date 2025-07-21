@@ -37,7 +37,7 @@ module erc20 {
     }
 
     // The result of executing an ERC20 method.
-    // If error != "", the the following holds true:
+    // If error != "", the following holds true:
     //  - the field error stores the error message,
     //  - the field state stores the input state,
     //  - the field returnedTrue is irrelevant.

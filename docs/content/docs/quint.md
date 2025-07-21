@@ -348,30 +348,32 @@ quint verify <input>
 Verify a Quint specification via Apalache
 
 Options:
-  --help                Show help                                      [boolean]
-  --version             Show version number                            [boolean]
-  --out                 output file (suppresses all console output)     [string]
-  --main                name of the main module (by default, computed from
-                        filename)                                       [string]
-  --init                name of the initializer action[string] [default: "init"]
-  --step                name of the step action       [string] [default: "step"]
-  --invariant           the invariants to check, separated by commas    [string]
-  --temporal            the temporal properties to check, separated by commas
-                                                                        [string]
-  --invariants          space separated list of invariants to check (definition
-                        names). When specified, all invariants are combined with
-                        AND and checked together, with detailed reporting of
-                        which ones were violated           [array] [default: []]
-  --out-itf             output the trace in the Informal Trace Format to file
-                        (suppresses all console output)                 [string]
-  --max-steps           the maximum number of steps in every trace
-                                                          [number] [default: 10]
-  --random-transitions  choose transitions at random (= use symbolic simulation)
-                                                      [boolean] [default: false]
-  --apalache-config     path to an additional Apalache configuration file (in
-                        JSON)                                           [string]
-  --verbosity           control how much output is produced (0 to 5)
-                                                           [number] [default: 2]
+  --help                 Show help                                      [boolean]
+  --version              Show version number                            [boolean]
+  --out                  output file (suppresses all console output)     [string]
+  --main                 name of the main module (by default, computed from
+                         filename)                                       [string]
+  --init                 name of the initializer action[string] [default: "init"]
+  --step                 name of the step action       [string] [default: "step"]
+  --invariant            the invariants to check, separated by commas    [string]
+  --inductive-invariant  inductive invariant to check. Can be used together with
+                         ordinary invariants.                            [string]
+  --temporal             the temporal properties to check, separated by commas
+                                                                         [string]
+  --invariants           space separated list of invariants to check (definition
+                         names). When specified, all invariants are combined with
+                         AND and checked together, with detailed reporting of
+                         which ones were violated           [array] [default: []]
+  --out-itf              output the trace in the Informal Trace Format to file
+                         (suppresses all console output)                 [string]
+  --max-steps            the maximum number of steps in every trace
+                                                           [number] [default: 10]
+  --random-transitions   choose transitions at random (= use symbolic simulation)
+                                                       [boolean] [default: false]
+  --apalache-config      path to an additional Apalache configuration file (in
+                         JSON)                                           [string]
+  --verbosity            control how much output is produced (0 to 5)
+                                                            [number] [default: 2]
 ```
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
@@ -397,6 +399,17 @@ written as a JSON representation of Quint IR in the output file. When the
 parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
 Format][]. This output can be conveniently displayed with the [ITF Trace
 Viewer][], or just with [jq][].
+
+- When a `--inductive-invariant` is supplied, Quint will call Apalache multiple times:
+  - 2 times if there is no ordinary invariant (`--invariant`)
+    - First, checking that the inductive invariant holds in all intiial states
+      - `init=init`, `invariant=inductive-invariant`, `max-steps=0`
+    - Then, checking that, starting from a state where inductive invariant
+      holds, if we take a step, the inductive invariant will continue to hold.
+      - `init=inductive-invariant`, `invariant=inductive-invariant`, `step=step`, `max-steps=1`
+  - 3 times if there is an ordinary invariant. The third call checks whether the
+    inductive invariant implies the ordinary invariant:
+      - `init=inductive-invariant`, `invariant=ordinary-invariant`, `max-steps=0`
 
 - If the specification cannot be run (e.g., due to a parsing error), the file
 contains an error message in JSON:

@@ -391,11 +391,12 @@ export class ToIrListener implements QuintListener {
     // val a: T = A(42)
     // val b: T = B
     // ```
-    if (fields.length == 1 && isUnitType(fields[0].fieldType)) {
-      // A single type constructor with no parameters is parsed as an alias:
+    if (fields.length == 1 && isUnitType(fields[0].fieldType) && ctx.sumTypeDefinition()._separator == undefined) {
+      // A single type constructor with no parameters is parsed as an alias, unless it has the `|` separator:
       // type T = A
       // The only proper way to disambiguate it between an alias and
       // a constructor over the unit type would be to use name resolution.
+      // Users can use `type T = | A` to make it into a sum type.
       const variantCtx = ctx.sumTypeDefinition().typeSumVariant()[0]
       const def: QuintTypeDef = {
         id: id,
@@ -1006,7 +1007,7 @@ export class ToIrListener implements QuintListener {
     // If there is not a variant param, then we have one of two things
     //
     // - a wildcard case, `_ => foo`
-    // - a hole in the paramater position, `Foo(_) => bar`
+    // - a hole in the parameter position, `Foo(_) => bar`
     const name = variantMatch && variantMatch._variantParam ? variantMatch._variantParam.text : '_'
     const params = [{ name, id: this.getId(caseCtx) }]
 

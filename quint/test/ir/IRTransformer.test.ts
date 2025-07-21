@@ -42,7 +42,7 @@ describe('enterExpr', () => {
     assert.deepEqual(moduleToString(result), moduleToString(expectedModule))
   })
 
-  it('transforms paramater type annotations', () => {
+  it('transforms parameter type annotations', () => {
     class TestTransformer implements IRTransformer {
       exitType(_: QuintType): QuintType {
         return { kind: 'var', name: 'trans' }

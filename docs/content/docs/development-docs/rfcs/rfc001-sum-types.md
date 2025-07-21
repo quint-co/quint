@@ -220,7 +220,7 @@ type Triangle =
   , c : int }
 ```
 
-Quint's type system does not yet have the the dual construct, [sum
+Quint's type system does not yet have the dual construct, [sum
 types](https://en.wikipedia.org/wiki/Tagged_union) (aka "variants",
 "co-products", or "tagged unions"). Sum types specify *disjunctions* of
 data types in a way that is verifiable statically. This lets us describe

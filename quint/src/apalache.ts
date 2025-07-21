@@ -70,10 +70,9 @@ export function createConfig(
   loadedConfig: any,
   parsedSpec: string,
   args: any,
-  invariantsList: string[],
+  inv: string[] = ['q::inv'],
   init: string = 'q::init',
-  next: string = 'q::step',
-  inv: string = 'q::inv'
+  next: string = 'q::step'
 ): ApalacheConfig {
   return {
     ...loadedConfig,
@@ -90,7 +89,7 @@ export function createConfig(
       length: args.maxSteps,
       init: init,
       next: next,
-      inv: invariantsList.length > 0 ? [inv] : undefined,
+      inv: inv,
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
         ...(loadedConfig.checker?.tuning ?? {}),
@@ -169,6 +168,18 @@ async function handleResponse(response: RunResponse): Promise<ApalacheResult<any
     switch (response.failure.errorType) {
       case 'UNEXPECTED': {
         const errData = JSON.parse(response.failure.data)
+
+        // Check for the specific assignment error pattern
+        const assignmentErrorMatch = errData.msg.match(
+          /Assignment error: <\[UNKNOWN\]>: (?:\w+::)*(\w+)' is used before it is assigned/
+        )
+        if (assignmentErrorMatch) {
+          const [, variableName] = assignmentErrorMatch
+          return err(
+            `${variableName} is used before it is assigned. You need to have either \`${variableName} == <expr>\` or \`${variableName}.in(<set>)\` before doing anything else with \`${variableName}\` in your predicate.`
+          )
+        }
+
         return err(errData.msg)
       }
       case 'PASS_FAILURE':

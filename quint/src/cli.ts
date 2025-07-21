@@ -330,6 +330,10 @@ const verifyCmd = {
         type: 'array',
         default: [],
       })
+      .option('inductive-invariant', {
+        desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
+        type: 'string',
+      })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file, e.g., out.itf.json (suppresses all console output)',
         type: 'string',
