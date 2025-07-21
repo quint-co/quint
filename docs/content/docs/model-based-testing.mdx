@@ -34,7 +34,7 @@ Observe the potential here: In many software projects, a test is a function writ
 
 ## Trace validation in one paragraph
 
-Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc.) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't.
+  * [ ] Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc.) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't. In other words, there is a bug in your code.
 
 | Data       | Expectations |
 | :---       | :---         |
@@ -220,6 +220,6 @@ And then call it after each function invocation (all of them return a `Option<St
 
 ### Running the complete example
 
-The repository includes a shell script file that will both generate the traces for you and run `cargo test`. The example includes a mismatch between model and implementation, where the implementation has a bug that allows a user to sell the same investment more than once, potentially draining funds from the bank. The model-based test we wrote identifies this issue. We can be much more confident that the model is correct as we can formally verify that this sort of draining never happens - and model-based testing transfers some of that confidence to the implementation.
+The repository includes a shell script file that will both generate the traces for you and run `cargo test`. The example includes a mismatch between model and implementation, where the implementation has a bug that allows a user to sell the same investment more than once, potentially draining funds from the bank. The model-based test we wrote identifies this issue. Assuming that the specification is thoroughly analyzed and/or verified, this in fact constitutes a bug in the implementation and not a protocol bug.
 
 **Read also:** Informal System's page on Model-Based Techniques: [mbt.informal.systems](https://mbt.informal.systems/).
