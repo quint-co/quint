@@ -13,9 +13,15 @@ import AlpenglowViolation from './assets/alpenglow_violation.mdx'
 import AlpenglowViolationMBT from './assets/alpenglow_violation_mbt.mdx'
 import { Callout, Cards } from 'nextra/components'
 import Image from 'next/image'
-import { Comments } from '../../components/blog/Comments';
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
 
 # Understanding Solana's Alpenglow with Quint
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
 
 If you are interested in understanding the next Solana consensus algorithm, this is for you. We are not going to explain the algorithm to you, but will show you an efficient way how you can figure it out for yourself using the Quint toolset to interact with the specification.
 
