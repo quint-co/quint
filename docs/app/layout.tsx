@@ -1,7 +1,6 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
-import { useThemeConfig } from 'nextra-theme-docs'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 
@@ -24,15 +23,21 @@ export const metadata = {
 }
 
 const QuintLogo = () => {
-  const theme = useThemeConfig
   return (
-    <img
-      src={`https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-${
-        theme.darkMode ? 'light' : 'dark'
-      }.svg`}
-      alt="Quint"
-      width="150px"
-    />
+    <>
+      <img
+        src="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-dark.svg"
+        alt="Quint"
+        width="150px"
+        className="dark:hidden"
+      />
+      <img
+        src="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-light.svg"
+        alt="Quint"
+        width="150px"
+        className="hidden dark:block"
+      />
+    </>
   )
 }
 

@@ -42,5 +42,4 @@ const withNextra = nextra({
   }
 })
 
-// export default withNextra()
 export default withNextra({ output: 'export', images: { unoptimized: true } })

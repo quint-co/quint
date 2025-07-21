@@ -17,19 +17,18 @@
   "scripts": {
     "dev": "next",
     "build": "next build",
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
     "format-check": "npx prettier --check '**/*.ts*' && npx eslint '**/*.ts*'",
     "format": "npx prettier --write '**/*.ts*' && npx eslint --fix '**/*.ts*'"
   },
   "devDependencies": {
+    "@next/eslint-plugin-next": "^15.4.2",
     "@tailwindcss/postcss": "4.1.10",
     "@types/node": "20.14.5",
     "@types/react": "19.1.8",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "4.1.10",
-    "typescript": "5.4.5",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
+    "autoprefixer": "^10.4.19",
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-recommended": "^4.1.0",
@@ -38,6 +37,10 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-unused-imports": "^2.0.0",
-    "prettier": "2.8.8"
+    "pagefind": "^1.3.0",
+    "postcss": "^8.4.38",
+    "prettier": "2.8.8",
+    "tailwindcss": "4.1.10",
+    "typescript": "5.4.5"
   }
 }

@@ -1,4 +1,4 @@
-import { getPosts } from '../blog/get-posts.ts'
+import { getPosts } from '../blog/get-posts'
 
 const CONFIG = {
   title: 'Quint Blog',

@@ -1,6 +1,7 @@
 export default {
   index: {
     type: 'page',
+    title: 'Home',
     theme: {
       layout: 'full',
       toc: false,
@@ -12,6 +13,7 @@ export default {
   },
   blog: {
     type: 'page',
+    href: '/blog',
     title: 'Blog',
   },
   community: {

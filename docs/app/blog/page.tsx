@@ -5,8 +5,14 @@ import { getPosts, getTags } from './get-posts'
 import '../../style.css'
 
 export const metadata = {
-  title: 'Blog',
+  title: 'Quint Blog',
 }
+
+export const dynamic = 'force-static'
+export async function generateStaticParams() {
+  return []
+}
+
 export default async function PostsPage() {
   const tags = await getTags()
   const posts = await getPosts()
@@ -23,7 +29,7 @@ export default async function PostsPage() {
         <div className="not-prose mb-12 text-center">
           <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Quint Blog</h2>
           <div className="flex flex-wrap justify-center gap-2">
-            {Object.entries(allTags).map(([tag, count]) => (
+            {Object.entries(allTags).map(([tag, count]: [string, number]) => (
               <Link
                 key={tag}
                 href={`/tags/${tag}`}
