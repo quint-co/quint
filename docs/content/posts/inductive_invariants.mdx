@@ -52,6 +52,8 @@ Inductive invariants describe what the correct states are. Here, actually, our i
 
 So the tool will tell you that, in this situation, your protocol is doing a bad thing. You will get a spurious counterexample. So, while intuition in the first place might have kept us from thinking about spurious message `m` explicitly, intuition now is our friend. The tool will show us the state where `m` was in flight, and we will be able to say "that's not possible" and we will write a formula that excludes that.
 
+### Example: Folklore Reliable Broadcast
+
 Let's now do this exercise by looking at one of the simplest fault-tolerant distributed algorithms I am aware of. I call it the **folklore reliable broadcast** algorithm, and show how you can make your thinking about correct states more thorough. As with all kinds of thinking, this needs some practice. But here is a guide on how to get into the habit.
 
 The example we are looking at is as follows: you want to make sure that, in the presence of potential process crashes, all correct processes should see the same set of messages. The challenge happens when a process, while trying to send a message to all, crashes. In this case it might be that it has sent the message only to some of the processes. So instead of storing any message I receive, we use a protocol that first makes sure that I forward the message to everyone, before I store it/deliver it.
@@ -104,7 +106,7 @@ pure def frbc(s: ProtocolState, m: Message): ProtocolState =
   }
 ```
 
-If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the quint action level is going to do the send to all. When sending is done the function can be called again, I go to the delivered state.
+If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the quint action level is going to do the send to all. When sending is done, the function can be called again, and then I go to the `Delivered` state.
 
 As typical for distributed protocol, the complexity is not in the code that describes the local computations, but in the effect the computation has on the environment. Quint allows us to encapsulate this in the action layer.
 
@@ -112,8 +114,8 @@ First we non-deterministically pick a process that takes the next step, and pote
 
 Each process maintains a `send_to` variable.
 
-* If it is set to `0`, no send operation is in progress. Then we just call the frbc function, and update the process state. If the state is `Send(msg)`, we initiate the send to all by setting `send_to` to `1`
-* If `send_to` is different from `0`, the send to all is in progress, and when a process is scheduled to take a step, it will send a message to the process stored in the variable, and then increment its value
+- If it is set to `0`, no send operation is in progress. Then we just call the `frbc` operator, and update the process state. If the state is `Send(msg)`, we initiate the send to all by setting `send_to` to `1`.
+- If `send_to` is different from `0`, the send to all is in progress, and when a process is scheduled to take a step, it will send a message to the process stored in the variable, and then increment its value.
 
 ```quint
 action step =
@@ -149,7 +151,9 @@ action step =
      }
 ```
 
-You now can run the repl and investigate a number of runs to convince yourself that the model is doing what we described.
+You now can run the REPL and investigate a number of runs to convince yourself that the model is doing what we described.
+
+#### Safety Property
 
 Let's now turn to analyzing the protocol with inductive invariants: The property safety is what we are looking for
 
@@ -164,6 +168,8 @@ val safety =
       system.get(p).s == Delivered(v) implies v.in(values_broadcast)))
 ```
 
+#### TypeOK: the first constraint
+
 For using quint (and its back-end model checker Apalache) as the first step, you need to specify the state space in the following form. The name TypeOK is inherited from TLA+. It is jargon to specify the allowed content of state variables. This is a minimal requirement on what a correct state is:
 
 ```quint
@@ -174,6 +180,8 @@ val TypeOK = and {
 ```
 
 `msg_universe` and `state_space` are variables that are defined over Cartesian products over all domains. Please refer to the quint spec for details. This is technically not so interesting,
+
+#### Deriving the Inductive Invariant
 
 So, no we specify the following candidate for our inductive invariant:
 
