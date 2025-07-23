@@ -181,23 +181,40 @@ val IndInv = and {
 ...and with the following command asks quint two questions (1) is IndInv and inductive invariant and (2) if so, does it imply that safety holds. 
 
 ```sh
-quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
+quint verify reliablebc.qnt --inductive-invariant IndInv --invariant safety
 ```
 
 Here is what Quint has to say:
 
 ```ansi
-[90m> [1/2] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
-[90m> [2/2] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
 [90m[39m
-[[1mState 0[22m] { network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m }, { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }), system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m }) }
+[[1mState 0[22m]
+{
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }
+    ),
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
+}
 
-[[1mState 1[22m] { network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m }, { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }), system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m }) }
+[[1mState 1[22m]
+{
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }
+    ),
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
+}
 
-[31m[violation][39m Found an issue [90m(882ms).[39m
+[31m[violation][39m Found an issue [90m(688ms).[39m
 [31m  ❌ IndInv[39m
 error: found a counterexample
+
 ```
 
 It says that it is violated. But look at State 0: Process 1 is in init, but it has already sent a "goodbye" message. The verifier has just tried all states described by TypeOK, and it doesn’t know that if you are in Init you haven’t sent a message yet. We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn’t have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let’s teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in init (anymore).
@@ -207,7 +224,7 @@ It says that it is violated. But look at State 0: Process 1 is in init, but it h
 val sender_in_good_state =
   Proc.forall(p => 
     network.forall(m => m.sender == p implies 
-      (system.get(p).s != Init)))
+      (system.get(p).s == Send(m.payload) or system.get(p).s == Delivered(m.payload))))
 
 val IndInv = and {
   TypeOK,
@@ -220,23 +237,31 @@ The tool will check whether this is true in the initial state, and then it check
 Now we get this:
 
 ```ansi
-[90m> [1/2] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
-[90m> [2/2] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
 [90m[39m
 [[1mState 0[22m]
 {
-  network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }),
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m0[39m }
+    ),
   system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
 }
 
 [[1mState 1[22m]
 {
-  network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }),
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m0[39m }
+    ),
   system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
 }
 
-[31m[violation][39m Found an issue [90m(754ms).[39m
+[31m[violation][39m Found an issue [90m(777ms).[39m
 [31m  ❌ IndInv[39m
 error: found a counterexample
 ```
@@ -259,7 +284,6 @@ def number_of_sent_messages_matches =
 val IndInv = and {
   TypeOK,
   number_of_sent_messages_matches,
-  no_made_up_values,
   safety,
 }
 ```
@@ -267,18 +291,18 @@ val IndInv = and {
 Note again. This is not an assumption we add to the system. It is a constraint on the state space. If the tool finds a step that would violate this, it would complain. Let's ask `quint verify` again
 
 ```ansi
-[90m> [1/2] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
-[90m> [2/2] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
 [90m[39m
 [[1mState 0[22m]
 {
   network[90m:[39m
     [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m2[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m },
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m1[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m2[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }
+      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m1[39m }
     ),
   system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
 }
@@ -287,15 +311,16 @@ Note again. This is not an assumption we add to the system. It is a constraint o
 {
   network[90m:[39m
     [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m2[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m },
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m1[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m2[39m },
-      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }
+      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m1[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
+  system[90m:[39m
+    [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
 }
 
-[31m[violation][39m Found an issue [90m(1008ms).[39m
+[31m[violation][39m Found an issue [90m(946ms).[39m
 [31m  ❌ IndInv[39m
 error: found a counterexample
 ```
@@ -319,8 +344,37 @@ val IndInv = and {
 
 Let's ask quint again:
 
-
-// TODO
+```ansi
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m]
+{
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m0[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
+      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }
+    ),
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
+}
+
+[[1mState 1[22m]
+{
+  network[90m:[39m
+    [32mSet[39m(
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m0[39m },
+      { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
+      { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }
+    ),
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
+}
+
+[31m[violation][39m Found an issue [90m(1071ms).[39m
+[31m  ❌ IndInv[39m
+error: found a counterexample
+```
 
 Now, In State 0, because for process 1, send\_to \= 2 it seems that it is about to send "good\_bye" to process 2, but if we look into the network, we see that this message is already sent. However, the message with the same payload to process 1 is missing. So the inductive invariant didn’t capture the order in which messages are sent by the protocol. Let’s constrain the state further
 
@@ -342,7 +396,14 @@ val IndInv = and {
 
 ...and ask Quint
 
-// TODO
+```ansi
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [3/3] Checking whether the inductive invariant 'IndInv' implies 'safety'...[39m
+[32m[ok][39m No violation found [90m(1580ms).[39m
+[90mYou may increase --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+```
 
 Wow. We verified safety.
 
@@ -367,6 +428,26 @@ val invariant = safety and reliability
 
 And ask
 
+```sh
+quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
+```
+
+```ansi
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [3/3] Checking whether the inductive invariant 'IndInv' implies 'invariant'...[39m
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m]
+{
+  network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }),
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
+}
+
+[31m[violation][39m Found an issue [90m(1655ms).[39m
+[31m  ❌ invariant[39m
+error: found a counterexample
+```
 
 Oups. The inductive invariant we have until now is not strong enough to prove that. What we see here is a state where process 2 has delivered "hello", but it didn’t send "hello". Indeed, in the formulas above we only constrained the network w.r.t. a process being in the send state. Let’s just add reliability to the inductive invariant candidate. If the new formula is still inductive, that should do the job. Fingers crossed.
 
@@ -382,8 +463,14 @@ val IndInv = and {
 }
 ```
 
-
-// TODO
+```ansi
+[90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
+[90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
+[90m> [3/3] Checking whether the inductive invariant 'IndInv' implies 'invariant'...[39m
+[32m[ok][39m No violation found [90m(1766ms).[39m
+[90mYou may increase --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+```
 
 We are good now. We have proven safety, and a part of liveness.
 
