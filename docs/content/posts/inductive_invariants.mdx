@@ -21,56 +21,62 @@ import { PostMeta } from '../../components/blog/PostMeta'
   authors={metadata.authors}
 />
 
+This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line flag called `--inductive-invariant`. The term "inductive invariant" is scary, but we like them, as they allow us to prove the absence of design bugs in distributed systems. Moreover, the act of writing an inductive invariant is a great tool that allows you to learn how to **think** about distributed systems. Before diving into the tutorial part, let's discuss what is going on here.
+
 ## Understanding the system you build
 
-This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line flag called "--inductive-invariant", The term "inductive invariant" is scary. We like inductive invariants, as they allow us to prove the absence of design bugs in distributed systems. But the act of writing an inductive invariant is a great tool that allows you to learn how to think about distributed systems. Before diving into the tutorial part, let's discuss what is going on here.
-
-Like in all relevant areas in distributed systems, there is a great paper by Leslie Lamport on this. Reading it can be quite intimidating. Read it only if you are very self-confident as an engineer. We suggest you continue with this post first before you read Lamport's [paper](https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf).
+Like in all relevant areas in distributed systems, there is a great paper by Leslie Lamport on this. Reading it can be quite intimidating: read it only if you are very self-confident as an engineer. We suggest you continue with this post first before you read Lamport's [paper](https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf).
 
 For us, the simple but impactful statement in his paper is this
 > "A computing device does the correct thing only because it maintains a correct state"
 
-The notion of a "correct state" is super important, and we will come back to it a lot in this text. If you want to build confidence that your system is doing the right thing, you need to demonstrate that it "maintains a correct state". Surprisingly, "Maintains" is the easy part here. It just means executing your protocol. Put simply, you take an arbitrary correct state, you let your protocol do a step, and you end up in another correct state. We know what taking a step means. It is defined by the program code or by your actions defined in Quint. This is clear. But what is "a correct state"? Well, let's say that the initial state is correct. But then? This is surprisingly hard.
+The notion of a "correct state" is super important, and we will come back to it a lot in this text. If you want to build confidence that your system is doing the right thing, you need to demonstrate that it "maintains a correct state". Surprisingly, "maintains" is the easy part here. It just means executing your protocol. Put simply, you take an arbitrary correct state, you let your protocol do a step, and you end up in another correct state. We know what taking a step means: it is defined by the program code or by your actions defined in Quint. This is clear. But what is "a correct state"? Well, let's say that the initial state is correct. But then? This is surprisingly hard.
 
-A correct state needs to be described in terms of a snapshot of all the variable values and messages that are in-flight at a moment in time. This means, you are not allowed to talk about past events. You need to look at a state in isolation and need to come up with one of the two answers "correct" or "incorrect". In other words, we need a logical formula — a predicate — over the variables of the system. So we can then say that a state is correct if and only if the formula evaluates to true in this state. Now,
+A correct state needs to be described in terms of a snapshot of all the variable values and messages that are in-flight at a moment in time. This means you are not allowed to talk about past events. You need to look at a state in isolation and need to come up with one of the two answers: "correct" or "incorrect". In other words, we need a logical formula — a predicate — over the variables of the system. So we can then say that a state is correct if and only if the formula evaluates to true in this state. Now,
 
 1. if all initial states are correct, and
-2. if in a correct state, I apply a protocol state and the result is also a correct state,
+2. if in a correct state, I apply a protocol step and the result is also a correct state,
 
 then we call this formula an inductive invariant. End of lecture. There was a lot of logic that came at a surprise. I am sorry, but we are done now.
 
-Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically he is right. Still, we dare to argue the opposite: You might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn't touched it since"). So it is possible that you understand your system, without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
+Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically he is right. Still, we dare to argue the opposite: you might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn't touched it since"). So it is possible that you understand your system without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
 
 Deriving an inductive invariant with the help of Quint can help you
 
-1. Figuring out that your intuition was good. You can  sharpen your thinking about distributed systems along the way. After all, we agree with Lamport that we have more confidence in a system once we know how to write the inductive invariant
-2. Figuring out that your intuition perhaps was bad, and there was this one scenario you didn't think of
+1. Figuring out that your intuition was good. You can sharpen your thinking about distributed systems along the way. After all, we agree with Lamport that we have more confidence in a system once we know how to write the inductive invariant.
+2. Figuring out that your intuition perhaps was bad, and there was this one scenario you didn't think of.
 
-### Protocol intuition pros and cons
+### Protocol intuition: friend or foe?
 
-Inductive invariants describe what the correct states are. Here actually, our intuition about systems is a challenge that we need to overcome. If you talk about distributed protocols, then there are things that we take for granted, e.g., a message m is on the network only if some process has sent it. This is so obvious why bother with it? Well, if you don't exclude states where m is in-flight, although the sender is in a state where it is impossible to have sent a message in the past, you will mark such a state as correct. But then applying a step to such a state might lead your protocol to do the incorrect thing.
+Inductive invariants describe what the correct states are. Here, actually, our intuition about systems is a challenge that we need to overcome. If you talk about distributed protocols, then there are things that we take for granted, e.g., a message `m` is on the network only if some process has sent it. This is so obvious why bother with it? Well, if you don't exclude states where `m` is in-flight, although the sender is in a state where it is impossible to have sent a message in the past, you will mark such a state as correct. But then applying a step to such a state might lead your protocol to do the incorrect thing.
 
-So the tool will tell you that in this situation your protocol is doing a bad thing. You will get a spurious counterexample. So, while intuition in the first place might have kept us from thinking about spurious message m explicitly, intuition now is our friend. The tool will show us the state where m was in flight, and we will be able to say "that's not possible" and we will write a formula that excludes that.
+So the tool will tell you that, in this situation, your protocol is doing a bad thing. You will get a spurious counterexample. So, while intuition in the first place might have kept us from thinking about spurious message `m` explicitly, intuition now is our friend. The tool will show us the state where `m` was in flight, and we will be able to say "that's not possible" and we will write a formula that excludes that.
 
-Let's now do this exercise by looking at one of the simplest fault-tolerant distributed algorithms I am aware of. I call it the folklore reliable broadcast algorithm, and show how you can make your thinking about correct states more thorough. As with all kinds of thinking, this needs some practice. But here is a guide on how to get into the habit.
+Let's now do this exercise by looking at one of the simplest fault-tolerant distributed algorithms I am aware of. I call it the **folklore reliable broadcast** algorithm, and show how you can make your thinking about correct states more thorough. As with all kinds of thinking, this needs some practice. But here is a guide on how to get into the habit.
 
-The example we are looking at is as follows: you want to make sure that in the presence of potential process crashes, all correct processes should see the same set of messages. The challenge is that if a process, while trying to send a message to all, crashes. In this case it might be that it has sent the message only to some of the processes. So instead of storing any message I receive, we use a protocol that first makes sure that I forward the message to everyone, before I store it/deliver it.
+The example we are looking at is as follows: you want to make sure that, in the presence of potential process crashes, all correct processes should see the same set of messages. The challenge happens when a process, while trying to send a message to all, crashes. In this case it might be that it has sent the message only to some of the processes. So instead of storing any message I receive, we use a protocol that first makes sure that I forward the message to everyone, before I store it/deliver it.
 
+```
 To broadcast(m):
 Send m to all
 Deliver m
+```
 
+```
 On receiving m:
 Send m to all
 Deliver m
+```
+
+We want the following properties to hold:
 
 1. If the sender is correct it will eventually deliver the message.
-2. If a correct process delivers a message m then eventually all correct processes will deliver m
-3. If no process broadcasts m then no process will ever deliver m.
+2. If a correct process delivers a message `m` then eventually all correct processes will deliver `m`
+3. If no process broadcasts `m` then no process will ever deliver `m`.
 
 The first two properties are liveness properties. Let's mostly ignore them for today. The third one is a safety property.
 
-We have encoded a simple version in quint. We ignore the original broadcaster, and just preload the variable network with messages that it has sent to a (possibly empty) set of receivers:
+We have encoded a simple version in Quint. We ignore the original broadcaster, and just preload the variable network with messages that it has sent to a (possibly empty) set of receivers:
 
 ```quint
 action init =
@@ -82,9 +88,9 @@ action init =
   }
 ```
 
-The variable system is a map that stores for each process which state it is in. Initially, they are in the initial state.
+The variable `system` is a map that stores, for each process, which state it is in. Initially, they are in the initial state. The variable `network` stores all messages that were ever sent.
 
-The next thing to encode is the code snippet from above:
+The next thing to encode is the pseudocode snippet from above:
 
 ```quint
 pure def frbc(s: ProtocolState, m: Message): ProtocolState =
