@@ -23,14 +23,14 @@ import { PostMeta } from '../../components/blog/PostMeta'
 
 ## Understanding the system you build
 
-This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line flag called "--inductive-invariant", The term "inductive invariant" is scary. We like inductive invariants, as they allow us to prove the absence of design bugs in distributed systems. But the act of writing an inductive invariant is a great tool that allows you to learn how to think about distributed systems. Before diving into the tutorial part, let’s discuss what is going on here.
+This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line flag called "--inductive-invariant", The term "inductive invariant" is scary. We like inductive invariants, as they allow us to prove the absence of design bugs in distributed systems. But the act of writing an inductive invariant is a great tool that allows you to learn how to think about distributed systems. Before diving into the tutorial part, let's discuss what is going on here.
 
-Like in all relevant areas in distributed systems, there is a great paper by Leslie Lamport on this. Reading it can be quite intimidating. Read it only if you are very self-confident as an engineer. We suggest you continue with this post first before you read Lamport’s [paper](https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf).
+Like in all relevant areas in distributed systems, there is a great paper by Leslie Lamport on this. Reading it can be quite intimidating. Read it only if you are very self-confident as an engineer. We suggest you continue with this post first before you read Lamport's [paper](https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf).
 
 For us, the simple but impactful statement in his paper is this
 > "A computing device does the correct thing only because it maintains a correct state"
 
-The notion of a "correct state" is super important, and we will come back to it a lot in this text. If you want to build confidence that your system is doing the right thing, you need to demonstrate that it "maintains a correct state". Surprisingly, "Maintains" is the easy part here. It just means executing your protocol. Put simply, you take an arbitrary correct state, you let your protocol do a step, and you end up in another correct state. We know what taking a step means. It is defined by the program code or by your actions defined in Quint. This is clear. But what is "a correct state"? Well, let’s say that the initial state is correct. But then? This is surprisingly hard.
+The notion of a "correct state" is super important, and we will come back to it a lot in this text. If you want to build confidence that your system is doing the right thing, you need to demonstrate that it "maintains a correct state". Surprisingly, "Maintains" is the easy part here. It just means executing your protocol. Put simply, you take an arbitrary correct state, you let your protocol do a step, and you end up in another correct state. We know what taking a step means. It is defined by the program code or by your actions defined in Quint. This is clear. But what is "a correct state"? Well, let's say that the initial state is correct. But then? This is surprisingly hard.
 
 A correct state needs to be described in terms of a snapshot of all the variable values and messages that are in-flight at a moment in time. This means, you are not allowed to talk about past events. You need to look at a state in isolation and need to come up with one of the two answers "correct" or "incorrect". In other words, we need a logical formula — a predicate — over the variables of the system. So we can then say that a state is correct if and only if the formula evaluates to true in this state. Now,
 
@@ -39,20 +39,20 @@ A correct state needs to be described in terms of a snapshot of all the variable
 
 then we call this formula an inductive invariant. End of lecture. There was a lot of logic that came at a surprise. I am sorry, but we are done now.
 
-Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically he is right. Still, we dare to argue the opposite: You might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn’t touched it since"). So it is possible that you understand your system, without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
+Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically he is right. Still, we dare to argue the opposite: You might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn't touched it since"). So it is possible that you understand your system, without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
 
 Deriving an inductive invariant with the help of Quint can help you
 
 1. Figuring out that your intuition was good. You can  sharpen your thinking about distributed systems along the way. After all, we agree with Lamport that we have more confidence in a system once we know how to write the inductive invariant
-2. Figuring out that your intuition perhaps was bad, and there was this one scenario you didn’t think of
+2. Figuring out that your intuition perhaps was bad, and there was this one scenario you didn't think of
 
 ### Protocol intuition pros and cons
 
-Inductive invariants describe what the correct states are. Here actually, our intuition about systems is a challenge that we need to overcome. If you talk about distributed protocols, then there are things that we take for granted, e.g., a message m is on the network only if some process has sent it. This is so obvious why bother with it? Well, if you don’t exclude states where m is in-flight, although the sender is in a state where it is impossible to have sent a message in the past, you will mark such a state as correct. But then applying a step to such a state might lead your protocol to do the incorrect thing.
+Inductive invariants describe what the correct states are. Here actually, our intuition about systems is a challenge that we need to overcome. If you talk about distributed protocols, then there are things that we take for granted, e.g., a message m is on the network only if some process has sent it. This is so obvious why bother with it? Well, if you don't exclude states where m is in-flight, although the sender is in a state where it is impossible to have sent a message in the past, you will mark such a state as correct. But then applying a step to such a state might lead your protocol to do the incorrect thing.
 
-So the tool will tell you that in this situation your protocol is doing a bad thing. You will get a spurious counterexample. So, while intuition in the first place might have kept us from thinking about spurious message m explicitly, intuition now is our friend. The tool will show us the state where m was in flight, and we will be able to say "that’s not possible" and we will write a formula that excludes that.
+So the tool will tell you that in this situation your protocol is doing a bad thing. You will get a spurious counterexample. So, while intuition in the first place might have kept us from thinking about spurious message m explicitly, intuition now is our friend. The tool will show us the state where m was in flight, and we will be able to say "that's not possible" and we will write a formula that excludes that.
 
-Let’s now do this exercise by looking at one of the simplest fault-tolerant distributed algorithms I am aware of. I call it the folklore reliable broadcast algorithm, and show how you can make your thinking about correct states more thorough. As with all kinds of thinking, this needs some practice. But here is a guide on how to get into the habit.
+Let's now do this exercise by looking at one of the simplest fault-tolerant distributed algorithms I am aware of. I call it the folklore reliable broadcast algorithm, and show how you can make your thinking about correct states more thorough. As with all kinds of thinking, this needs some practice. But here is a guide on how to get into the habit.
 
 The example we are looking at is as follows: you want to make sure that in the presence of potential process crashes, all correct processes should see the same set of messages. The challenge is that if a process, while trying to send a message to all, crashes. In this case it might be that it has sent the message only to some of the processes. So instead of storing any message I receive, we use a protocol that first makes sure that I forward the message to everyone, before I store it/deliver it.
 
@@ -68,7 +68,7 @@ Deliver m
 2. If a correct process delivers a message m then eventually all correct processes will deliver m
 3. If no process broadcasts m then no process will ever deliver m.
 
-The first two properties are liveness properties. Let’s mostly ignore them for today. The third one is a safety property.
+The first two properties are liveness properties. Let's mostly ignore them for today. The third one is a safety property.
 
 We have encoded a simple version in quint. We ignore the original broadcaster, and just preload the variable network with messages that it has sent to a (possibly empty) set of receivers:
 
@@ -77,7 +77,7 @@ action init =
   nondet initial_receivers = Proc.powerset().oneOf()
   nondet x = Domain.oneOf()
   all {
-    network' = initial_receivers.map(i => {sender: initial_sender, receiver: i, payload: x}),
+    network' = initial_receivers.map(i => { sender: initial_sender, receiver: i, payload: x }),
     system' = Proc.mapBy(_ => initial_state)
   }
 ```
@@ -145,7 +145,7 @@ action step =
 
 You now can run the repl and investigate a number of runs to convince yourself that the model is doing what we described.
 
-Let’s now turn to analyzing the protocol with inductive invariants: The property safety is what we are looking for
+Let's now turn to analyzing the protocol with inductive invariants: The property safety is what we are looking for
 
 ```quint
 val values_broadcast = network.filter(m => m.sender == initial_sender).map(m => m.payload)
@@ -173,8 +173,8 @@ So, no we specify the following candidate for our inductive invariant:
 
 ```quint
 val IndInv = and {
-   TypeOK,
-   safety,
+ TypeOK,
+ safety,
 }
 ```
 
@@ -186,7 +186,7 @@ quint verify reliablebc.qnt --inductive-invariant IndInv --invariant safety
 
 Here is what Quint has to say:
 
-```ansi
+```ansi /[State 0]/ /Init/1 /Send("goodbye")/
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
@@ -217,7 +217,7 @@ error: found a counterexample
 
 ```
 
-It says that it is violated. But look at State 0: Process 1 is in init, but it has already sent a "goodbye" message. The verifier has just tried all states described by TypeOK, and it doesn’t know that if you are in Init you haven’t sent a message yet. We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn’t have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let’s teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in init (anymore).
+It says that it is violated. But look at `State 0`: Process `1` is in `Init`, but it has already sent a `"goodbye"` message. The verifier has just tried all states described by `TypeOK`, and it doesn't know that if you are in `Init` you haven't sent a message yet. We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `Send(m)` or `Delivered(m)` for that message's payload `m`.
 
 ```quint
 /// If a message is sent, then the sender is in Send or Delivered state
@@ -236,7 +236,7 @@ val IndInv = and {
 The tool will check whether this is true in the initial state, and then it checks that if it holds in a state and we apply the step action, it also holds in the successor state. So, we are describing what we believe captures an aspect of a correct state, and the tool checks for us whether it is true. So we cannot do something wrong here. If we give a wrong characterization of the correct state the tool will tell us.
 Now we get this:
 
-```ansi
+```ansi {9-10} /send_to/2 /0/4
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
@@ -266,7 +266,7 @@ Now we get this:
 error: found a counterexample
 ```
 
-The issue from above is gone but now we have the opposite problem. Process 2 is in the send state with `send_to == 0` (meaning sending is over), but the state the tool picked doesn’t contain any messages sent by process `2`.
+The issue from above is gone but now we have the opposite problem. Process `2` is in the send state with `send_to == 0` (meaning sending is over), but the state the tool picked doesn't contain any messages sent by process `2`.
 
 So let's constrain the state further. The following formula links the number of sent messages to the state of the process. If process p is in `Send(v)` and `send_to` is zero sending is over. This means the number of messages sent by the process must be the number of processes in the system. For other values of `send_to`, it indicates the number of messages already sent.
 
@@ -290,7 +290,7 @@ val IndInv = and {
 
 Note again. This is not an assumption we add to the system. It is a constraint on the state space. If the tool finds a step that would violate this, it would complain. Let's ask `quint verify` again
 
-```ansi
+```ansi {11} /"goodbye"/
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
@@ -325,7 +325,7 @@ Note again. This is not an assumption we add to the system. It is a constraint o
 error: found a counterexample
 ```
 
-This is weird. Process 2 has forwarded value "goodbye", but there is no "goodbye" message from the original broadcaster in the network. Actually, we believe that our algorithm only forwards messages that were originally sent. So let’s add this:
+This is weird. Process `2` has forwarded value `"goodbye"`, but there is no `"goodbye"` message from the original broadcaster (`initial_sender`, which is `0`) in the network. Actually, we believe that our algorithm only forwards messages that were originally sent. So let's add this:
 ```quint
 /// If a process is in Send(v) state, then the value v was initially sent
 val no_made_up_values = 
@@ -344,7 +344,7 @@ val IndInv = and {
 
 Let's ask quint again:
 
-```ansi
+```ansi /[State 0]/ /send_to/1 /2/4 {10}
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
@@ -376,13 +376,13 @@ Let's ask quint again:
 error: found a counterexample
 ```
 
-Now, In State 0, because for process 1, send\_to \= 2 it seems that it is about to send "good\_bye" to process 2, but if we look into the network, we see that this message is already sent. However, the message with the same payload to process 1 is missing. So the inductive invariant didn’t capture the order in which messages are sent by the protocol. Let’s constrain the state further
+Now, In `State 0`, because for process `1`, `send_to == 2` it seems that it is about to send `"goodbye"` to process `2`, but if we look into the network, we see that this message is already sent. However, the message with the same payload to process `1` is missing. So the inductive invariant didn't capture the order in which messages are sent by the protocol. Let's constrain the state further
 
 ```quint
 /// If a message to process 2 is sent then the same message also to process 1 is there.
 val messages_sent_in_order =
   network.forall(m => (m.receiver > 1 and m.sender != initial_sender)
-    implies { sender: m.sender, receiver: m.receiver -1, payload: m.payload }.in(network))
+    implies { sender: m.sender, receiver: m.receiver - 1, payload: m.payload }.in(network))
     
 val IndInv = and {
   TypeOK,
@@ -432,7 +432,7 @@ And ask
 quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
 ```
 
-```ansi
+```ansi /Delivered("hello")/
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90m> [3/3] Checking whether the inductive invariant 'IndInv' implies 'invariant'...[39m
@@ -449,7 +449,7 @@ quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
 error: found a counterexample
 ```
 
-Oups. The inductive invariant we have until now is not strong enough to prove that. What we see here is a state where process 2 has delivered "hello", but it didn’t send "hello". Indeed, in the formulas above we only constrained the network w.r.t. a process being in the send state. Let’s just add reliability to the inductive invariant candidate. If the new formula is still inductive, that should do the job. Fingers crossed.
+Oups. The inductive invariant we have until now is not strong enough to prove that. What we see here is a state where process `2` has delivered `"hello"`, but it didn't send `"hello"`. Indeed, in the formulas above we only constrained the network w.r.t. a process being in the send state. Let's just add reliability to the inductive invariant candidate. If the new formula is still inductive, that should do the job. Fingers crossed.
 
 ```quint
 val IndInv = and {
@@ -474,23 +474,23 @@ val IndInv = and {
 
 We are good now. We have proven safety, and a part of liveness.
 
-Observe that we refined the inductive invariants from counter examples. Let’s go back to Lamports "A computing device does the correct thing only because it maintains a correct state". One could argue that what we have done here was just to explain to quint (and its underlying solver Apalache) what a correct state is.
+Observe that we refined the inductive invariants from counter examples. Let's go back to Lamports "A computing device does the correct thing only because it maintains a correct state". One could argue that what we have done here was just to explain to quint (and its underlying solver Apalache) what a correct state is.
 
 However, to me it feels a bit different. In fact, quint used the Socratic method to teach us what a correct state is. The dialog was like this
 
 Me: The world is in a correct state if no-one ever delivers a message that never was sent (safety).
 
-Socrates: Are you saying that the world is OK if there are messages that appear to be sent by Glaukon, but Glaukon hasn’t sent any.
+Socrates: Are you saying that the world is OK if there are messages that appear to be sent by Glaukon, but Glaukon hasn't sent any.
 
 Me: Of course not, this would be a curious world. The perfect world I imagine is one where for every message around the originator has actually sent it.
 
 Socrates: So that would mean in a perfect world, I could have sent many messages, but none can be found anywhere.
 
-Me: you are right, great Socrates, let’s see …
+Me: you are right, great Socrates, let's see …
 
 So quint helps us sharpening our thinking and reasoning about distributed systems.
 
-The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport’s bakery algorithm in Quint. The inductive invariant is a monster.
+The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint. The inductive invariant is a monster.
 
 TODO: outro
 
