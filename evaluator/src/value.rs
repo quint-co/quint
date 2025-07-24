@@ -151,7 +151,7 @@ impl PartialEq for Value {
             (Value::CrossProduct(a), Value::CrossProduct(b)) => *a == *b,
             (Value::PowerSet(a), Value::PowerSet(b)) => *a == *b,
             (Value::MapSet(a1, b1), Value::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
-            // To compare two sets represented in different ways, we need to enumarate them both
+            // To compare two sets represented in different ways, we need to enumerate them both
             (a, b) if a.is_set() && b.is_set() => a.as_set() == b.as_set(),
             _ => false,
         }

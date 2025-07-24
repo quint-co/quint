@@ -76,7 +76,7 @@ impl CompiledExprWithLazyArgs {
 
 pub struct Env {
     // The storage for state variables, holding their values on the current and
-    // next state. We need it in the enviroment for taking and restoring snapshots.
+    // next state. We need it in the environment for taking and restoring snapshots.
     pub var_storage: Rc<RefCell<Storage>>,
 
     // The random number generator, used for nondeterministic choices. This is stateful.
