@@ -370,7 +370,7 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| {
                     register.borrow().clone().value.ok_or(QuintError::new(
                         "QNT502",
-                        format!("Variable {} not set", name).as_str(),
+                        format!("Variable {name} not set").as_str(),
                     ))
                 })
             }

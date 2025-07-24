@@ -182,7 +182,7 @@ impl Value {
                     .cardinality()
                     .pow(domain.cardinality().try_into().unwrap())
             }
-            _ => panic!("Cardinality not implemented for {:?}", self),
+            _ => panic!("Cardinality not implemented for {self:?}"),
         }
     }
 
@@ -206,7 +206,7 @@ impl Value {
                 // Check if domains are equal and all map values are in the range set
                 map_domain == **domain && map.values().all(|v| range.contains(v))
             }
-            _ => panic!("contains not implemented for {:?}", self),
+            _ => panic!("contains not implemented for {self:?}"),
         }
     }
 
@@ -367,7 +367,7 @@ impl Value {
         match self {
             Value::Tuple(elems) => elems,
             Value::List(elems) => elems,
-            _ => panic!("Expected list, got {:?}", self),
+            _ => panic!("Expected list, got {self:?}"),
         }
     }
 
@@ -443,9 +443,9 @@ pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Int(n) => write!(f, "{}", n),
-            Value::Bool(b) => write!(f, "{}", b),
-            Value::Str(s) => write!(f, "{:?}", s),
+            Value::Int(n) => write!(f, "{n}"),
+            Value::Bool(b) => write!(f, "{b}"),
+            Value::Str(s) => write!(f, "{s:?}"),
             Value::Set(_)
             | Value::Interval(_, _)
             | Value::CrossProduct(_)
@@ -456,7 +456,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{:#}", set)?;
+                    write!(f, "{set:#}")?;
                 }
                 write!(f, ")")
             }
@@ -466,7 +466,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{:#}", elem)?;
+                    write!(f, "{elem:#}")?;
                 }
                 write!(f, ")")
             }
@@ -476,7 +476,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}: {:#}", name, value)?;
+                    write!(f, "{name}: {value:#}")?;
                 }
                 write!(f, " }}")
             }
@@ -486,7 +486,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "Tup({:#}, {:#})", key, value)?;
+                    write!(f, "Tup({key:#}, {value:#})")?;
                 }
                 write!(f, ")")
             }
@@ -496,7 +496,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{:#}", elem)?;
+                    write!(f, "{elem:#}")?;
                 }
                 write!(f, ")")
             }
@@ -504,10 +504,10 @@ impl fmt::Display for Value {
             Value::Variant(label, value) => {
                 if let Value::Tuple(elems) = &**value {
                     if elems.is_empty() {
-                        return write!(f, "{}", label);
+                        return write!(f, "{label}");
                     }
                 }
-                write!(f, "{}({:#})", label, value)
+                write!(f, "{label}({value:#})")
             }
         }
     }
