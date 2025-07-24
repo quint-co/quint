@@ -101,7 +101,7 @@ type [name] = [tp];
 In the above definition, `[name]` is a unique identifier that will be associated
 with the type, and `[tp]` is the type to be associated with the name, e.g.,
 `int` or `Set[int]`. To see a complete description of all available types, visit the Section
-[Type System 1.2](https://github.com/informalsystems/quint/blob/main/docs/pages/docs/lang.md#type-system-12)
+[Type System 1.2](https://github.com/informalsystems/quint/blob/main/docs/content/docs/lang.md#type-system-12)
 of the language manual.
 
 Although it is convenient to declare type aliases, it is not mandatory.
