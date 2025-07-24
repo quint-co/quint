@@ -200,7 +200,7 @@ quint verify reliablebc.qnt --inductive-invariant IndInv --invariant safety
 
 Here is what Quint has to say:
 
-```ansi /[State 0]/ /Init/1 /Send("goodbye")/
+```ansi /[State 0]/ /Init/1 {9} 
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
 [90m> [2/3] Checking whether 'step' preserves the inductive invariant 'IndInv'...[39m
 [90mAn example execution:[39m
@@ -231,7 +231,13 @@ error: found a counterexample
 
 ```
 
-It says that it is violated. But look at `State 0`: Process `1` is in `Init`, but it has already sent a `"goodbye"` message. The verifier has just tried all states described by `TypeOK`, and it doesn't know that if you are in `Init` you haven't sent a message yet. We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `Send(m)` or `Delivered(m)` for that message's payload `m`.
+It says that it is violated. But look at `State 0`: Process `1` is in `Init`, but it has already sent a `"goodbye"` message. The verifier has just tried all states described by `TypeOK`, and it doesn't know that if you are in `Init` you haven't sent a message yet.
+
+> [!NOTE]
+>
+> Observe that we are still motivated to show that `safety` is an invariant, that is, any state reachable from the initial state satisfies `safety`. However, what the tool tells us here is that `safety` alone is not enough to characterize correct states. In other words, while hopefully turning out to be an invariant towards the end of this post, we already know now, for certain, that safety alone is **not inductive**. So we need to find a more precise description of a correct state.
+
+We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `Send(m)` or `Delivered(m)` for that message's payload `m`.
 
 ```quint
 /// If a message is sent, then the sender is in Send or Delivered state
