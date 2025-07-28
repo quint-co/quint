@@ -46,6 +46,8 @@ Deriving an inductive invariant with the help of Quint can help you
 1. Figuring out that your intuition was good. You can sharpen your thinking about distributed systems along the way. After all, we agree with Lamport that we have more confidence in a system once we know how to write the inductive invariant.
 2. Figuring out that your intuition perhaps was bad, and there was this one scenario you didn't think of.
 
+// TODO: plus, they are stronger than ordinary invariant, link do docs page
+
 ### Protocol intuition: friend or foe?
 
 Inductive invariants describe what the correct states are. Here, actually, our intuition about systems is a challenge that we need to overcome. If you talk about distributed protocols, then there are things that we take for granted, e.g., a message `m` is on the network only if some process has sent it. This is so obvious why bother with it? Well, if you don't exclude states where `m` is in-flight, although the sender is in a state where it is impossible to have sent a message in the past, you will mark such a state as correct. But then applying a step to such a state might lead your protocol to do the incorrect thing.
@@ -96,59 +98,60 @@ The next thing to encode is the pseudocode snippet from above:
 
 ```quint
 pure def frbc(s: ProtocolState, m: Message): ProtocolState =
-  match s {
-    | Init => match m {
-        | Some(c) => Send(c)
-        | None => s
-      }
-    | Send(c) => Delivered(c)
-    | _ => s
+    match s {
+      | Init =>
+        match m {
+          | Some(c) => SendToAll(c)
+          | None => s
+        }
+      | SendToAll(c) => Delivered(c)
+      | _ => s
+    }
+```
+
+If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the Quint action level is going to do the send to all. When sending is done, the function can be called again, and then I go to the `Delivered` state.
+
+On top of that, processes also keep track of sending a message to all processes, which we do here with the help of the `send_to` counter. The `send_to_next` operator describes the local computation of determining the next receiver and incrementing the counter (going back to zero when it would become greater than the number of the last process).
+
+```quint
+pure def send_to_next(l: LocalState): { post: LocalState, recv: ProcessID, payload: Payload } =
+  match l.s {
+    | SendToAll(m) => {
+      post: { ...l, send_to: (l.send_to + 1) % (Proc.size() + 1) },
+      recv: l.send_to,
+      payload: m
+    }
+    | _ => { post: l, recv: -1, payload: "" } // impossible due to `send_in_progress` check
   }
 ```
 
-If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the quint action level is going to do the send to all. When sending is done, the function can be called again, and then I go to the `Delivered` state.
-
 As typical for distributed protocol, the complexity is not in the code that describes the local computations, but in the effect the computation has on the environment. Quint allows us to encapsulate this in the action layer.
 
-First we non-deterministically pick a process that takes the next step, and potentially a message it should act on.
-
-Each process maintains a `send_to` variable.
-
-- If it is set to `0`, no send operation is in progress. Then we just call the `frbc` operator, and update the process state. If the state is `Send(msg)`, we initiate the send to all by setting `send_to` to `1`.
-- If `send_to` is different from `0`, the send to all is in progress, and when a process is scheduled to take a step, it will send a message to the process stored in the variable, and then increment its value.
+First we non-deterministically pick a process that takes the next step, and check if this process is in the middle of a `SendToAll` operation.
+- If it is, then we call `send_to_next` and assign the resulting receiver and payload to a new message in the network, an update the local state of the process in the system
+- If it is not, then we call `frbc` with a non-deterministic input, which will be used if the process is in the `Init` state, as it will start sending one of the existing messages. The input can also be `None` to explicitly capture the asynchrony of the system.
 
 ```quint
 action step =
   nondet p = Proc.oneOf()
-  nondet m = network.filter(m => m.receiver == p).oneOf()
-  nondet input = Set(None, Some(m.payload)).oneOf()
-    if (system.get(p).send_to == 0) // no send in progress. p can make a step
-      val res = frbc(system.get(p).s, input)
-      match res {
-        | Send(msg) => all {
-          network' = network,
-          system' = system.set(p, {s: res, send_to: 1}),
-          }
-        | _ => all {
-          network' = network,
-          system' = system.set(p, {s: res, send_to: system.get(p).send_to}),
-          }
-      }
-    else // sending in progress
-      all {
-        match system.get(p).s {
-          | Send(i) => all {
-              // send to next process
-              network' = network.union(Set({sender: p, receiver: system.get(p).send_to, payload: i})),
-              // update who to send to next
-              system' = system.set(p, { ... system.get(p), send_to: (system.get(p).send_to + 1) % (Proc.size() + 1)}),
-            }
-          | _ => all { // should not happen
-            network' = network,
-            system' = system
-          }
-        }
+  if (system.get(p).send_in_progress())
+    val res = send_to_next(system.get(p))
+    all {
+      network' = network.union(Set({sender: p, receiver: res.recv, payload: res.payload})),
+      system' = system.set(p, res.post),
      }
+  else
+    nondet m = network.filter(m => m.receiver == p).oneOf()
+    nondet input = Set(None, Some(m.payload)).oneOf()
+    val res = frbc(system.get(p).s, input)
+    val start_send = system.get(p).s == Init and res != Init
+    all {
+      network' = network,
+      system' = system.set(p, {
+        s: res,
+        send_to: if (start_send) 1 else 0
+      }),
+    }
 ```
 
 You now can run the REPL and investigate a number of runs to convince yourself that the model is doing what we described.
@@ -212,7 +215,7 @@ Here is what Quint has to say:
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m2[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
 }
 
 [[1mState 1[22m]
@@ -237,14 +240,14 @@ It says that it is violated. But look at `State 0`: Process `1` is in `Init`, bu
 >
 > Observe that we are still motivated to show that `safety` is an invariant, that is, any state reachable from the initial state satisfies `safety`. However, what the tool tells us here is that `safety` alone is not enough to characterize correct states. In other words, while hopefully turning out to be an invariant towards the end of this post, we already know now, for certain, that safety alone is **not inductive**. So we need to find a more precise description of a correct state.
 
-We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `Send(m)` or `Delivered(m)` for that message's payload `m`.
+We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `SendToAll(m)` or `Delivered(m)` for that message's payload `m`.
 
 ```quint
-/// If a message is sent, then the sender is in Send or Delivered state
+/// If a message is sent, then the sender is in SendToAll or Delivered state
 val sender_in_good_state =
   Proc.forall(p =>
     network.forall(m => m.sender == p implies
-      (system.get(p).s == Send(m.payload) or system.get(p).s == Delivered(m.payload))))
+      (system.get(p).s == SendToAll(m.payload) or system.get(p).s == Delivered(m.payload))))
 
 val IndInv = and {
   TypeOK,
@@ -268,7 +271,7 @@ Now we get this:
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m0[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
 }
 
 [[1mState 1[22m]
@@ -288,14 +291,14 @@ error: found a counterexample
 
 The issue from above is gone but now we have the opposite problem. Process `2` is in the send state with `send_to == 0` (meaning sending is over), but the state the tool picked doesn't contain any messages sent by process `2`.
 
-So let's constrain the state further. The following formula links the number of sent messages to the state of the process. If process p is in `Send(v)` and `send_to` is zero sending is over. This means the number of messages sent by the process must be the number of processes in the system. For other values of `send_to`, it indicates the number of messages already sent.
+So let's constrain the state further. The following formula links the number of sent messages to the state of the process. If process p is in `SendToAll(v)` and `send_to` is zero sending is over. This means the number of messages sent by the process must be the number of processes in the system. For other values of `send_to`, it indicates the number of messages already sent.
 
 ```quint
 /// This links the number of messages sent to the local state of the sender.
 def number_of_sent_messages_matches =
   Proc.forall(p =>
     Domain.forall(v =>
-      system.get(p).s == Send(v) implies
+      system.get(p).s == SendToAll(v) implies
         if (system.get(p).send_to == 0)
           network.filter(m => m.sender == p).size() == Proc.size()
         else
@@ -324,7 +327,7 @@ Note again. This is not an assumption we add to the system. It is a constraint o
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m },
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m1[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m })
 }
 
 [[1mState 1[22m]
@@ -347,11 +350,11 @@ error: found a counterexample
 
 This is weird. Process `2` has forwarded value `"goodbye"`, but there is no `"goodbye"` message from the original broadcaster (`initial_sender`, which is `0`) in the network. Actually, we believe that our algorithm only forwards messages that were originally sent. So let's add this:
 ```quint
-/// If a process is in Send(v) state, then the value v was initially sent
+/// If a process is in SendToAll(v) state, then the value v was initially sent
 val no_made_up_values =
   Proc.forall(p =>
     Domain.forall(v =>
-      system.get(p).s == Send(v) implies v.in(values_broadcast)))
+      system.get(p).s == SendToAll(v) implies v.in(values_broadcast)))
 
 val IndInv = and {
   TypeOK,
@@ -377,7 +380,7 @@ Let's ask quint again:
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"goodbye"[39m), send_to[90m:[39m [33m2[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
 }
 
 [[1mState 1[22m]
@@ -388,7 +391,7 @@ Let's ask quint again:
       { payload[90m:[39m [32m"goodbye"[39m, receiver[90m:[39m [33m2[39m, sender[90m:[39m [33m1[39m },
       { payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }
     ),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"goodbye"[39m), send_to[90m:[39m [33m0[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mInit[39m, send_to[90m:[39m [33m2[39m })
 }
 
 [31m[violation][39m Found an issue [90m(1071ms).[39m
@@ -461,7 +464,7 @@ quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
 [[1mState 0[22m]
 {
   network[90m:[39m [32mSet[39m({ payload[90m:[39m [32m"hello"[39m, receiver[90m:[39m [33m1[39m, sender[90m:[39m [33m0[39m }),
-  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSend[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
+  system[90m:[39m [32mMap[39m([33m1[39m[90m ->[39m { s[90m:[39m [32mSendToAll[39m([32m"hello"[39m), send_to[90m:[39m [33m1[39m }, [33m2[39m[90m ->[39m { s[90m:[39m [32mDelivered[39m([32m"hello"[39m), send_to[90m:[39m [33m0[39m })
 }
 
 [31m[violation][39m Found an issue [90m(1655ms).[39m
