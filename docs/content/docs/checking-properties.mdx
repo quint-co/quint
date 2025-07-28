@@ -124,3 +124,42 @@ The `--invariants` option also works with the `verify` command, allowing you to 
 ```sh
 quint verify bank.qnt --invariants no_negatives accounts_match total_positive
 ```
+
+## Inductive Invariants
+
+An inductive invariant is a special, more powerful kind of invariant. We can use the basis of proof by induction to show that, if the invariant holds for the base case (initial state) and for any step, then it holds for all states in the system (regardless of how many steps we take).
+
+An inductive invariant `ind_inv` can be checked with:
+
+```sh
+quint verify file.qnt --inductive-invariant ind_inv 
+```
+
+To also check if `ind_inv` implies an ordinary invariant `inv`, run:
+
+```sh
+quint verify file.qnt --inductive-invariant ind_inv --invariant inv
+```
+
+Simulation (`quint run`) does not support inductive invariants.
+
+### How it works
+
+Quint will call Apalache 2-3 times (depending on whether an ordinary invariant was provided):
+1. To check if the inductive invariant holds in all possible initial states (base case). This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --invariant ind_inv --max-steps 0
+  ```
+2. To check if, starting from any state where the inductive invariant holds, taking any step results in a state where the invariant still holds. This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --init ind_inv --invariant ind_inv --max-steps 1
+  ```
+  PS: you'd get an error here as `ind_inv` is not an action, and therefore can't be used as `--init`. Using `--inductive-invariant` takes care of this for you.
+3. To check if, in any state where the inductive invariant holds, the ordinary invariant also holds. This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --init ind_inv --invariant inv --max-steps 0
+  ```
+
+### Examples
+
+Check out the blog post How to write [Inductive Invariants](/posts/inductive-invariants) to learn more, and the folder TODO in the repository with examples including inductive invariants.
