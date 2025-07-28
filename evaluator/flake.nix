@@ -15,7 +15,7 @@
             pkgs.cargo-insta
           ];
           shellHook = ''
-            rustup default stable
+            rustup default 1.88
           '';
         };
       });

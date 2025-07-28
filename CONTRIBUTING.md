@@ -74,21 +74,21 @@ This repository hosts all Quint pieces:
 ## Developer docs
 
 - [ADR001: Transpiler
-  architecture](./docs/pages/docs/development-docs/architecture-decision-records/adr001-transpiler-architecture.md)
+  architecture](./docs/content/docs/development-docs/architecture-decision-records/adr001-transpiler-architecture.md)
 - [ADR002: Error
-  codes](./docs/pages/docs/development-docs/architecture-decision-records/adr002-errors.md)
+  codes](./docs/content/docs/development-docs/architecture-decision-records/adr002-errors.md)
 - [ADR003: Interface to visit Internal Representation
-   components](./docs/pages/docs/development-docs/architecture-decision-records/adr003-visiting-ir-components.md)
+   components](./docs/content/docs/development-docs/architecture-decision-records/adr003-visiting-ir-components.md)
 - [ADR004: An Effect System for
-  Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr004-effect-system.md)
+  Quint](./docs/content/docs/development-docs/architecture-decision-records/adr004-effect-system.md)
 - [ADR005: A Type System for
-  Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr005-type-system.md)
+  Quint](./docs/content/docs/development-docs/architecture-decision-records/adr005-type-system.md)
 - [ADR006: Design of modules and lookup
-  tables](./docs/pages/docs/development-docs/architecture-decision-records/adr006-modules.lit.md)
+  tables](./docs/content/docs/development-docs/architecture-decision-records/adr006-modules.lit.md)
 - [ADR007:
-  Flattening](./docs/pages/docs/development-docs/architecture-decision-records/adr007-flattening.md)
+  Flattening](./docs/content/docs/development-docs/architecture-decision-records/adr007-flattening.md)
 - [ADR008: Obtaining and Launching Apalache from
-  Quint](./docs/pages/docs/development-docs/architecture-decision-records/adr008-managing-apalache.md)
+  Quint](./docs/content/docs/development-docs/architecture-decision-records/adr008-managing-apalache.md)
 
 ## Dependencies
 

@@ -23,7 +23,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     let value = run(&parsed.table, &input_def.expr);
 
     if expected == "undefined" {
-        assert!(value.is_err(), "Expected error, got: {:?}", value);
+        assert!(value.is_err(), "Expected error, got: {value:?}");
         return Ok(());
     }
 
