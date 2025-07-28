@@ -39,7 +39,7 @@ A correct state needs to be described in terms of a snapshot of all the variable
 
 then we call this formula an inductive invariant. End of lecture. There was a lot of logic that came at a surprise. I am sorry, but we are done now.
 
-Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically he is right. Still, we dare to argue the opposite: you might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn't touched it since"). So it is possible that you understand your system without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
+Lamport argues in the mentioned paper that you need to know the inductive invariant to understand the system you are building. Typically, he is right. Still, we dare to argue the opposite: you might have a good intuition about the system you are building. Your intuition might be more operational (e.g. in the form "x must be greater than 0 at this point of the program, because it has been checked three lines above, and we are in an atomic section, and the code hasn't touched it since"). So it is possible that you understand your system without knowing how to write the inductive invariant. However, if you are building a correct concurrent system, then there must be an inductive invariant. There is no other way.
 
 Deriving an inductive invariant with the help of Quint can help you
 
@@ -109,7 +109,7 @@ pure def frbc(s: ProtocolState, m: Message): ProtocolState =
     }
 ```
 
-If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the Quint action level is going to do the send to all. When sending is done, the function can be called again, and then I go to the `Delivered` state.
+If I am in the initial state and receive a message `m`, I am sending it. The function returns, and the Quint action level is going to do the "send to all". When sending is done, the function can be called again, and then I go to the `Delivered` state.
 
 On top of that, processes also keep track of sending a message to all processes, which we do here with the help of the `send_to` counter. The `send_to_next` operator describes the local computation of determining the next receiver and incrementing the counter (going back to zero when it would become greater than the number of the last process).
 
@@ -173,7 +173,7 @@ val safety =
 
 #### TypeOK: the first constraint
 
-For using quint (and its back-end model checker Apalache) as the first step, you need to specify the state space in the following form. The name TypeOK is inherited from TLA+. It is jargon to specify the allowed content of state variables. This is a minimal requirement on what a correct state is:
+For using quint (and its back-end model checker Apalache) as the first step, you need to specify the state space in the following form. The name `TypeOK` is inherited from TLA+. It is jargon to specify the allowed content of state variables. This is a minimal requirement on what a correct state is:
 
 ```quint
 val TypeOK = and {
@@ -195,7 +195,7 @@ val IndInv = and {
 }
 ```
 
-...and with the following command asks quint two questions (1) is IndInv and inductive invariant and (2) if so, does it imply that safety holds.
+...and with the following command asks quint two questions (1) is `IndInv` and inductive invariant and (2) if so, does it imply that safety holds.
 
 ```sh
 quint verify reliablebc.qnt --inductive-invariant IndInv --invariant safety
@@ -242,7 +242,7 @@ It says that it is violated. But look at `State 0`: Process `1` is in `Init`, bu
 
 We are in the scenario we discussed above that argued how intuition helps and harms us. Just observe that the verifier doesn't have any intuition; it produces states that satisfy the constraints. If the constraints are not good, it will just produce stupid states. So let's teach the tool this fact, by adding this to our candidate: It says that if there is a message in the network sent by P, then P cannot be in `Init` (anymore). It actually has to be in either `SendToAll(m)` or `Delivered(m)` for that message's payload `m`.
 
-```quint
+```quint {9}
 /// If a message is sent, then the sender is in SendToAll or Delivered state
 val sender_in_good_state =
   Proc.forall(p =>
@@ -256,7 +256,7 @@ val IndInv = and {
 }
 ```
 
-The tool will check whether this is true in the initial state, and then it checks that if it holds in a state and we apply the step action, it also holds in the successor state. So, we are describing what we believe captures an aspect of a correct state, and the tool checks for us whether it is true. So we cannot do something wrong here. If we give a wrong characterization of the correct state the tool will tell us.
+The tool will check whether this is true in the initial state, and then it checks that if it holds in a state, and we apply the step action, it also holds in the successor state. So, we are describing what we believe captures an aspect of a correct state, and the tool checks for us whether it is true. So we cannot do something wrong here. If we give a wrong characterization of the correct state the tool will tell us.
 Now we get this:
 
 ```ansi {9-10} /send_to/2 /0/4
@@ -289,11 +289,11 @@ Now we get this:
 error: found a counterexample
 ```
 
-The issue from above is gone but now we have the opposite problem. Process `2` is in the send state with `send_to == 0` (meaning sending is over), but the state the tool picked doesn't contain any messages sent by process `2`.
+The issue from above is gone, but now we have the opposite problem. Process `2` is in the send state with `send_to == 0` (meaning sending is over), but the state the tool picked doesn't contain any messages sent by process `2`.
 
 So let's constrain the state further. The following formula links the number of sent messages to the state of the process. If process p is in `SendToAll(v)` and `send_to` is zero sending is over. This means the number of messages sent by the process must be the number of processes in the system. For other values of `send_to`, it indicates the number of messages already sent.
 
-```quint
+```quint {14}
 /// This links the number of messages sent to the local state of the sender.
 def number_of_sent_messages_matches =
   Proc.forall(p =>
@@ -306,6 +306,7 @@ def number_of_sent_messages_matches =
 
 val IndInv = and {
   TypeOK,
+  sender_in_good_state,
   number_of_sent_messages_matches,
   safety,
 }
@@ -349,7 +350,7 @@ error: found a counterexample
 ```
 
 This is weird. Process `2` has forwarded value `"goodbye"`, but there is no `"goodbye"` message from the original broadcaster (`initial_sender`, which is `0`) in the network. Actually, we believe that our algorithm only forwards messages that were originally sent. So let's add this:
-```quint
+```quint {11}
 /// If a process is in SendToAll(v) state, then the value v was initially sent
 val no_made_up_values =
   Proc.forall(p =>
@@ -365,7 +366,7 @@ val IndInv = and {
 }
 ```
 
-Let's ask quint again:
+Let's ask Quint again:
 
 ```ansi /[State 0]/ /send_to/1 /2/4 {10}
 [90m> [1/3] Checking whether the inductive invariant 'IndInv' holds in the initial state(s) defined by 'init'...[39m
@@ -401,7 +402,7 @@ error: found a counterexample
 
 Now, In `State 0`, because for process `1`, `send_to == 2` it seems that it is about to send `"goodbye"` to process `2`, but if we look into the network, we see that this message is already sent. However, the message with the same payload to process `1` is missing. So the inductive invariant didn't capture the order in which messages are sent by the protocol. Let's constrain the state further
 
-```quint
+```quint {11}
 /// If a message to process 2 is sent then the same message also to process 1 is there.
 val messages_sent_in_order =
   network.forall(m => (m.receiver > 1 and m.sender != initial_sender)
@@ -430,7 +431,7 @@ val IndInv = and {
 
 Wow. We verified safety.
 
-We cannot prove liveness with this method as it would require us to introduce fairness (every correct process takes an infinite number of steps and if a message m is sent to the receiver, and the receiver takes an infinite number of steps, then eventually the receiver will receive m). But what we can ask is that if a process has delivered a message m then it has forwarded m to everyone. This would improve the situation, as initially it is not guaranteed that m was sent to everyone. We add
+We cannot prove liveness with this method as it would require us to introduce fairness (every correct process takes an infinite number of steps and if a message `m` is sent to the receiver, and the receiver takes an infinite number of steps, then eventually the receiver will receive `m`). But what we can ask is that, if a process has delivered a message `m`, then it has forwarded `m` to everyone. This would improve the situation, as initially it is not guaranteed that `m` was sent to everyone. We add
 
 ```quint
 /// If I deliver a message, I have already forwarded it to all. This plus
@@ -472,9 +473,9 @@ quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
 error: found a counterexample
 ```
 
-Oups. The inductive invariant we have until now is not strong enough to prove that. What we see here is a state where process `2` has delivered `"hello"`, but it didn't send `"hello"`. Indeed, in the formulas above we only constrained the network w.r.t. a process being in the send state. Let's just add reliability to the inductive invariant candidate. If the new formula is still inductive, that should do the job. Fingers crossed.
+Whoops. The inductive invariant we have until now is not strong enough to prove that. What we see here is a state where process `2` has delivered `"hello"`, but it didn't send `"hello"`. Indeed, in the formulas above, we only constrained the network with regard to a process being in the `SendToAll` state. Let's just add `reliability` to the inductive invariant candidate. If the new formula is still inductive, that should do the job. Fingers crossed.
 
-```quint
+```quint {8}
 val IndInv = and {
   TypeOK,
   sender_in_good_state,
@@ -497,24 +498,26 @@ val IndInv = and {
 
 We are good now. We have proven safety, and a part of liveness.
 
-Observe that we refined the inductive invariants from counter examples. Let's go back to Lamports "A computing device does the correct thing only because it maintains a correct state". One could argue that what we have done here was just to explain to quint (and its underlying solver Apalache) what a correct state is.
+## On the task of defining what is a correct state
 
-However, to me it feels a bit different. In fact, quint used the Socratic method to teach us what a correct state is. The dialog was like this
+Observe that we refined the inductive invariants from counter-examples. Let's go back to Lamports "A computing device does the correct thing only because it maintains a correct state". One could argue that what we have done here was just to explain to Quint (and its underlying solver Apalache) what a correct state is.
 
-Me: The world is in a correct state if no-one ever delivers a message that never was sent (safety).
+However, to me, it feels a bit different. In fact, Quint used the Socratic method to teach us what a correct state is. The dialog was like this:
 
-Socrates: Are you saying that the world is OK if there are messages that appear to be sent by Glaukon, but Glaukon hasn't sent any.
+- Me: The world is in a correct state if no-one ever delivers a message that never was sent (safety).
+- Socrates: Are you saying that the world is OK if there are messages that appear to be sent by Glaukon, but Glaukon hasn't sent any?
+- Me: Of course not, this would be a curious world. The perfect world I imagine is one where, for every message around, the originator has actually sent it.
+- Socrates: So that would mean in a perfect world, I could have sent many messages, but none can be found anywhere.
+- Me: you are right, great Socrates, let's see...
 
-Me: Of course not, this would be a curious world. The perfect world I imagine is one where for every message around the originator has actually sent it.
+So Quint helps us sharpen our thinking and reasoning about distributed systems and other complex protocols.
 
-Socrates: So that would mean in a perfect world, I could have sent many messages, but none can be found anywhere.
-
-Me: you are right, great Socrates, let's see …
-
-So quint helps us sharpening our thinking and reasoning about distributed systems.
+## More on Inductive Invariants
 
 The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint. The inductive invariant is a monster.
 
-TODO: outro
+TODO: link examples
+
+We hope this blog post could show you how amazing inductive invariants can be, and that, even though they can be difficult to define, iterating with Quint and examining its counter-examples can make it possible for us to write them, while also getting deeper understanding of our own protocols in the process.
 
 <Comments/>
