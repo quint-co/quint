@@ -1519,3 +1519,26 @@ Use --verbosity=3 to show executions.
 Use --seed=0x2b442ab439177 to reproduce.
 ```
 
+### Error when --n-traces is greater than --max-samples
+
+<!-- !test exit 1 -->
+<!-- !test in n-traces greater than max-samples -->
+```
+quint run ./testFixture/NTracesValidation.qnt --n-traces 10 --max-samples 5
+```
+
+<!-- !test err n-traces greater than max-samples -->
+```
+--n-traces (10) cannot be greater than --max-samples (5).
+```
+
+<!-- !test exit 1 -->
+<!-- !test in n-traces greater than default max-samples -->
+```
+quint run ./testFixture/NTracesValidation.qnt --n-traces 20000
+```
+
+<!-- !test err n-traces greater than default max-samples -->
+```
+--n-traces (20000) cannot be greater than --max-samples (10000).
+```
