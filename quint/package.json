@@ -1,0 +1,125 @@
+{
+  "name": "@informalsystems/quint",
+  "version": "0.26.0",
+  "description": "Core tool for the Quint specification language",
+  "keywords": [
+    "temporal",
+    "logic",
+    "formal",
+    "specification",
+    "verification"
+  ],
+  "homepage": "https://github.com/informalsystems/quint",
+  "bugs": "https://github.com/informalsystems/quint/issues",
+  "license": "Apache 2.0",
+  "author": "Informal Systems",
+  "contributors": [
+    {
+      "name": "Gabriela Moreira",
+      "email": "gabriela@informal.systems"
+    },
+    {
+      "name": "Igor Konnov",
+      "email": "igor@konnov.phd"
+    },
+    {
+      "name": "Shon Feder",
+      "email": "shon@informal.systems"
+    }
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index",
+  "bin": {
+    "quint": "dist/src/cli.js"
+  },
+  "files": [
+    "README.md",
+    "dist/**/*",
+    "test/**/*.ts"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/informalsystems/quint"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.11.1",
+    "@grpc/proto-loader": "^0.7.7",
+    "@octokit/request": "^8.1.1",
+    "@sweet-monads/either": "~3.2.0",
+    "@sweet-monads/maybe": "~3.2.0",
+    "@types/line-column": "^1.0.0",
+    "@types/lodash.clonedeep": "4.5.0",
+    "@types/seedrandom": "^3.0.4",
+    "adm-zip": "^0.5.16",
+    "antlr4ts": "^0.5.0-alpha.4",
+    "chalk": "^4.1.2",
+    "cli-progress": "^3.12.0",
+    "cross-spawn": "^7.0.6",
+    "eol": "^0.9.1",
+    "immutable": "^4.3.0",
+    "json-bigint": "^1.0.0",
+    "line-column": "^1.0.2",
+    "lodash": "^4.17.21",
+    "lodash.clonedeep": "4.5.0",
+    "lodash.isequal": "^4.5.0",
+    "seedrandom": "^3.0.5",
+    "tar": "^6.1.14",
+    "yargs": "^17.7.2"
+  },
+  "scripts": {
+    "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
+    "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
+    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test-w": "while inotifywait -r -e close_write ./ ; do npm run test; done",
+    "test-f": "mocha --reporter-option maxDiffSize=0 -r ts-node/register",
+    "coverage": "nyc npm run test",
+    "integration": "txm cli-tests.md && txm io-cli-tests.md",
+    "apalache-integration": "txm apalache-tests.md",
+    "apalache-dist": "txm apalache-dist-tests.md",
+    "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
+    "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
+    "api-docs": "quint docs ./src/builtin.qnt > ../docs/pages/docs/builtin.md",
+    "update-fixtures": "./scripts/update-fixtures.sh",
+    "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
+    "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",
+    "debug": "npx ts-node ./src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.18",
+    "@types/cli-progress": "^3.11.6",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/json-bigint": "^1.0.1",
+    "@types/lodash.isequal": "^4.5.6",
+    "@types/mocha": "^8.2.3",
+    "@types/node": "^18.16.0",
+    "@types/node-fetch": "^2.6.4",
+    "@types/tar": "^6.1.5",
+    "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
+    "chai": "^4.3.4",
+    "copyfiles": "^2.4.1",
+    "eslint": "^8.39.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-recommended": "^4.1.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-json": "^3.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "genversion": "^3.1.1",
+    "mocha": "^10.0.0",
+    "nyc": "^15.1.0",
+    "prettier": "2.8.8",
+    "ts-node": "^10.0.0",
+    "txm": "^8.0.2",
+    "typescript": "^4.8.2"
+  }
+}
