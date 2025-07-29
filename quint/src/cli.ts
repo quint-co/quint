@@ -403,11 +403,11 @@ const docsCmd = {
 const validate = (argv: any) => {
   if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {
     if (argv['n-traces'] > argv['max-samples']) {
-      throw new Error(`--n-traces (${argv['n-traces']}) cannot be greater than --max-samples (${argv['max-samples']}).`);
+      throw new Error(`--n-traces (${argv['n-traces']}) cannot be greater than --max-samples (${argv['max-samples']}).`)
     }
   }
-  return true;
-};
+  return true
+}
 
 function coerceSeed(seedText: string): BigInt {
   // since yargs does not has a type for big integers,
