@@ -153,7 +153,7 @@ Inductive invariants use a fundamentally different verification strategy. Instea
 
 The key insight is that in step 2, state A is not constructed by applying transitions from initial states. Instead, A is any arbitrary state satisfying the inductive invariant's constraints. Through mathematical induction on steps 1 and 2, we can conclude that the inductive invariant holds on all reachable states without explicitly constructing those states.
 
-## Trade-offs and Challenges
+### Trade-offs and Challenges
 
 While inductive invariants may avoid the state explosion problem, they introduce their own complexities:
 - Finding the right inductive invariant requires expertise and creative insight. Unlike model checking where you simply specify properties to verify, you must construct the strengthened invariant yourself, typically through an iterative process of trial and refinement.
