@@ -516,7 +516,13 @@ So Quint helps us sharpen our thinking and reasoning about distributed systems a
 
 The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint. The inductive invariant is a monster.
 
-TODO: link examples
+- The complete example from this blog post: [reliablebc.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReliableBroadcast/reliablebc.qnt)
+- The algorithm from Lamport's Teaching Concurrency paper: [teaching.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/teaching.qnt)
+- The bakery algorithm, with a more complex inductive invariant: [bakery.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/Bakery/bakery.qnt)
+- Dijkstra's termination detection in a ring: [ewd840.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ewd840/ewd840.qnt)
+- ChonkyBFT agreement: [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)
+
+You can find more information on the [documentation](/docs/checking-properties#inductive-invariants) as well.
 
 We hope this blog post could show you how amazing inductive invariants can be, and that, even though they can be difficult to define, iterating with Quint and examining its counter-examples can make it possible for us to write them, while also getting deeper understanding of our own protocols in the process.
 
