@@ -127,14 +127,50 @@ quint verify bank.qnt --invariants no_negatives accounts_match total_positive
 
 ## Inductive Invariants
 
-An inductive invariant is a special, more powerful kind of invariant. We can use the basis of proof by induction to show that, if the invariant holds for the base case (initial state) and for any step, then it holds for all states in the system (regardless of how many steps we take).
+An inductive invariant is a special, more powerful kind of invariant.
+They are a powerful design artifact as they capture the core of why a system is correct. Moreover, inductive invariants enable complete verification without exhaustive state exploration.
 
-If you read our documentation on [Model Checkers](/docs/model-checkers), you might understand that checking an ordinary (non-inductive) invariant requires either:
-- Using Apalache to solve constraints that represent executions up to a given length (symbolic bounded model-checking)
-- Using TLC to enumerate all possible states and try every single transition (explicit-state model-checking)
-Inductive invariants make the "bounded" problem of Apalache go away, as we can use bounded checks to prove something for the entire state space (see [How it works](#how-it-works) below). So we can levarage the full potential of SMT solving without worrying about assumptions on the execution length.
+### How Ordinary Invariants Work
 
-TODO: Improve argument - what about TLC? Is there an advantage there also? Should we talk about using inductive invariants in proof assistants as well?
+Model checking of ordinary (non-inductive) invariants follows a straightforward but potentially expensive approach:
+
+1. Check the invariant holds in all initial states
+2. Use the step action and a search strategy (breadth-first, depth-first, etc.) to systematically explore all states reachable from the initial states
+3. Verify the invariant holds in every discovered state
+
+This process may require analyzing arbitrarily long execution sequences. As explained in our [Model Checkers](/docs/model-checkers) documentation, checking ordinary invariants forces you to choose between:
+
+- **Symbolic bounded model checking** (Apalache) - Solves constraints representing executions up to a given length, providing incomplete verification results
+- **Explicit-state model checking** (TLC) - Enumerates all possible states and transitions, which can become computationally intractable for large systems
+
+### The Inductive Approach
+
+Inductive invariants use a fundamentally different verification strategy. Instead of verifying an invariant on all reachable states by exploring them explicitly, the approach relies on a stronger inductive invariant to prove the goal invariant. The verification process consists of three steps:
+
+1. **Base case**: Verify the inductive invariant holds in all initial states
+2. **Inductive step**: Prove that if the inductive invariant holds in some state A, then after applying any step transition, the resulting state A' also satisfies the inductive invariant
+3. **Implication**: Show that the inductive invariant logically implies the goal invariant
+
+The key insight is that in step 2, state A is not constructed by applying transitions from initial states. Instead, A is any arbitrary state satisfying the inductive invariant's constraints. Through mathematical induction on steps 1 and 2, we can conclude that the inductive invariant holds on all reachable states without explicitly constructing those states.
+
+## Trade-offs and Challenges
+
+While inductive invariants may avoid the state explosion problem, they introduce their own complexities:
+- Finding the right inductive invariant requires expertise and creative insight. Unlike model checking where you simply specify properties to verify, you must construct the strengthened invariant yourself, typically through an iterative process of trial and refinement.
+- To prove your desired property, you typically need to prove something stronger (the inductive invariant), which can feel counterintuitive. The invariant that makes the proof work may require non-obvious insights about the system.
+
+### When Inductive Invariants Excel
+
+Inductive invariants become particularly powerful when:
+
+- Enumerating all reachable states would be computationally prohibitive
+- The inductive invariant's constraints are well-suited to Apalache's symbolic reasoning capabilities
+- The system has complex state spaces that resist explicit enumeration
+
+This approach can provide complete verification results even for systems where traditional model checking approaches fail due to state explosion or infinite behaviors.
+
+
+### Checking Inductive Invariants
 
 An inductive invariant `ind_inv` can be checked with:
 
