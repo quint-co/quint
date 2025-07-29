@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-./repl/kettle.qnt: ../../../docs/pages/docs/repl.md
+./repl/kettle.qnt: ../../../docs/content/docs/repl.md
 	lmt $^
 	cat replTest.txt |\
 		egrep '^(>>>|\.\.\.) ' | sed 's/^>>> //g' | sed 's/^\.\.\. //g' \
