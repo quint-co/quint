@@ -186,6 +186,14 @@ quint verify file.qnt --inductive-invariant ind_inv --invariant inv
 
 Simulation (`quint run`) does not support inductive invariants.
 
+### Requirement: "TypeOK"
+
+In order to check an inductive invariant, it has to be constrained enough, otherwise you might see errors like "x is used before it is assigned". More specifically, for each state variable `x`, you need to have either:
+1. `x == <value>`
+2. `x.in(<set of possible values>)`
+
+We almost always use (2) for inductive invariants. **AFTER** this constraint, you can write other constraints like `x * 2 < 10`, but the first time `x` appears in the predicate, it must be something about its domain. We usually call the predicates that define the domains of variables `TypeOK`.
+
 ### How it works
 
 Quint will call Apalache 2-3 times (depending on whether an ordinary invariant was provided):
