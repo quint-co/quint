@@ -1,4 +1,5 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
+import Script from 'next/script'
 import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
@@ -58,11 +59,31 @@ const navbar = (
   />
 )
 
+
 const footer = (
   <Footer>
-    <div className="flex w-full flex-col gap-6 items-center text-center sm:items-start">
-      <InformalSystemsLogo />
-      <p className="mt-6 text-xs">© {new Date().getFullYear()} Informal Systems.</p>
+    <div className="flex w-full flex-col sm:flex-row gap-6 items-center justify-between">
+      <div className="flex flex-col sm:items-start items-center">
+        <InformalSystemsLogo />
+        <p className="mt-6 text-xs">© {new Date().getFullYear()} Informal Systems.</p>
+      </div>
+
+      <div className="flex gap-6">
+        <a
+          href="https://www.iubenda.com/privacy-policy/80583341"
+          title="Privacy Policy"
+          data-iub-container={true}
+        >
+          Privacy Policy
+        </a>
+        <a
+          href="https://www.iubenda.com/privacy-policy/80583341/cookie-policy"
+          title="Cookie Policy"
+          data-iub-container={true}
+        >
+          Cookie Policy
+        </a>
+      </div>
     </div>
   </Footer>
 )
@@ -94,7 +115,20 @@ export default async function RootLayout({ children }) {
         >
           {children}
         </Layout>
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-HD6HX8DTXE"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-HD6HX8DTXE');
+          `}
+        </Script>
       </body>
+      <Script strategy="afterInteractive" src="https://cdn.iubenda.com/iubenda.js" />
     </html>
   )
 }
