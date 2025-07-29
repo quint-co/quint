@@ -153,7 +153,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 }
                 None => Err(QuintError::new(
                     "QNT505",
-                    &format!("No match for variant {}", variant_label),
+                    &format!("No match for variant {variant_label}"),
                 )),
             }
         },
@@ -611,7 +611,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 }
                 None => Err(QuintError::new(
                     "QNT507",
-                    format!("Called 'setBy' with a non- existing key {}", key).as_str(),
+                    format!("Called 'setBy' with a non- existing key {key}").as_str(),
                 )),
             }
         },

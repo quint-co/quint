@@ -20,7 +20,7 @@ tutorials: lesson0-helloworld/hello.qnt \
 	mv $*.tour .tours
 	cp -r img .tours/
 	# move the generated markdown files to the website directory
-	mv $*.md ../pages/docs/lessons/
+	mv $*.md ../content/docs/lessons/
 	cp -r img ../public/lessons/
 	# move the generated quint files to the examples directory
 	cp $*.qnt ../../examples/tutorials/

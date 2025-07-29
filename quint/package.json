@@ -70,7 +70,7 @@
     "lodash.isequal": "^4.5.0",
     "seedrandom": "^3.0.5",
     "tar": "^6.1.14",
-    "yargs": "^17.2.1"
+    "yargs": "^17.7.2"
   },
   "scripts": {
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
@@ -84,7 +84,7 @@
     "apalache-dist": "txm apalache-dist-tests.md",
     "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
-    "api-docs": "quint docs ./src/builtin.qnt > ../docs/pages/docs/builtin.md",
+    "api-docs": "quint docs ./src/builtin.qnt > ../docs/content/docs/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
     "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
     "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",
@@ -100,7 +100,7 @@
     "@types/node": "^18.16.0",
     "@types/node-fetch": "^2.6.4",
     "@types/tar": "^6.1.5",
-    "@types/yargs": "^17.0.5",
+    "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "antlr4ts-cli": "^0.5.0-alpha.4",
