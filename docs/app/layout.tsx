@@ -116,17 +116,21 @@ export default async function RootLayout({ children }) {
           {children}
         </Layout>
         <Script
-          strategy="afterInteractive"
+          id="google-analytics"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || []
+              function gtag(){dataLayer.push(arguments)}
+              gtag('js', new Date())
+              gtag('config', 'G-HD6HX8DTXE')
+            `,
+          }}
+        />
+        <Script
+          async
           src="https://www.googletagmanager.com/gtag/js?id=G-HD6HX8DTXE"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-HD6HX8DTXE');
-          `}
-        </Script>
       </body>
       <Script strategy="afterInteractive" src="https://cdn.iubenda.com/iubenda.js" />
     </html>
