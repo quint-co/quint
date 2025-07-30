@@ -1,0 +1,45 @@
+---
+title: "Message Soup: the Secret Sauce for Consensus Specifications"
+date: 2025-07-30
+excerpt: Use the Quint spec we have written for the Alpenglow consensus algorithm to learn about it in an interactive way, while also learning how to use the Quint tools like we do.
+authors:
+    - name: Yassine Boukhari
+    - name: Josef Widder
+    - name: Gabriela Moreira
+tags:
+    - intermediate
+---
+
+# Message Soup: the Secret Sauce for Consensus Specifications
+
+
+
+Consensus has recently gained novel attention, with Malachite, Alpenglow, Espresso, and MonadBFT being just some examples. As mentioned previously, we are working on a library to make specification of consensus algorithms more easy. As part of this, we have written specifications for newly announced algorithms. Two examples are Solana's Aplenglow and Category Lab's MonadBFT.
+Both come with a clear paper, and we implemented both form the paper quite easily. 
+
+
+ TODO: Doings is better than reading
+
+
+As we discussed in the previous post [Alpenglow], a big value we get out of specs is that they help us to understand the algorithm. So let's do this exercise and let Quint generate an example where a block has been finalized
+
+TODO: 
+
+
+It differs in granularity
+Msg soup vs. individual messages 
+Monad msg by message
+Action to receive a vote (simplified version)
+Most of the time it does nothing except storing the message. 
+Only rarely something interesting happens
+Monad soup -> 
+Corresponding action to above example
+Action that filters the soup and produces the interesting thing
+How should you write the spec?
+Rewritten Monad into the soup style
+Discuss performance
+How fast are we finding witnesses 
+How long are witnesses
+More understandable
+How resilient to Byzantine messages
+Perhaps graphs for multiple witnesses and use webpage magic to make it easier to view
