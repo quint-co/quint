@@ -65,7 +65,7 @@ Quint reports:
 And that informs us that, in most executions, there is a state where Alice has a larger balance than that of Bob.
 
 <Callout>
-  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios. 
+  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios.
 </Callout>
 
 ### Inspecting interesting traces with `--invariant`
@@ -175,7 +175,7 @@ This approach can provide complete verification results even for systems where t
 An inductive invariant `ind_inv` can be checked with:
 
 ```sh
-quint verify file.qnt --inductive-invariant ind_inv 
+quint verify file.qnt --inductive-invariant ind_inv
 ```
 
 To also check if `ind_inv` implies an ordinary invariant `inv`, run:
@@ -206,6 +206,7 @@ Quint will call Apalache 2-3 times (depending on whether an ordinary invariant w
   quint verify file.qnt --init ind_inv --invariant ind_inv --max-steps 1
   ```
   PS: you'd get an error here as `ind_inv` is not an action, and therefore can't be used as `--init`. Using `--inductive-invariant` takes care of this for you.
+
 3. To check if, in any state where the inductive invariant holds, the ordinary invariant also holds. This is the equivalent of calling:
   ```sh
   quint verify file.qnt --init ind_inv --invariant inv --max-steps 0
@@ -215,8 +216,8 @@ Quint will call Apalache 2-3 times (depending on whether an ordinary invariant w
 
 Check out the blog post [How to write Inductive Invariants](/posts/inductive-invariants) to learn more, and the following examples which include inductive invariants.
 - The algorithm from Lamport's Teaching Concurrency paper: [teaching.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/teaching.qnt)
+- Incrementing a shared counter with a mutex: [mutex.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/mutex.qnt)
 - The folklore reliable broadcast protocol explained in the blog post: [reliablebc.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReliableBroadcast/reliablebc.qnt)
 - The bakery algorithm, with a more complex inductive invariant: [bakery.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/Bakery/bakery.qnt)
 - Dijkstra's termination detection in a ring: [ewd840.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ewd840/ewd840.qnt)
-- ChonkyBFT agreement: [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)
-
+- ChonkyBFT agreement (written by Igor Konnov before we added the feature to Quint, so it includes some workarounds): [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)

@@ -21,7 +21,7 @@ import { PostMeta } from '../../components/blog/PostMeta'
   authors={metadata.authors}
 />
 
-This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line flag called `--inductive-invariant`. The term "inductive invariant" is scary, but we like them, as they allow us to prove the absence of design bugs in distributed systems. Moreover, the act of writing an inductive invariant is a great tool that allows you to learn how to **think** about distributed systems. Before diving into the tutorial part, let's discuss what is going on here.
+This post is about a method that will allow you to deepen the understanding of protocols and concurrent systems. Quint recently added a command line argument called `--inductive-invariant`. The term "inductive invariant" is scary, but we like them, as they allow us to prove the absence of design bugs in distributed systems. Moreover, the act of writing an inductive invariant is a great tool that allows you to learn how to **think** about distributed systems. Before diving into the tutorial part, let's discuss what is going on here.
 
 ## Understanding the system you build
 
@@ -514,13 +514,14 @@ So Quint helps us sharpen our thinking and reasoning about distributed systems a
 
 ## More on Inductive Invariants
 
-The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint. The inductive invariant is a monster.
+The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint, which is significanlty more complex than the example in this post. Check out the following examples which include inductive invariants:
 
 - The complete example from this blog post: [reliablebc.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReliableBroadcast/reliablebc.qnt)
 - The algorithm from Lamport's Teaching Concurrency paper: [teaching.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/teaching.qnt)
+- Incrementing a shared counter with a mutex: [mutex.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/mutex.qnt)
 - The bakery algorithm, with a more complex inductive invariant: [bakery.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/Bakery/bakery.qnt)
 - Dijkstra's termination detection in a ring: [ewd840.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ewd840/ewd840.qnt)
-- ChonkyBFT agreement: [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)
+- ChonkyBFT agreement (written by Igor Konnov before we added the feature, so it includes some workarounds): [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)
 
 You can find more information on the [documentation](/docs/checking-properties#inductive-invariants) as well.
 
