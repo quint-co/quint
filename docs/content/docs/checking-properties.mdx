@@ -65,7 +65,7 @@ Quint reports:
 And that informs us that, in most executions, there is a state where Alice has a larger balance than that of Bob.
 
 <Callout>
-  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios. 
+  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios.
 </Callout>
 
 ### Inspecting interesting traces with `--invariant`
@@ -124,3 +124,100 @@ The `--invariants` option also works with the `verify` command, allowing you to 
 ```sh
 quint verify bank.qnt --invariants no_negatives accounts_match total_positive
 ```
+
+## Inductive Invariants
+
+An inductive invariant is a special, more powerful kind of invariant.
+They are a powerful design artifact as they capture the core of why a system is correct. Moreover, inductive invariants enable complete verification without exhaustive state exploration.
+
+### How Ordinary Invariants Work
+
+Model checking of ordinary (non-inductive) invariants follows a straightforward but potentially expensive approach:
+
+1. Check the invariant holds in all initial states
+2. Use the step action and a search strategy (breadth-first, depth-first, etc.) to systematically explore all states reachable from the initial states
+3. Verify the invariant holds in every discovered state
+
+This process may require analyzing arbitrarily long execution sequences. As explained in our [Model Checkers](/docs/model-checkers) documentation, checking ordinary invariants forces you to choose between:
+
+- **Symbolic bounded model checking** (Apalache) - Solves constraints representing executions up to a given length, providing incomplete verification results
+- **Explicit-state model checking** (TLC) - Enumerates all possible states and transitions, which can become computationally intractable for large systems
+
+### The Inductive Approach
+
+Inductive invariants use a fundamentally different verification strategy. Instead of verifying an invariant on all reachable states by exploring them explicitly, the approach relies on a stronger inductive invariant to prove the goal invariant. The verification process consists of three steps:
+
+1. **Base case**: Verify the inductive invariant holds in all initial states
+2. **Inductive step**: Prove that if the inductive invariant holds in some state A, then after applying any step transition, the resulting state A' also satisfies the inductive invariant
+3. **Implication**: Show that the inductive invariant logically implies the goal invariant
+
+The key insight is that in step 2, state A is not constructed by applying transitions from initial states. Instead, A is any arbitrary state satisfying the inductive invariant's constraints. Through mathematical induction on steps 1 and 2, we can conclude that the inductive invariant holds on all reachable states without explicitly constructing those states.
+
+### Trade-offs and Challenges
+
+While inductive invariants may avoid the state explosion problem, they introduce their own complexities:
+- Finding the right inductive invariant requires expertise and creative insight. Unlike model checking where you simply specify properties to verify, you must construct the strengthened invariant yourself, typically through an iterative process of trial and refinement.
+- To prove your desired property, you typically need to prove something stronger (the inductive invariant), which can feel counterintuitive. The invariant that makes the proof work may require non-obvious insights about the system.
+
+### When Inductive Invariants Excel
+
+Inductive invariants become particularly powerful when:
+
+- Enumerating all reachable states would be computationally prohibitive
+- The inductive invariant's constraints are well-suited to Apalache's symbolic reasoning capabilities
+- The system has complex state spaces that resist explicit enumeration
+
+This approach can provide complete verification results even for systems where traditional model checking approaches fail due to state explosion or infinite behaviors.
+
+
+### Checking Inductive Invariants
+
+An inductive invariant `ind_inv` can be checked with:
+
+```sh
+quint verify file.qnt --inductive-invariant ind_inv
+```
+
+To also check if `ind_inv` implies an ordinary invariant `inv`, run:
+
+```sh
+quint verify file.qnt --inductive-invariant ind_inv --invariant inv
+```
+
+Simulation (`quint run`) does not support inductive invariants.
+
+### Requirement: "TypeOK"
+
+In order to check an inductive invariant, it has to be constrained enough, otherwise you might see errors like "x is used before it is assigned". More specifically, for each state variable `x`, you need to have either:
+1. `x == <value>`
+2. `x.in(<set of possible values>)`
+
+We almost always use (2) for inductive invariants. **AFTER** this constraint, you can write other constraints like `x * 2 < 10`, but the first time `x` appears in the predicate, it must be something about its domain. We usually call the predicates that define the domains of variables `TypeOK`.
+
+### How it works
+
+Quint will call Apalache 2-3 times (depending on whether an ordinary invariant was provided):
+1. To check if the inductive invariant holds in all possible initial states (base case). This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --invariant ind_inv --max-steps 0
+  ```
+2. To check if, starting from any state where the inductive invariant holds, taking any step results in a state where the invariant still holds. This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --init ind_inv --invariant ind_inv --max-steps 1
+  ```
+  PS: you'd get an error here as `ind_inv` is not an action, and therefore can't be used as `--init`. Using `--inductive-invariant` takes care of this for you.
+
+3. To check if, in any state where the inductive invariant holds, the ordinary invariant also holds. This is the equivalent of calling:
+  ```sh
+  quint verify file.qnt --init ind_inv --invariant inv --max-steps 0
+  ```
+
+### Examples
+
+Check out the blog post [How to write Inductive Invariants](/posts/inductive-invariants) to learn more, and the following examples which include inductive invariants.
+- The algorithm from Lamport's Teaching Concurrency paper: [teaching.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/teaching.qnt)
+- Incrementing a shared counter with a mutex: [mutex.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/mutex.qnt)
+- The folklore reliable broadcast protocol explained in the blog post: [reliablebc.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReliableBroadcast/reliablebc.qnt)
+- The bakery algorithm, with a more complex inductive invariant: [bakery.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/Bakery/bakery.qnt)
+- Dijkstra's termination detection in a ring: [ewd840.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ewd840/ewd840.qnt)
+- ChonkyBFT agreement (written by Igor Konnov before we added the feature to Quint, so it includes some workarounds): [inductive.qnt](https://github.com/matter-labs/era-consensus/blob/3c63546474b3a62864fce872a1b10fb0b4d0da06/spec/protocol-spec/simplified/inductive.qnt)

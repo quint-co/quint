@@ -34,7 +34,7 @@ Observe the potential here: In many software projects, a test is a function writ
 
 ## Trace validation in one paragraph
 
-  * [ ] Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc.) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't. In other words, there is a bug in your code.
+Trace validation can be seen as the other way around (from MBT). Instead of using the model to generate test data, you use the data from your production (or staging etc.) environments, but the expectations of what should happen with that data will come from the model. You do this by adding some sort of logging to your code that spits out information about the trace (either the transitions, telling what happened, like `deposit("Bob", 100)`; and/or the states, with sequential snapshots of the relevant balances, like `"Bob" -> 40, "Alice -> 60"`). You then capture the logged data and ask Quint: is this sequence of transitions/states possible in my model? And if Quint tells you "no", it means that your code allows something that the model doesn't. In other words, there is a bug in your code.
 
 | Data       | Expectations |
 | :---       | :---         |
@@ -65,7 +65,7 @@ Explaining the command:
 - `--n-traces` determines how many traces the simulator will hold in memory. It will hold the `N` longest traces in case there is no violation, or the shortest ones if they represent violations to given properties (not the case in this example).
   - Note: if you want more than 10k traces, you need to also increase `--max-samples`, as 10k is the default for that.
   - Troubleshooting: If you run out of node memory while running this, you can increase it with `NODE_OPTIONS="--max-old-space-size=8192"`. Shouldn't be the case for 10k on modern computers.
-- `--out-itf` specifies that we want to dump all those traces to JSON, and where to put them. 
+- `--out-itf` specifies that we want to dump all those traces to JSON, and where to put them.
 
 This will create files from `traces/out0.itf.json` to `traces/out9999.itf.json` with a bunch of executions that our model allows.
 

@@ -88,6 +88,8 @@ get_main () {
     main="--main=badValues"
   elif [[ "$file" == "classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt" ]] ; then
     main="--main=KSetBadValues"
+  elif [[ "$file" == "classic/distributed/Bakery/bakery.qnt" ]] ; then
+    main="--main=verification"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
@@ -144,12 +146,14 @@ get_verify_args () {
     args="--init=Init --step=Next"
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
-  elif [[ "$file" == "classic/distributed/TeachingConcurrency/teachingConcurrency.qnt" ]] ; then
-    args="--invariant yContainsOne --inductive-invariant inv"
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/teaching.qnt" ]] ; then
+    args="--invariant correctness --inductive-invariant IndInv"
   elif [[ "$file" == "classic/distributed/TeachingConcurrency/mutex.qnt" ]] ; then
     args="--invariant=correctness --inductive-invariant=inv"
   elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
     args='--invariant TerminationDetection --inductive-invariant "TypeOK and Inv"'
+  elif [[ "$file" == "classic/distributed/Bakery/bakery.qnt" ]] ; then
+    args='--invariant correctness --inductive-invariant IndInv'
   fi
   echo "${args}"
 
