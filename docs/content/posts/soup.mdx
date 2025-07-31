@@ -12,18 +12,19 @@ tags:
 
 # Message Soup: the Secret Sauce for Consensus Specifications
 
+If you've ever tried to debug a consensus implementation, you know the frustration: your algorithm is stuck, but the logs shows hundreds of message-passing steps that obscure what's actually happening. You're drowning in implementation details when what you really need to understand is whether enough validators have voted to move to the next phase.
+
+
 Writing specifications is an art. You want to be detailed enough to actually capture all the things you want to talk about, but you want to be abstract enough to not be required to deal (too much) with the things you don't want to talk about. 
 
-TODO: pain points. Why should I care?
 
-There are some best practices that are useful to know. In this post we talk about one of them, the message soup, and how it helps you to focus on the core of consensus mechanism.
 
-In this post, we'll explore the message soup pattern, demonstrate its benefits through a comparison of specification approaches, and show how it leads to more analyzable consensus specifications.
+There are some best practices that are useful to know. In this post we talk about one of them, the message soup, and how it helps you to focus on the core of consensus mechanism. We'll explore the message soup pattern, demonstrate its benefits through a comparison of specification approaches, and show how it leads to more analyzable consensus specifications.
 
 
 ## Recent consensus specifications
 
-Consensus algorithms have recently gained novel attention, with Malachite, Alpenglow, Espresso, and MonadBFT, minimmit being just some examples. 
+Consensus algorithms have recently gained novel attention, with Malachite, Alpenglow, Espresso, and MonadBFT, minimmit being just some example projects. 
 TODO link to other blog posts on Espresso, Alpenglow. 
 As mentioned previously, we are working on a library to make specification of consensus algorithms more easy. As part of this, we have written specifications for newly announced algorithms. Two examples are Solana's Aplenglow and Category Lab's MonadBFT.
 We basically translated what was written in these paper into Quint. 
@@ -67,3 +68,7 @@ TODO: look for the same witness. Show that MonadSoup finds a shorter trace
 - How resilient to Byzantine messages
 
 TODO: Perhaps graphs for multiple witnesses and use webpage magic to make it easier to view
+
+TODO: Not sure where to put this:
+- [Alpenglow](https://quint-lang.org/posts/alpenglow)
+- [Espresso](https://informal.systems/blog/espresso-hotshot-epoch-changes-in-quint-2025)
