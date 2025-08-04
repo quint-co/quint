@@ -51,23 +51,56 @@ In contrast, the Monad spec has the action `receive_message`. Most of the time, 
 
 Let's be clear. This is not about comparing the two consensus algorithms. The point we are discussing here is a matter of abstraction in the specification. To not compare apples and oranges in the remainder of the post, and to not give the wrong impression that we compare different algorithms, we have refactored MonadBFT to also work on the message soup. This has allowed us to analyze interesting scenarios that we couldn't do with our first attempt of specifying it.
 
-## Performance comparison
 
 
-TODO: you can take a look here. Here is the action that corresponds to the logic discussed above
 
-TODO: look for the same witness. Show that MonadSoup finds a shorter trace
+## Cooking the soup: from single messages to quorum transitions
+The recipe to go from explicit bookeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
+This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
 
+```
+pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
+    if (s.is_leader() and s.is_valid(vote))
+        val s1 = s.add_vote(vote)
+        if (s1.get_votes(vote.id).size() >= Q)
+            val qc = s1.build_qc(vote.id)
+            val p =  s1.build_proposal(qc)
+            {postState: s1 , effects: Set(BroadcastProp(p))}
+        else
+            nop(s1)
+    else
+        nop(s)
+```
 
-- How fast are we finding witnesses 
-- How long are witnesses
-    - More understandable
-- How resilient to Byzantine messages
+```
+pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transition] =
+    if (s.is_leader())
+        vote_soup.filter(v => s.is_valid(v))
+                 .groupBy(v => v.id)
+                 .values()
+                 .filter(q => q.size() >= Q)
+                 .map(vs => s.build_qc(vs))
+                 .map(qc => s.build_proposal(qc))
+                 .map(p => {postState: s , effects: Set(BroadcastProp(p))})
+    else
+        Set(nop(s))
+```
+Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses that explore different scenarios ranging from a simple reproposal case to more complex scenarios like the disappearance of a high tip from subsequent view. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
 
-TODO: Perhaps graphs for multiple witnesses and use webpage magic to make it easier to view
+## Long Story Short
+Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average 37 steps with message soup needed 500+ steps in the original bookkeeping version. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation.
+Whether you're manually analyzing traces or feeding them to an LLM to parse and explain the behavior, shorter and more coarse-grained traces are always better. For engineers, it's about cognitive load as you can actually follow the consensus flow without drowning in message-handling mechanics. For language models, it's about token efficiency—why burn through your context window on message tracking when you could focus those tokens on the actual algorithmic logic?
 
-TODO: find a place: it is also practice to model Byzantine faults, but just preloading all messages that they can send in the message soup.
+## A Need for Speed
+The message soup version finds witnesses at least 3x faster than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
 
+## What Doesn't Kill You Makes You Stronger
+A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause state space explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup. 
+The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
+When you're dealing with adversarial networks, what doesn't kill your protocol makes it stronger. The message soup cuts through the byzantine noise and helps you focus on what really matters: is your design still safe when under attack?
+
+TODO: Add graphs
+TODO: look for the same witness. Show that MonadSoup finds a shorter trace (Do we need to show a trace) ? 
 
 
 List of blog posts/resources for consensus in Quint:
