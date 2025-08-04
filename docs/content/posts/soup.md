@@ -58,6 +58,7 @@ Let's be clear. This is not about comparing the two consensus algorithms. The po
 The recipe to go from explicit bookeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
 This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
 
+## TODO: This needs better Presentation (Arrow to represent the transformation)
 ```
 pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
     if (s.is_leader() and s.is_valid(vote))
@@ -91,16 +92,18 @@ Now let's compare the two MonadBFT specifications: the original with explicit bo
 Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average 37 steps with message soup needed 500+ steps in the original bookkeeping version. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation.
 Whether you're manually analyzing traces or feeding them to an LLM to parse and explain the behavior, shorter and more coarse-grained traces are always better. For engineers, it's about cognitive load as you can actually follow the consensus flow without drowning in message-handling mechanics. For language models, it's about token efficiency—why burn through your context window on message tracking when you could focus those tokens on the actual algorithmic logic?
 
+## TODO: ADD BAR PLOT HERE FOR THE EXAMPLE ABOVE
+
 ## A Need for Speed
 The message soup version finds witnesses at least 3x faster than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
+
+## TODO: ADD REST OF BAR PLOTS HERE
 
 ## What Doesn't Kill You Makes You Stronger
 A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause state space explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup. 
 The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
+## TODO: ADD LINE PLOT HERE
 When you're dealing with adversarial networks, what doesn't kill your protocol makes it stronger. The message soup cuts through the byzantine noise and helps you focus on what really matters: is your design still safe when under attack?
-
-TODO: Add graphs
-TODO: look for the same witness. Show that MonadSoup finds a shorter trace (Do we need to show a trace) ? 
 
 
 List of blog posts/resources for consensus in Quint:
