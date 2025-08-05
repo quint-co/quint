@@ -94,7 +94,7 @@ Whether you're manually analyzing traces or feeding them to an LLM to parse and 
 
 ## TODO: ADD BAR PLOT HERE FOR THE EXAMPLE ABOVE
 
-## A Need for Speed
+## The Need for Speed
 The message soup version finds witnesses at least 3x faster than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
 
 ## TODO: ADD REST OF BAR PLOTS HERE
