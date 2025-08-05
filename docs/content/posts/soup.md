@@ -86,7 +86,10 @@ pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transitio
     else
         Set(nop(s))
 ```
-Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses that explore different scenarios ranging from a simple reproposal case to more complex scenarios like the disappearance of a high tip from subsequent view. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
+Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
+
+The witnesses we use in our experiments explore different scenarios. Some are quite easy to construct in short executions (like 
+a simple case were a proposal is reproposed) to more complex scenarios that require longer executions to reach them (like the disappearance of a high tip from subsequent view). 
 
 ## Long Story Short
 Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates.
