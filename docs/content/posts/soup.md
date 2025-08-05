@@ -113,5 +113,5 @@ When you're dealing with adversarial networks, what doesn't kill your protocol m
 List of blog posts/resources for consensus in Quint:
 - [Solana Alpenglow](https://quint-lang.org/posts/alpenglow)
 - [Espresso Hotshot](https://informal.systems/blog/espresso-hotshot-epoch-changes-in-quint-2025)
-- [ZKSynch ChonkyBFT](https://protocols-made-fun.com/consensus/matterlabs/quint/specification/modelchecking/2024/07/29/chonkybft.html)
+- [ZKSync ChonkyBFT](https://protocols-made-fun.com/consensus/matterlabs/quint/specification/modelchecking/2024/07/29/chonkybft.html)
 - [Commonware Minimmit](https://github.com/commonwarexyz/monorepo/tree/main/pipeline/minimmit/quint)
