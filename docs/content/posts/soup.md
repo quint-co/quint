@@ -26,7 +26,13 @@ Consensus algorithms have recently gained novel attention, with Malachite, Alpen
 
 We have written some of these specifications for newly announced algorithms. For Solana's Alpenglow and Category Lab's MonadBFT we have taken a straight-forward approach: we have specified in Quint what was written in the original papers. 
 
-TODO: Doings is better than reading 
+## Doing is better than reading
+Reading about consensus algorithms in papers is one thing, but actually specifying them is where the real magic happens. This blog post gives you the soup recipe, but the best you can do is try it with your own favourite algorithm.
+
+For the hands-on experience, you'll need:
+- [Install](../getting-started) Quint (TLDR: `npm i @informalsystems/quint -g`)
+- Give Quint a star on [GitHub](https://github.com/informalsystems/quint) (this is a very important step!)
+- Clone our [MonadBFT repository](https://github.com/informalsystems/monad-spec)
 
 
 As we discussed in the [previous post](https://quint-lang.org/posts/alpenglow), a big value we get out of specs is that they help us to understand the algorithm. So let's do this exercise again, and let Quint generate example traces, where a block has been finalized
@@ -51,13 +57,10 @@ In contrast, the Monad spec has the action `receive_message`. Most of the time, 
 
 Let's be clear. This is not about comparing the two consensus algorithms. The point we are discussing here is a matter of abstraction in the specification. To not compare apples and oranges in the remainder of the post, and to not give the wrong impression that we compare different algorithms, we have refactored MonadBFT to also work on the message soup. This has allowed us to analyze interesting scenarios that we couldn't do with our first attempt of specifying it.
 
-
-
-
 ## Cooking the soup: from single messages to quorum transitions
 The recipe to go from explicit bookeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
 This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
-
+In the example below, we sketch how a simplified vote handling function can be easily refactored to operate on the message soup:
 ## TODO: This needs better Presentation (Arrow to represent the transformation)
 ```
 pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
@@ -88,8 +91,7 @@ pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transitio
 ```
 Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
 
-The witnesses we use in our experiments explore different scenarios. Some are quite easy to construct in short executions (like 
-a simple case were a proposal is reproposed) to more complex scenarios that require longer executions to reach them (like the disappearance of a high tip from subsequent view). 
+The witnesses we use in our experiments explore different scenarios. Some are quite easy to construct in short executions, like a simple case where a proposal is reproposed. Others are more complex scenarios that require longer executions to be observed.
 
 ## Long Story Short
 Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates.
@@ -98,7 +100,7 @@ Whether you're manually analyzing traces or feeding them to an LLM to parse and 
 ## TODO: ADD BAR PLOT HERE FOR THE EXAMPLE ABOVE
 
 ## The Need for Speed
-The message soup version finds witnesses at least 3x faster than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
+The message soup version finds witnesses at **least 3x faster** than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
 
 ## TODO: ADD REST OF BAR PLOTS HERE
 
