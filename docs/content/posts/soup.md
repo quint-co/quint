@@ -99,7 +99,7 @@ The message soup version finds witnesses at least 3x faster than the bookkeeping
 
 ## TODO: ADD REST OF BAR PLOTS HERE
 
-## What Doesn't Kill You Makes You Stronger
+## When the Soup Gets Spicy: Byzantine Faults
 A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause state space explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup. 
 The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
 ## TODO: ADD LINE PLOT HERE
