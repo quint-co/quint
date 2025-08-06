@@ -95,7 +95,7 @@ The witnesses we use in our experiments explore different scenarios. Some are qu
 
 ## Long Story Short
 Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates.
-Whether you're manually analyzing traces or feeding them to an LLM to parse and explain the behavior, shorter and more coarse-grained traces are always better. For engineers, it's about cognitive load as you can actually follow the consensus flow without drowning in message-handling mechanics. For language models, it's about token efficiency—why burn through your context window on message tracking when you could focus those tokens on the actual algorithmic logic?
+Even if you are using LLMs to parse and explain the traces for you, this can make it focus on what you really want to understand instead of drowning in message-handling mechanics.
 
 ## TODO: ADD BAR PLOT HERE FOR THE EXAMPLE ABOVE
 
