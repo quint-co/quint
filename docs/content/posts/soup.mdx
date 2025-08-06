@@ -1,6 +1,6 @@
 ---
 title: "Message Soup: the Secret Sauce for Consensus Specifications"
-date: 2025-07-30
+date: 2025-08-14
 excerpt: 
 authors:
     - name: Yassine Boukhari
@@ -70,33 +70,37 @@ Let's be clear. This is not about comparing the two consensus algorithms. The po
 The recipe to go from explicit bookeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
 This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
 In the example below, we sketch how a simplified vote handling function can be easily refactored to operate on the message soup:
+
 ## TODO: This needs better Presentation (Arrow to represent the transformation)
-```
+```quint /VoteMsg/ /Transition/
 pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
-    if (s.is_leader() and s.is_valid(vote))
-        val s1 = s.add_vote(vote)
-        if (s1.get_votes(vote.id).size() >= Q)
-            val qc = s1.build_qc(vote.id)
-            val p =  s1.build_proposal(qc)
-            {postState: s1 , effects: Set(BroadcastProp(p))}
-        else
-            nop(s1)
+  if (s.is_leader() and s.is_valid(vote))
+    val s1 = s.add_vote(vote)
+    if (s1.get_votes(vote.id).size() >= Q)
+      val qc = s1.build_qc(vote.id)
+      val p = s1.build_proposal(qc)
+      { postState: s1, effects: Set(BroadcastProp(p)) }
     else
-        nop(s)
+      nop(s1)
+  else
+    nop(s)
 ```
 
-```
+```quint /Set[VoteMsg]/ /Set[Transition]/
 pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transition] =
-    if (s.is_leader())
-        vote_soup.filter(v => s.is_valid(v))
-                 .groupBy(v => v.id)
-                 .values()
-                 .filter(q => q.size() >= Q)
-                 .map(vs => s.build_qc(vs))
-                 .map(qc => s.build_proposal(qc))
-                 .map(p => {postState: s , effects: Set(BroadcastProp(p))})
-    else
-        Set(nop(s))
+  if (s.is_leader())
+    vote_soup
+      .filter(v => s.is_valid(v))
+      .groupBy(v => v.id)
+      .values()
+      .filter(q => q.size() >= Q)
+      .map(votes => {
+        val qc = s.build_qc(vote.id)
+        val p = s.build_proposal(qc)
+        { postState: s, effects: Set(BroadcastProp(p)) }
+      })
+  else
+    Set(nop(s))
 ```
 Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
 
@@ -151,3 +155,5 @@ List of blog posts/resources for consensus in Quint:
 - Igor Konnov's blog post on [ZKSync ChonkyBFT](https://protocols-made-fun.com/consensus/matterlabs/quint/specification/modelchecking/2024/07/29/chonkybft.html)
 - Commonware's Quint spec on [Minimmit](https://github.com/commonwarexyz/monorepo/tree/main/pipeline/minimmit/quint)
 - The examples in the Quint repo contain a [text book consensus algorithm](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt) and [Tendermint](https://github.com/informalsystems/quint/tree/main/examples/cosmos/tendermint)
+
+<Comments/>
