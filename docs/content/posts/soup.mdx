@@ -1,7 +1,7 @@
 ---
 title: "Message Soup: the Secret Sauce for Consensus Specifications"
 date: 2025-08-14
-excerpt: 
+excerpt:
 authors:
     - name: Yassine Boukhari
     - name: Gabriela Moreira
@@ -33,7 +33,7 @@ There are some best practices that are useful to know. In this post we talk abou
 
 Consensus algorithms have recently gained novel attention, with Malachite, Alpenglow, Espresso, and MonadBFT, Minimmit, ChonkyBFT being just some example projects. Did you know that all of them have a Quint specification? You'll find a list with links at the bottom of this post.
 
-We have written some of these specifications for newly announced algorithms. For Solana's Alpenglow and Category Lab's MonadBFT we have taken a straight-forward approach: we have specified in Quint what was written in the original papers. 
+We have written some of these specifications for newly announced algorithms. For Solana's Alpenglow and Category Lab's MonadBFT we have taken a straight-forward approach: we have specified in Quint what was written in the original papers.
 
 ## Doing is better than reading
 Reading about consensus algorithms in papers is one thing, but actually specifying them is where the real magic happens. This blog post gives you the soup recipe, but the best you can do is try it with your own favourite algorithm.
@@ -52,15 +52,15 @@ While we would say, that these consensus algorithms are more or less comparable,
 
 ## The message soup design pattern vs. explicit bookkeeping
 
-Let's look a bit at the structure of the actions. As we already have seen in the previous post, in the Alpenglow specification we have actions like `blockNotarizedAction(v, slot)`, which is enabled when 60% of the voting power have sent a notar vote. In more detail, all messages that are sent are stored (forever) in a variable `msgBuffer`. This is the famous message soup; one set that contains all message that were ever sent. 
+Let's look a bit at the structure of the actions. As we already have seen in the previous post, in the Alpenglow specification we have actions like `blockNotarizedAction(v, slot)`, which is enabled when 60% of the voting power have sent a notar vote. In more detail, all messages that are sent are stored (forever) in a variable `msgBuffer`. This is the famous message soup; one set that contains all message that were ever sent.
 
 This is a modeling trick. Production systems never work this way: messages travel over network stacks and disappear once received. However, production nodes do store information about received messages, making the local state an imperfect snapshot of network history.
 
 Node actions are based on this stored history; there's one level of indirection through receiving and storing. In specifications, we can eliminate this indirection. Instead of defining actions based on local state (which depends on network history), we can define them directly based on network history: the message soup.
 
-Observe that `blockNotarizedAction(v, slot)` is guarded by a predicate over the message soup (has 60% of the voting power voted), and this predicate is evaluated by the quint simulator. What is happening here effectively is that all the bookkeeping that an implementation is doing (reading messages one-by-one, storing it, eliminating duplicates, pruning etc.) is abstracted away, and only the **effect** of the bookkeeping is visible in a Quint run. This is a good thing, if we don't care too much about the bookkeeping. Remember, we don't want all the details that the logs of a testnet would give to us. 
+Observe that `blockNotarizedAction(v, slot)` is guarded by a predicate over the message soup (has 60% of the voting power voted), and this predicate is evaluated by the quint simulator. What is happening here effectively is that all the bookkeeping that an implementation is doing (reading messages one-by-one, storing it, eliminating duplicates, pruning etc.) is abstracted away, and only the **effect** of the bookkeeping is visible in a Quint run. This is a good thing, if we don't care too much about the bookkeeping. Remember, we don't want all the details that the logs of a testnet would give to us.
 
-Note: There are specific questions, e.g., when you want to focus on optimization in the bookkeeping implementation or want to focus on specifics in which order predicates should be evaluated, where modeling bookkeeping makes a lot of sense (we have done it in the driver and voterkeeper specs for Malachite). But for analyzing the core consensus algorithm it is good practice that these specifics should be abstracted. 
+Note: There are specific questions, e.g., when you want to focus on optimization in the bookkeeping implementation or want to focus on specifics in which order predicates should be evaluated, where modeling bookkeeping makes a lot of sense (we have done it in the driver and voterkeeper specs for Malachite). But for analyzing the core consensus algorithm it is good practice that these specifics should be abstracted.
 
 In contrast, the Monad spec has the action `receive_message`. Most of the time, this action doesn't do anything interesting: it just stores that it has received a message. Only when the number of received messages surpasses a given threshold, the action does something interesting, like sending a message or finalizing a block. In contrast, the `blockNotarizedAction(v, slot)` always does something interesting, but it happens more rarely. Observe that `receive_message` actually pulls all the bookkeeping within the specification, and its state space. So we have a level detail here in the specification, that we don't really care about, and which actually gets in our way, when wanting to analyze the core consensus mechanism.
 
@@ -71,7 +71,6 @@ The recipe to go from explicit bookeeping to the message soup pattern is surpris
 This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
 In the example below, we sketch how a simplified vote handling function can be easily refactored to operate on the message soup:
 
-## TODO: This needs better Presentation (Arrow to represent the transformation)
 ```quint /VoteMsg/ /Transition/
 pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
   if (s.is_leader() and s.is_valid(vote))
@@ -85,6 +84,8 @@ pure def upon_vote_msg(vote: VoteMsg, s: LocalState): Transition =
   else
     nop(s)
 ```
+
+got refactored into:
 
 ```quint /Set[VoteMsg]/ /Set[Transition]/
 pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transition] =
@@ -137,7 +138,7 @@ The message soup version finds witnesses **at least 3x faster** than the bookkee
 
 ## When the Soup Gets Spicy: Byzantine Faults
 A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. (We have used this in our earlier [blog post on Alpenglow](https://quint-lang.org/posts/alpenglow), where we wanted to analyze the issue of having too many faults.)
-The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause combinatorial explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup. 
+The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause combinatorial explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup.
 The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
 
 <HTMLPlot
