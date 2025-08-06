@@ -113,8 +113,9 @@ When you're dealing with adversarial networks, what doesn't kill your protocol m
 
 
 List of blog posts/resources for consensus in Quint:
+- The [MonadBFT spec](https://github.com/informalsystems/monad-spec) discussed in this post
 - Quint blog post on [Solana Alpenglow](https://quint-lang.org/posts/alpenglow)
 - Informal's blog post on [Espresso Hotshot](https://informal.systems/blog/espresso-hotshot-epoch-changes-in-quint-2025)
 - Igor Konnov's blog post on [ZKSync ChonkyBFT](https://protocols-made-fun.com/consensus/matterlabs/quint/specification/modelchecking/2024/07/29/chonkybft.html)
 - Commonware's Quint spec on [Minimmit](https://github.com/commonwarexyz/monorepo/tree/main/pipeline/minimmit/quint)
-- The [MonadBFT spec](https://github.com/informalsystems/monad-spec) discussed in this post
+- The examples in the Quint repo contain a [text book consensus algorithm](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt) and [Tendermint](https://github.com/informalsystems/quint/tree/main/examples/cosmos/tendermint)
