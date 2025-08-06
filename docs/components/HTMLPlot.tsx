@@ -1,14 +1,9 @@
 // Taken from: https://fengbojun.com/blog/embedding-interactive-plotly-charts-in-mdx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
-export function HTMLPlot({
-  title,
-  pathname,
-  height_before_scale = '433.59',
-  width_before_scale = '768',
-}) {
+export function HTMLPlot({ title, pathname, height_before_scale = '433.59', width_before_scale = '768' }) {
   // Convert string to number, state to store the current plot layout
   const height_numeric = +height_before_scale
   const width_numeric = +width_before_scale
