@@ -4,14 +4,23 @@ date: 2025-07-30
 excerpt: 
 authors:
     - name: Yassine Boukhari
-    - name: Gabriela Moreira    
+    - name: Gabriela Moreira
     - name: Josef Widder
 
 tags:
     - intermediate
 ---
 
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+import { HTMLPlot } from '../../components/HTMLPlot'
+
 # Message Soup: the Secret Sauce for Consensus Specifications
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
 
 If you've ever tried to debug a consensus implementation, you know the frustration: your algorithm is stuck, but the logs shows hundreds of steps that obscure what's actually happening. You're drowning in implementation details when what you really need to understand is whether enough validators have voted to move to the next phase.
 
@@ -97,18 +106,41 @@ The witnesses we use in our experiments explore different scenarios. Some are qu
 Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates.
 Even if you are using LLMs to parse and explain the traces for you, this can make it focus on what you really want to understand instead of drowning in message-handling mechanics.
 
-## TODO: ADD BAR PLOT HERE FOR THE EXAMPLE ABOVE
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_reproposal.html"
+/>
 
 ## The Need for Speed
 The message soup version finds witnesses **at least 3x faster** than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
 
-## TODO: ADD REST OF BAR PLOTS HERE
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_commit_tc.html"
+/>
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_missing_qc.html"
+/>
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_missing_tip.html"
+/>
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_no_timeouts.html"
+/>
 
 ## When the Soup Gets Spicy: Byzantine Faults
 A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. (We have used this in our earlier [blog post on Alpenglow](https://quint-lang.org/posts/alpenglow), where we wanted to analyze the issue of having too many faults.)
 The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause combinatorial explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup. 
 The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
-## TODO: ADD LINE PLOT HERE
+
+<HTMLPlot
+  title="Reproposal"
+  pathname="/soup-post-plots/quint_analysis_byz.html"
+/>
+
 When you're dealing with adversarial networks, what doesn't kill your protocol makes it stronger. The message soup cuts through the byzantine noise and helps you focus on what really matters: is your design still safe when under attack?
 
 
