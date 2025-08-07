@@ -1,0 +1,155 @@
+---
+title: "Use‑Cases"
+description: "A curated list of real‑world projects specified with Quint."
+---
+
+import { QuintProjectsGrid, Project } from '../../components/QuintProjectsGrid'
+
+# Quint Use-Cases
+
+export const projects = [
+  {
+    name: "Tendermint Consensus",
+    owner: "Tendermint",
+    authors: [],
+    description: "Reference specification of Tendermint's BFT consensus algorithm.",
+    repo: "https://github.com/informalsystems/quint/tree/main/examples/cosmos/tendermint",
+  },
+  {
+    name: "Interchain Security",
+    owner: "Cosmos Hub (Informal)",
+    authors: ["Philip Offtermatt"],
+    description: "Formalization and model‑based tests for Cosmos Hub's Interchain‑Security implementation.",
+    repo: "https://github.com/cosmos/interchain-security/tree/main/tests/mbt/model",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/model-based-testing-for-the-cosmos-hub" },
+    ],
+  },
+  {
+    name: "CometBFT Mempool",
+    owner: "CometBFT (Informal)",
+    authors: ["Josef Widder", "Lásaro Camargos"],
+    description: "Formalisation & verification of the CometBFT mempool rules.",
+    repo: "https://github.com/cometbft/cometbft/tree/main/spec/mempool/quint",
+  },
+  {
+    name: "CometBFT Gossip (Flood)",
+    owner: "CometBFT (Informal)",
+    authors: ["Hérnan Vanzetto"],
+    description: "Literate specification for a CometBFT's gossip protocol.",
+    repo: "https://github.com/cometbft/cometbft/blob/main/spec/mempool/gossip/flood.md",
+  },
+  {
+    name: "Malachite",
+    owner: "Informal and Starkware",
+    authors: ["Josef Widder", "Daniel Cason"],
+    description: "Spec & several protocol-level tests, all running on the CI for the Malachite consensus engine.",
+    repo: "https://github.com/informalsystems/malachite/tree/main/specs/quint",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/interchain-meet-starknet" },
+      { label: "Talk", url: "https://www.youtube.com/watch?v=_2A_6vPM8AA" },
+    ],
+  },
+  {
+    name: "Namada",
+    owner: "Heliax",
+    authors: ["Manuel Bravo"],
+    description: "Fast redelegation and rewards specification with correctness properties.",
+    repo: "https://github.com/informalsystems/partnership-heliax",
+  },
+  {
+    name: "ChonkyBFT",
+    owner: "Matter Labs",
+    authors: ["Igor Konnov", "Denis Kolegov"],
+    description: "Specification and model checking experiments, including usage of the Twins technique.",
+    repo: "https://github.com/matter-labs/era-consensus/tree/main/spec/protocol-spec",
+    links: [
+      { label: "Blog post", url: "https://protocols-made-fun.com/consensus/matterlabs/quint/specification/modelchecking/2024/07/29/chonkybft" },
+    ],
+  },
+  {
+    name: "ZKSync Governance",
+    owner: "Matter Labs",
+    authors: ["Denis Kolegov", "Igor Konnov"],
+    description: "Gonvernance protocol specification with over 50 invariants",
+    repo: "https://github.com/zksync-association/zk-governance/tree/master/spec",
+    links: [
+      { label: "Blog post", url: "https://protocols-made-fun.com/zksync/matterlabs/quint/specification/modelchecking/2024/09/12/zksync-governance" },
+      { label: "Talk", url: "https://youtu.be/6a3AYcLbHlc?si=cZhDtzb2YsDxR48O"}
+    ],
+  },
+  {
+    name: "Neutron Liquidity Pool Migration",
+    owner: "Neutron",
+    authors: ["Ivan Gavran", "Aleksandar Ignjatijevic"],
+    description: "Model-based testing of Neutron's liquidity migration contracts.",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/model-based-testing-to-secure-neutrons-liquidity" },
+    ],
+  },
+  {
+    name: "Neutron Drop",
+    owner: "Neutron",
+    authors: ["Ivan Gavran", "Aleksandar Ignjatijevic", "Manuel Bravo"],
+    description: "Liquid staking protocol specification.",
+    repo: "https://github.com/informalsystems/audit-drop",
+    links: [],
+  },
+  {
+    name: "Neutron DeX",
+    owner: "Neutron",
+    authors: ["Ivan Gavran", "Manuel Bravo", "Gabriela Moreira"],
+    description: "Decentralized Exchange formal model.",
+    repo: "https://github.com/informalsystems/neutron-dex-model",
+    links: [],
+  },
+  {
+    name: "Mysticeti-C",
+    owner: "Sui",
+    authors: ["Gabriela Moreira", "Martin Hutle"],
+    description: "DAG-based Consensus protocol spec, including an interactive visualization of protocol evolution.",
+    repo: "https://github.com/informalsystems/mysticeti-spec",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/understanding-mysticeti-consensus-with-quint-2025" }
+    ]
+  },
+  {
+    name: "Jellyfish Merkle Tree",
+    owner: "Left Curve",
+    authors: ["Josef Widder", "Aleksandar Ignjatijevic", "Gabriela Moreira"],
+    description: "Literate specifications and model checking of Grug's Jellyfish Merkle sparse tree.",
+    repo: "https://github.com/left-curve/left-curve/tree/main/grug/jellyfish-merkle/spec",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/jellyfish-merkle-tree-quint-2025" }
+    ]
+  },
+  {
+    name: "HotShot Epoch‑change",
+    owner: "Espresso",
+    authors: ["Yassine Boukhari", "Josef Widder", "Gabriela Moreira"],
+    description: "Formalization of the epoch-change protocol, identifying ambiguities in the English spec.",
+    repo: "https://github.com/informalsystems/hotshot-spec",
+    links: [
+      { label: "Blog post", url: "https://informal.systems/blog/espresso-hotshot-epoch-changes-in-quint-2025" }
+    ]
+  },
+  {
+    name: "MonadBFT",
+    owner: "Category Labs",
+    authors: ["Yassine Boukhari", "Josef Widder", "Gabriela Moreira"],
+    description: "Formalization and witnesses for MonadBFT consensus.",
+    repo: "https://github.com/informalsystems/monad-spec/",
+  },
+  {
+    name: "Alpenglow",
+    owner: "Anza Research",
+    authors: ["Josef Widder", "Yassine Boukhari", "Gabriela Moreira"],
+    description: "Formalization from the pseudo-code in the Alpenglow paper.",
+    repo: "https://github.com/informalsystems/Alpenglow-spec/",
+    links: [
+      { label: "Blog post", url: "https://quint-lang.org/posts/alpenglow" },
+    ],
+  },
+];
+
+<QuintProjectsGrid projects={projects} />

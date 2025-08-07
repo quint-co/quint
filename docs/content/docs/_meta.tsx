@@ -15,6 +15,7 @@ export default {
   why: '',
   'what-does-quint-do': '',
   'getting-started': '',
+  'use-cases': '',
   faq: 'FAQ',
   '-- Writing specifications': {
     type: 'separator',
