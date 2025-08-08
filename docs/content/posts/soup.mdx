@@ -1,16 +1,17 @@
 ---
 title: "Message Soup: the Secret Sauce for Consensus Specifications"
-date: 2025-08-14
+date: 2025-08-11
 excerpt:
 authors:
     - name: Yassine Boukhari
-    - name: Gabriela Moreira
     - name: Josef Widder
+    - name: Gabriela Moreira
 
 tags:
     - intermediate
 ---
 
+import Image from 'next/image'
 import { Comments } from '../../components/blog/Comments'
 import { PostMeta } from '../../components/blog/PostMeta'
 import { HTMLPlot } from '../../components/HTMLPlot'
@@ -21,6 +22,8 @@ import { HTMLPlot } from '../../components/HTMLPlot'
   date={metadata.date}
   authors={metadata.authors}
 />
+
+<Image src="/soup.jpg" alt="Alphabet soup with Quint Rocks spelled on it" width={1000} height={500} />
 
 If you've ever tried to debug a consensus implementation, you know the frustration: your algorithm is stuck, but the logs shows hundreds of steps that obscure what's actually happening. You're drowning in implementation details when what you really need to understand is whether enough validators have voted to move to the next phase.
 
@@ -44,10 +47,9 @@ For the hands-on experience, you'll need:
 - Clone our [MonadBFT repository](https://github.com/informalsystems/monad-spec)
 
 
-As we discussed in the [previous post](https://quint-lang.org/posts/alpenglow), a big value we get out of specs is that they help us to understand the algorithm. So let's do this exercise again, and let Quint generate example traces, where a block has been finalized. Upon inspecting the trace produced by Monad's initial specifications, we can see that the detailed bookkeeping of every received message resulted in verbose output of 26 states displayed over 126k lines. In contrast, the trace for Alpenglow was concise enough to be easily displayed in the previous post. 
-TODO: Show that the Monad trace is long and Alpenglow is short
+As we discussed in the [previous post](https://quint-lang.org/posts/alpenglow), a big value we get out of specs is that they help us to understand the algorithm. So let's do this exercise again, and let Quint generate example traces where a block has been finalized. Upon inspecting the trace produced by Monad's initial specifications, we can see that the detailed bookkeeping of every received message resulted in verbose output of 26 states displayed over 126k lines - you'd be scrolling a lot to read even a single state. In contrast, the trace for Alpenglow was concise enough to be easily displayed in the previous post.
 
-While we would say, that these consensus algorithms are more or less comparable, the specifications seem to differ significantly in terms of usability and efficiency. The reason is that the Alpenglow specification uses actions that are guarded by predicates over the message soup, while the Monad spec is doing explicit bookkeeping. Wait! What does all that mean?
+While we would say that these consensus algorithms are more or less comparable, the specifications seem to differ significantly in terms of usability and efficiency. The reason is that the Alpenglow specification uses actions that are guarded by predicates over the **message soup**, while the Monad spec is doing **explicit bookkeeping**. Wait! What does all that mean?
 
 ## The message soup design pattern vs. explicit bookkeeping
 
