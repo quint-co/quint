@@ -15,6 +15,7 @@ import Image from 'next/image'
 import { Comments } from '../../components/blog/Comments'
 import { PostMeta } from '../../components/blog/PostMeta'
 import { HTMLPlot } from '../../components/HTMLPlot'
+import { Callout } from 'nextra/components'
 
 # Message Soup: the Secret Sauce for Consensus Specifications
 
@@ -25,7 +26,7 @@ import { HTMLPlot } from '../../components/HTMLPlot'
 
 <Image src="/soup.jpg" alt="Alphabet soup with Quint Rocks spelled on it" width={1000} height={500} />
 
-If you've ever tried to debug a consensus implementation, you know the frustration: your algorithm is stuck, but the logs shows hundreds of steps that obscure what's actually happening. You're drowning in implementation details when what you really need to understand is whether enough validators have voted to move to the next phase.
+If you've ever tried to debug a consensus implementation, you know the frustration: your algorithm is stuck, but the logs show hundreds of steps that obscure what's actually happening. You're drowning in implementation details when what you really need to understand is whether enough validators have voted to move to the next phase.
 
 Consensus algorithms are among the hardest distributed systems problems to solve correctly, so you don't want to debug them in production. This is exactly why formal specification matters: you need to catch algorithmic errors before deployment. But writing good consensus specifications requires choosing the right level of abstraction.
 
@@ -39,7 +40,7 @@ Consensus algorithms have recently gained novel attention, with Malachite, Alpen
 We have written some of these specifications for newly announced algorithms. For Solana's Alpenglow and Category Lab's MonadBFT we have taken a straight-forward approach: we have specified in Quint what was written in the original papers.
 
 ## Doing is better than reading
-Reading about consensus algorithms in papers is one thing, but actually specifying them is where the real magic happens. This blog post gives you the soup recipe, but the best you can do is try it with your own favourite algorithm.
+Reading about consensus algorithms in papers is one thing, but actually specifying them is where the real magic happens. This blog post gives you the soup recipe, but the best you can do is try it with your own favorite algorithm.
 
 For the hands-on experience, you'll need:
 - [Install](../getting-started) Quint (TLDR: `npm i @informalsystems/quint -g`)
@@ -59,17 +60,19 @@ This is a modeling trick. Production systems never work this way: messages trave
 
 Node actions are based on this stored history; there's one level of indirection through receiving and storing. In specifications, we can eliminate this indirection. Instead of defining actions based on local state (which depends on network history), we can define them directly based on network history: the message soup.
 
-Observe that `blockNotarizedAction(v, slot)` is guarded by a predicate over the message soup (has 60% of the voting power voted), and this predicate is evaluated by the quint simulator. What is happening here effectively is that all the bookkeeping that an implementation is doing (reading messages one-by-one, storing it, eliminating duplicates, pruning etc.) is abstracted away, and only the **effect** of the bookkeeping is visible in a Quint run. This is a good thing, if we don't care too much about the bookkeeping. Remember, we don't want all the details that the logs of a testnet would give to us.
+Observe that `blockNotarizedAction(v, slot)` is guarded by a predicate over the message soup (has 60% of the voting power voted), and this predicate is evaluated by the Quint simulator. What is happening here effectively is that all the bookkeeping that an implementation is doing (reading messages one-by-one, storing it, eliminating duplicates, pruning etc.) is abstracted away, and only the **effect** of the bookkeeping is visible in a Quint run. This is a good thing, if we don't care too much about the bookkeeping. Remember, we don't want all the details that the logs of a testnet would give to us.
 
-Note: There are specific questions, e.g., when you want to focus on optimization in the bookkeeping implementation or want to focus on specifics in which order predicates should be evaluated, where modeling bookkeeping makes a lot of sense (we have done it in the driver and voterkeeper specs for Malachite). But for analyzing the core consensus algorithm it is good practice that these specifics should be abstracted.
+<Callout type="info">
+There are specific questions, e.g., when you want to focus on optimization in the bookkeeping implementation or want to focus on specifics in which order predicates should be evaluated, where modeling bookkeeping makes a lot of sense (we have done it in the driver and voterkeeper specs for Malachite). But for analyzing the core consensus algorithm it is good practice that these specifics should be abstracted.
+</Callout>
 
 In contrast, the Monad spec has the action `receive_message`. Most of the time, this action doesn't do anything interesting: it just stores that it has received a message. Only when the number of received messages surpasses a given threshold, the action does something interesting, like sending a message or finalizing a block. In contrast, the `blockNotarizedAction(v, slot)` always does something interesting, but it happens more rarely. Observe that `receive_message` actually pulls all the bookkeeping within the specification, and its state space. So we have a level detail here in the specification, that we don't really care about, and which actually gets in our way, when wanting to analyze the core consensus mechanism.
 
 Let's be clear. This is not about comparing the two consensus algorithms. The point we are discussing here is a matter of abstraction in the specification. To not compare apples and oranges in the remainder of the post, and to not give the wrong impression that we compare different algorithms, we have refactored MonadBFT to also work on the message soup. This has allowed us to analyze interesting scenarios that we couldn't do with our first attempt of specifying it.
 
 ## Cooking the soup: from single messages to quorum transitions
-The recipe to go from explicit bookeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
-This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create QCs, timeout quorums create TCs, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
+The recipe to go from explicit bookkeeping to the message soup pattern is surprisingly simple. Take any place where you need a quorum of messages to trigger some effect and, instead of modeling each message arrival individually, just model the moment when the quorum threshold is crossed. You skip all the intermediate states where you've received some messages but not enough, and jump straight to "threshold reached, action taken."
+This works particularly well for MonadBFT because it's already structured around quorum-driven events. Vote quorums create `QCs`, timeout quorums create `TCs`, and these certificates drive the consensus protocol forward. In our refactored specification, each certificate formation becomes one atomic transition rather than a series of incremental message processing steps.
 In the example below, we sketch how a simplified vote handling function can be easily refactored to operate on the message soup:
 
 ```quint /VoteMsg/ /Transition/
@@ -104,13 +107,13 @@ pure def upon_vote_quorum(vote_soup: Set[VoteMsg], s: LocalState): Set[Transitio
   else
     Set(nop(s))
 ```
-Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
+
+Now let's compare the two MonadBFT specifications: the original with explicit bookkeeping versus our refactored version using the message soup pattern. To compare the performance of the two approaches, we use a set of witnesses. A witness is something that we expect to hold in at least one state in one execution. We can then ask the Quint simulator whether it can find a trace that leads to a state that is described by the witness. We conducted 2 sets of experiments that answer these questions: How fast can a simulation for the model find a specific witness "once"? What is the frequency of witness observation across multiple samples?
 
 The witnesses we use in our experiments explore different scenarios. Some are quite easy to construct in short executions, like a simple case where a proposal is reproposed. Others are more complex scenarios that require longer executions to be observed.
 
 ## Long Story Short
-Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just a numbers game, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates.
-Even if you are using LLMs to parse and explain the traces for you, this can make it focus on what you really want to understand instead of drowning in message-handling mechanics.
+Remember how we said the message soup approach skips intermediate states? Well, this shows up dramatically in the traces. The same consensus scenario where a reproposal is observed that takes on average **37 steps with the message soup needed 500+ steps in the original bookkeeping version**. That's not just an optimization, it's the difference between seeing the consensus logic clearly versus getting lost in translation, when looking at the output Quint generates. Even if you are using LLMs to parse and explain the traces for you, this can make it focus on what you really want to understand instead of drowning in message-handling mechanics.
 
 <HTMLPlot
   title="Reproposal"
@@ -120,26 +123,39 @@ Even if you are using LLMs to parse and explain the traces for you, this can mak
 ## The Need for Speed
 The message soup version finds witnesses **at least 3x faster** than the bookkeeping approach, and that's in the worst case. For more complex scenarios, the message-per-message version would often time out or run out of memory entirely while the message soup version sailed through. This speed matters because faster executions mean faster debugging cycles and more extensive coverage of the state space. When you can explore more scenarios in the same amount of time, you're establishing more trust in your system. More speed, more trust, more sleep.
 
+Finding a scenario where some proposal was committed with TC (Timeout Certificate):
+
 <HTMLPlot
-  title="Reproposal"
+  title="commit-tc witness"
   pathname="/soup-post-plots/quint_analysis_commit_tc.html"
 />
+
+Finding a scenario where some QC (Quorum Certificate) was not followed by a proposal referencing it:
+
 <HTMLPlot
-  title="Reproposal"
+  title="missing-qc witness"
   pathname="/soup-post-plots/quint_analysis_missing_qc.html"
 />
+
+Finding a scenario where some TC (Timeout Certificate) has a tip and then loses it in a subsequent view:
+
 <HTMLPlot
-  title="Reproposal"
+  title="missing-tip witness"
   pathname="/soup-post-plots/quint_analysis_missing_tip.html"
 />
+
+Finding a scenario with no timeouts:
+
 <HTMLPlot
-  title="Reproposal"
+  title="no-timeouts"
   pathname="/soup-post-plots/quint_analysis_no_timeouts.html"
 />
 
 ## When the Soup Gets Spicy: Byzantine Faults
+
 A powerful trick to model byzantine behavior is to simply pre-populate the message soup with all messages that byzantine nodes could ever send without modeling complex byzantine node logic. (We have used this in our earlier [blog post on Alpenglow](https://quint-lang.org/posts/alpenglow), where we wanted to analyze the issue of having too many faults.)
-The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause combinatorial explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blowup.
+The message soup approach handles the load that comes with this technique more elegantly than explicit bookkeeping: because our system only makes transitions on enabled steps, having a huge number of possibilities for byzantine messages doesn't cause combinatorial explosion. In the bookkeeping approach, every byzantine message creates a new state transition that the system has to explore, leading to exponential blow-up.
+
 The plot below shows resilience to byzantine messages injection. We can see that the frequency of observing witnesses is unaffected for the message soup approach, but the bookkeeping version fails to maintain this resilience. In the single-message version, there's a massive gap between the Byzantine and honest scenarios. Byzantine conditions severely degrade performance while the message soup approach shows barely any difference.
 
 <HTMLPlot
