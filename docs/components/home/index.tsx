@@ -49,13 +49,13 @@ export function Home() {
 
   useEffect(() => {
     // Add gradient class to body on mount
-    document.body.classList.add('gradient-bg');
+    document.body.classList.add('gradient-bg')
 
     // Cleanup on unmount
     return () => {
-      document.body.classList.remove('gradient-bg');
-    };
-  }, []);
+      document.body.classList.remove('gradient-bg')
+    }
+  }, [])
 
   return (
     <div className="overflow-x-hidden">
