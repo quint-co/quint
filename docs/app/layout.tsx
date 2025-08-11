@@ -98,20 +98,18 @@ export default async function RootLayout({ children }) {
         <link rel="icon" href="/icon-dark.png" type="image/png" media="(prefers-color-scheme: dark)" />
       </Head>
       <body>
-        <div className="gradient-bg">
-          <Layout
-            navbar={navbar}
-            footer={footer}
-            pageMap={await getPageMap()}
-            docsRepositoryBase="https://github.com/informalsystems/quint/blob/main/docs"
-            sidebar={{
-              defaultMenuCollapseLevel: 1,
-              toggleButton: true,
-            }}
-          >
-            {children}
-          </Layout>
-        </div>
+        <Layout
+          navbar={navbar}
+          footer={footer}
+          pageMap={await getPageMap()}
+          docsRepositoryBase="https://github.com/informalsystems/quint/blob/main/docs"
+          sidebar={{
+            defaultMenuCollapseLevel: 1,
+            toggleButton: true,
+          }}
+        >
+          {children}
+        </Layout>
         <Script
           id="google-analytics"
           strategy="lazyOnload"

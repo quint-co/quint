@@ -6,7 +6,7 @@ import Image from 'next/image'
 
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CodeSample from './code_sample.mdx'
 import ViolationSample from './violation_sample.mdx'
 
@@ -14,7 +14,6 @@ import { Button } from '../atomic-ui-elements/button'
 import { NewsletterSignupBanner } from '../NewsletterSignupBanner'
 import { classNames } from './classNames'
 import { ProsOrConsList } from './ProsOrConsList'
-import { HeroBackdrop } from './HeroBackdrop'
 import { ProjectsGridCompact } from './ProjectsGridCompact'
 import { projects } from '../../public/projects.tsx'
 
@@ -48,9 +47,18 @@ export function Home() {
     setViolationVisible(!isViolationVisible)
   }
 
+  useEffect(() => {
+    // Add gradient class to body on mount
+    document.body.classList.add('gradient-bg');
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('gradient-bg');
+    };
+  }, []);
+
   return (
     <div className="overflow-x-hidden">
-      <HeroBackdrop />
       <section className="relative py-12 sm:py-16 lg:pb-1">
         <div className="mx-auto max-w-8xl px-4">
           <div className="grid items-start gap-10 lg:grid-cols-1">
