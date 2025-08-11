@@ -74,7 +74,7 @@ export function Home() {
 
               <div className="mt-6 flex flex-wrap items-center gap-4">
                 <Link
-                  href="/docs/get-started"
+                  href="/docs/getting-started"
                   className="relative inline-flex items-center gap-3 rounded-xl px-6 py-3 text-base font-semibold
                              text-white shadow-lg transition active:scale-[0.99]
                              bg-gradient-to-r from-quint-purple/50 to-quint-purple
