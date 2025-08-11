@@ -62,3 +62,19 @@ dd {
   margin-top: -1.5rem !important;
 }
 
+.gradient-bg {
+  background: #CEB6F2;
+  background: linear-gradient(90deg,rgba(206, 182, 242, 1) 0%, rgba(255, 255, 255, 1) 20%);
+  min-height: 100vh;
+  width: 100%;
+}
+ :is(html[class~="dark"] .gradient-bg) {
+  background: #4f3673;
+  background: linear-gradient(90deg, rgba(79, 54, 115, 1) 0%, rgba(0, 0, 0, 1) 20%);
+  min-height: 100vh;
+  width: 100%;
+}
+
+.nextra-container {
+  background: transparent !important;
+}
