@@ -138,7 +138,7 @@ export function Home() {
 
             <div className="xl:col-span-1 text-lg relative isolate">
               <h2 className="relative z-10 text-4xl/tight sm:text-4xl/tight font-extrabold tracking-tight xl:mt-24">
-                Run Quint and get step-by-step executions
+                Can you spot the bug? Quint can
               </h2>
               <Button className="mt-8 sm:mt-10" as="button" variant="secondary" onClick={handleToggleVisibility}>
                 {isViolationVisible ? 'Hide results' : 'Find bug'}
