@@ -56,3 +56,9 @@ dd {
 .text-lg code {
   font-size: 1rem;
 }
+
+/* Nextra component is adding the margin twice, so I cancel it here */
+[role="tabpanel"].x\:mt-6 {
+  margin-top: -1.5rem !important;
+}
+

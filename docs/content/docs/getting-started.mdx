@@ -6,19 +6,40 @@ import Image from 'next/image'
 Welcome to Quint! In this short guide, we'll cover everything from installation to your very first verification.
 
 <Steps>
-### Install Quint with npm
+### Install Quint
 
-Install [node/npm](https://nodejs.org/en/download/package-manager) if you don't have it already. Then, open your terminal and run:
+<Tabs items={['NPM', 'Nix', 'Binaries']}>
+ <Tabs.Tab className="mt-3">
+  Install [node/npm](https://nodejs.org/en/download/package-manager) if you don't have it already. Then, open your terminal and run:
 
-```sh
-npm i @informalsystems/quint -g
-```
+  ```sh
+  npm i @informalsystems/quint -g
+  ```
+
+ </Tabs.Tab>
+ <Tabs.Tab>
+ If you have [Nix](https://nixos.org/) installed, you can obtain a shell with Quint and all its dependencies installed by running:
+
+ ```sh
+ nix-shell -p quint
+ ```
+
+ Note that the release cycle with Nix is slower than with other alternatives, so latest features might not be available.
+
+ The Nix package is a great option to use in the CI.
+ </Tabs.Tab>
+ <Tabs.Tab>
+
+  Download the binaries directly from [GitHub Releases](https://github.com/informalsystems/quint/releases).
+
+ </Tabs.Tab>
+</Tabs>
 
 ### Setup your code editor
 
 For the best experience writing Quint, you should set up your code editor with the Quint tools. The VSCode setup is, by far, the easiest, so you might want to use it if you want a quick start.
 
-<Tabs items={['VSCode', 'Emacs', 'Vim']}>
+<Tabs items={['VSCode', 'Emacs', 'Vim', 'Helix']}>
  <Tabs.Tab>
 <Image src="/vscode.png" alt="Quint extension on VSCode" width={500} height={100} />
  Install the [Quint extension](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode):
@@ -30,9 +51,9 @@ For the best experience writing Quint, you should set up your code editor with t
 
   1. `quint-mode` is a major mode that enables simple syntax highlighting
   2. `lsp-quint` is a client for `lsp-mode`, enabling IDE features provided by `quint-language-server`
-  
+
   These packages are not published anywhere for the moment. Get the files from [Quint's git repository](https://github.com/informalsystems/quint/tree/main/editor-plugins/emacs) (i.e. by cloning it) and then add a configuration like the following (which uses `use-package`):
-  
+
   ```elisp
   (load-file "<path-to-quint-repo>/editor-plugins/emacs/quint-mode.el")
   (load-file "<path-to-quint-repo>/editor-plugins/emacs/lsp-quint.el")
@@ -44,12 +65,12 @@ For the best experience writing Quint, you should set up your code editor with t
   ```
  </Tabs.Tab>
  <Tabs.Tab>
- 
+
  First, you'll need to install the language server via npm:
  ```sh
  npm i @informalsystems/quint-language-server -g
  ```
- 
+
  For Neovim:
  1. Download the [quint.vim](https://github.com/informalsystems/quint/blob/main/editor-plugins/vim/quint.vim) file and move it to `~/.config/nvim/syntax`
  2. Enable automatic syntax highlighting and language server integration by adding the following lines to your `~/.config/nvim/init.vim`:
@@ -60,6 +81,11 @@ au BufNewFile,BufReadPost *.qnt runtime syntax/quint.vim
 ```
 
  For Vim, follow the extended instructions in [here](https://github.com/informalsystems/quint/tree/main/editor-plugins/vim).
+ </Tabs.Tab>
+ <Tabs.Tab>
+
+  🎉 Helix has built-in support for Quint, you don't need to do anything!
+
  </Tabs.Tab>
 </Tabs>
 
@@ -105,7 +131,7 @@ module bank {
 }
 ```
 
-Create a `bank.qnt` file and add the contents above to it. Then, let's try to check the invariant `no_negatives`. This invariant states that none of the balances should be less then zero, ever. An invariant is something that needs to be true for all reachable states. 
+Create a `bank.qnt` file and add the contents above to it. Then, let's try to check the invariant `no_negatives`. This invariant states that none of the balances should be less then zero, ever. An invariant is something that needs to be true for all reachable states.
 
 ### Find a violation
 
@@ -119,7 +145,7 @@ This should result in a violation. You can inspect the balances and find a negat
 quint run bank.qnt --invariant=no_negatives --mbt
 ```
 
-Now, you should see that a withdraw action was taken right before the balances went negative. 
+Now, you should see that a withdraw action was taken right before the balances went negative.
 
 ### Fix the issue
 

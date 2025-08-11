@@ -103,79 +103,79 @@ A counter-example is a trace (a sequence of states) that violates a property. Bo
 
 A counter-example from Quint looks like this:
 
-```
+```ansi
 $ quint run tictactoe.qnt --invariant=XHasNotWon
-An example execution:
-
-[State 0]
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
-      2 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
-      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m)
     ),
-  nextTurn: X
+  nextTurn[90m:[39m [32mX[39m
 }
 
-[State 1]
+[[1mState 1[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
-      2 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty),
-      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mX[39m)),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m)
     ),
-  nextTurn: O
+  nextTurn[90m:[39m [32mO[39m
 }
 
-[State 2]
+[[1mState 2[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
-      2 -> Map(1 -> Occupied(O), 2 -> Empty, 3 -> Empty),
-      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mX[39m)),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m)),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m)
     ),
-  nextTurn: X
+  nextTurn[90m:[39m [32mX[39m
 }
 
-[State 3]
+[[1mState 3[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
-      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Empty),
-      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mX[39m)),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mOccupied[39m([32mX[39m), [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m)),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mEmpty[39m)
     ),
-  nextTurn: O
+  nextTurn[90m:[39m [32mO[39m
 }
 
-[State 4]
+[[1mState 4[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
-      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Occupied(O)),
-      3 -> Map(1 -> Empty, 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mX[39m)),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mOccupied[39m([32mX[39m), [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m)),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m))
     ),
-  nextTurn: X
+  nextTurn[90m:[39m [32mX[39m
 }
 
-[State 5]
+[[1mState 5[22m]
 {
-  board:
-    Map(
-      1 -> Map(1 -> Empty, 2 -> Empty, 3 -> Occupied(X)),
-      2 -> Map(1 -> Occupied(O), 2 -> Occupied(X), 3 -> Occupied(O)),
-      3 -> Map(1 -> Occupied(X), 2 -> Empty, 3 -> Empty)
+  board[90m:[39m
+    [32mMap[39m(
+      [33m1[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mX[39m)),
+      [33m2[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mEmpty[39m, [33m2[39m[90m ->[39m [32mOccupied[39m([32mX[39m), [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m)),
+      [33m3[39m[90m ->[39m [32mMap[39m([33m1[39m[90m ->[39m [32mOccupied[39m([32mX[39m), [33m2[39m[90m ->[39m [32mEmpty[39m, [33m3[39m[90m ->[39m [32mOccupied[39m([32mO[39m))
     ),
-  nextTurn: O
+  nextTurn[90m:[39m [32mO[39m
 }
 
-[violation] Found an issue (36ms).
-Use --verbosity=3 to show executions.
-Use --seed=0x8ac91506b011b to reproduce.
+[31m[violation][39m Found an issue [90m(22ms at 45 traces/second).[39m
+[90mUse --verbosity=3 to show executions.[39m
+[90mUse --seed=0x7d5b21f01286f to reproduce.[39m
 error: Invariant violated
 ```
 
