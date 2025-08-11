@@ -15,7 +15,7 @@ import { NewsletterSignupBanner } from '../NewsletterSignupBanner'
 import { classNames } from './classNames'
 import { ProsOrConsList } from './ProsOrConsList'
 import { ProjectsGridCompact } from './ProjectsGridCompact'
-import { projects } from '../../public/projects.tsx'
+import { projects } from '../../data/projects'
 
 const benefits = [
   [
