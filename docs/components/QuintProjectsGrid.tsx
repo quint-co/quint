@@ -36,11 +36,11 @@ export const QuintProjectsGrid: React.FC<{ projects: Project[] }> = ({ projects 
               {p.name}
             </h3>
             <p className="text-sm font-medium x:text-gray-800 dark:text-gray-200">
-              for {p.owner}
+              protocol by {p.owner}
             </p>
             {p.authors.length > 0 && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                by {p.authors.join(", ")}
+                specification by {p.authors.join(", ")}
               </p>
             )}
           </header>
