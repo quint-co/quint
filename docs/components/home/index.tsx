@@ -21,7 +21,7 @@ const benefits = [
   ],
   [
     'Abstract',
-    ['Specification Languages', ['define only what you care about']],
+    ['Quint', ['define only what matters']],
     ['Programming Languages', ['define how things happen, in detail']],
   ],
   [
