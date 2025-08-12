@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix Quint hanging if Apalache server exits early (#1729)
+
 ### Security
 
 ## v0.26.0 -- 2025-07-14
