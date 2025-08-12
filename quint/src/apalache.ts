@@ -519,8 +519,6 @@ export async function connect(
             }
             // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
             process.removeAllListeners('exit')
-            // Exit for real
-            process.exit(code)
           }
 
           if (apalache.pid) {
