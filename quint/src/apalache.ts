@@ -508,9 +508,11 @@ export async function connect(
           const apalache = child_process.spawn(exe, args, options)
 
           // Exit handler that kills Apalache if Quint exists
-          function exitHandler() {
-            // Try to kill Apalache
+          function exitHandler(code: number) {
             debugLog(verbosityLevel, 'Shutting down Apalache server')
+            // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
+            apalache.removeAllListeners('exit')
+            // Try to kill Apalache
             let killed = apalache.kill('SIGTERM')
             if (!killed) {
               debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
@@ -518,7 +520,7 @@ export async function connect(
             // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
             process.removeAllListeners('exit')
             // Exit for real
-            process.exit(1)
+            process.exit(code)
           }
 
           if (apalache.pid) {
