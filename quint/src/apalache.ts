@@ -38,7 +38,6 @@ import { debugLog, verbosity } from './verbosity'
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 import { apalacheDistDir } from './config'
-import { exit } from 'process'
 
 /**
  * A server endpoint for establishing a connection with the Apalache server.
