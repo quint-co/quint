@@ -38,6 +38,7 @@ import { debugLog, verbosity } from './verbosity'
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 import { apalacheDistDir } from './config'
+import { exit } from 'process'
 
 /**
  * A server endpoint for establishing a connection with the Apalache server.
@@ -509,18 +510,16 @@ export async function connect(
 
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
+            // Try to kill Apalache
             debugLog(verbosityLevel, 'Shutting down Apalache server')
-            try {
-              apalache.kill('SIGTERM')
-            } catch (error: any) {
-              // ESRCH is raised if no process with `pid` exists, i.e.,
-              // if Apalache server exited on its own
-              if (error.code == 'ESRCH') {
-                debugLog(verbosityLevel, 'Apalache already exited')
-              } else {
-                throw error
-              }
+            let killed = apalache.kill('SIGTERM')
+            if (!killed) {
+              debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
             }
+            // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
+            process.removeAllListeners('exit')
+            // Exit for real
+            process.exit(1)
           }
 
           if (apalache.pid) {
@@ -533,6 +532,15 @@ export async function connect(
             process.on('SIGUSR1', exitHandler.bind(null))
             process.on('SIGUSR2', exitHandler.bind(null))
             process.on('uncaughtException', exitHandler.bind(null))
+
+            // Exit Quint if Apalache exits unexpectedly
+            apalache.on('exit', (code) => {
+              debugLog(verbosityLevel, `Apalache server exited with code ${code}, exiting as well`)
+              // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
+              process.removeAllListeners('exit')
+              // Exit for real
+              process.exit(1)
+            })
 
             resolve(right(void 0))
           }
