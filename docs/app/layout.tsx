@@ -59,7 +59,6 @@ const navbar = (
   />
 )
 
-
 const footer = (
   <Footer>
     <div className="flex w-full flex-col sm:flex-row gap-6 items-center justify-between">
@@ -69,11 +68,7 @@ const footer = (
       </div>
 
       <div className="flex gap-6">
-        <a
-          href="https://www.iubenda.com/privacy-policy/80583341"
-          title="Privacy Policy"
-          data-iub-container={true}
-        >
+        <a href="https://www.iubenda.com/privacy-policy/80583341" title="Privacy Policy" data-iub-container={true}>
           Privacy Policy
         </a>
         <a
@@ -127,10 +122,7 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-HD6HX8DTXE"
-        />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-HD6HX8DTXE" />
       </body>
       <Script strategy="afterInteractive" src="https://cdn.iubenda.com/iubenda.js" />
     </html>

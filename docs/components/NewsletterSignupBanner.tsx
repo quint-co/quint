@@ -14,6 +14,7 @@ export function NewsletterSignupBanner() {
         md:grid-cols-2
         gap-12
         items-center
+        mt-6
       "
     >
       <div className="flex flex-col gap-3 items-start">
@@ -105,21 +106,6 @@ export function NewsletterSignupBanner() {
           Subscribe
         </Button>
       </form>
-
-      {/* The purple background */}
-      <div
-        className="
-          absolute
-          -z-10
-          top-1/2
-          left-1/2
-          w-[100vw]
-          h-full
-          bg-quint-purple/10
-          -translate-x-1/2
-          -translate-y-1/2
-        "
-      />
     </div>
   )
 }
