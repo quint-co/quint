@@ -4,7 +4,7 @@
  * A bank module for ICS-020 (Fungible Token Transfer).
  *
  * ICS-020 assumes a high-level "bank module" capable of minting, burning, and
- * transfering tokens. This specification is held as general as possible,
+ * transferring tokens. This specification is held as general as possible,
  * providing only the assumptions required by ICS-020.
  *
  * For a possible implementation, consider the Cosmos SDK bank module:
@@ -112,7 +112,7 @@ module bank {
   }
 
   /* Return `state`, where `amount`-many tokens of denomination `denom` were
-   * moved from `sender`'s account into `receiver`'s acount.
+   * moved from `sender`'s account into `receiver`'s account.
    *
    * Fails iff `amount` is either negative or greater than `sender`'s balance.
    */

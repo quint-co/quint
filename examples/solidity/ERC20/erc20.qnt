@@ -62,7 +62,7 @@ module erc20 {
         { error: "", state: state, returnedTrue: returnedTrue }
     }
 
-    // An auxilliary definition similar to Solidity's require
+    // An auxiliary definition similar to Solidity's require
     pure def require(cond: bool, msg: str): str = {
         if (cond) "" else msg
     }
@@ -415,7 +415,7 @@ module mempool {
         lastTx' = tx,
     }
 
-    // an auxilliary action that assigns variables from a method execution result
+    // an auxiliary action that assigns variables from a method execution result
     action fromResult(tx: Transaction, r: Erc20Result): bool = all {
         val status = if (r.error != "") r.error else "success"
         lastTx' = tx.with("status", status),
