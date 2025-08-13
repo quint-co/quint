@@ -546,7 +546,7 @@ module ics20Test {
       val balanceA = getBalanceIn("A", "alice", denomInA)
       assert(balanceA == 0),
 
-      // check that balance on chain B has the transfered amount
+      // check that balance on chain B has the transferred amount
       val balanceB = getBalanceIn("B", "bob", denomSentFromAToB)
       assert(balanceB == amount),
 
