@@ -531,7 +531,7 @@ export async function connect(
             process.on('uncaughtException', exitHandler.bind(null))
 
             // Exit Quint if Apalache exits unexpectedly
-            apalache.on('exit', (code) => {
+            apalache.on('exit', code => {
               debugLog(verbosityLevel, `Apalache server exited with code ${code}, exiting as well`)
               // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
               process.removeAllListeners('exit')
