@@ -47,7 +47,7 @@ module lottery {
         if (addr == state.owner) "" else "must be the owner"
     }
 
-    // An auxilliary definition similar to Solidity's require
+    // An auxiliary definition similar to Solidity's require
     pure def require(cond: bool, msg: str): str = {
         if (cond) "" else msg
     }
@@ -233,7 +233,7 @@ module lotteryMempool {
         lastTx' = tx,
     }
 
-    // an auxilliary action that assigns variables from a method execution result
+    // an auxiliary action that assigns variables from a method execution result
     action fromResult(tx: Transaction, r: LotteryResult): bool = all {
         val status = if (r._1 != "") r._1 else "success"
         lastTx' = tx.with("status", status),

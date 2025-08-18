@@ -12,7 +12,7 @@ The high-level reasons for this and any other differences are two:
 
 ## Prime operator
 
-Quint uses the prime operator (`'`) to define transitions of the state machine. It can be read as "in the next state", that is, 
+Quint uses the prime operator (`'`) to define transitions of the state machine. It can be read as "in the next state", that is,
 
 ```quint
 x'
@@ -110,7 +110,7 @@ action increment = x' = x + 1
 action reset = x' = 0
 ```
 
-Non-determinisc definitions are special ones: you can use them only inside actions, before some assignment(s), in order to pick a value non-determintically.
+Non-deterministic definitions are special ones: you can use them only inside actions, before some assignment(s), in order to pick a value non-deterministically.
 
 ```quint
 action increase = {
@@ -124,7 +124,7 @@ What is non-deterministically? In theory, we are defining a bunch of transitions
 
 ## No recursion
 
-Quint doesn't support recursive operators, mutually recursive operators, nor recursive type definitions. Formal verification and recursion have complicated interactions, and on the context of Quint and the available tools, all recursion that it could, in theory, support, is the type of recursion that can be written using folds (a.k.a. reduces). 
+Quint doesn't support recursive operators, mutually recursive operators, nor recursive type definitions. Formal verification and recursion have complicated interactions, and on the context of Quint and the available tools, all recursion that it could, in theory, support, is the type of recursion that can be written using folds (a.k.a. reduces).
 
 For example, although you **can't** write a recursive factorial like this
 
