@@ -75,6 +75,8 @@ jobs:
           npm run apalache-dist
           # Start the server
           _build/apalache/bin/apalache-mc server &
+          # Wait for the server to start
+          sleep 5
           # Run the integration tests
           npm run apalache-integration
         env:
