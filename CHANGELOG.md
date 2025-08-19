@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Bump Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
+
 ### Deprecated
 ### Removed
 ### Fixed
