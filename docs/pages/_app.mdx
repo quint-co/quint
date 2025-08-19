@@ -1,8 +1,0 @@
-import '../style.css'
-import '@fortawesome/fontawesome-svg-core/styles.css'; // Import the CSS
-import { config } from '@fortawesome/fontawesome-svg-core';
-
-export default function MyApp({ Component, pageProps }) {
-  config.autoAddCss = false;
-  return <Component {...pageProps} />
-}

@@ -38,6 +38,7 @@ function quintHljs(hljs) {
         scope: 'number',
         begin: '-?(0x[0-9a-fA-F]([0-9a-fA-F]|_[0-9a-fA-F])*|0|[1-9]([0-9]|_[0-9])*)',
       },
+      hljs.SHEBANG, // file-leading hashbang
       hljs.C_LINE_COMMENT_MODE,  // single line comments
       hljs.C_BLOCK_COMMENT_MODE, // multiline comments
     ],

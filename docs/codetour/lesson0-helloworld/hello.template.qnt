@@ -19,7 +19,7 @@ In our protocol, two parties are communicating:
  - the user who reads "Hello, world!" from the console.
 
 We describe the protocol in terms of a state machine. This means
-that we have to describe two importants aspects of the protocol:
+that we have to describe two important aspects of the protocol:
 
  - What constitutes a state of the state machine.
  - What kinds of transitions can be made by the state machine.
@@ -181,7 +181,7 @@ Finally, the third statement may look useless to you too:
 Why shall we say that `readByUser` keeps its value in the next state?
 Most likely, we will be able to automatically infer this in the future.
 In the current version of Quint, if an action is used to execute transitions,
-it has to explicitely assign values to all of the state variables.
+it has to explicitly assign values to all of the state variables.
         </description>
       </step>
      !*/

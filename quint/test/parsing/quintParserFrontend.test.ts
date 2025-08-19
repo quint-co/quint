@@ -14,7 +14,7 @@ import { lf } from 'eol'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { mkErrorMessage } from '../../src/cliCommands'
+import { mkErrorMessage } from '../../src/cliHelpers'
 import { QuintError } from '../../src'
 
 // the name that we are using by default
@@ -170,11 +170,38 @@ describe('syntax errors', () => {
   })
 
   it('error on unexpected token', () => {
+    // ~ is an unexpected token
+    const code = 'module unexpectedToken { def access(p) = { p ~ name } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '~'`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on unexpected hash', () => {
     // # is an unexpected token
     const code = 'module unexpectedToken { def access(p) = { p # name } }'
     const errors = parseErrorsFrom(defaultSourceName, code)
     assert.isAtLeast(errors.length, 1)
-    assert.equal(errors[0].message, `token recognition error at: '#'`)
+    assert.equal(errors[0].message, `token recognition error at: '# '`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on unexpected hashbang', () => {
+    // hashbang '#!' is only valid at the beginning of a file
+    const code = 'module unexpectedToken { def access(p) = { p #! name } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '#! name } }'`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error on multiple hashbangs', () => {
+    // only a single hashbang '#!' is valid at the beginning of a file
+    const code = '#!foo\n#!bar\nmodule unexpectedToken { def access = { true } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `extraneous input '#!bar\\n' expecting {'module', DOCCOMMENT}`)
     assert.equal(errors[0].code, 'QNT000')
   })
 
@@ -220,7 +247,6 @@ describe('syntax errors', () => {
   })
 
   it('error on type declarations with undeclared variables', () => {
-    // we should use double quotes
     const code = `module singleQuotes {  type T = (List[a], Set[b]) }`
     const [error] = parseErrorsFrom(defaultSourceName, code)
     assert.deepEqual(error.code, 'QNT014')
@@ -235,6 +261,27 @@ type variable 'a' is unbound. To fix it, write
 
    type T[a] = List[a]`
     )
+  })
+
+  it('error on type declarations with undeclared variables', () => {
+    const code = `module mapSyntax { type WrongMap = Map[int, str] }`
+    const [error] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error.code, 'QNT015')
+    assert.deepEqual(error.message, `Use 'int -> str' instead of 'Map[int, str]' for map types`)
+    assert.deepEqual(error.data?.fix, {
+      kind: 'replace',
+      original: 'Map[int, str]',
+      replacement: 'int -> str',
+    })
+  })
+
+  it('error on using reserved keywords', () => {
+    const code = `module reservedKeyword { type Reserved = { and: int, export: bool } }`
+    const [error1, error2] = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(error1.code, 'QNT008')
+    assert.deepEqual(error1.message, `Reserved keyword 'and' cannot be used as an identifier.`)
+    assert.deepEqual(error2.code, 'QNT008')
+    assert.deepEqual(error2.message, `Reserved keyword 'export' cannot be used as an identifier.`)
   })
 })
 
@@ -302,6 +349,10 @@ describe('parse errors', () => {
     parseAndCompare('_1016nonConstOverride')
   })
 
+  it('success on keywords that are allowed as identifiers', () => {
+    parseAndCompare('_1017keywordsAsIdentifiers')
+  })
+
   it('error on cyclic definitions', () => {
     parseAndCompare('_0100cyclicDefs')
   })
@@ -312,5 +363,9 @@ describe('parse errors', () => {
 
   it('errors on invalid record fields', () => {
     parseAndCompare('_1042qualifiersInRecordsFieldsError')
+  })
+
+  it('error on map syntax', () => {
+    parseAndCompare('_1070mapSyntax')
   })
 })

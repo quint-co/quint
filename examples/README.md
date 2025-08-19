@@ -48,13 +48,23 @@ listed without any additional command line arguments.
 
 | Example | Syntax (`parse`) | Types (`typecheck`) | Unit tests (`test`) | Apalache (`verify`) |
 |---------|:----------------:|:-------------------:|:-------------------:|:-------------------:|
-| [classic/distributed/ClockSync/clockSync3.qnt](./classic/distributed/ClockSync/clockSync3.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/Bakery/bakery.qnt](./classic/distributed/Bakery/bakery.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ClockSync/clockSync6.qnt](./classic/distributed/ClockSync/clockSync6.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt](./classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt](./classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [classic/distributed/DiningPhilosophers/DiningPhilosophers5.qnt](./classic/distributed/DiningPhilosophers/DiningPhilosophers5.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ewd426/ewd426.qnt](./classic/distributed/ewd426/ewd426.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ewd426/ewd426_3.qnt](./classic/distributed/ewd426/ewd426_3.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ewd426/ewd426_4.qnt](./classic/distributed/ewd426/ewd426_4.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/ewd840/ewd840.qnt](./classic/distributed/ewd840/ewd840.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/LamportMutex/LamportMutex.qnt](./classic/distributed/LamportMutex/LamportMutex.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/Paxos/Paxos.qnt](./classic/distributed/Paxos/Paxos.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/1284</sup> |
 | [classic/distributed/Paxos/Voting.qnt](./classic/distributed/Paxos/Voting.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
 | [classic/distributed/ReadersWriters/ReadersWriters.qnt](./classic/distributed/ReadersWriters/ReadersWriters.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| [classic/distributed/TeachingConcurrency/teachingConcurrency.qnt](./classic/distributed/TeachingConcurrency/teachingConcurrency.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/ReliableBroadcast/reliablebc.qnt](./classic/distributed/ReliableBroadcast/reliablebc.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/TeachingConcurrency/mutex.qnt](./classic/distributed/TeachingConcurrency/mutex.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/TeachingConcurrency/teaching.qnt](./classic/distributed/TeachingConcurrency/teaching.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [classic/distributed/TwoLayeredCache/two_layered_cache.qnt](./classic/distributed/TwoLayeredCache/two_layered_cache.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/TwoPhaseCommit/two_phase_commit.qnt](./classic/distributed/TwoPhaseCommit/two_phase_commit.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt](./classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt) | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/1299</sup> | :x:<sup>https://github.com/informalsystems/quint/issues/1299</sup> |
 | [classic/sequential/BinSearch/BinSearch.qnt](./classic/sequential/BinSearch/BinSearch.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
@@ -73,8 +83,9 @@ listed without any additional command line arguments.
 | [cosmos/tendermint/TendermintModels.qnt](./cosmos/tendermint/TendermintModels.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [cosmos/tendermint/TendermintTest.qnt](./cosmos/tendermint/TendermintTest.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
 | [cosmwasm/zero-to-hero/vote.qnt](./cosmwasm/zero-to-hero/vote.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| [cryptography/hashes.qnt](./cryptography/hashes.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
-| [cryptography/hashesTest.qnt](./cryptography/hashesTest.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [cryptography/hashes/hashes.qnt](./cryptography/hashes/hashes.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [cryptography/hashes/hashesTest.qnt](./cryptography/hashes/hashesTest.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [cryptography/utxo/utxo.qnt](./cryptography/utxo/utxo.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/mafia_werewolf/play_mafia.qnt](./games/mafia_werewolf/play_mafia.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/rock_paper_scissors/play_rock_paper_scissors.qnt](./games/rock_paper_scissors/play_rock_paper_scissors.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [games/secret-santa/secret_santa.qnt](./games/secret-santa/secret_santa.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |

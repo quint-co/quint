@@ -12,11 +12,12 @@
  * @module
  */
 
-import { Either, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { Map as ImmutableMap } from 'immutable'
 import { CachedValue, Register } from './Context'
+import { ACTION_TAKEN, NONDET_PICKS } from '../../itf'
 
 /**
  * A named pointer to a value, so we can use the same reference in multiple places, and just update the value.
@@ -125,11 +126,34 @@ export class VarStorage {
           return [name, valueVariant]
         })
       )
-      map.push(['nondet_picks', nondetPicksRecord])
-      map.push(['action_taken', rv.mkStr(this.actionTaken ?? '')])
+      map.push([NONDET_PICKS, nondetPicksRecord])
+      map.push([ACTION_TAKEN, rv.mkStr(this.actionTaken ?? '')])
     }
 
     return rv.mkRecord(map)
+  }
+
+  fromRecord(record: RuntimeValue) {
+    this.reset()
+
+    record.toOrderedMap().forEach((value, key) => {
+      const regToSet = this.vars
+        .valueSeq()
+        .toArray()
+        .find(r => r.name === key)
+
+      if (regToSet != undefined) {
+        regToSet.value = right(value)
+      } else if (key === NONDET_PICKS && this.storeMetadata) {
+        value.toOrderedMap().forEach((v, k) => {
+          this.nondetPicks.set(k, v.toVariant()[0] == 'None' ? undefined : v)
+        })
+      } else if (key === ACTION_TAKEN && this.storeMetadata) {
+        this.actionTaken = value.toStr()
+      }
+    })
+
+    this.clearCaches()
   }
 
   /**
@@ -140,6 +164,12 @@ export class VarStorage {
   reset() {
     this.vars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
     this.nextVars.forEach(reg => (reg.value = initialRegisterValue(reg.name)))
+    if (this.storeMetadata) {
+      this.actionTaken = undefined
+      this.nondetPicks.forEach((_, key) => {
+        this.nondetPicks.set(key, undefined)
+      })
+    }
   }
 
   /**

@@ -3,3 +3,4 @@ out
 coverage
 .nyc_output
 dist
+.direnv

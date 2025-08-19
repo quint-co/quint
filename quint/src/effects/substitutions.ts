@@ -77,7 +77,7 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
       break
     }
     case 'concrete': {
-      // e is a an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
+      // e is an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
       const components = e.components
         .map(c => ({ kind: c.kind, entity: applySubstitutionToEntity(subs, c.entity) }))
         .filter(c => !emptyEntity(c.entity))

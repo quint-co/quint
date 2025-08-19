@@ -1,9 +1,0 @@
-{
-  "version": "v1",
-  "packages": {
-    "@informalsystems/quint": {
-      "signature": "ad8ced9006ae6598847c3dd685c78051",
-      "file": true
-    }
-  }
-}

@@ -8,13 +8,174 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
 
-- `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
+- Bump Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fix Quint hanging if Apalache server exits early (#1729)
+
+### Security
+
+## v0.26.0 -- 2025-07-14
+
+### Added
+
+- Better diagnostics for common syntax error on map type definitions (#1682)
+- Better diagnostics for using reserved keywords and common syntax error on type application (#1696)
+- Keywords `from`, `as`, `List` and `Set` can now be used as identifiers (#1696)
+- Support for verifying inductive invariants through `quint verify --inductive-invariant my_inv`
 
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.25.1 -- 2025-06-05
+
+### Added
+
+- `quint run` and `quint verify` can now receive multiple invariants through
+  `--invariants` and Quint prints which ones were violated in the found
+  violation (#1662)
+
+### Changed
+
+- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664) 
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed issue on integration with the rust backend (#1683)
+
+### Security
+
+## v0.25.0 -- 2025-05-28
+
+### Added
+
+- Added `--hide` option to hide specific variables from output (#1656)
+- Errors from the Rust evaluator now show the corresponding location (#1648)
+- Added support for calling `q::debug` with a single argument, which shows both the expression and its value (#1660)
+- `quint run` now reports statistics on trace length and the simulation speec in traces/second (#1669)
+
+### Changed
+
+- `oneOf()` now automatically handles empty sets instead of giving an error and has a retry strategy for small sets (#1670)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem on `pure val`s referring to constants resulting in errors in the Rust evaluator (#1647)
+
+### Security
+
+## v0.24.0 -- 2025-04-08
+
+### Added
+
+- Added a `--flatten` option to `quint compile` to enable compilation of unflattened modules (#1623)
+- Added a `main` field to the JSON output of `quint compile` (#1623)
+- Added a `--backend` option to `quint run` to enable running the new Rust simulator (#1623)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Init definitions are now properly transpiled into TLA+ without assignments (#1613)
+
+### Security
+
+## v0.23.1 -- 2025-03-10
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a requirement from the package configuration that would lead to always installing v0.18.3 on node versions > 20 (#1602)
+
+### Security
+
+## v0.23.0 -- 2025-01-24
+
+### Added
+
+- Added a `--witnesses` option to `quint run` that enables counting for how many explored traces each of the given predicates (witnesses) were true (#1562)
+
+### Changed
+
+- Bumped Apalache to 0.47.2 (#1565)
+- Changed how an action from `any` gets picked, improving performance significantly (#1582)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where calling `setOfMaps()` on empty sets resulted in errors in the simulator (#1561)
+
+### Security
+
+## v0.22.4 -- 2024-11-19
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`. 
+Added those variables to the `vars` field of the ITF json so that they are displayed correctly in the trace viewer.
+- Fixed a problem where traces other than the first one when `--n-traces` > 1
+  and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
+  (#1553).
+
+### Security
+
+## v0.22.3 -- 2024-10-28
+
+### Added
+
+- Added a new operator called `getOnlyElement()` to extract elements out of singleton sets (#1525)
+
+### Changed
+
+- Updated grammar rule to allow an optional trailing comma in parameter lists (#1510):
+  - Operator calls
+  - Constant initialization
+  - Operator definitions
+
+### Deprecated
+### Removed
+### Fixed
+
+- The seed was not being properly printed when the simulator found some runtime errors (#1524).
+- Fixed a problem where using `--mbt` resulted in missing data on `nondet_picks`
+  due to internal caching (#1531)
+- Hashbang lines are now properly highlighted as comments in vscode and in highlight.js.
+
+### Security
+
+## v0.22.2 -- 2024-10-08
+
+### Added
+
+- `quint verify` has the option `--apalache-version` to pull a custom version (#1521)
+- Grammar updated with support for an optional leading hashbang (`#!`) line (#1522)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
 ### Security
 
 ## v0.22.1 -- 2024-09-25

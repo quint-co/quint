@@ -175,6 +175,7 @@ export const builtinNames = [
   'flatten',
   'allLists',
   'allListsUpTo',
+  'getOnlyElement',
   'chooseSome',
   'generate',
   'oneOf',

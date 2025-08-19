@@ -1,0 +1,143 @@
+# Language basics
+
+Quint mostly resembles a functional programming language, but it has a few key differences that are highlighted on this page.
+- Prime operator (`'`)
+- Non-determinism (`nondet`)
+- Modes (`pure def`, `pure val`, `def`, `val`, `nondet`, `action`, `temporal`, `run`)
+- No recursion
+
+The high-level reasons for this and any other differences are two:
+- Quint is used to define state machines and properties, not regular executable code
+- Quint uses the same logic as TLA+ and can be translated into SMT-constraints by Apalache, which is a very powerful thing and we have to constrain the language in some ways to enable it.
+
+## Prime operator
+
+Quint uses the prime operator (`'`) to define transitions of the state machine. It can be read as "in the next state", that is,
+
+```quint
+x'
+```
+
+is "x in the next state" and
+
+```quint
+x' = x + 1
+```
+
+is "x in the next state is equal to x (in the present state) plus one".
+
+Although in theory (and in TLA+) you could apply the prime operator to any expression, in Quint it has to always come in the format `<var>' = <expr>` which is called assignment. This prevents us from writing things that are really hard to grasp and potentially not possible to compute with the available tools.
+
+Quint's tooling is equipped to report several different errors if you use `'` in forbidden ways. It won't let you assign a value to a variable more than once in the same transition, or forget to update a variable in some branches of transitions.
+
+
+### Assignments have no order
+
+This assignments are not done as in an imperative language. They are, in fact, only defining a set of state transitions. Consider the example:
+```quint
+all {
+  x' = 1,
+  y' = x,
+}
+```
+
+This could be read as "x in the next state is equal to 1 and y in the next state is equal to x in the **current** state". Someone used to imperative programming assignments will likely expect `y` to be `1` in the next state, but this is not the case here.
+
+### `init` and `step`
+
+Actions named `init` and `step` are special as they define the **state machine**. Action `init` defines the initial states and `step` defines the transitions (you can use different names and specify the on the CLI, but `init` and `step` are the defaults). We use the prime operator to define them. Remember this example from [Quint basics](./quint-basics):
+
+```quint
+var x: int
+
+action init = x' = 1
+
+action step = x' = x + 1
+```
+
+You can see `init` and `step` as the entrypoint for the model, like the `main` function is the entrypoint for many programming language applications. All other definitions don't matter for the model, unless they are referred to by `init` or `step`.
+
+## Non-determinism
+
+If only a single path was possible in our model, it would be easy to table test it manually and Quint tools wouldn't be necessary. In the reality, most systems involve many possibilities through non-deterministic factors: user's input, random factors, processes that can execute in different orders, failures that may or may not happen, etc. In Quint models, we express all of these possibilities using `any` and `oneOf`.
+
+For example, there's non-determinism when a user gets to decide if they want to deposit or withdraw, so we use `any`:
+```quint
+action step = any {
+  deposit,
+  withdraw,
+}
+```
+
+Also, this user can pick the amount they want to deposit or withdraw, which therefore is also non-deterministic:
+```quint
+action step = {
+  nondet amount = 1.to(100).oneOf()
+  any {
+    deposit(amount),
+    withdraw(amount),
+  }
+}
+```
+
+## Modes
+
+Most of Quint code is just functional programming, but a bit of it involves non-determinism and state machines. In order to avoid mixing those up and increasing complexity, Quint provides different *modes*, which help separate specifications into layers: some of them purely functional, some of them which interact with state variables, etc.
+
+Definitions prefixed with `pure` are just like functional programming functions: given the same input (parameters), they will always return the same output. If the `pure` modifier is not present, they can read state variables which can change over time and, therefore, they may return different outputs given the same inputs.
+
+```quint
+pure val PROCESSES = ["p1", "p2", "p3"]
+
+pure def plus_four(p) = p + 4
+```
+
+Definitions that don't take parameters can be of mode `val` (or `pure val`), while definitions that take parameters need to be `def` (or `pure def`).
+
+```quint
+var x: int
+
+val process_at_x = PROCESSES[x]
+
+def plus_x(p) = p + x
+```
+
+Definitions that use the prime operator (`'`) can only be of mode `action`. Actions are definitions that "modify" the state.
+
+```quint
+action increment = x' = x + 1
+
+action reset = x' = 0
+```
+
+Non-deterministic definitions are special ones: you can use them only inside actions, before some assignment(s), in order to pick a value non-deterministically.
+
+```quint
+action increase = {
+  nondet amount = 1.to(5).oneOf()
+  x' = x + amount
+}
+```
+
+What is non-deterministically? In theory, we are defining a bunch of transitions: `0 -> 1`, `0 -> 2`, ..., `0 -> 5`, `1 -> 2`, ... In practice: The random simulator will pick a random one and continue, while the model checkers will branch out all possibilities and examine each one of them.
+
+
+## No recursion
+
+Quint doesn't support recursive operators, mutually recursive operators, nor recursive type definitions. Formal verification and recursion have complicated interactions, and on the context of Quint and the available tools, all recursion that it could, in theory, support, is the type of recursion that can be written using folds (a.k.a. reduces).
+
+For example, although you **can't** write a recursive factorial like this
+
+```quint
+pure def factorial(n) = n * factorial(n - 1)
+```
+
+You **can** rewrite it using a fold:
+
+```quint
+pure def factorial(n) = 1.to(n).fold(1, (acc, i) => acc * i)
+```
+
+{/* TODO: Write page on how to rewrite recursion into folds and link it here */}
+
+The lack of recursion enables powerful analysis tools, and although it can be a burden sometimes, thinking about recursive algorithms in terms of folds can be a good exercise to find problems and optimization opportunities.

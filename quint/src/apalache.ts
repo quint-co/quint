@@ -20,7 +20,6 @@ import { Either, chain, left, right } from '@sweet-monads/either'
 import { ErrorMessage } from './ErrorMessage'
 import path from 'path'
 import fs from 'fs'
-import os from 'os'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import semver from 'semver'
 import { pipeline } from 'stream/promises'
@@ -32,12 +31,13 @@ import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
-import { verbosity } from './verbosity'
+import { debugLog, verbosity } from './verbosity'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import { request as octokitRequest } from '@octokit/request'
 
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
+import { apalacheDistDir } from './config'
 
 /**
  * A server endpoint for establishing a connection with the Apalache server.
@@ -66,6 +66,39 @@ export function parseServerEndpoint(input: string): Either<string, ServerEndpoin
   }
 }
 
+export function createConfig(
+  loadedConfig: any,
+  parsedSpec: string,
+  args: any,
+  inv: string[] = ['q::inv'],
+  init: string = 'q::init',
+  next: string = 'q::step'
+): ApalacheConfig {
+  return {
+    ...loadedConfig,
+    input: {
+      ...(loadedConfig.input ?? {}),
+      source: {
+        type: 'string',
+        format: 'qnt',
+        content: parsedSpec,
+      },
+    },
+    checker: {
+      ...(loadedConfig.checker ?? {}),
+      length: args.maxSteps,
+      init: init,
+      next: next,
+      inv: inv,
+      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
+      tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
+        'search.simulation': args.randomTransitions ? 'true' : 'false',
+      },
+    },
+  }
+}
+
 /**
  * Convert an endpoint to a GRPC connection string.
  * @param endpoint an endpoint
@@ -75,17 +108,9 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.46.1'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.47.3'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
-
-function quintConfigDir(): string {
-  return path.join(os.homedir(), '.quint')
-}
-
-function apalacheDistDir(apalacheVersion: string): string {
-  return path.join(quintConfigDir(), `apalache-dist-${apalacheVersion}`)
-}
 
 // The structure used to report errors
 type ApalacheError = {
@@ -98,7 +123,7 @@ export type ApalacheResult<T> = Either<ApalacheError, T>
 
 // An object representing the Apalache configuration
 // See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
-type ApalacheConfig = any
+export type ApalacheConfig = any
 
 // Interface to the apalache server
 // This is likely to be expanded in the future
@@ -143,6 +168,18 @@ async function handleResponse(response: RunResponse): Promise<ApalacheResult<any
     switch (response.failure.errorType) {
       case 'UNEXPECTED': {
         const errData = JSON.parse(response.failure.data)
+
+        // Check for the specific assignment error pattern
+        const assignmentErrorMatch = errData.msg.match(
+          /Assignment error: <\[UNKNOWN\]>: (?:\w+::)*(\w+)' is used before it is assigned/
+        )
+        if (assignmentErrorMatch) {
+          const [, variableName] = assignmentErrorMatch
+          return err(
+            `${variableName} is used before it is assigned. You need to have either \`${variableName} == <expr>\` or \`${variableName}.in(<set>)\` before doing anything else with \`${variableName}\` in your predicate.`
+          )
+        }
+
         return err(errData.msg)
       }
       case 'PASS_FAILURE':
@@ -219,6 +256,8 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
+const GRPC_TIMEOUT_MS = 5000
+
 async function loadProtoDefViaReflection(
   serverEndpoint: ServerEndpoint,
   retry: boolean
@@ -239,7 +278,9 @@ async function loadProtoDefViaReflection(
   type ServerReflectionResponse = ServerReflectionResponseSuccess | ServerReflectionResponseFailure
   type ServerReflectionService = {
     new (url: string, creds: grpc.ChannelCredentials): ServerReflectionService
-    ServerReflectionInfo: () => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
+    ServerReflectionInfo: (args: {
+      deadline: Date
+    }) => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
     getChannel: () => { getConnectivityState: (_: boolean) => grpc.connectivityState }
   }
   type ServerReflectionPkg = {
@@ -272,8 +313,12 @@ async function loadProtoDefViaReflection(
   }
 
   // Query reflection endpoint
-  return new Promise<ApalacheResult<ServerReflectionResponse>>((resolve, _) => {
-    const call = reflectionClient.ServerReflectionInfo()
+  return new Promise<ApalacheResult<ServerReflectionResponse>>((resolve, _reject) => {
+    // Add deadline to the call
+    const deadline = new Date()
+    deadline.setMilliseconds(deadline.getMilliseconds() + GRPC_TIMEOUT_MS)
+
+    const call = reflectionClient.ServerReflectionInfo({ deadline })
     call.on('data', (r: ServerReflectionResponse) => {
       call.end()
       resolve(right(r))
@@ -437,6 +482,7 @@ export async function connect(
   const connectionResult = await tryConnect(serverEndpoint)
   // We managed to connect, simply return this connection
   if (connectionResult.isRight()) {
+    debugLog(verbosityLevel, 'Connecting with existing Apalache server')
     return connectionResult
   }
 
@@ -464,16 +510,12 @@ export async function connect(
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
             debugLog(verbosityLevel, 'Shutting down Apalache server')
-            try {
-              apalache.kill('SIGTERM')
-            } catch (error: any) {
-              // ESRCH is raised if no process with `pid` exists, i.e.,
-              // if Apalache server exited on its own
-              if (error.code == 'ESRCH') {
-                debugLog(verbosityLevel, 'Apalache already exited')
-              } else {
-                throw error
-              }
+            // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
+            apalache.removeAllListeners('exit')
+            // Try to kill Apalache
+            let killed = apalache.kill('SIGTERM')
+            if (!killed) {
+              debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
             }
           }
 
@@ -488,6 +530,15 @@ export async function connect(
             process.on('SIGUSR2', exitHandler.bind(null))
             process.on('uncaughtException', exitHandler.bind(null))
 
+            // Exit Quint if Apalache exits unexpectedly
+            apalache.on('exit', code => {
+              debugLog(verbosityLevel, `Apalache server exited with code ${code}, exiting as well`)
+              // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
+              process.removeAllListeners('exit')
+              // Exit for real
+              process.exit(1)
+            })
+
             resolve(right(void 0))
           }
           // If Apalache fails to spawn, `apalache.pid` is undefined and 'error' is
@@ -496,16 +547,4 @@ export async function connect(
         })
     )
     .then(chain(() => tryConnect(serverEndpoint, true)))
-}
-
-/**
- * Log `msg` to the console if `verbosityLevel` implies debug output.
- *
- * @param verbosityLevel  the current verbosity level (set with --verbosity)
- * @param msg             the message to log
- */
-function debugLog(verbosityLevel: number, msg: string) {
-  if (verbosity.hasDebugInfo(verbosityLevel)) {
-    console.log(msg)
-  }
 }

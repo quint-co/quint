@@ -133,7 +133,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
-    // For each override, ensure that the the type for the name and the type of
+    // For each override, ensure that the type for the name and the type of
     // the value are the same
     def.overrides.forEach(([name, ex]) => {
       this.addToResults(name.id, this.typeForName(name.name, name.id, 2).map(toScheme))
@@ -300,7 +300,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     if (this.constraints.length > 0) {
       this.solveConstraints().map(subs => {
-        // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+        // For every free name we are binding in the substitutions, the names occurring in the value of the substitution
         // have to become free as well.
         addBindingsToFreeTypes(tvs_before, subs)
 

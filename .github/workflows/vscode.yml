@@ -1,0 +1,81 @@
+name: Test VSCode Extension
+
+on:
+  # Every pull request
+  pull_request:
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      vscode: ${{ steps.filter.outputs.vscode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Also run on Quint changes as this can catch integration issues
+          filters: |
+            vscode:
+              - 'vscode/**'
+              - 'quint/**'
+
+  quint-vscode-plugin:
+    name: Unit Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.vscode == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache nix store
+        # Workaround for cache action not playing well with permissions
+        # See https://github.com/actions/cache/issues/324
+        uses: john-shaffer/cache@59429c0461095f341a8cf7388e5d3aef37b95edd
+        with:
+          path: |
+            /nix/store
+            /nix/var/nix/profiles
+          key: ${{ runner.os }}-nix-${{ hashFiles('**.nix') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
+            ${{ runner.os }}-
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Build dev-shell
+        run: nix develop -c bash -c exit
+      - name: Install quint deps
+        run: cd ./quint && nix develop -c npm install
+      - name: Compile quint vscode plugin
+        run: nix develop -c make local
+      - name: Run vscode unit tests
+        run: cd ./vscode/quint-vscode && nix develop -c npm test
+      - name: Check that we can create the vsix package
+        run: cd ./vscode/quint-vscode && nix develop -c vsce package
+
+  quint-vscode-plugin-aggregator:
+    name: Unit Tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: quint-vscode-plugin
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"

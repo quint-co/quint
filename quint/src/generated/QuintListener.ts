@@ -23,9 +23,10 @@ import { TypeVarCaseContext } from "./QuintParser";
 import { TypeConstContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
 import { TypeAppContext } from "./QuintParser";
+import { WrongTypeAppContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
-import { TypeAliasDefContext } from "./QuintParser";
 import { TypeSumDefContext } from "./QuintParser";
+import { TypeAliasDefContext } from "./QuintParser";
 import { DotCallContext } from "./QuintParser";
 import { LambdaConsContext } from "./QuintParser";
 import { OperAppContext } from "./QuintParser";
@@ -87,6 +88,9 @@ import { TypeContext } from "./QuintParser";
 import { TypeVarContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
+import { TypeArgsContext } from "./QuintParser";
+import { TypeApplicationContext } from "./QuintParser";
+import { WrongTypeApplicationContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
 import { MatchSumExprContext } from "./QuintParser";
 import { MatchSumCaseContext } from "./QuintParser";
@@ -108,6 +112,8 @@ import { LiteralContext } from "./QuintParser";
 import { QualIdContext } from "./QuintParser";
 import { SimpleIdContext } from "./QuintParser";
 import { IdentifierContext } from "./QuintParser";
+import { KeywordAsIDContext } from "./QuintParser";
+import { ReservedContext } from "./QuintParser";
 
 
 /**
@@ -298,6 +304,19 @@ export interface QuintListener extends ParseTreeListener {
 	exitTypeApp?: (ctx: TypeAppContext) => void;
 
 	/**
+	 * Enter a parse tree produced by the `wrongTypeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	enterWrongTypeApp?: (ctx: WrongTypeAppContext) => void;
+	/**
+	 * Exit a parse tree produced by the `wrongTypeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	exitWrongTypeApp?: (ctx: WrongTypeAppContext) => void;
+
+	/**
 	 * Enter a parse tree produced by the `typeAbstractDef`
 	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
@@ -311,19 +330,6 @@ export interface QuintListener extends ParseTreeListener {
 	exitTypeAbstractDef?: (ctx: TypeAbstractDefContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `typeAliasDef`
-	 * labeled alternative in `QuintParser.typeDef`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeAliasDef?: (ctx: TypeAliasDefContext) => void;
-	/**
-	 * Exit a parse tree produced by the `typeAliasDef`
-	 * labeled alternative in `QuintParser.typeDef`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeAliasDef?: (ctx: TypeAliasDefContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `typeSumDef`
 	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
@@ -335,6 +341,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeSumDef?: (ctx: TypeSumDefContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `typeAliasDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeAliasDef?: (ctx: TypeAliasDefContext) => void;
+	/**
+	 * Exit a parse tree produced by the `typeAliasDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeAliasDef?: (ctx: TypeAliasDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `dotCall`
@@ -1088,6 +1107,39 @@ export interface QuintListener extends ParseTreeListener {
 	exitRowLabel?: (ctx: RowLabelContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `QuintParser.typeArgs`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeArgs?: (ctx: TypeArgsContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.typeArgs`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeArgs?: (ctx: TypeArgsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.typeApplication`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeApplication?: (ctx: TypeApplicationContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.typeApplication`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeApplication?: (ctx: TypeApplicationContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.wrongTypeApplication`.
+	 * @param ctx the parse tree
+	 */
+	enterWrongTypeApplication?: (ctx: WrongTypeApplicationContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.wrongTypeApplication`.
+	 * @param ctx the parse tree
+	 */
+	exitWrongTypeApplication?: (ctx: WrongTypeApplicationContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `QuintParser.expr`.
 	 * @param ctx the parse tree
 	 */
@@ -1317,5 +1369,27 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIdentifier?: (ctx: IdentifierContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.keywordAsID`.
+	 * @param ctx the parse tree
+	 */
+	enterKeywordAsID?: (ctx: KeywordAsIDContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.keywordAsID`.
+	 * @param ctx the parse tree
+	 */
+	exitKeywordAsID?: (ctx: KeywordAsIDContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.reserved`.
+	 * @param ctx the parse tree
+	 */
+	enterReserved?: (ctx: ReservedContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.reserved`.
+	 * @param ctx the parse tree
+	 */
+	exitReserved?: (ctx: ReservedContext) => void;
 }
 

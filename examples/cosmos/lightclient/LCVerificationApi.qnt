@@ -113,7 +113,7 @@ module LCVerificationApi {
                 else "NOT_ENOUGH_TRUST"
 
     // The invariant of the light store that is not related to the blockchain.
-    // Plugin bug: see issue #808. action -> pure def once resloved
+    // Plugin bug: see issue #808. action -> pure def once resolved
     pure def LightStoreInv(fetchedLightBlocks: LightBlockMap, lightBlockStatus: LightBlockStatus): bool = {
         val domain = fetchedLightBlocks.keys()
         tuples(domain, domain).forall( ((lh, rh)) => or {

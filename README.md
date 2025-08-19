@@ -18,7 +18,7 @@
 <p>
     <a href="https://github.com/informalsystems/quint/actions">
         <img
-            src="https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg"
+            src="https://github.com/informalsystems/quint/actions/workflows/quint.yml/badge.svg"
             alt="build badge">
     </a>
     <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
@@ -150,7 +150,7 @@ Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
 advanced developer tooling and static analysis (see our [design
-principles](./docs/pages/docs/design-principles.md) and [previews](./docs/pages/docs/previews.md) of the
+principles](./docs/content/docs/design-principles.md) and [previews](./docs/content/docs/previews.md) of the
 tooling).
 
 The syntax also aims to be familiar to engineers:
@@ -225,8 +225,7 @@ Cosmos in 2023.
 
 ## Documentation
 
-
-View the [Quint documentation](https://quint-lang.org/docs).
+View the [Quint documentation](https://quint-lang.org/docs/getting-started).
 
 We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share

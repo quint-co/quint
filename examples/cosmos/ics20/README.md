@@ -168,7 +168,7 @@ common-sense specification and make the following assumptions:
 
 - Balances are always non-negative, and operations error if there is
   insufficient balance. This assumption [is documented in pseudo-code in the
-  natural language spec][balancesNonNegative] for `TransferCoins`, but not explicitely stated for
+  natural language spec][balancesNonNegative] for `TransferCoins`, but not explicitly stated for
   `BurnCoins`:
 
 ```typescript

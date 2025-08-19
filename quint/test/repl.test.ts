@@ -684,13 +684,13 @@ describe('repl ok', () => {
       |>>> val Inv = n < 10
       |
       |>>> q::testOnce(5, 1, Init, Next, Inv)
-      |true
+      |"ok"
       |>>> q::testOnce(10, 1, Init, Next, Inv)
-      |false
+      |"violation"
       |>>> q::test(5, 5, 1, Init, Next, Inv)
-      |true
+      |"ok"
       |>>> q::test(5, 10, 1, Init, Next, Inv)
-      |false
+      |"violation"
       |>>> q::lastTrace.length()
       |11
       |>>> q::lastTrace.nth(q::lastTrace.length() - 1)

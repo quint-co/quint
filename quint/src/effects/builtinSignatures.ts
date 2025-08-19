@@ -144,6 +144,7 @@ export const setOperators = [
   { name: 'flatten', effect: standardPropagation(1) },
   { name: 'allLists', effect: standardPropagation(1) },
   { name: 'allListsUpTo', effect: standardPropagation(2) },
+  { name: 'getOnlyElement', effect: standardPropagation(1) },
   { name: 'chooseSome', effect: standardPropagation(1) },
   { name: 'oneOf', effect: standardPropagation(1) },
   { name: 'isFinite', effect: standardPropagation(1) },

@@ -315,7 +315,6 @@ fi
 <!-- !test check simplePonzi - Run progressInv -->
     quint run \
       --invariant=progressInv --main=simplePonziTest \
-      --seed=0x1f035d45bcece7 \
       ../examples/solidity/SimplePonzi/simplePonzi.qnt
 
 ### OK on run gradualPonzi::noNegativeInv
@@ -332,7 +331,7 @@ fi
 <!-- !test check gradualPonzi - Run progressInv -->
     quint run --invariant=progressInv --main=gradualPonziTest \
       --max-samples=1000 --max-steps=50 \
-      --seed=0xa7bf730b93981 \
+      --seed=0x144e3011359c7f \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
 ### FAIL on run gradualPonzi::noLeftoversInv
@@ -386,3 +385,15 @@ Regression test for [#1108](https://github.com/informalsystems/quint/issues/1108
 
 <!-- !test check 1108 -->
     quint parse testFixture/_1052one.qnt
+
+### OK on typecheck SuperSpec via Unix hashbang
+
+See [#1500](https://github.com/informalsystems/quint/issues/1500).
+
+<!-- !test exit 0 -->
+<!-- !test check typecheck SuperSpec via Unix hashbang -->
+```
+if [ `uname -s` == 'Linux' -o `uname -s` == 'Darwin' ]; then
+    ./testFixture/SuperSpec.qnt
+fi
+```

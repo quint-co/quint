@@ -57,10 +57,24 @@ export const verbosity = {
   },
 
   /**
+   * Shall the tool write info on its progress.
+   */
+  hasProgress: (level: number): boolean => {
+    return level >= 2
+  },
+
+  /**
    * Shall the tool output states, e.g., in counterexamples.
    */
   hasStateOutput: (level: number): boolean => {
     return level >= 2
+  },
+
+  /**
+   * Shall the tool output witnesses counts.
+   */
+  hasWitnessesOutput: (level: number): boolean => {
+    return level >= 1
   },
 
   /**
@@ -83,4 +97,16 @@ export const verbosity = {
   hasDebugInfo: (level: number): boolean => {
     return level >= 4
   },
+}
+
+/**
+ * Log `msg` to the console if `verbosityLevel` implies debug output.
+ *
+ * @param verbosityLevel  the current verbosity level (set with --verbosity)
+ * @param msg             the message to log
+ */
+export function debugLog(verbosityLevel: number, msg: string) {
+  if (verbosity.hasDebugInfo(verbosityLevel)) {
+    console.log(msg)
+  }
 }

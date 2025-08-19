@@ -33,7 +33,7 @@ import assert from 'assert'
 import { uniqBy } from 'lodash'
 
 /**
- * Flatten a module, replacing instances, imports and exports with definitions refered by the module.
+ * Flatten a module, replacing instances, imports and exports with definitions referred by the module.
  *
  * @param quintModule - The module to be flattened
  * @param modulesByName - A map of referred modules by name

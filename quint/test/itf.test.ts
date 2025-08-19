@@ -101,7 +101,7 @@ describe('toItf', () => {
           '#meta': {
             index: 0,
           },
-          a: 'U_OF_UNIT',
+          a: { tag: 'UNIT' },
         },
       ],
     }

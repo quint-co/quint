@@ -31,7 +31,7 @@ result () {
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
-            "$file" =~ ^cryptography/ ||
+            "$file" =~ ^cryptography/hashes ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "tutorials/integers.qnt" ||
@@ -45,7 +45,7 @@ result () {
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
     local succeeded=false
-    if ($quint_cmd &> /dev/null)
+    if (eval "$quint_cmd &> /dev/null")
     then
         printf ":white_check_mark:"
         succeeded=true
@@ -72,7 +72,9 @@ result () {
 get_main () {
   local file="$1"
   local main=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
+  if [[ "$file" == "classic/distributed/ClockSync/clockSync6.qnt" ]] ; then
+    main="--main=clock_sync4"
+  elif [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
   elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     main="--main=ReadersWriters_5"
@@ -82,6 +84,12 @@ get_main () {
     main="--main=two_phase_commit_3"
   elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" ]] ; then
     main="--main=Paxos_val2_accept3_quorum2"
+  elif [[ "$file" == "classic/distributed/ConsensusAlgorithm/ConsensusAlg.qnt" ]] ; then
+    main="--main=badValues"
+  elif [[ "$file" == "classic/distributed/ConsensusAlgorithm/KSetAgreementConsensus.qnt" ]] ; then
+    main="--main=KSetBadValues"
+  elif [[ "$file" == "classic/distributed/Bakery/bakery.qnt" ]] ; then
+    main="--main=verification"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
@@ -126,7 +134,9 @@ get_test_args () {
 get_verify_args () {
   local file="$1"
   local args=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
+  if [[ "$file" == "classic/distributed/ClockSync/clockSync6.qnt" ]] ; then
+    main="--invariant=skew_inv"
+  elif [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
         "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ||
         "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     args="--init=Init --step=Next"
@@ -136,10 +146,17 @@ get_verify_args () {
     args="--init=Init --step=Next"
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
-  elif [[ "$file" == "classic/distributed/TeachingConcurrency/teachingConcurrency.qnt" ]] ; then
-    args="--temporal correct"
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/teaching.qnt" ]] ; then
+    args="--invariant correctness --inductive-invariant IndInv"
+  elif [[ "$file" == "classic/distributed/TeachingConcurrency/mutex.qnt" ]] ; then
+    args="--invariant=correctness --inductive-invariant=inv"
+  elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
+    args='--invariant TerminationDetection --inductive-invariant "TypeOK and Inv"'
+  elif [[ "$file" == "classic/distributed/Bakery/bakery.qnt" ]] ; then
+    args='--invariant correctness --inductive-invariant IndInv'
   fi
   echo "${args}"
+
 }
 
 file="$1"

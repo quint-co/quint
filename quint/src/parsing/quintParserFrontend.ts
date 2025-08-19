@@ -163,7 +163,7 @@ export function parsePhase2sourceResolution(
   // We accumulate the source map over all files here.
   let sourceMap = new Map(mainPhase1Result.sourceMap)
 
-  // The list of modules that have not been been processed yet.  Each element of
+  // The list of modules that have not been processed yet.  Each element of
   // the list carries the module to be processed and the trail of sources that
   // led to this module.  The construction is similar to the worklist algorithm:
   // https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm
@@ -368,7 +368,7 @@ export function compactSourceMap(sourceMap: SourceMap): { sourceIndex: any; map:
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
-  // Initialized two structures to be outputed
+  // Initialized two structures to be outputted
   const compactedSourceMap: Map<bigint, any[]> = new Map<bigint, number[]>()
   const sourcesIndex: Map<number, string> = new Map<number, string>()
 

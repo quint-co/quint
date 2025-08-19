@@ -27,6 +27,7 @@ import { QuintApp, QuintEx, QuintVar } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
+import { evalNondet } from './nondet'
 
 /**
  * The type returned by the builder in its methods, which can be called to get the
@@ -308,22 +309,12 @@ function buildDefCore(builder: Builder, def: LookupDefinition): EvalFunction {
       const cachedValue = builder.scopedCachedValues.get(def.id)!
 
       const bodyEval = buildExpr(builder, def.expr)
-      if (def.qualifier === 'nondet') {
-        // Create an entry in the map for this nondet pick,
-        // as we want the resulting record to be the same at every state.
-        // Value is optional, and starts with undefined
-        builder.initialNondetPicks.set(def.name, undefined)
-      }
 
       return ctx => {
         if (cachedValue.value === undefined) {
           cachedValue.value = bodyEval(ctx)
-          if (def.qualifier === 'nondet') {
-            cachedValue.value
-              .map(value => ctx.varStorage.nondetPicks.set(def.name, value))
-              .mapLeft(_ => ctx.varStorage.nondetPicks.set(def.name, undefined))
-          }
         }
+
         return cachedValue.value
       }
     }
@@ -492,6 +483,32 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
       }
     }
     case 'let': {
+      if (expr.opdef.qualifier === 'nondet') {
+        // For `nondet`, we want to retry the `oneOf()` call in case the body returns false.
+        // So we take care of the compilation at the let-in level.
+
+        if (expr.opdef.expr.kind !== 'app') {
+          // impossible, added to make Typescript's type checker happy.
+          throw new Error('Impossible case: nondet let expression is not an app')
+        }
+
+        // Create an entry in the map for this nondet pick,
+        // as we want the resulting record to be the same at every state.
+        // Value is optional, and starts with undefined
+        builder.initialNondetPicks.set(expr.opdef.name, undefined)
+
+        // Set up cache and memo in the same way we do for regular let-ins.
+        // We don't need to add it to `scopedCachedValues` since we'll clear
+        // the cache in here
+        let cache: CachedValue = { value: undefined }
+        builder.memo.set(expr.opdef.id, _ => cache.value!)
+
+        const setEval = buildExpr(builder, expr.opdef.expr.args[0])
+        const bodyEval = buildExpr(builder, expr.expr)
+
+        return evalNondet(expr.opdef.name, cache, setEval, bodyEval)
+      }
+
       // First, we create a cached value (a register with optional value) for the definition in this let expression
       let cachedValue = builder.scopedCachedValues.get(expr.opdef.id)
       if (!cachedValue) {

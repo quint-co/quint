@@ -14,7 +14,7 @@
  * @module
  */
 
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from '../../quintError'
 import { List, Map, Range, Set } from 'immutable'
 import { isFalse, isTrue } from './evaluator'
@@ -140,55 +140,53 @@ export function lazyBuiltinLambda(
       }
 
     case 'actionAny': {
-      // Executes any of the given actions.
-      // First, we filter actions so that we only consider those that are enabled.
-      // Then, we use `rand()` to pick one of the enabled actions.
+      // Executes the first enabled action from a randomized list of actions.
+      // Returns false if no enabled actions are found.
       const app: QuintApp = { id: 0n, kind: 'app', opcode: 'actionAny', args: [] }
       return (ctx, args) => {
         const nextVarsSnapshot = ctx.varStorage.snapshot()
 
-        const evaluationResults = args.map((arg, i) => {
-          // on `any`, we reset the action taken as the goal is to save the last
-          // action picked in an `any` call
+        // Create array of indices and shuffle them
+        const indices = Array.from(args.keys())
+        // Fisher-Yates shuffle algorithm
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Number(ctx.rand(BigInt(i + 1)))
+          // Swap: indices[i] <--> indices[j]
+          ;[indices[i], indices[j]] = [indices[j], indices[i]]
+        }
+
+        // Try actions in shuffled order until we find one that's enabled
+        for (const i of indices) {
+          // Reset state for each attempt
           ctx.varStorage.actionTaken = undefined
           ctx.varStorage.nondetPicks.forEach((_, key) => {
             ctx.varStorage.nondetPicks.set(key, undefined)
           })
 
           ctx.recorder.onAnyOptionCall(app, i)
-          const result = arg(ctx).map(result => {
-            // Save vars
-            const successor = ctx.varStorage.snapshot()
-
-            return result.toBool() ? [{ snapshot: successor, index: i }] : []
-          })
+          const result = args[i](ctx)
           ctx.recorder.onAnyOptionReturn(app, i)
 
-          return result
-        })
-
-        const processedResults = mergeInMany(evaluationResults)
-          .map(suc => suc.flat())
-          .mapLeft(errors => errors[0])
-
-        return processedResults.map(potentialSuccessors => {
-          switch (potentialSuccessors.length) {
-            case 0:
-              ctx.recorder.onAnyReturn(args.length, -1)
-              ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
-              return rv.mkBool(false)
-            case 1:
-              ctx.recorder.onAnyReturn(args.length, potentialSuccessors[0].index)
-              ctx.varStorage.recoverSnapshot(potentialSuccessors[0].snapshot)
-              return rv.mkBool(true)
-            default: {
-              const choice = Number(ctx.rand(BigInt(potentialSuccessors.length)))
-              ctx.recorder.onAnyReturn(args.length, potentialSuccessors[choice].index)
-              ctx.varStorage.recoverSnapshot(potentialSuccessors[choice].snapshot)
-              return rv.mkBool(true)
-            }
+          if (result.isLeft()) {
+            return result
           }
-        })
+
+          if (result.value.toBool()) {
+            // Found an enabled action - record it and return true
+            const successor = ctx.varStorage.snapshot()
+            ctx.recorder.onAnyReturn(args.length, i)
+            ctx.varStorage.recoverSnapshot(successor)
+            return right(rv.mkBool(true))
+          }
+
+          // Reset state before trying next action
+          ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
+        }
+
+        // No enabled actions found
+        ctx.recorder.onAnyReturn(args.length, -1)
+        ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
+        return right(rv.mkBool(false))
       }
     }
     case 'actionAll':
@@ -240,33 +238,6 @@ export function lazyBuiltinLambda(
         })
       }
 
-    case 'oneOf':
-      // Randomly selects one element of the set.
-      return (ctx, args) => {
-        return args[0](ctx).chain(set => {
-          const bounds = set.bounds()
-          const positions: Either<QuintError, bigint[]> = mergeInMany(
-            bounds.map((b): Either<QuintError, bigint> => {
-              if (b.isJust()) {
-                const sz = b.value
-
-                if (sz === 0n) {
-                  return left({ code: 'QNT509', message: `Applied oneOf to an empty set` })
-                }
-                return right(ctx.rand(sz))
-              } else {
-                // An infinite set, pick an integer from the range [-2^255, 2^255).
-                // Note that pick on Nat uses the absolute value of the passed integer.
-                // TODO: make it a configurable parameter:
-                // https://github.com/informalsystems/quint/issues/279
-                return right(-(2n ** 255n) + ctx.rand(2n ** 256n))
-              }
-            })
-          ).mapLeft(errors => errors[0])
-
-          return positions.chain(ps => set.pick(ps.values()))
-        })
-      }
     case 'then':
       // Compose two actions, executing the second one only if the first one results in true.
       return (ctx, args) => {
@@ -751,6 +722,19 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
         })
 
         return right(rv.mkSet(lists.map(list => rv.mkList(list)).toOrderedSet()))
+      }
+    case 'getOnlyElement':
+      // Get the only element of a set, or an error if the set is empty or has more than one element.
+      return (_, args) => {
+        const set = args[0].toSet()
+        if (set.size !== 1) {
+          return left({
+            code: 'QNT505',
+            message: `Called 'getOnlyElement' on a set with ${set.size} elements. Make sure the set has exactly one element.`,
+          })
+        }
+
+        return right(set.first())
       }
 
     case 'q::debug':

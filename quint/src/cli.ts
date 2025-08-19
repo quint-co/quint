@@ -10,7 +10,6 @@
  * @author Igor Konnov, konnov.phd, 2024
  */
 
-import { fail } from 'assert'
 import yargs from 'yargs/yargs'
 
 import {
@@ -100,7 +99,6 @@ const typecheckCmd = {
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
-const supportedTarges = ['tlaplus', 'json']
 // construct the compile subcommand
 const compileCmd = {
   command: 'compile <input>',
@@ -108,15 +106,15 @@ const compileCmd = {
   builder: (yargs: any) =>
     compileOpts(yargs)
       .option('target', {
-        desc: `the compilation target. Supported values: ${supportedTarges.join(', ')}`,
+        desc: `the compilation target.`,
         type: 'string',
+        choices: ['tlaplus', 'json'],
         default: 'json',
       })
-      .coerce('target', (target: string): string => {
-        if (!supportedTarges.includes(target)) {
-          fail(`Invalid option for --target: ${target}. Valid options: ${supportedTarges.join(', ')}`)
-        }
-        return target
+      .option('flatten', {
+        desc: 'Whether or not to flatten the modules into one. Use --flatten=false to disable',
+        type: 'boolean',
+        default: true,
       })
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
@@ -203,6 +201,7 @@ const testCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -232,7 +231,7 @@ const testCmd = {
 // construct run commands with yargs
 const runCmd = {
   command: 'run <input>',
-  desc: 'Simulate a Quint specification and check invariants',
+  desc: 'Simulate a Quint specification and (optionally) check invariants',
   builder: (yargs: any) =>
     defaultOpts(yargs)
       .option('main', {
@@ -240,7 +239,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file, e.g., out_{seq}.itf.json where {seq} is the trace sequence number (suppresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file, e.g., out_{seq}.itf.json where {seq} is the trace sequence number',
         type: 'string',
       })
       .option('max-samples', {
@@ -268,15 +267,31 @@ const runCmd = {
         type: 'string',
         default: 'step',
       })
+      .option('invariants', {
+        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        type: 'array',
+        default: [],
+      })
       .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression',
+        desc: 'invariant to check: a definition name or an expression. Can be used together with --invariants',
         type: 'string',
         default: 'true',
+      })
+      .option('witnesses', {
+        desc: 'space separated list of witnesses to report on (counting for how many traces the witness is true)',
+        type: 'array',
+        default: [],
+      })
+      .option('hide', {
+        desc: 'space separated list of variable names to hide from the terminal output (does not affect ITF output)',
+        type: 'array',
+        default: [],
       })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .coerce('seed', coerceSeed)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
@@ -286,6 +301,12 @@ const runCmd = {
         desc: '(experimental) whether to produce metadata to be used by model-based testing',
         type: 'boolean',
         default: false,
+      })
+      .option('backend', {
+        desc: 'the backend to use for simulation',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -304,6 +325,15 @@ const verifyCmd = {
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     compileOpts(yargs)
+      .option('invariants', {
+        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        type: 'array',
+        default: [],
+      })
+      .option('inductive-invariant', {
+        desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
+        type: 'string',
+      })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file, e.g., out.itf.json (suppresses all console output)',
         type: 'string',
@@ -369,13 +399,30 @@ const docsCmd = {
   handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
 
-const validate = (_argv: any) => {
+// validate that --n-traces is not greater than --max-samples
+const validate = (argv: any) => {
+  if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {
+    if (argv['n-traces'] > argv['max-samples']) {
+      throw new Error(`--n-traces (${argv['n-traces']}) cannot be greater than --max-samples (${argv['max-samples']}).`)
+    }
+  }
   return true
+}
+
+function coerceSeed(seedText: string): BigInt {
+  // since yargs does not has a type for big integers,
+  // we do it with a fallback
+  try {
+    return BigInt(seedText)
+  } catch (SyntaxError) {
+    throw new Error(`--seed must be a big integer, found: ${seedText}`)
+  }
 }
 
 async function main() {
   // parse the command-line arguments and execute the handlers
   await yargs(process.argv.slice(2))
+    .showHelpOnFail(false)
     .command(parseCmd)
     .command(typecheckCmd)
     .command(compileCmd)

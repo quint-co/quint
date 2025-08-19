@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "17"
           registry-url: "https://registry.npmjs.org"
@@ -35,8 +35,75 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body_path: ${{ github.workspace }}/release-notes.txt
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish
         # See https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages#publishing-packages-to-the-npm-registry
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  wait-for-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.npm-ready.outputs.version }}
+    steps:
+      - name: Wait for NPM
+        id: npm-ready
+        timeout-minutes: 30
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          while ! curl -s https://registry.npmjs.org/@informalsystems/quint | jq -er ".versions.\"${REF_NAME#v}\""; do
+            echo "Waiting for NPM to publish version ${REF_NAME#v}..."
+            sleep 30
+          done
+          echo "version=${REF_NAME#v}" >> $GITHUB_OUTPUT
+
+  check-on-arch:
+    strategy:
+      matrix:
+        os:
+          # linux-amd64
+          - ubuntu-22.04
+          # linux-arm64
+          - ubuntu-22.04-arm
+          # macos-arm64
+          - macos-14
+          # macos-intel
+          - macos-13
+          # pc-amd64
+          - windows-2022
+    needs: wait-for-npm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check Quint
+        timeout-minutes: 30
+        env:
+          QUINT_VERSION: ${{ needs.wait-for-npm.outputs.version }}
+        # can't use bash shell tricks, as it's not available on windows
+        run: |
+          deno run --allow-all --node-modules-dir=auto --allow-scripts "npm:@informalsystems/quint@${{ env.QUINT_VERSION }}" --version
+  upload-binaries:
+    needs: check-on-arch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Upload assets
+        env:
+          GH_REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./.github/upload-binaries.sh "$GH_REPO" "$REF_NAME" --publish

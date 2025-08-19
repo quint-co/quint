@@ -9,9 +9,9 @@
  */
 
 import { QuintEx } from './ir/quintIr'
-import { ExecutionFrame } from './runtime/trace'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
+import { TraceHook } from './cliReporting'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -20,29 +20,62 @@ export interface SimulatorOptions {
   init: string
   step: string
   invariant: string
+  individualInvariants?: string[]
   maxSamples: number
   maxSteps: number
   numberOfTraces: number
   rng: Rng
   verbosity: number
   storeMetadata: boolean
-  onTrace(index: number, status: string, vars: string[], states: QuintEx[]): void
+  hideVars: string[]
+  onTrace?: TraceHook
 }
+
+export interface SimulationTrace {
+  states: QuintEx[]
+  result: boolean
+  seed: bigint
+}
+
+export type SimulationStatus = 'ok' | 'violation' | 'error'
 
 /** The outcome of a simulation
  */
-export type Outcome =
-  | { status: 'ok' } /** Simulation succeeded */
-  | { status: 'violation' } /** Simulation found an invariant violation */
-  | { status: 'error'; errors: QuintError[] } /** An error occurred during simulation  */
+export interface Outcome {
+  status: SimulationStatus
+  errors: QuintError[]
+  bestTraces: SimulationTrace[]
+  witnessingTraces: number[]
+  samples: number
+  traceStatistics: TraceStatistics
+}
 
 /**
  * A result returned by the simulator.
  */
-export interface SimulatorResult {
-  outcome: Outcome
-  vars: string[]
-  states: QuintEx[]
-  frames: ExecutionFrame[]
-  seed: bigint
+export interface SimulationResult {
+  result: QuintEx
+  witnessingTraces: number[]
+  samples: number
+  traceStatistics: TraceStatistics
+}
+
+export interface TraceStatistics {
+  averageTraceLength: number
+  minTraceLength: number
+  maxTraceLength: number
+}
+
+export function getTraceStatistics(traceLengths: number[]): TraceStatistics {
+  return {
+    maxTraceLength: Math.max(...traceLengths),
+    minTraceLength: Math.min(...traceLengths),
+    averageTraceLength: traceLengths.reduce((a, b) => a + b, 0) / traceLengths.length,
+  }
+}
+
+export function showTraceStatistics(stats: TraceStatistics): string {
+  return `Trace length statistics: max=${stats.maxTraceLength}, min=${
+    stats.minTraceLength
+  }, average=${stats.averageTraceLength.toFixed(2)}`
 }

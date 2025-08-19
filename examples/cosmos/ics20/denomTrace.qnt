@@ -71,7 +71,7 @@ module denomTraceTest {
   import denomTrace.*
 
   // For testing, imagine the following topology between channels in chains A, B and C.
-  // PS: There should be similar channels between A and C, those are ommited in the diagram for simplicity
+  // PS: There should be similar channels between A and C, those are omitted in the diagram for simplicity
   // ┌───────────────────┐           ┌────────────────────────────────────┐         ┌───────────────────┐
   // │      Chain A      │           │               Chain B              │         │      Chain C      │
   // │                   │           │                                    │         │                   │

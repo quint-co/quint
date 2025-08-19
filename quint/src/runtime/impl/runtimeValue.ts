@@ -66,7 +66,7 @@ import { strict as assert } from 'assert'
 
 import { IdGenerator, zerog } from '../../idGenerator'
 import { expressionToString } from '../../ir/IRprinting'
-import { QuintEx, QuintLambdaParameter, QuintName } from '../../ir/quintIr'
+import { QuintEx, QuintLambdaParameter, QuintStr } from '../../ir/quintIr'
 import { QuintError, quintErrorToString } from '../../quintError'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { EvalFunction } from './builder'
@@ -349,7 +349,7 @@ export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
         }
 
         case 'variant': {
-          const label = (ex.args[0] as QuintName).name
+          const label = (ex.args[0] as QuintStr).value
           return fromQuintEx(ex.args[1]).map(v => rv.mkVariant(label, v))
         }
 
@@ -1475,10 +1475,18 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
     const nindices = domainArr.length
     const nvalues = rangeArr.length
     function* gen() {
-      if (domainArr.length === 0 || rangeArr.length === 0) {
-        // yield nothing as an empty set produces the empty product
+      if (domainArr.length === 0) {
+        // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
+        yield rv.mkMap([])
         return
       }
+
+      if (rangeArr.length === 0) {
+        // To reflect the behaviour of TLC, an empty range needs to give Set()
+        // yields nothing
+        return
+      }
+
       // generate `nmaps` maps by using number increments
       const nmaps = nvalues ** nindices
       for (let i = 0; i < nmaps; i++) {
@@ -1539,7 +1547,12 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
     }
 
     const domainSize = domainSizeResult.value
-    if (domainSize === 0n || (rangeSizeResult.isRight() && rangeSizeResult.value === 0n)) {
+    if (domainSize === 0n) {
+      // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
+      return right(rv.mkMap([]))
+    }
+
+    if (rangeSizeResult.isRight() && rangeSizeResult.value === 0n) {
       // the set of maps is empty, no way to pick a value
       return left({ code: 'QNT501', message: 'Empty set of maps' })
     }

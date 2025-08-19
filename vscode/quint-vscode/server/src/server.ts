@@ -23,6 +23,7 @@ import {
   InitializeParams,
   InitializeResult,
   MarkupContent,
+  MarkupKind,
   ProposedFeatures,
   RenameParams,
   SignatureHelp,
@@ -35,6 +36,9 @@ import {
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
+import { logger, overrideConsole } from './logger'
+
+overrideConsole()
 
 import {
   AnalysisOutput,
@@ -48,13 +52,13 @@ import {
   produceDocsById,
 } from '@informalsystems/quint'
 
-import { completeIdentifier } from './complete'
+import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType } from './complete'
 import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { parseDocument } from './parsing'
 import { getDeclRegExp } from './rename'
-import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
 export class QuintLanguageServer {
@@ -235,7 +239,7 @@ export class QuintLanguageServer {
               end: { line: lineNum + 1, character: 0 },
             })
 
-            const matchResult = line.match(new RegExp(fix.original))
+            const matchResult = line.match(stringToRegex(fix.original))
             if (!matchResult) {
               return actions
             }
@@ -274,45 +278,81 @@ export class QuintLanguageServer {
     })
 
     connection.onCompletion((params: CompletionParams): CompletionItem[] => {
-      // Only complete on "."
-      // TODO: offer completion at arbitrary positions in the text
-      if (params.context?.triggerKind !== CompletionTriggerKind.TriggerCharacter) {
+      logger.debug(`Completion requested at position ${JSON.stringify(params.position)} in ${params.textDocument.uri}`)
+
+      if (params.context?.triggerKind !== CompletionTriggerKind.Invoked) {
+        logger.debug(`Completion triggered by non-invoked action, ignoring.`)
         return []
       }
 
       const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
-      if (!parsedData) {
-        return []
-      }
-
       const document = this.documents.get(params.textDocument.uri)
-      if (!document) {
+
+      if (!parsedData || !document) {
+        logger.debug(`No parsed data or document found for completion.`)
         return []
       }
 
-      // Parse the identifier that triggered completion
-      // TODO: offer completion for chained calls
-      //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
       const triggeringLine = document.getText({
         start: { ...params.position, character: 0 },
         end: params.position,
       })
 
-      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
-      if (!match) {
-        return []
-      }
-      const triggeringIdentifier = match[1]
-
+      const dotAccessMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)\.$/)
       const sourceFile = URI.parse(params.textDocument.uri).path
 
-      // Run analysis synchronously to get the required information for completion
       this.triggerAnalysis(document)
-
       const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
       if (!analysisOutput) {
+        logger.debug(`No analysis output available for completion.`)
         return []
       }
+
+      if (dotAccessMatch) {
+        const baseIdentifier = dotAccessMatch[1]
+        logger.debug(`Detected dot-access on identifier: ${baseIdentifier}`)
+
+        const ref = [...parsedData.table.entries()].find(([_, v]) => v.name === baseIdentifier)
+        if (!ref) {
+          logger.debug(`Could not resolve identifier: ${baseIdentifier}`)
+          return []
+        }
+
+        const [declId, _binding] = ref
+        const type = analysisOutput.types.get(declId)?.type
+        if (!type) {
+          logger.debug(`No type found for identifier: ${baseIdentifier}`)
+          return []
+        }
+
+        logger.debug(
+          `Resolved type for '${baseIdentifier}': ${JSON.stringify(type, (_, v) =>
+            typeof v === 'bigint' ? v.toString() : v
+          )}`
+        )
+
+        const builtinCompletions: CompletionItem[] = getSuggestedBuiltinsForType(type).map(op => {
+          const docs = loadedBuiltInDocs.get(op.name)
+          return {
+            label: op.name,
+            detail: docs?.signature,
+            documentation: docs?.documentation ? { kind: MarkupKind.Markdown, value: docs.documentation } : undefined,
+          }
+        })
+
+        const fieldCompletions = getFieldCompletions(type)
+
+        return builtinCompletions.concat(fieldCompletions)
+      }
+
+      // Fallback: regular identifier completion
+      const identifierMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
+      if (!identifierMatch) {
+        logger.debug(`No matching identifier found in line: ${triggeringLine}`)
+        return []
+      }
+
+      const triggeringIdentifier = identifierMatch[1]
 
       return completeIdentifier(
         triggeringIdentifier,
@@ -456,8 +496,10 @@ export class QuintLanguageServer {
 
   private analyze(document: TextDocument) {
     try {
+      logger.debug(`Starting analysis for document: ${document.uri}`)
       const parsedData = this.parsedDataByDocument.get(document.uri)
       if (!parsedData) {
+        logger.debug(`No parsed data found for document: ${document.uri}`)
         return
       }
 
@@ -473,6 +515,7 @@ export class QuintLanguageServer {
       const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
       const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
       this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
+      logger.debug(`Analysis completed for document: ${document.uri}, errors found: ${diagnostics.length}`)
     } catch (e) {
       this.connection.console.error(`Error during analysis: ${e}`)
     }
@@ -480,3 +523,4 @@ export class QuintLanguageServer {
 }
 
 new QuintLanguageServer(createConnection(ProposedFeatures.all), new TextDocuments(TextDocument))
+logger.info('🚀 Quint Language Server Started!')

@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'nextra-theme-docs/style.css';
+@import 'tailwindcss';
+@variant dark (&:where(.dark *));
+
+@theme {
+  --color-quint-purple: #9d6ce5;
+  --color-quint-dark: #2d0075;
+  --color-quint-orange: #ffab70;
+}
 
 dl {
   margin-top: 1rem;
@@ -14,55 +20,59 @@ dd {
   padding-left: 1rem;
 }
 
-footer {
-  max-height: 10%;
+
+.x\:text-primary-600 {
+  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
 }
 
-.nx-text-primary-600 {
+:is(html[class~="dark"] .x\:text-primary-600) {
   color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
 }
-:is(html[class~="dark"] .dark\:nx-text-primary-600) {
-  color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 57%);
+
+.nextra-code pre {
+  background-color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 97%);
+  --tw-ring-color: transparent;
+  border-bottom-right-radius: var(--radius-xl);
+  border-bottom-left-radius: var(--radius-xl);
+}
+
+.nextra-code div {
+  background-color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 95%);
+  border-color: transparent;
+  border-top-right-radius: var(--radius-xl);
+  border-top-left-radius: var(--radius-xl);
+}
+
+:is(html[class~="dark"] .nextra-code div) {
+  background-color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 15%);
+  border-color: transparent;
+}
+
+:is(html[class~="dark"] .nextra-code pre) {
+  background-color: hsl(var(--nextra-primary-hue), var(--nextra-primary-saturation), 12%);
+  --tw-ring-color: transparent;
 }
 
 .text-lg code {
   font-size: 1rem;
 }
 
-:root {
-  --shiki-color-text: #414141;
-  --shiki-color-background: transparent;
-  --shiki-token-constant: #1976d2;
-  --shiki-token-string: #9d6ce5;
-  --shiki-token-comment: #aaa;
-  --shiki-token-keyword: #9d6ce5;
-  --shiki-token-parameter: #ff9800;
-  --shiki-token-function: #6f42c1;
-  --shiki-token-string-expression: #1976d2;
-  --shiki-token-punctuation: #212121;
-  --shiki-token-link: #22863a;
+/* Nextra component is adding the margin twice, so I cancel it here */
+[role="tabpanel"].x\:mt-6 {
+  margin-top: -1.5rem !important;
 }
 
-.dark {
-  --shiki-color-text: #d1d1d1;
-  --shiki-token-constant: #79b8ff;
-  --shiki-token-string: #ffab70;
-  --shiki-token-comment: #6b737c;
-  --shiki-token-keyword: #ffab70;
-  --shiki-token-parameter: #ff9800;
-  --shiki-token-function: #b392f0;
-  --shiki-token-string-expression: #b392f0;
-  --shiki-token-punctuation: #bbb;
-  --shiki-token-link: #ffab70;
+.gradient-bg {
+  background: #FFF;
+  background: linear-gradient(90deg,rgba(206, 182, 242, 1) 0%, rgba(255, 255, 255, 1) 20%);
+  min-height: 100vh;
+  width: 100%;
 }
-/* .violation-sample-container { */
-/*   max-height: 0; */
-/*   overflow: hidden; */
-/*   transition: max-height 0.5s ease-out, opacity 0.5s ease-out; */
-/*   opacity: 0; */
-/* } */
 
-/* .violation-sample-container.visible { */
-/*   max-height: 1000px; /\* Arbitrary large value to ensure full height *\/ */
-/*   opacity: 1; */
-/* } */
+:is(html[class~="dark"] .gradient-bg) {
+  background: #000;
+  background: linear-gradient(90deg, rgba(79, 54, 115, 1) 0%, rgba(0, 0, 0, 1) 20%);
+  min-height: 100vh;
+  width: 100%;
+}
+

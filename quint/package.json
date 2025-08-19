@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.22.1",
+  "version": "0.26.0",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
@@ -41,7 +41,7 @@
     "test/**/*.ts"
   ],
   "engines": {
-    "node": "18 - 20"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
@@ -56,9 +56,11 @@
     "@types/line-column": "^1.0.0",
     "@types/lodash.clonedeep": "4.5.0",
     "@types/seedrandom": "^3.0.4",
+    "adm-zip": "^0.5.16",
     "antlr4ts": "^0.5.0-alpha.4",
     "chalk": "^4.1.2",
     "cli-progress": "^3.12.0",
+    "cross-spawn": "^7.0.6",
     "eol": "^0.9.1",
     "immutable": "^4.3.0",
     "json-bigint": "^1.0.0",
@@ -68,7 +70,7 @@
     "lodash.isequal": "^4.5.0",
     "seedrandom": "^3.0.5",
     "tar": "^6.1.14",
-    "yargs": "^17.2.1"
+    "yargs": "^17.7.2"
   },
   "scripts": {
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
@@ -82,7 +84,7 @@
     "apalache-dist": "txm apalache-dist-tests.md",
     "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
-    "api-docs": "quint docs ./src/builtin.qnt > ../docs/pages/docs/builtin.md",
+    "api-docs": "quint docs ./src/builtin.qnt > ../docs/content/docs/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
     "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
     "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",
@@ -91,13 +93,14 @@
   "devDependencies": {
     "@types/chai": "^4.2.18",
     "@types/cli-progress": "^3.11.6",
+    "@types/cross-spawn": "^6.0.6",
     "@types/json-bigint": "^1.0.1",
     "@types/lodash.isequal": "^4.5.6",
     "@types/mocha": "^8.2.3",
     "@types/node": "^18.16.0",
     "@types/node-fetch": "^2.6.4",
     "@types/tar": "^6.1.5",
-    "@types/yargs": "^17.0.5",
+    "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "antlr4ts-cli": "^0.5.0-alpha.4",

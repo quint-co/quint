@@ -38,9 +38,10 @@ import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
-import { lowercaseTypeError, tooManySpreadsError, undeclaredTypeParamsError } from './parseErrors'
+import { lowercaseTypeError, mapSyntaxError, tooManySpreadsError, undeclaredTypeParamsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
 import assert, { fail } from 'assert'
+import { typeToString } from '../ir/IRprinting'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -390,6 +391,24 @@ export class ToIrListener implements QuintListener {
     // val a: T = A(42)
     // val b: T = B
     // ```
+    if (fields.length == 1 && isUnitType(fields[0].fieldType) && ctx.sumTypeDefinition()._separator == undefined) {
+      // A single type constructor with no parameters is parsed as an alias, unless it has the `|` separator:
+      // type T = A
+      // The only proper way to disambiguate it between an alias and
+      // a constructor over the unit type would be to use name resolution.
+      // Users can use `type T = | A` to make it into a sum type.
+      const variantCtx = ctx.sumTypeDefinition().typeSumVariant()[0]
+      const def: QuintTypeDef = {
+        id: id,
+        kind: 'typedef',
+        name,
+        type: { id: this.getId(variantCtx), kind: 'const', name: variantCtx.text },
+      }
+
+      this.declarationStack.push(def)
+      return
+    }
+
     const constructors: QuintOpDef[] = zip(fields, ctx.sumTypeDefinition().typeSumVariant()).map(
       ([{ fieldName, fieldType }, variantCtx]) => {
         // Mangle the parameter name to avoid clashes
@@ -988,7 +1007,7 @@ export class ToIrListener implements QuintListener {
     // If there is not a variant param, then we have one of two things
     //
     // - a wildcard case, `_ => foo`
-    // - a hole in the paramater position, `Foo(_) => bar`
+    // - a hole in the parameter position, `Foo(_) => bar`
     const name = variantMatch && variantMatch._variantParam ? variantMatch._variantParam.text : '_'
     const params = [{ name, id: this.getId(caseCtx) }]
 
@@ -1035,8 +1054,16 @@ export class ToIrListener implements QuintListener {
 
   // E.g., Result[int, str]
   exitTypeApp(ctx: p.TypeAppContext) {
+    this.processTypeApp(ctx, ctx.typeApplication()._typeCtor.text, ctx.typeApplication().typeArgs()._typeArg)
+  }
+
+  exitWrongTypeApp(ctx: p.WrongTypeAppContext) {
+    this.processTypeApp(ctx, ctx.wrongTypeApplication()._typeCtor.text, ctx.wrongTypeApplication().typeArgs()._typeArg)
+  }
+
+  private processTypeApp(ctx: ParserRuleContext, name: string, types: ParserRuleContext[]) {
     const id = this.getId(ctx)
-    const args: QuintType[] = ctx._typeArg
+    const args = types
       .map(_ =>
         // We require that there is one parsed type for each typeArg recorded
         this.popType().unwrap()
@@ -1044,9 +1071,24 @@ export class ToIrListener implements QuintListener {
       .reverse()
     // The next type on the stack after the args should be the applied
     // type constructor
-    const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name: ctx._typeCtor.text }
-    const typeApp: QuintAppType = { id, kind: 'app', ctor, args }
-    this.typeStack.push(typeApp)
+    const ctor: QuintConstType = { id: this.getId(ctx), kind: 'const', name }
+
+    // Check for Map[a, b] syntax
+    if (ctor.name === 'Map' && args.length === 2) {
+      // Extract the key and value type names
+      const keyType = typeToString(args[0])
+      const valueType = typeToString(args[1])
+
+      // Add error with fix suggestion
+      this.errors.push(mapSyntaxError(id, keyType, valueType))
+
+      // Create a function type instead (which is the correct representation for maps)
+      const funType: QuintType = { id, kind: 'fun', arg: args[0], res: args[1] }
+      this.typeStack.push(funType)
+    } else {
+      const typeApp: QuintAppType = { id, kind: 'app', ctor, args }
+      this.typeStack.push(typeApp)
+    }
   }
 
   // TODO: replace with general type application
@@ -1183,6 +1225,29 @@ export class ToIrListener implements QuintListener {
   // stack of expressions
   private pushApplication(ctx: any, name: string, args: QuintEx[]) {
     const id = this.getId(ctx)
+
+    // Special handling for q::debug with a single argument
+    if (name === 'q::debug' && args.length === 1) {
+      // Get the expression text from the context
+      const expressionText = ctx.text
+
+      // Create a string literal with the expression text
+      const expressionStrLiteral: QuintStr = {
+        id: this.idGen.nextId(),
+        kind: 'str',
+        value: expressionText,
+      }
+
+      // Create the application with two arguments: the expression text and the original argument
+      this.exprStack.push({
+        id,
+        kind: 'app',
+        opcode: name,
+        args: [expressionStrLiteral, args[0]],
+      })
+      return
+    }
+
     this.exprStack.push({
       id,
       kind: 'app',

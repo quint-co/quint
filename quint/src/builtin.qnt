@@ -236,6 +236,16 @@ module builtin {
   /// ```
   pure def allListsUpTo(s: Set[a], max_length: int): Set[List[a]]
 
+  /// `s.getOnlyElement()` is, deterministically, the only element of `s`.
+  /// If the size of `s` is not 1, this operator has undefined behavior.
+  ///
+  /// ### Examples
+  ///
+  /// ```quint
+  /// assert(Set(5).getOnlyElement() == 5)
+  /// ```
+  pure def getOnlyElement(s): (Set[a]) => a
+
   /// `s.chooseSome()` is, deterministically, one element of `s`.
   ///
   /// ### Examples
@@ -698,7 +708,7 @@ module builtin {
   ///
   /// The weak fairness condition can be expressed in English as (from Specifying Systems):
   ///
-  /// 1. It’s always the case that, if A is enabled forever, then an A step eventually occurs.
+  /// 1. It's always the case that, if A is enabled forever, then an A step eventually occurs.
   /// 1. A is infinitely often disabled, or infinitely many A steps occur.
   /// 1. If A is eventually enabled forever, then infinitely many A steps occur.
   ///
@@ -871,6 +881,9 @@ module builtin {
   /// It also returns the given value unchanged,
   /// so that it can be used directly within expressions.
   ///
+  /// When called with a single argument as `q::debug(expr)`, it prints the
+  /// expression itself as the message, followed by its value.
+  ///
   /// ### Examples
   ///
   /// ```quint
@@ -879,6 +892,13 @@ module builtin {
   /// > new x: 1
   /// > new x: 2
   /// > new x: 3
+  /// true
+  /// ```
+  ///
+  /// ```quint
+  /// var x: int
+  /// >>> (x' = 0).then(x' = q::debug(x + 1))
+  /// > x + 1: 1
   /// true
   /// ```
   pure def q::debug(msg, value): (str, a) => a

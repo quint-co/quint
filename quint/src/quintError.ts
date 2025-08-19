@@ -53,6 +53,8 @@ export type ErrorCode =
   | 'QNT013'
   /* QNT014: Type variables in a type declaration are not declared as parameters */
   | 'QNT014'
+  /* QNT015: use a -> b instead of Map[a, b] */
+  | 'QNT015'
   /* QNT098: Cyclic imports */
   | 'QNT098'
   /* QNT099: Found cyclic definitions */
@@ -85,6 +87,8 @@ export type ErrorCode =
   | 'QNT407'
   /* QNT408: Case-sensitive filenames */
   | 'QNT408'
+  /* QNT409: Init cannot be converted to TLA+ */
+  | 'QNT409'
   /* QNT500: Uninitialized constant */
   | 'QNT500'
   /* QNT501: Internal compiler error */
