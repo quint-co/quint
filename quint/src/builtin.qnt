@@ -903,6 +903,20 @@ module builtin {
   /// ```
   pure def q::debug(msg, value): (str, a) => a
 
+  /// `apalache::generate(n)` generates a value of type `a` while constraining
+  /// all of its children collections to have at most `n` elements. This operator
+  /// must be used together with `nondet`, similar to `oneOf`.
+  ///
+  /// ### Examples
+  ///
+  /// ```quint
+  /// nondet S: Set({a: int, b: Set({ c: str, d: bool })}) = apalache::generate(4)
+  /// ```
+  ///
+  /// In the above example, `S` has up to 4 elements, and for each `x` in `S`,
+  /// `x.b` has up to 4 elements.
+  pure def apalache::generate(n): (int) => a
+
   // /// `List(e0, ..., en)` is a list of values `e0`, ..., `en`.
   // ///
   // /// This is the list constructor.

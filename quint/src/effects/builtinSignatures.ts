@@ -203,8 +203,7 @@ export const integerOperators = [
   { name: 'ilte', effect: standardPropagation(2) },
   { name: 'igte', effect: standardPropagation(2) },
   { name: 'to', effect: standardPropagation(2) },
-  { name: 'generate', effect: standardPropagation(2) },
-]
+  ]
 
 const temporalOperators = [
   { name: 'always', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
@@ -227,6 +226,8 @@ const otherOperators = [
   { name: 'fail', effect: propagateComponents(['read', 'update'])(1) },
   { name: 'assert', effect: propagateComponents(['read'])(1) },
   { name: 'q::debug', effect: propagateComponents(['read'])(2) },
+  // the Apalache!Gen extension
+  { name: 'apalache::generate', effect: standardPropagation(1) },
   // FIXME: The following should produce run mode
   { name: 'q::lastTrace', effect: parseAndQuantify('Pure') },
   {

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+- Add the operator `apalache::generate` to mirror `Apalache!Gen` (see #1455).
+
 ### Changed
 
 - Bump Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
@@ -216,7 +218,6 @@ Added those variables to the `vars` field of the ITF json so that they are displ
 
 ### Added
 
-- Add the operator `generate` to mirror `Apalache!Gen` (see #1455).
 - In the `verify` command, add warning if `--out-itf` option contains `{test}` or `{seq}` as those have no effect since Apalache only produces a single trace (#1485)
 - The `run` and `test` commands now display a progress bar (#1457)
 

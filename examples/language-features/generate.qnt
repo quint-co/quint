@@ -1,11 +1,11 @@
-// demonstrating the use of 'generate'
+// demonstrating the use of 'apalache::generate'
 module gen {
   var S: Set[int]
   var T: Set[{ x: int, y: bool }]
 
   action init = {
-    nondet iS = generate(10, Set(0))
-    nondet iT = generate(20, Set({ x: 0, y: false }))
+    nondet iS: Set[int] = apalache::generate(10)
+    nondet iT: Set[{ x: int, y: bool }] = apalache::generate(20)
     all {
       S' = iS,
       T' = iT,
