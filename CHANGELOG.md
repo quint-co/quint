@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bump Apalache to 0.49.0 (including support for `apalache::generate` [#3138](https://github.com/apalache-mc/apalache/pull/3138))
 - Bump Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
 
 ### Deprecated
