@@ -61,7 +61,7 @@ describe('checkNondets', () => {
     assert.sameDeepMembers(errors, [
       {
         code: 'QNT204',
-        message: "'oneOf' must be the outermost expression in a nondet definition",
+        message: "the outermost expression in a nondet definition must be either 'oneOf' or 'apalache::generate'",
         reference: 8n,
         data: {},
       },

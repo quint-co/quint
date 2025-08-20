@@ -108,6 +108,7 @@ const integerOperators = [
   { name: 'to', type: '(int, int) => Set[int]' },
   { name: 'iuminus', type: '(int) => int' },
 ]
+
 const temporalOperators = [
   { name: 'always', type: '(bool) => bool' },
   { name: 'eventually', type: '(bool) => bool' },
@@ -132,6 +133,7 @@ const otherOperators = [
   { name: 'q::lastTrace', type: 'List[a]' },
   { name: 'q::test', type: '(int, int, int, bool, bool, bool) => bool' },
   { name: 'q::testOnce', type: '(int, int, bool, bool, bool) => bool' },
+  { name: 'apalache::generate', type: '(int) => a' },
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {
