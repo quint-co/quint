@@ -910,7 +910,7 @@ module builtin {
   /// ### Examples
   ///
   /// ```quint
-  /// nondet S: Set({a: int, b: Set({ c: str, d: bool })}) = apalache::generate(4)
+  /// nondet S: Set({ a: int, b: Set({ c: str, d: bool }) }) = apalache::generate(4)
   /// ```
   ///
   /// In the above example, `S` has up to 4 elements, and for each `x` in `S`,
