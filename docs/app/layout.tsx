@@ -9,14 +9,14 @@ export const metadata = {
   title: 'Quint',
   description: 'Quint - A modern and executable specification language',
   openGraph: {
-    images: [{ url: 'quint-lang.org/og.jpg' }],
+    images: [{ url: 'https://quint-lang.org/og.jpg' }],
     url: 'https://quint-lang.org',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     creator: '@informalsystems',
-    images: ['quint-lang.org/og.jpg'],
+    images: ['https://quint-lang.org/og.jpg'],
   },
 }
 
