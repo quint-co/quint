@@ -6,20 +6,17 @@ import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 
 export const metadata = {
-  title: 'Quint - Executable Specification Language',
-  description: 'A modern and executable specification language',
+  title: 'Quint',
+  description: 'Quint - A modern and executable specification language',
   openGraph: {
-    title: 'Quint - Executable Specification Language',
-    description: 'A modern and executable specification language',
-    images: [{ url: '/og.png' }],
+    images: [{ url: 'quint-lang.org/og.jpg' }],
     url: 'https://quint-lang.org',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@quint_lang',
     creator: '@informalsystems',
-    images: '/og.png',
+    images: ['quint-lang.org/og.jpg'],
   },
 }
 
