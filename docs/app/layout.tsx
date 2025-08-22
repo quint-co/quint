@@ -6,10 +6,7 @@ import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 
 export const metadata = {
-  title: {
-    template: '%s | Quint',
-    default: 'Quint',
-  },
+  title: 'Quint',
   description: 'Quint - A modern and executable specification language',
   openGraph: {
     images: [{ url: 'quint-lang.org/og.jpg' }],
