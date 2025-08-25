@@ -38,7 +38,6 @@ impl Value {
                 let domain_size = domain.cardinality();
                 let range_size = range.cardinality();
 
-
                 if domain_size == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map()),
                     // so the only element we can pick is Map().
