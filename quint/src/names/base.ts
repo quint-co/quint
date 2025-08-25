@@ -177,6 +177,7 @@ export const builtinNames = [
   'allListsUpTo',
   'getOnlyElement',
   'chooseSome',
+  'apalache::generate',
   'oneOf',
   'isFinite',
   'size',

@@ -184,6 +184,11 @@ This example was pointing to Paxos. Now it does not typecheck.
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/tutorials/coin.qnt
 
+### OK on typecheck generate
+
+<!-- !test check generate - Types & Effects -->
+    quint typecheck ../examples/language-features/generate.qnt
+
 ### OK on test SimpleAuction.qnt
 
 <!-- !test check SimpleAuction - Syntax/Types & Effects/Unit tests -->

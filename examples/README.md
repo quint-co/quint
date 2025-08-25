@@ -92,6 +92,7 @@ listed without any additional command line arguments.
 | [games/tictactoe/tictactoe.qnt](./games/tictactoe/tictactoe.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/booleans.qnt](./language-features/booleans.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/counters.qnt](./language-features/counters.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/generate.qnt](./language-features/generate.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/importFrom.qnt](./language-features/importFrom.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/imports.qnt](./language-features/imports.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/instances.qnt](./language-features/instances.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |

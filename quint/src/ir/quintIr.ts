@@ -156,6 +156,7 @@ export const builtinOpCodes = [
   'foldl',
   'foldr',
   'forall',
+  'apalache::generate',
   'get',
   'head',
   'iadd',

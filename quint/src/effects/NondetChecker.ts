@@ -5,8 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Checking for the misuse of 'nondet' and 'oneOf'. Necessary to ensure they are
- * compatible with the exists operator from TLA+.
+ * Checking for the misuse of 'nondet', 'oneOf', and 'apalache::generate'.
+ * Necessary to ensure they are compatible with the exists operator from TLA+.
  *
  * @author Gabriela Moreira
  *
@@ -32,7 +32,7 @@ export class NondetChecker implements IRVisitor {
   }
 
   /**
-   * Checks declarations for misuse of 'nondet' and 'oneOf'.
+   * Checks declarations for misuse of 'nondet', 'oneOf', and 'apalache::generate'.
    *
    * @param types - the types of the declarations
    * @param declarations - the declarations to check
@@ -66,7 +66,7 @@ export class NondetChecker implements IRVisitor {
   }
 
   enterApp(app: QuintApp) {
-    if (app.opcode !== 'oneOf') {
+    if (app.opcode !== 'oneOf' && app.opcode !== 'apalache::generate') {
       // nothing to check
       return
     }
@@ -74,7 +74,7 @@ export class NondetChecker implements IRVisitor {
     if (this.lastDefQualifier !== 'nondet') {
       this.errors.push({
         code: 'QNT203',
-        message: `'oneOf' must be used inside a nondet definition`,
+        message: `'${app.opcode}' must be used inside a nondet definition`,
         reference: app.id,
         data: {},
       })
@@ -87,12 +87,12 @@ export class NondetChecker implements IRVisitor {
       return
     }
 
-    // body of nondet must be an application of oneOf
+    // body of nondet must be an application of oneOf or apalache::generate
     const body = expr.opdef.expr
-    if (body.kind !== 'app' || body.opcode !== 'oneOf') {
+    if (body.kind !== 'app' || (body.opcode !== 'oneOf' && body.opcode !== 'apalache::generate')) {
       this.errors.push({
         code: 'QNT204',
-        message: `'oneOf' must be the outermost expression in a nondet definition`,
+        message: `the outermost expression in a nondet definition must be either 'oneOf' or 'apalache::generate'`,
         reference: body.id,
         data: {},
       })

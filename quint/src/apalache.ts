@@ -108,7 +108,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.47.2'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.49.1'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -510,16 +510,12 @@ export async function connect(
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
             debugLog(verbosityLevel, 'Shutting down Apalache server')
-            try {
-              apalache.kill('SIGTERM')
-            } catch (error: any) {
-              // ESRCH is raised if no process with `pid` exists, i.e.,
-              // if Apalache server exited on its own
-              if (error.code == 'ESRCH') {
-                debugLog(verbosityLevel, 'Apalache already exited')
-              } else {
-                throw error
-              }
+            // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
+            apalache.removeAllListeners('exit')
+            // Try to kill Apalache
+            let killed = apalache.kill('SIGTERM')
+            if (!killed) {
+              debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
             }
           }
 
@@ -533,6 +529,15 @@ export async function connect(
             process.on('SIGUSR1', exitHandler.bind(null))
             process.on('SIGUSR2', exitHandler.bind(null))
             process.on('uncaughtException', exitHandler.bind(null))
+
+            // Exit Quint if Apalache exits unexpectedly
+            apalache.on('exit', code => {
+              debugLog(verbosityLevel, `Apalache server exited with code ${code}, exiting as well`)
+              // Remove 'exit' listeners (`process.exit()` delivers another 'exit' event)
+              process.removeAllListeners('exit')
+              // Exit for real
+              process.exit(1)
+            })
 
             resolve(right(void 0))
           }
