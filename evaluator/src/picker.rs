@@ -1,7 +1,7 @@
 //! Picking values out of sets without enumerating the elements.
 
 use crate::value::{powerset_at_index, ImmutableMap, Value};
-use std::convert::TryInto;
+use std::{convert::TryInto, rc::Rc};
 
 impl Value {
     /// Pick a value from the set, using the given indexes, without enumerating
@@ -38,6 +38,7 @@ impl Value {
                 let domain_size = domain.cardinality();
                 let range_size = range.cardinality();
 
+
                 if domain_size == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map()),
                     // so the only element we can pick is Map().
@@ -46,9 +47,15 @@ impl Value {
 
                 assert!(range_size > 0, "Range can't be zero");
 
+                let range_to_pick = if let Value::MapSet(_, _) = **range {
+                    Rc::new(Value::Set(range.as_set().into_owned()))
+                } else {
+                    Rc::clone(range)
+                };
+
                 let keys = domain.as_set();
                 let key_values = keys.iter().map(|key| {
-                    let value = range.pick(indexes);
+                    let value = range_to_pick.pick(indexes);
                     (key.clone(), value)
                 });
 
