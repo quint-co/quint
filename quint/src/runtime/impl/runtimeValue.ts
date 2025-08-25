@@ -1564,7 +1564,7 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
       if (rangeSet instanceof RuntimeValueMapSet) {
         // enumerate the range set to avoid issues like #1530
         const elems: RuntimeValue[] = []
-        for (const i of this) {
+        for (const i of rangeSet) {
           elems.push(i)
         }
         rangeSet = new RuntimeValueSet(Set(elems))
