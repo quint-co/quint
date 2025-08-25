@@ -128,7 +128,7 @@ pure def send_to_next(l: LocalState): { post: LocalState, recv: ProcessID, paylo
 As typical for distributed protocol, the complexity is not in the code that describes the local computations, but in the effect the computation has on the environment. Quint allows us to encapsulate this in the action layer.
 
 First we non-deterministically pick a process that takes the next step, and check if this process is in the middle of a `SendToAll` operation.
-- If it is, then we call `send_to_next` and assign the resulting receiver and payload to a new message in the network, an update the local state of the process in the system
+- If it is, then we call `send_to_next` and assign the resulting receiver and payload to a new message in the network, and update the local state of the process in the system
 - If it is not, then we call `frbc` with a non-deterministic input, which will be used if the process is in the `Init` state, as it will start sending one of the existing messages. The input can also be `None` to explicitly capture the asynchrony of the system.
 
 ```quint
@@ -164,7 +164,7 @@ Let's now turn to analyzing the protocol with inductive invariants: The property
 val values_broadcast = network.filter(m => m.sender == initial_sender).map(m => m.payload)
 
 /// I only deliver messages that have been sent. This also means that if
-/// values_broadcast == Set() the no-one will ever deliver anything
+/// values_broadcast == Set() then no-one will ever deliver anything
 val safety =
   Proc.forall(p =>
     Domain.forall(v =>
@@ -514,7 +514,7 @@ So Quint helps us sharpen our thinking and reasoning about distributed systems a
 
 ## More on Inductive Invariants
 
-The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint, which is significanlty more complex than the example in this post. Check out the following examples which include inductive invariants:
+The protocol here is super simple. We have collected a few examples that are more challenging. For instance, we have done an encoding of Lamport's bakery algorithm in Quint, which is significantly more complex than the example in this post. Check out the following examples which include inductive invariants:
 
 - The complete example from this blog post: [reliablebc.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReliableBroadcast/reliablebc.qnt)
 - The algorithm from Lamport's Teaching Concurrency paper: [teaching.qnt](https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/TeachingConcurrency/teaching.qnt)
