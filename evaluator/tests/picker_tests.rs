@@ -55,3 +55,25 @@ fn interval_pick_test() -> Result<(), Box<dyn std::error::Error>> {
 
     run_test!(quint_content, Value::Int(5))
 }
+
+#[test]
+fn nested_set_of_maps_pick_test() -> Result<(), Box<dyn std::error::Error>> {
+    // Regression test for issue #1736
+    let quint_content = "module main {
+          val A = Set(\"a\", \"b\", \"c\")
+          val B = Set(2, 3, 4)
+          val C = Set(\"x\", \"y\")
+
+          var myMap: str -> (int -> str)
+
+          val input = myMap.get(\"a\").get(2)
+
+          action init = {
+            nondet _foo = A.setOfMaps(B.setOfMaps(C)).oneOf()
+            myMap' = _foo
+          }
+          action step = myMap' = myMap
+        }";
+
+    run_test!(quint_content, Value::Str("x".into()))
+}

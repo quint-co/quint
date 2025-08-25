@@ -397,3 +397,10 @@ if [ `uname -s` == 'Linux' -o `uname -s` == 'Darwin' ]; then
     ./testFixture/SuperSpec.qnt
 fi
 ```
+### OK on run 1736
+
+Regression test for [#1736](https://github.com/informalsystems/quint/issues/1736).
+Tests that `quint run` works with nested setOfMaps and oneOf.
+
+<!-- !test check 1736 -->
+    quint run testFixture/bug1736setOfMaps.qnt
