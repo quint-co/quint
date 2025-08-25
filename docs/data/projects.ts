@@ -78,6 +78,7 @@ export const projects = [
     owner: 'Neutron',
     authors: ['Ivan Gavran', 'Aleksandar Ignjatijevic'],
     description: "Model-based testing of Neutron's liquidity migration contracts.",
+    repo: 'https://github.com/informalsystems/liquidity_migration_test_model',
     links: [
       { label: 'Blog post', url: 'https://informal.systems/blog/model-based-testing-to-secure-neutrons-liquidity' },
     ],
@@ -95,6 +96,7 @@ export const projects = [
     owner: 'Neutron',
     authors: ['Ivan Gavran', 'Manuel Bravo', 'Gabriela Moreira'],
     description: 'Decentralized Exchange formal model.',
+    repo: 'https://github.com/informalsystems/neutron-dex-model',
     links: [],
   },
   {
