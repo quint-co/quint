@@ -133,7 +133,7 @@ module reliablebc {
   def values_broadcast = network.filter(m => m.sender == initial_sender).map(m => m.payload)
 
   /// I only deliver messages that have been sent. This also means that if
-  /// values_broadcast == Set() the no-one will ever deliver anything
+  /// values_broadcast == Set() then no-one will ever deliver anything
   def safety =
     Proc.forall(p =>
       Domain.forall(v =>

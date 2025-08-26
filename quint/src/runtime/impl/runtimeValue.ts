@@ -1559,7 +1559,18 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
 
     const keyValues: [RuntimeValue, RuntimeValue][] = []
     for (const key of this.domainSet) {
-      const valueOrNone = this.rangeSet.pick(positions)
+      let rangeSet = this.rangeSet
+
+      if (rangeSet instanceof RuntimeValueMapSet) {
+        // enumerate the range set to avoid issues like #1530
+        const elems: RuntimeValue[] = []
+        for (const i of rangeSet) {
+          elems.push(i)
+        }
+        rangeSet = new RuntimeValueSet(Set(elems))
+      }
+
+      const valueOrNone = rangeSet.pick(positions)
       if (valueOrNone.isRight()) {
         keyValues.push([key, valueOrNone.value])
       } else {
