@@ -55,6 +55,8 @@ export type ErrorCode =
   | 'QNT014'
   /* QNT015: use a -> b instead of Map[a, b] */
   | 'QNT015'
+  /* QNT016: Duplicated field on record */
+  | 'QNT016'
   /* QNT098: Cyclic imports */
   | 'QNT098'
   /* QNT099: Found cyclic definitions */
