@@ -61,3 +61,15 @@ type variable 'a' is unbound. To fix it, write
     data: {},
   }
 }
+
+export function duplicatedRecordField(id: bigint, names: string[]): QuintError {
+  const joined = names.join(', ')
+  const plural = names.length > 1 ? 'Fields' : 'Field'
+
+  return {
+    code: 'QNT016',
+    message: `${plural} ${joined} cannot be defined more than once`,
+    reference: id,
+    data: {},
+  }
+}

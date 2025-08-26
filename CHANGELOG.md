@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Quint hanging if Apalache server exits early (#1729)
 - Fixed a problem where the simulators failed to evaluate `oneOf` for nested `setOfMaps` (#1736)
+- Add parser error for duplicated record fields (#1677)
 
 ### Security
 
@@ -50,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664) 
+- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664)
 
 ### Deprecated
 ### Removed
@@ -137,7 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
-- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`. 
+- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`.
 Added those variables to the `vars` field of the ITF json so that they are displayed correctly in the trace viewer.
 - Fixed a problem where traces other than the first one when `--n-traces` > 1
   and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
