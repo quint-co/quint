@@ -8,13 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
 - Added the operator `apalache::generate` to mirror `Apalache!Gen` (see #1455).
+- Added parser error for duplicated record fields (#1677)
 
 ### Changed
 
-- Bump Apalache to 0.50.0 (fixing caches for `apalache::generate` [#3147](https://github.com/apalache-mc/apalache/pull/3147)
-- Bump Apalache to 0.49.1 (including support for `apalache::generate` [#3138](https://github.com/apalache-mc/apalache/pull/3138))
-- Bump Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
+- Bumped Apalache to 0.50.0 (fixing caches for `apalache::generate` [#3147](https://github.com/apalache-mc/apalache/pull/3147)
+- Bumped Apalache to 0.49.1 (including support for `apalache::generate` [#3138](https://github.com/apalache-mc/apalache/pull/3138))
+- Bumped Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
 
 ### Deprecated
 ### Removed
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Quint hanging if Apalache server exits early (#1729)
 - Fixed a problem where the simulators failed to evaluate `oneOf` for nested `setOfMaps` (#1736)
-- Add parser error for duplicated record fields (#1677)
+- Fixed a problem where calling `oneOf` in empty sets would still result in an error instead of `false` (#1745)
 
 ### Security
 
