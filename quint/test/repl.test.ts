@@ -562,6 +562,7 @@ describe('repl ok', () => {
       |Int.contains(x)
       |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
       |x.in(Int)
+      |nondet m = Set().oneOf(); x' = m
       |`
     )
     const output = dedent(
@@ -599,6 +600,8 @@ describe('repl ok', () => {
       |true
       |>>> x.in(Int)
       |true
+      |>>> nondet m = Set().oneOf(); x' = m
+      |false
       |>>> `
     )
     await assertRepl(input, output)
