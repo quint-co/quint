@@ -47,7 +47,7 @@ export function evalNondet(
 ): EvalFunction {
   return ctx =>
     setEval(ctx).chain(set => {
-      if (set.cardinality().unwrap() === 0n) {
+      if (set.cardinality().isRight() && set.cardinality().unwrap() === 0n) {
         // The whole let expression is false if there are no elements to be picked.
         return right(rv.mkBool(false))
       }
