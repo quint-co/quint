@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
 - Added the operator `apalache::generate` to mirror `Apalache!Gen` (see #1455).
 
 ### Changed
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Quint hanging if Apalache server exits early (#1729)
 - Fixed a problem where the simulators failed to evaluate `oneOf` for nested `setOfMaps` (#1736)
+- Fixed a problem where calling `oneOf` in empty sets would still result in an error instead of `false` (#1745)
 
 ### Security
 
