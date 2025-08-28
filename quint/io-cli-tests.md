@@ -1165,7 +1165,10 @@ echo "init" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 |
 
 <!-- !test in compile instances -->
 ```
-echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n +3
+{
+  echo "A1::f(1)"
+  echo "A2::f(1)"
+} | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n +3
 ```
 
 <!-- !test out compile instances -->
@@ -1541,4 +1544,30 @@ quint run ./examples/language-features/counters.qnt --n-traces 20000
 <!-- !test err n-traces greater than default max-samples -->
 ```text
 --n-traces (20000) cannot be greater than --max-samples (10000).
+```
+
+### Regression on 428
+
+Errors from `amWrong` should not affect the definition and usage of `amRight`
+
+<!-- !test in regression 428 -->
+```
+{
+  echo "var myVar: bool"
+  echo "action amWrong = all { myVar' = true, myVar' = true }"
+  echo "amWrong"
+  echo "action amRight = all { myVar' = true }"
+  echo "amRight"
+} | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n7
+```
+
+<!-- !test out regression 428 -->
+```
+>>> static analysis error: error: [QNT404] Name 'amWrong' not found
+amWrong
+^^^^^^^
+
+>>> 
+>>> true
+>>> 
 ```
