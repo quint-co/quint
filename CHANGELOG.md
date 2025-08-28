@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
 - Added the operator `apalache::generate` to mirror `Apalache!Gen` (see #1455).
+- Added parser error for duplicated record fields (#1677)
 
 ### Changed
 
+- Bumped Apalache to 0.50.0 (fixing caches for `apalache::generate` [#3147](https://github.com/apalache-mc/apalache/pull/3147)
 - Bumped Apalache to 0.49.1 (including support for `apalache::generate` [#3138](https://github.com/apalache-mc/apalache/pull/3138))
 - Bumped Apalache to 0.47.3 (including Z3 4.13.4 with linux/arm64 support)
 
@@ -21,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Quint hanging if Apalache server exits early (#1729)
 - Fixed a problem where the simulators failed to evaluate `oneOf` for nested `setOfMaps` (#1736)
+- Fixed a problem where calling `oneOf` in empty sets would still result in an error instead of `false` (#1745)
 - Fixed an issue with effect errors not being cleared up properly in the REPL (#1747)
 
 ### Security
@@ -50,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664) 
+- `--out-itf` does not suppress outputs anymore. Shown output amount only depends on `--verbosity` now (#1664)
 
 ### Deprecated
 ### Removed
@@ -137,7 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
-- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`. 
+- Changed the `--mbt` variables representation into `mbt::actionTaken` and `mbt::nondetPicks`.
 Added those variables to the `vars` field of the ITF json so that they are displayed correctly in the trace viewer.
 - Fixed a problem where traces other than the first one when `--n-traces` > 1
   and `--mbt` is true had the incorrect `action_taken` and `nondet_picks` values
