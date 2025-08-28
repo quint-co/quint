@@ -642,6 +642,8 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       parseResult.decls.forEach(decl => {
         if (isDef(decl)) {
           state.nameResolver.collector.deleteDefinition(decl.name)
+          state.compilationState.analysisOutput.effects.delete(decl.id)
+          state.compilationState.analysisOutput.modes.delete(decl.id)
         }
       })
 

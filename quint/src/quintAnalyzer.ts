@@ -98,7 +98,8 @@ class QuintAnalyzer {
     // XXX: the lookUp table is mutated when TypeApplicationResolver is instantiated
     this.typeApplicationResolver = new TypeApplicationResolver(lookupTable)
     this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types)
-    this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
+    // FIXES: https://github.com/informalsystems/quint/issues/428
+    this.effectInferrer = new EffectInferrer(lookupTable, new Map([...(previousOutput?.effects.entries() ?? [])]))
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker(previousOutput?.modes)
     this.nondetChecker = new NondetChecker(lookupTable)
