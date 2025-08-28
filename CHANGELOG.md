@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Quint hanging if Apalache server exits early (#1729)
 - Fixed a problem where the simulators failed to evaluate `oneOf` for nested `setOfMaps` (#1736)
+- Fixed an issue with effect errors not being cleared up properly in the REPL (#1747)
 
 ### Security
 
