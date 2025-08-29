@@ -151,6 +151,9 @@ export function Home() {
           <h3 className="text-lg text-center text-zinc-600 dark:text-zinc-300 mt-2">
             The following projects already have Quint specifications
           </h3>
+          <h4 className="text-center text-quint-purple">
+            and your project could too
+          </h4>
           <ProjectsGridCompact projects={projects} />
 
           <div className="mt-6 text-center items-center gap-4">
