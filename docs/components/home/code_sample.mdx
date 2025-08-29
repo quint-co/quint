@@ -6,7 +6,6 @@ pure val ADDRESSES = Set("alice", "bob", "charlie")
 
 action withdraw(account, amount) = {
   // Decrement balance of account by amount
-  // Whoops, we forgot to check for enough balance
   balances' = balances.setBy(account, curr => curr - amount)
 }
 
