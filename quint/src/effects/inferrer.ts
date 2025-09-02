@@ -364,7 +364,7 @@ export class EffectInferrer implements IRVisitor {
         if (def.importedFrom?.kind === 'instance') {
           // Names imported from instances might have effects that refer to
           // names that are shared between multiple instances. To properly infer
-          // effects refering to those state variables, they need to be
+          // effects referring to those state variables, they need to be
           // namespaced in a way that makes them different between different
           // instances. For that, we use the namespaces attribute from lookup
           // table definition, which contains the proper namespaces to identify
