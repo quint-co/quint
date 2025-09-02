@@ -15,12 +15,13 @@
 import { ErrorTree, buildErrorLeaf } from '../errorTree'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
-import { typeToString } from '../ir/IRprinting'
+import { definitionToString, typeToString } from '../ir/IRprinting'
 import { IRTransformer, transformDeclaration, transformLookupDefinition, transformType } from '../ir/IRTransformer'
 import { QuintDeclaration, QuintTypeAlias } from '../ir/quintIr'
 import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
+import { substitutionsToString } from './printing'
 import { Substitutions, applySubstitution } from './substitutions'
 import assert from 'assert'
 
@@ -102,11 +103,40 @@ export class TypeApplicationResolver implements IRTransformer {
     }
 
     // Substitute the type `args` for each corresponding fresh variable
-    const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({
-      kind: 'type',
-      name: param.name,
-      value: arg,
-    }))
+    const subs: Substitutions = zip(params, t.args).flatMap(([param, arg]) => {
+      let resolvedArg = arg
+      while (resolvedArg.kind == 'const') {
+        const aliasValue = this.table.get(resolvedArg.id!)
+        if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {
+          resolvedArg = aliasValue.type
+        } else {
+          break
+        }
+      }
+
+      const s: Substitutions = [{
+        kind: 'type',
+        name: param.name,
+        value: resolvedArg,
+      }]
+
+      if (resolvedArg.kind == 'rec' || resolvedArg.kind == 'tup') {
+        s.push({
+          kind: 'row',
+          name: param.name,
+          value: resolvedArg.fields,
+        })
+      }
+      if (resolvedArg.kind == 'var' ) {
+        s.push({
+          kind: 'row',
+          name: param.name,
+          value: { kind: 'var', name: resolvedArg.name },
+        })
+
+      }
+      return s
+    })
     return applySubstitution(this.table, subs, type)
   }
 
@@ -156,11 +186,11 @@ class TypeVariableNameMapper implements IRTransformer {
     this.mapper = f
   }
 
-  exitVarType(t: QuintVarType): QuintVarType {
+  enterVarType(t: QuintVarType): QuintVarType {
     return { ...t, name: this.mapper(t.name) }
   }
 
-  exitRow(r: Row): Row {
+  enterRow(r: Row): Row {
     return r.kind === 'var' ? { ...r, name: this.mapper(r.name) } : r
   }
 }
