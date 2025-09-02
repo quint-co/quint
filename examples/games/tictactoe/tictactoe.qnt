@@ -24,7 +24,7 @@ module tictactoe {
   pure val boardCoordinates = tuples(1.to(3), 1.to(3))
 
   pure val winningPatterns = Set(
-    // Horizonal wins
+    // Horizontal wins
     Set((1,1), (1,2), (1,3)),
     Set((2,1), (2,2), (2,3)),
     Set((3,1), (3,2), (3,3)),
