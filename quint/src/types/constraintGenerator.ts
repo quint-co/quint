@@ -108,6 +108,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   protected tvs: Map<bigint, QuantifiedVariables> = new Map()
   // Temporary type map only for types in scope for a certain declaration
   protected typesInScope: Map<bigint, TypeScheme> = new Map()
+  protected savedTypesInScope: Map<bigint, TypeScheme> = new Map()
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -275,8 +276,17 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.addToResults(e.id, this.fetchResult(e.expr.id))
   }
 
-  exitDecl(_def: QuintDeclaration) {
-    this.typesInScope = new Map()
+  exitDecl(def: QuintDeclaration) {
+    if (def.kind == 'var' || def.kind == 'const') {
+      this.savedTypesInScope = new Map(this.typesInScope)
+    } else {
+      this.typesInScope.forEach((_, k) => {
+        if (!this.savedTypesInScope.has(k)) {
+          this.typesInScope.delete(k)
+        }
+      })
+    }
+    this.savedTypesInScope = new Map(this.typesInScope)
   }
 
   enterOpDef(def: QuintOpDef) {
@@ -390,15 +400,19 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     } else {
       const def = this.table.get(nameId)
 
-      // FIXME: We have to check if the annotation is too general for var and consts as well
-      // https://github.com/informalsystems/quint/issues/691
-      if (def?.typeAnnotation) {
-        return right(def.typeAnnotation)
-      }
-
       const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
+      }
+
+      if (def.kind === 'var' || def.kind === 'const') {
+        return this.fetchResult(id).map(t => t.type)
+      }
+
+      // FIXME: We have to check if the annotation is too general for var and consts as well
+      // https://github.com/informalsystems/quint/issues/691
+      if (def.typeAnnotation) {
+        return right(def.typeAnnotation)
       }
 
       return this.fetchResult(id).map(t => this.newInstance(t))
