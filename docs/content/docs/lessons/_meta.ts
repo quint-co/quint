@@ -1,7 +1,7 @@
 export default {
-  hello: "Hello, World!",
-  booleans: "Booleans",
-  integers: "Integers",
-  coin: "Anatomy",
-  sets: "Sets"
+  hello: 'Hello, World!',
+  booleans: 'Booleans',
+  integers: 'Integers',
+  coin: 'Anatomy',
+  sets: 'Sets',
 }
