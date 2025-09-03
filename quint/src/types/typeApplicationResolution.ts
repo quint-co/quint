@@ -208,7 +208,7 @@ class TypeMapper implements IRTransformer {
     this.mapper = f
   }
 
-  exitType(t: QuintType): QuintType {
+  enterType(t: QuintType): QuintType {
     return this.mapper(t)
   }
 }
