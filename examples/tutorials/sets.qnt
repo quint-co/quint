@@ -111,7 +111,7 @@ module sets {
       pairs.filter(ps => coin.in(ps)).size() == 2
     }
     // for every coin that appears in `pairs`,
-    // there are exactly two pairs that cointain it
+    // there are exactly two pairs that contain it
     coinsInPairs(pairs).forall(appearsTwice)
   }
 

@@ -108,7 +108,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.50.0'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.50.2'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -354,8 +354,8 @@ function loadGrpcClient(serverEndpoint: ServerEndpoint, protoDef: ProtoPackageDe
   const connectionString = serverEndpointToConnectionString(serverEndpoint)
   // bump the maximal message sizes, as the Quint backend in Apalache may send very large JSON files
   const options: any = {
-    'grpc.max_receive_message_length': 1024 * 1024 * 1024,
-    'grpc.max_send_message_length': 1024 * 1024 * 1024,
+    'grpc.max_receive_message_length': 10 * 1024 * 1024 * 1024,
+    'grpc.max_send_message_length': 10 * 1024 * 1024 * 1024,
   }
   const stub: any = new pkg.cmdExecutor.CmdExecutor(connectionString, grpc.credentials.createInsecure(), options)
   return {
