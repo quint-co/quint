@@ -15,13 +15,13 @@
 import { ErrorTree, buildErrorLeaf } from '../errorTree'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
-import { definitionToString, typeToString } from '../ir/IRprinting'
+import { typeToString } from '../ir/IRprinting'
 import { IRTransformer, transformDeclaration, transformLookupDefinition, transformType } from '../ir/IRTransformer'
 import { QuintDeclaration, QuintTypeAlias } from '../ir/quintIr'
 import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
-import { substitutionsToString } from './printing'
+import { resolveAlias } from './aliasInliner'
 import { Substitutions, applySubstitution } from './substitutions'
 import assert from 'assert'
 
@@ -104,22 +104,20 @@ export class TypeApplicationResolver implements IRTransformer {
 
     // Substitute the type `args` for each corresponding fresh variable
     const subs: Substitutions = zip(params, t.args).flatMap(([param, arg]) => {
-      let resolvedArg = arg
-      while (resolvedArg.kind == 'const') {
-        const aliasValue = this.table.get(resolvedArg.id!)
-        if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {
-          resolvedArg = aliasValue.type
-        } else {
-          break
-        }
-      }
+      const resolvedArg = resolveAlias(this.table, arg)
 
-      const s: Substitutions = [{
-        kind: 'type',
-        name: param.name,
-        value: resolvedArg,
-      }]
+      const s: Substitutions = [
+        {
+          kind: 'type',
+          name: param.name,
+          value: resolvedArg,
+        },
+      ]
 
+      // If the argument is a record or tuple, it might be that we are trying to
+      // instantiate a row variable, i.e.
+      // type Foo[r] = { x: int | r }
+      // the type app Foo[{ y: str }] should result in { x: int, y: str }
       if (resolvedArg.kind == 'rec' || resolvedArg.kind == 'tup') {
         s.push({
           kind: 'row',
@@ -127,14 +125,17 @@ export class TypeApplicationResolver implements IRTransformer {
           value: resolvedArg.fields,
         })
       }
-      if (resolvedArg.kind == 'var' ) {
+      // And similarly, if the argument is a variable itself
+      // type Foo[r] = { x: int | r }
+      // type Bar[s] = Foo[s] should be resolved to Bar[s] = { x: int | s }
+      if (resolvedArg.kind == 'var') {
         s.push({
           kind: 'row',
           name: param.name,
           value: { kind: 'var', name: resolvedArg.name },
         })
-
       }
+
       return s
     })
     return applySubstitution(this.table, subs, type)
