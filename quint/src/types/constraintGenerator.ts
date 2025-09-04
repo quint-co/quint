@@ -409,8 +409,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return this.fetchResult(id).map(t => t.type)
       }
 
-      // FIXME: We have to check if the annotation is too general for var and consts as well
-      // https://github.com/informalsystems/quint/issues/691
       if (def.typeAnnotation) {
         return right(def.typeAnnotation)
       }
