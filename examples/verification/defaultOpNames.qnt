@@ -24,7 +24,7 @@ module defaultOpNames {
   // quint verify --invariant inv ./defaultOpNames.qnt
   def inv = true
 
-  // Multile invariants can be specified by separating them with a comma
+  // Multiple invariants can be specified by separating them with a comma
   // E.g.,
   //
   // quint verify --invariant inv,inv2 ./defaultOpNames.qnt

@@ -31,7 +31,7 @@ quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
 
 <!-- !test out server not running -->
 ```
-Downloading Apalache distribution 0.50.0... done.
+Downloading Apalache distribution 0.50.3... done.
 [ok] No violation found (duration).
 [ok] No violation found (duration).
 ```

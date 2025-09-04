@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Bump Apalache to 0.50.3 (fix counterexamples for `apalache::generate`)
+- Bump Apalache to 0.50.2 (increasing the GRPC message size to 1GB)
+
 ### Deprecated
 ### Removed
 ### Fixed
