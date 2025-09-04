@@ -79,6 +79,29 @@ quint verify --server-endpoint=0.0.0.0:8822 --max-steps=2 ../examples/verificati
 quint verify --invariant inv,inv2 ../examples/verification/defaultOpNames.qnt
 ```
 
+### Can verify `testFixture/apalache/genericRowParam.qnt`
+
+<!-- !test check can verify genericRowParam.qnt -->
+```
+quint verify ./testFixture/apalache/genericRowParam.qnt
+```
+
+### Can verify `testFixture/apalache/polyStateVar.qnt`
+
+<!-- !test check can verify polyStateVar.qnt -->
+```
+quint verify ./testFixture/apalache/polyStateVar.qnt
+```
+
+### Can compile `testFixture/apalache/inferredStateVar.qnt`
+
+This one still not works with `quint verify` (see #1755)
+
+<!-- !test check can compile inferredStateVar.qnt -->
+```
+quint compile --target tlaplus ./testFixture/apalache/inferredStateVar.qnt
+```
+
 ## Violations
 
 ### Variant violations are reported with traces
