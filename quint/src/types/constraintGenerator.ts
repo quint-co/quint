@@ -108,6 +108,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   protected tvs: Map<bigint, QuantifiedVariables> = new Map()
   // Temporary type map only for types in scope for a certain declaration
   protected typesInScope: Map<bigint, TypeScheme> = new Map()
+  // Types which should be considered "in scope" all the time
+  // Used for types of const and var defs, which are not polymorphic
   protected savedTypesInScope: Map<bigint, TypeScheme> = new Map()
 
   // Track location descriptions for error tree traces
@@ -278,14 +280,21 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   exitDecl(def: QuintDeclaration) {
     if (def.kind == 'var' || def.kind == 'const') {
+      // Anything in scope should stay in scope after we exit,
+      // as we don't want polymorphism for consts and vars
       this.savedTypesInScope = new Map(this.typesInScope)
-    } else {
-      this.typesInScope.forEach((_, k) => {
-        if (!this.savedTypesInScope.has(k)) {
-          this.typesInScope.delete(k)
-        }
-      })
+      return
     }
+
+    // Regular declaration, drop all types in scope except for the saved ones
+    this.typesInScope.forEach((_, k) => {
+      if (!this.savedTypesInScope.has(k)) {
+        this.typesInScope.delete(k)
+      }
+    })
+
+    // Update saved types as we might have discovered a more specialized
+    // type for one of the saved ids
     this.savedTypesInScope = new Map(this.typesInScope)
   }
 
