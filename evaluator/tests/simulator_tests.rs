@@ -56,3 +56,35 @@ fn instance_overrides_ok() {
     // Should not find violation
     assert!(result.unwrap().result);
 }
+
+#[test]
+/// Test that oneOf on empty sets returns false instead of causing runtime errors
+fn one_of_empty_set_ok() {
+    let file_path: &Path = Path::new("fixtures/oneOf_empty_test.qnt");
+
+    let parsed = helpers::parse_from_path(
+        file_path,
+        "init",
+        "step",
+        Some("inv"),
+        Some("oneOfEmptyTest"),
+    )
+    .unwrap();
+    // Should not cause runtime error - init should return false due to empty oneOf
+    let result = parsed.simulate(10, 100, 0, None);
+    match &result {
+        Ok(_) => {}
+        Err(e) => panic!("Simulation failed with error: {e}"),
+    }
+    assert!(result.is_ok());
+
+    // The simulation should succeed without runtime errors
+    // Since init returns false (due to empty oneOf), no traces will be generated
+    // But there should be no invariant violations since the invariant is simply 'true'
+    let sim_result = result.unwrap();
+    // The result should be true (no invariant violations found)
+    assert!(
+        sim_result.result,
+        "Expected no invariant violations, but result was false"
+    );
+}
