@@ -21,6 +21,7 @@ import { QuintDeclaration, QuintTypeAlias } from '../ir/quintIr'
 import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
+import { resolveAlias } from './aliasInliner'
 import { Substitutions, applySubstitution } from './substitutions'
 import assert from 'assert'
 
@@ -102,11 +103,41 @@ export class TypeApplicationResolver implements IRTransformer {
     }
 
     // Substitute the type `args` for each corresponding fresh variable
-    const subs: Substitutions = zip(params, t.args).map(([param, arg]) => ({
-      kind: 'type',
-      name: param.name,
-      value: arg,
-    }))
+    const subs: Substitutions = zip(params, t.args).flatMap(([param, arg]) => {
+      const resolvedArg = resolveAlias(this.table, arg)
+
+      const s: Substitutions = [
+        {
+          kind: 'type',
+          name: param.name,
+          value: resolvedArg,
+        },
+      ]
+
+      // If the argument is a record or tuple, it might be that we are trying to
+      // instantiate a row variable, i.e.
+      // type Foo[r] = { x: int | r }
+      // the type app Foo[{ y: str }] should result in { x: int, y: str }
+      if (resolvedArg.kind == 'rec' || resolvedArg.kind == 'tup') {
+        s.push({
+          kind: 'row',
+          name: param.name,
+          value: resolvedArg.fields,
+        })
+      }
+      // And similarly, if the argument is a variable itself
+      // type Foo[r] = { x: int | r }
+      // type Bar[s] = Foo[s] should be resolved to Bar[s] = { x: int | s }
+      if (resolvedArg.kind == 'var') {
+        s.push({
+          kind: 'row',
+          name: param.name,
+          value: { kind: 'var', name: resolvedArg.name },
+        })
+      }
+
+      return s
+    })
     return applySubstitution(this.table, subs, type)
   }
 
@@ -156,11 +187,11 @@ class TypeVariableNameMapper implements IRTransformer {
     this.mapper = f
   }
 
-  exitVarType(t: QuintVarType): QuintVarType {
+  enterVarType(t: QuintVarType): QuintVarType {
     return { ...t, name: this.mapper(t.name) }
   }
 
-  exitRow(r: Row): Row {
+  enterRow(r: Row): Row {
     return r.kind === 'var' ? { ...r, name: this.mapper(r.name) } : r
   }
 }
@@ -178,7 +209,7 @@ class TypeMapper implements IRTransformer {
     this.mapper = f
   }
 
-  exitType(t: QuintType): QuintType {
+  enterType(t: QuintType): QuintType {
     return this.mapper(t)
   }
 }
