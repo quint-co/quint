@@ -3,6 +3,7 @@
 //! Includes the compilation types and stateful datastructures used for
 //! memoization, caching, state variable storage, etc.
 
+use crate::nondet;
 use crate::rand::Rand;
 use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
@@ -556,52 +557,7 @@ impl<'a> Interpreter<'a> {
                             };
                             let body_expr = self.compile(expr);
 
-                            return CompiledExpr::new(move |env| {
-                                // Evaluate the set from which to pick
-                                let set = set_expr.execute(env)?;
-
-                                // Check if the set is empty - if so, return false instead of error
-                                let bounds = set.bounds();
-                                for bound in &bounds {
-                                    if *bound == 0 {
-                                        return Ok(Value::Bool(false));
-                                    }
-                                }
-
-                                // Generate initial random positions
-                                let original_positions = bounds.iter().map(|&bound| env.rand.next(bound)).collect::<Vec<_>>();
-                                let mut new_positions = original_positions.clone();
-
-                                // Check if we should retry based on set size
-                                let should_retry_set = should_retry_nondet(&bounds);
-
-                                loop {
-                                    let picked_value = set.pick(&mut new_positions.iter().copied());
-
-                                    // Cache the picked value and evaluate the body
-                                    cached_value.replace(Some(Ok(picked_value)));
-                                    let result = body_expr.execute(env);
-
-                                    // If result is false and we can retry, try next position
-                                    let should_retry = matches!(result, Ok(Value::Bool(false))) && should_retry_set;
-
-                                    if should_retry {
-                                        // Increment positions to try next combination
-                                        increment_positions(&mut new_positions, &bounds);
-
-                                        // If we're back to original positions, we've tried everything
-                                        if new_positions == original_positions {
-                                            // Clear the cached value and return the last result
-                                            cached_value.replace(None);
-                                            return result;
-                                        }
-                                    } else {
-                                        // Clear the cached value and return the result (success or error)
-                                        cached_value.replace(None);
-                                        return result;
-                                    }
-                                }
-                            });
+                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value);
                         }
                     }
                     // Fall through to regular nondet handling for other cases
@@ -711,37 +667,6 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
-/// The maximum size of set bounds for which we retry nondet expressions.
-/// If the set is too big, it is better to be greedy and let the execution fail
-/// if we pick a "wrong" value. As retrying large sets can take a long time.
-///
-/// Configurable via QUINT_RETRY_NONDET_SMALLER_THAN environment variable.
-fn get_retry_threshold() -> usize {
-    std::env::var("QUINT_RETRY_NONDET_SMALLER_THAN")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(100)
-}
-
-/// Check if we should retry nondet expressions based on set bounds.
-/// We only retry if all bounds are smaller than the threshold and finite.
-fn should_retry_nondet(bounds: &[usize]) -> bool {
-    let threshold = get_retry_threshold();
-    bounds.iter().all(|&bound| bound < threshold)
-}
-
-/// Increment positions to the next combination, similar to counting in mixed-radix.
-/// Returns true if we successfully incremented, false if we've wrapped around.
-fn increment_positions(positions: &mut [usize], bounds: &[usize]) {
-    for i in (0..positions.len()).rev() {
-        if positions[i] < bounds[i] - 1 {
-            positions[i] += 1;
-            return;
-        } else {
-            positions[i] = 0;
-        }
-    }
-}
 
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {

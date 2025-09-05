@@ -9,6 +9,7 @@ pub mod helpers;
 pub mod ir;
 pub mod itf;
 pub mod log;
+pub mod nondet;
 pub mod normalizer;
 pub mod picker;
 pub mod rand;
