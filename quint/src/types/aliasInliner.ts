@@ -133,7 +133,7 @@ class AliasInliner implements IRTransformer {
   }
 }
 
-function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
+export function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
   if (type.kind === 'const' && type.id) {
     const aliasValue = lookupTable.get(type.id)
     if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {

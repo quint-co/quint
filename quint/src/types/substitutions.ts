@@ -190,7 +190,7 @@ function applySubstitutionToRow(table: LookupTable, s: Substitutions, r: Row): R
         other: applySubstitutionToRow(table, s, r.other),
       }
     case 'var': {
-      const sub = s.find(s => s.name === r.name)
+      const sub = s.find(s => s.name === r.name && s.kind === 'row')
       if (sub && sub.kind === 'row') {
         return sub.value
       } else {
