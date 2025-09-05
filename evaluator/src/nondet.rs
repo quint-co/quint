@@ -6,7 +6,7 @@
 use crate::{
     evaluator::{CompiledExpr, Env},
     ir::QuintError,
-    value::Value,
+    value::{Value, ValueInner},
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -71,7 +71,7 @@ pub fn eval_nondet_one_of(
         let bounds = set.bounds();
         for bound in &bounds {
             if *bound == 0 {
-                return Ok(Value::Bool(false));
+                return Ok(Value::bool(false));
             }
         }
 
@@ -93,7 +93,8 @@ pub fn eval_nondet_one_of(
             let result = body_expr.execute(env);
 
             // If result is false and we can retry, try next position
-            let should_retry = matches!(result, Ok(Value::Bool(false))) && should_retry_set;
+            let should_retry = matches!(result, Ok(ref v) if matches!(v.0.as_ref(), ValueInner::Bool(false)))
+                && should_retry_set;
 
             if should_retry {
                 // Increment positions to try next combination

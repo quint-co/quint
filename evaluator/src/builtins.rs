@@ -24,7 +24,6 @@ use crate::ir::QuintError;
 use crate::value::{ImmutableMap, ImmutableSet, ImmutableVec, Value};
 use fxhash::FxHashSet;
 use itertools::Itertools;
-use std::rc::Rc;
 
 /// A list of operators that need to be compiled lazily (with `compile_lazy_op`).
 pub const LAZY_OPS: [&str; 13] = [
@@ -52,26 +51,26 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             for arg in args {
                 let result = arg.execute(env)?;
                 if !result.as_bool() {
-                    return Ok(Value::Bool(false));
+                    return Ok(Value::bool(false));
                 }
             }
-            Ok(Value::Bool(true))
+            Ok(Value::bool(true))
         },
         "or" => |env, args| {
             // Short-circuit logical OR
             for arg in args {
                 let result = arg.execute(env)?;
                 if result.as_bool() {
-                    return Ok(Value::Bool(true));
+                    return Ok(Value::bool(true));
                 }
             }
-            Ok(Value::Bool(false))
+            Ok(Value::bool(false))
         },
         "implies" => |env, args| {
             // Short-circuit logical implication
             let lhs = args[0].execute(env)?;
             if !lhs.as_bool() {
-                return Ok(Value::Bool(true));
+                return Ok(Value::bool(true));
             }
 
             args[1].execute(env)
@@ -96,13 +95,13 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 if result.as_bool() {
                     // Found an enabled action - record it and return true
                     // TODO: Record in the trace recorder
-                    return Ok(Value::Bool(true));
+                    return Ok(Value::bool(true));
                 }
 
                 // Reset state before trying next action
                 env.var_storage.borrow_mut().restore(&next_vars_snapshot);
             }
-            Ok(Value::Bool(false))
+            Ok(Value::bool(false))
         },
         "actionAll" => |env, args| {
             // Executes all of the given actions, or none of them if any of them results in false.
@@ -112,10 +111,10 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 let result = action.execute(env)?;
                 if !result.as_bool() {
                     env.var_storage.borrow_mut().restore(&next_vars_snapshot);
-                    return Ok(Value::Bool(false));
+                    return Ok(Value::bool(false));
                 }
             }
-            Ok(Value::Bool(true))
+            Ok(Value::bool(true))
         },
         "ite" => |env, args| {
             // if-then-else
@@ -202,10 +201,10 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 // Repeats the given action n times, stopping if the action evaluates to false.
                 let reps = args[0].execute(env).map(|r| r.as_int())?;
                 let action = &args[1];
-                let mut result = Value::Bool(true);
+                let mut result = Value::bool(true);
                 for i in 0..reps {
                     let closure = action.execute(env)?;
-                    result = closure.as_closure()(env, vec![Value::Int(i)])?;
+                    result = closure.as_closure()(env, vec![Value::int(i)])?;
                     if !result.as_bool() {
                         return Err(QuintError::new(
                             "QNT513",
@@ -251,7 +250,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     ));
                 }
 
-                Ok(Value::Bool(true))
+                Ok(Value::bool(true))
             }
         }
         _ => {
@@ -273,41 +272,41 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
     CompiledExprWithArgs::from_fn(match op {
         // Constructs a set from the given arguments.
-        "Set" => |_env, args| Ok(Value::Set(args.into_iter().collect())),
+        "Set" => |_env, args| Ok(Value::set(args.into_iter().collect())),
         "Rec" => |_env, args| {
             // Constructs a record from the given arguments. Arguments are lists like [key1, value1, key2, value2, ...]
-            Ok(Value::Record(
+            Ok(Value::record(
                 args.chunks_exact(2)
                     .map(|chunk| (chunk[0].as_str(), chunk[1].clone()))
                     .collect(),
             ))
         },
         // Constructs a tuple from the given arguments.
-        "Tup" => |_env, args| Ok(Value::Tuple(args.into_iter().collect())),
+        "Tup" => |_env, args| Ok(Value::tuple(args.into_iter().collect())),
         // Constructs a list from the given arguments.
-        "List" => |_env, args| Ok(Value::List(args.into_iter().collect())),
+        "List" => |_env, args| Ok(Value::list(args.into_iter().collect())),
         // Constructs a map from the given arguments. Arguments are lists like [[key1, value1], [key2, value2], ...]
         "Map" => |_env, args| {
-            Ok(Value::Map(
+            Ok(Value::map(
                 args.into_iter().map(|kv| kv.as_tuple2()).collect(),
             ))
         },
         // Constructs a variant from the given arguments.
-        "variant" => |_env, args| Ok(Value::Variant(args[0].as_str(), Rc::new(args[1].clone()))),
+        "variant" => |_env, args| Ok(Value::variant(args[0].as_str(), args[1].clone())),
         // Logical negation
-        "not" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
+        "not" => |_env, args| Ok(Value::bool(!args[0].as_bool())),
         // Logical equivalence/bi-implication
-        "iff" => |_env, args| Ok(Value::Bool(args[0].as_bool() == args[1].as_bool())),
+        "iff" => |_env, args| Ok(Value::bool(args[0].as_bool() == args[1].as_bool())),
         // Equality
-        "eq" => |_env, args| Ok(Value::Bool(args[0] == args[1])),
+        "eq" => |_env, args| Ok(Value::bool(args[0] == args[1])),
         // Inequality
-        "neq" => |_env, args| Ok(Value::Bool(args[0] != args[1])),
+        "neq" => |_env, args| Ok(Value::bool(args[0] != args[1])),
         // Integer addition
-        "iadd" => |_env, args| Ok(Value::Int(args[0].as_int() + args[1].as_int())),
+        "iadd" => |_env, args| Ok(Value::int(args[0].as_int() + args[1].as_int())),
         // Integer subtraction
-        "isub" => |_env, args| Ok(Value::Int(args[0].as_int() - args[1].as_int())),
+        "isub" => |_env, args| Ok(Value::int(args[0].as_int() - args[1].as_int())),
         // Integer multiplication
-        "imul" => |_env, args| Ok(Value::Int(args[0].as_int() * args[1].as_int())),
+        "imul" => |_env, args| Ok(Value::int(args[0].as_int() * args[1].as_int())),
         // Integer division
         "idiv" => |_env, args| {
             let divisor = args[1].as_int();
@@ -315,10 +314,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 return Err(QuintError::new("QNT503", "Division by zero"));
             }
 
-            Ok(Value::Int(args[0].as_int() / divisor))
+            Ok(Value::int(args[0].as_int() / divisor))
         },
         // Integer modulus
-        "imod" => |_env, args| Ok(Value::Int(args[0].as_int() % args[1].as_int())),
+        "imod" => |_env, args| Ok(Value::int(args[0].as_int() % args[1].as_int())),
         // Integer exponentiation
         "ipow" => |_env, args| {
             let base = args[0].as_int();
@@ -330,29 +329,29 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 return Err(QuintError::new("QNT503", "i^j is undefined for j < 0"));
             }
 
-            Ok(Value::Int(base.pow(exp as u32)))
+            Ok(Value::int(base.pow(exp as u32)))
         },
         // Integer unary minus
-        "iuminus" => |_env, args| Ok(Value::Int(-args[0].as_int())),
+        "iuminus" => |_env, args| Ok(Value::int(-args[0].as_int())),
         // Integer less than
-        "ilt" => |_env, args| Ok(Value::Bool(args[0].as_int() < args[1].as_int())),
+        "ilt" => |_env, args| Ok(Value::bool(args[0].as_int() < args[1].as_int())),
         // Integer less than or equal to
-        "ilte" => |_env, args| Ok(Value::Bool(args[0].as_int() <= args[1].as_int())),
+        "ilte" => |_env, args| Ok(Value::bool(args[0].as_int() <= args[1].as_int())),
         // Integer greater than
-        "igt" => |_env, args| Ok(Value::Bool(args[0].as_int() > args[1].as_int())),
+        "igt" => |_env, args| Ok(Value::bool(args[0].as_int() > args[1].as_int())),
         // Integer greater than or equal to
-        "igte" => |_env, args| Ok(Value::Bool(args[0].as_int() >= args[1].as_int())),
+        "igte" => |_env, args| Ok(Value::bool(args[0].as_int() >= args[1].as_int())),
 
         // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
         "item" => |_env, args| at_index(args[0].as_list(), args[1].as_int() - 1),
         // A set of all possible tuples from the elements of the respective given sets.
-        "tuples" => |_env, args| Ok(Value::CrossProduct(args)),
+        "tuples" => |_env, args| Ok(Value::cross_product(args)),
 
         // Constructs a list of integers from start to end.
         "range" => |_env, args| {
             let start = args[0].as_int();
             let end = args[1].as_int();
-            Ok(Value::List((start..end).map(Value::Int).collect()))
+            Ok(Value::list((start..end).map(Value::int).collect()))
         },
         // List access
         "nth" => |_env, args| at_index(args[0].as_list(), args[1].as_int()),
@@ -369,7 +368,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             }
 
             list[index as usize] = args[2].clone();
-            Ok(Value::List(list))
+            Ok(Value::list(list))
         },
 
         // Get the first element of a list. Not allowed in empty lists.
@@ -385,7 +384,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "tail" => |_env, args| {
             let list = args[0].as_list();
             if !list.is_empty() {
-                Ok(Value::List(list.iter().skip(1).cloned().collect()))
+                Ok(Value::list(list.iter().skip(1).cloned().collect()))
             } else {
                 Err(QuintError::new("QNT505", "Called 'tail' on an empty list"))
             }
@@ -398,7 +397,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let end = args[2].as_int() as usize;
 
             if start >= 0 && end <= list.len() && start as usize <= end {
-                Ok(Value::List(list.clone().slice(start as usize..end)))
+                Ok(Value::list(list.clone().slice(start as usize..end)))
             } else {
                 Err(QuintError::new(
                     "QNT506",
@@ -414,23 +413,23 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         // The length of a list.
-        "length" => |_env, args| Ok(Value::Int(args[0].cardinality().try_into().unwrap())),
+        "length" => |_env, args| Ok(Value::int(args[0].cardinality().try_into().unwrap())),
         // Append an element to a list.
         "append" => |_env, args| {
             let mut list = args[0].as_list().clone();
             list.push_back(args[1].clone());
-            Ok(Value::List(list))
+            Ok(Value::list(list))
         },
         // Concatenate two lists.
         "concat" => |_env, args| {
             let mut list = args[0].as_list().clone();
             list.extend(args[1].as_list().iter().cloned());
-            Ok(Value::List(list))
+            Ok(Value::list(list))
         },
         // A set with the indices of a list.
         "indices" => |_env, args| {
             let size: i64 = args[0].cardinality().try_into().unwrap();
-            Ok(Value::Interval(0, size - 1))
+            Ok(Value::interval(0, size - 1))
         },
 
         // Access a field in a record.
@@ -444,11 +443,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // A set with the field names of a record.
         "fieldNames" => |_env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_record_map()
                     .keys()
-                    .map(|s| Value::Str(s.clone()))
+                    .map(|s| Value::str(s.clone()))
                     .collect(),
             ))
         },
@@ -457,20 +456,20 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "with" => |_env, args| {
             let mut record = args[0].as_record_map().clone();
             record.insert(args[1].as_str(), args[2].clone());
-            Ok(Value::Record(record))
+            Ok(Value::record(record))
         },
 
         // The powerset of a set.
-        "powerset" => |_env, args| Ok(Value::PowerSet(Rc::new(args[0].clone()))),
+        "powerset" => |_env, args| Ok(Value::power_set(args[0].clone())),
         // Check if a set contains an element.
-        "contains" => |_env, args| Ok(Value::Bool(args[0].contains(&args[1]))),
+        "contains" => |_env, args| Ok(Value::bool(args[0].contains(&args[1]))),
         // Check if an element is in a set.
-        "in" => |_env, args| Ok(Value::Bool(args[1].contains(&args[0]))),
+        "in" => |_env, args| Ok(Value::bool(args[1].contains(&args[0]))),
         // Check if a set is a subset of another set.
-        "subseteq" => |_env, args| Ok(Value::Bool(args[0].subseteq(&args[1]))),
+        "subseteq" => |_env, args| Ok(Value::bool(args[0].subseteq(&args[1]))),
         // Set difference.
         "exclude" => |_env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_set()
                     .into_owned()
@@ -479,7 +478,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
         // Set union.
         "union" => |_env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_set()
                     .into_owned()
@@ -488,7 +487,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
         // Set intersection.
         "intersect" => |_env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_set()
                     .into_owned()
@@ -497,12 +496,12 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         // The size of a set.
-        "size" => |_env, args| Ok(Value::Int(args[0].cardinality().try_into().unwrap())),
+        "size" => |_env, args| Ok(Value::int(args[0].cardinality().try_into().unwrap())),
 
         // Whether a set is finite.
         "isFinite" => |_env, _args| {
             // at the moment, we support only finite sets, so just return true
-            Ok(Value::Bool(true))
+            Ok(Value::bool(true))
         },
         // Construct a set of integers from a to b.
         "to" => |_env, args| {
@@ -510,9 +509,9 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let end = args[1].as_int();
             if start > end {
                 // Avoid having different intervals that represent the same thing (empty set)
-                return Ok(Value::Set(ImmutableSet::default()));
+                return Ok(Value::set(ImmutableSet::default()));
             }
-            Ok(Value::Interval(start, end))
+            Ok(Value::interval(start, end))
         },
 
         // Fold a set
@@ -547,7 +546,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Flatten a set of sets.
         "flatten" => |_env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_set()
                     .iter()
@@ -587,7 +586,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             }
 
             map.insert(key, args[2].clone());
-            Ok(Value::Map(map))
+            Ok(Value::map(map))
         },
 
         // Set a value for any key in a map.
@@ -596,7 +595,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let key = args[1].clone().normalize();
             let value = args[2].clone();
             map.insert(key, value);
-            Ok(Value::Map(map))
+            Ok(Value::map(map))
         },
 
         // Set a value for an existing key in a map using a lambda over the current value.
@@ -607,7 +606,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 Some(value) => {
                     let new_value = args[2].as_closure()(env, vec![value.clone()])?;
                     map.insert(key, new_value);
-                    Ok(Value::Map(map))
+                    Ok(Value::map(map))
                 }
                 None => Err(QuintError::new(
                     "QNT507",
@@ -617,31 +616,31 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         // A set with the keys of a map.
-        "keys" => |_env, args| Ok(Value::Set(args[0].as_map().keys().cloned().collect())),
+        "keys" => |_env, args| Ok(Value::set(args[0].as_map().keys().cloned().collect())),
         // Check if a predicate holds for some element in a set.
         "exists" => |env, args| {
             for v in args[0].as_set().iter() {
                 let result = args[1].as_closure()(env, vec![v.clone()])?;
                 if result.as_bool() {
-                    return Ok(Value::Bool(true));
+                    return Ok(Value::bool(true));
                 }
             }
-            Ok(Value::Bool(false))
+            Ok(Value::bool(false))
         },
 
         "forall" => |env, args| {
             for v in args[0].as_set().iter() {
                 let result = args[1].as_closure()(env, vec![v.clone()])?;
                 if !result.as_bool() {
-                    return Ok(Value::Bool(false));
+                    return Ok(Value::bool(false));
                 }
             }
-            Ok(Value::Bool(true))
+            Ok(Value::bool(true))
         },
 
         // Map a lambda over a set.
         "map" => |env, args| {
-            Ok(Value::Set(
+            Ok(Value::set(
                 args[0]
                     .as_set()
                     .iter()
@@ -652,7 +651,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Filter a set using a lambda.
         "filter" => |env, args| {
-            Ok(Value::Set(args[0].as_set().iter().try_fold(
+            Ok(Value::set(args[0].as_set().iter().try_fold(
                 ImmutableSet::default(),
                 |mut acc, v| {
                     if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
@@ -665,7 +664,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Filter a list using a lambda
         "select" => |env, args| {
-            Ok(Value::List(args[0].as_list().iter().try_fold(
+            Ok(Value::list(args[0].as_list().iter().try_fold(
                 ImmutableVec::new(),
                 |mut acc, v| {
                     if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
@@ -681,7 +680,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let closure = args[1].as_closure();
             let keys = args[0].as_set();
 
-            Ok(Value::Map(keys.iter().try_fold(
+            Ok(Value::map(keys.iter().try_fold(
                 ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
@@ -693,23 +692,23 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Convert a set of key-value tuples to a map.
         "setToMap" => |_env, args| {
             let set = args[0].as_set();
-            Ok(Value::Map(set.iter().map(|v| v.as_tuple2()).collect()))
+            Ok(Value::map(set.iter().map(|v| v.as_tuple2()).collect()))
         },
         // A set of all possible maps with keys and values from the given sets.
         "setOfMaps" => |_env, args| {
-            Ok(Value::MapSet(
-                Rc::new(args[0].clone()),
-                Rc::new(args[1].clone()),
+            Ok(Value::map_set(
+                args[0].clone(),
+                args[1].clone(),
             ))
         },
         // Expect a value to be false
-        "fail" => |_env, args| Ok(Value::Bool(!args[0].as_bool())),
+        "fail" => |_env, args| Ok(Value::bool(!args[0].as_bool())),
         // Expect a value to be true, returning a runtime error if it is not
         "assert" => |_env, args| {
             if !args[0].as_bool() {
                 return Err(QuintError::new("QNT508", "Assertion failed"));
             }
-            Ok(Value::Bool(true))
+            Ok(Value::bool(true))
         },
         // Generate all lists of length up to the given number, from a set
         "allListsUpTo" => |_env, args| {
@@ -734,7 +733,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 last_lists = new_lists;
             }
 
-            Ok(Value::Set(lists.into_iter().map(Value::List).collect()))
+            Ok(Value::set(lists.into_iter().map(Value::list).collect()))
         },
 
         // Get the only element of a set, or an error if the set is empty or has more than one element.
@@ -820,23 +819,23 @@ mod tests {
     // [3,2,1]
     #[test]
     fn test_fold_left() {
-        let list = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
+        let list = vec![Value::int(1), Value::int(2), Value::int(3)];
         let result = fold_left(
             list.into_iter(),
-            Value::List(ImmutableVec::new()),
+            Value::list(ImmutableVec::new()),
             |acc, arg| {
                 let mut acc = acc.as_list().clone();
                 acc.push_front(arg);
-                Ok(Value::List(acc))
+                Ok(Value::list(acc))
             },
         );
 
         assert_eq!(
             result.unwrap(),
-            Value::List(ImmutableVec::from(vec![
-                Value::Int(3),
-                Value::Int(2),
-                Value::Int(1),
+            Value::list(ImmutableVec::from(vec![
+                Value::int(3),
+                Value::int(2),
+                Value::int(1),
             ]))
         );
     }
@@ -845,23 +844,23 @@ mod tests {
     // [1,2,3]
     #[test]
     fn test_fold_right() {
-        let list = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
+        let list = vec![Value::int(1), Value::int(2), Value::int(3)];
         let result = fold_right(
             list.into_iter(),
-            Value::List(ImmutableVec::new()),
+            Value::list(ImmutableVec::new()),
             |arg, acc| {
                 let mut acc = acc.as_list().clone();
                 acc.push_front(arg);
-                Ok(Value::List(acc))
+                Ok(Value::list(acc))
             },
         );
 
         assert_eq!(
             result.unwrap(),
-            Value::List(ImmutableVec::from(vec![
-                Value::Int(1),
-                Value::Int(2),
-                Value::Int(3)
+            Value::list(ImmutableVec::from(vec![
+                Value::int(1),
+                Value::int(2),
+                Value::int(3)
             ]))
         );
     }

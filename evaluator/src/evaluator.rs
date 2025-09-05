@@ -441,7 +441,7 @@ impl<'a> Interpreter<'a> {
             })
             .collect::<Vec<_>>();
 
-        Value::Lambda(registers, body)
+        Value::lambda(registers, body)
     }
 
     pub fn compile(&mut self, expr: &QuintEx) -> CompiledExpr {
@@ -470,17 +470,17 @@ impl<'a> Interpreter<'a> {
         match expr {
             QuintEx::QuintInt { id: _, value } => {
                 let value = *value;
-                CompiledExpr::new(move |_| Ok(Value::Int(value)))
+                CompiledExpr::new(move |_| Ok(Value::int(value)))
             }
 
             QuintEx::QuintBool { id: _, value } => {
                 let value = *value;
-                CompiledExpr::new(move |_| Ok(Value::Bool(value)))
+                CompiledExpr::new(move |_| Ok(Value::bool(value)))
             }
 
             QuintEx::QuintStr { id: _, value } => {
                 let value = value.clone();
-                CompiledExpr::new(move |_| Ok(Value::Str(value.clone())))
+                CompiledExpr::new(move |_| Ok(Value::str(value.clone())))
             }
 
             QuintEx::QuintName { id, name } => self
@@ -515,7 +515,7 @@ impl<'a> Interpreter<'a> {
                         CompiledExpr::new(move |env| {
                             let value = expr.execute(env)?;
                             register.borrow_mut().value = Some(value.clone());
-                            Ok(Value::Bool(true))
+                            Ok(Value::bool(true))
                         })
                     })
                 } else if LAZY_OPS.contains(&opcode.as_str()) {
@@ -607,12 +607,12 @@ impl<'a> Interpreter<'a> {
 
 fn builtin_value(name: &str) -> CompiledExpr {
     match name {
-        "true" => CompiledExpr::new(move |_| Ok(Value::Bool(true))),
-        "false" => CompiledExpr::new(move |_| Ok(Value::Bool(false))),
+        "true" => CompiledExpr::new(move |_| Ok(Value::bool(true))),
+        "false" => CompiledExpr::new(move |_| Ok(Value::bool(false))),
         "Bool" => CompiledExpr::new(move |_| {
-            Ok(Value::Set(ImmutableSet::from(vec![
-                Value::Bool(true),
-                Value::Bool(false),
+            Ok(Value::set(ImmutableSet::from(vec![
+                Value::bool(true),
+                Value::bool(false),
             ])))
         }),
         _ => unimplemented!("Unknown builtin name: {}", name),

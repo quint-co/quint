@@ -5,7 +5,7 @@
 //! This format can be parsed by Quint's typescript tool and by the ITF trace
 //! viewer extension on VSCode.
 
-use crate::value::Value;
+use crate::value::{Value, ValueInner};
 use chrono::{self};
 use itf;
 use std::collections::BTreeMap;
@@ -33,10 +33,14 @@ impl Trace {
 
         // Find the variable names by taking the fields from the first state
         // (which should be a record)
-        let vars = if let Some(Value::Record(map)) = self.states.first() {
-            map.keys().map(|v| v.to_string()).collect::<Vec<_>>()
+        let vars = if let Some(first_state) = self.states.first() {
+            if let ValueInner::Record(map) = first_state.0.as_ref() {
+                map.keys().map(|v| v.to_string()).collect::<Vec<_>>()
+            } else {
+                panic!("Expected a record, got {}", self.states[0]);
+            }
         } else {
-            panic!("Expected a record, got {}", self.states[0]);
+            panic!("No states found");
         };
 
         let mut other = BTreeMap::new();
@@ -74,29 +78,29 @@ impl Trace {
 
 impl Value {
     pub fn to_itf(&self) -> itf::Value {
-        match self {
-            Self::Int(i) => itf::Value::Number(*i),
-            Self::Bool(b) => itf::Value::Bool(*b),
-            Self::Str(s) => itf::Value::String(s.to_string()),
-            Self::Set(_)
-            | Self::Interval(_, _)
-            | Self::CrossProduct(_)
-            | Self::PowerSet(_)
-            | Self::MapSet(_, _) => {
+        match self.0.as_ref() {
+            ValueInner::Int(i) => itf::Value::Number(*i),
+            ValueInner::Bool(b) => itf::Value::Bool(*b),
+            ValueInner::Str(s) => itf::Value::String(s.to_string()),
+            ValueInner::Set(_)
+            | ValueInner::Interval(_, _)
+            | ValueInner::CrossProduct(_)
+            | ValueInner::PowerSet(_)
+            | ValueInner::MapSet(_, _) => {
                 itf::Value::Set(self.as_set().iter().map(|v| v.to_itf()).collect())
             }
-            Self::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
-            Self::Record(fields) => itf::Value::Record(
+            ValueInner::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
+            ValueInner::Record(fields) => itf::Value::Record(
                 fields
                     .iter()
                     .map(|(k, v)| (k.to_string(), v.to_itf()))
                     .collect(),
             ),
-            Self::Map(map) => {
+            ValueInner::Map(map) => {
                 itf::Value::Map(map.iter().map(|(k, v)| (k.to_itf(), v.to_itf())).collect())
             }
-            Self::List(elems) => itf::Value::List(elems.iter().map(|v| v.to_itf()).collect()),
-            Self::Variant(label, value) => itf::Value::Record(
+            ValueInner::List(elems) => itf::Value::List(elems.iter().map(|v| v.to_itf()).collect()),
+            ValueInner::Variant(label, value) => itf::Value::Record(
                 vec![
                     ("tag".to_string(), itf::Value::String(label.to_string())),
                     ("value".to_string(), value.to_itf()),
@@ -104,7 +108,7 @@ impl Value {
                 .into_iter()
                 .collect(),
             ),
-            Self::Lambda(_, _) => panic!("Cannot convert Lambda to ITF"),
+            ValueInner::Lambda(_, _) => panic!("Cannot convert Lambda to ITF"),
         }
     }
 }
