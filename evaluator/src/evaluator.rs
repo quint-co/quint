@@ -546,7 +546,6 @@ impl<'a> Interpreter<'a> {
                     // Check if this is specifically a oneOf application
                     if let QuintEx::QuintApp { opcode, args, .. } = &opdef.expr {
                         if opcode == "oneOf" && args.len() == 1 {
-                            // Special handling for nondet oneOf on potentially empty sets
                             let set_expr = self.compile(&args[0]);
                             let cached_value = {
                                 let cached = self

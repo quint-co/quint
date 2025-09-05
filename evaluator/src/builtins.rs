@@ -619,9 +619,9 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "keys" => |_env, args| Ok(Value::set(args[0].as_map().keys().cloned().collect())),
         // Check if a predicate holds for some element in a set.
         "exists" => |env, args| {
+            let c = args[1].as_closure();
             for v in args[0].as_set().iter() {
-                let result = args[1].as_closure()(env, vec![v.clone()])?;
-                if result.as_bool() {
+                if c(env, vec![v.clone()])?.as_bool() {
                     return Ok(Value::bool(true));
                 }
             }
@@ -629,9 +629,9 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         "forall" => |env, args| {
+            let c = args[1].as_closure();
             for v in args[0].as_set().iter() {
-                let result = args[1].as_closure()(env, vec![v.clone()])?;
-                if !result.as_bool() {
+                if !c(env, vec![v.clone()])?.as_bool() {
                     return Ok(Value::bool(false));
                 }
             }
@@ -640,21 +640,23 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Map a lambda over a set.
         "map" => |env, args| {
+            let c = args[1].as_closure();
             Ok(Value::set(
                 args[0]
                     .as_set()
                     .iter()
-                    .map(|v| args[1].as_closure()(env, vec![v.clone()]))
+                    .map(|v| c(env, vec![v.clone()]))
                     .collect::<Result<_, _>>()?,
             ))
         },
 
         // Filter a set using a lambda.
         "filter" => |env, args| {
+            let c = args[1].as_closure();
             Ok(Value::set(args[0].as_set().iter().try_fold(
                 ImmutableSet::default(),
                 |mut acc, v| {
-                    if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
+                    if c(env, vec![v.clone()])?.as_bool() {
                         acc.insert(v.clone());
                     }
                     Ok(acc)
@@ -664,10 +666,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Filter a list using a lambda
         "select" => |env, args| {
+            let c = args[1].as_closure();
             Ok(Value::list(args[0].as_list().iter().try_fold(
                 ImmutableVec::new(),
                 |mut acc, v| {
-                    if args[1].as_closure()(env, vec![v.clone()])?.as_bool() {
+                    if c(env, vec![v.clone()])?.as_bool() {
                         acc.push_back(v.clone());
                     }
                     Ok(acc)
