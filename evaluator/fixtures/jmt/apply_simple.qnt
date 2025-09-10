@@ -113,7 +113,7 @@ module apply_simple {
     // We will construct the three from the leafs up until the root
     // Say we want to construct a tree with nodes: 0000, 0001, 1111
     // We start from MAX_HASH_LENGTH - 1, which is 3 (i = 3)
-    // We then find all prefixes of lenght 3 in the current nodes: 000 and 111
+    // We then find all prefixes of length 3 in the current nodes: 000 and 111
     // For each prefix, we do something.
     // For prefix 000: try to find both 000.append(0) and 000.append(1) in the current nodes
     //   - If both exist, then push 000 as an internal node both of them as children to the queue
