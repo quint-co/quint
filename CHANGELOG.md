@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed several issues with the integration of Apalache (#1754)
 - Fixed unauthorized errors when downloading the Rust backend (#1763)
+- Fixed undefined behavior when non-array options are passed twice in the CLI (#1757)
 
 ### Security
 
