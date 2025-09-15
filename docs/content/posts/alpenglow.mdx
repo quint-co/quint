@@ -426,7 +426,7 @@ For me, this run is like a space/time diagram that I would draw on a whiteboard 
 
 The Quint run is like this drawing but saved within a file in the repository as an executable artifact. Indeed, you can call `disagreementExampleTest` from within the REPL, which will execute the run. You will now be in the final state of this run, and you can use `s` to explore it.
 
-From the command line (outside of the REPL), you can also call `quint test statemachine.qnt` that will execute the test and show the result. You can use `quint test` in CI within Github to make sure that changing the specification didn't introduce weird behaviors.
+From the command line (outside of the REPL), you can also call `quint test statemachine.qnt --main too_many_byz` that will execute the test and show the result. You can use `quint test <file> --main <module>` in CI within Github to make sure that changing the specification didn't introduce weird behaviors.
 
 
 So, Quint runs are executable whiteboard drawings! You can use the run above to explain to your friends why Alpenglow needs more than ⅘ of correct voting power!
