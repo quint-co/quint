@@ -1,0 +1,134 @@
+# Using the choreo::cue Pattern
+
+The `choreo::cue` pattern is a powerful abstraction in Choreo that separates the "when" from the "what" in protocol transitions. It follows a listen-then-act pattern where you first check for conditions (listen) and then perform actions based on those conditions (act).
+
+## The Pattern
+
+```quint
+choreo::cue(context, listen_operator, upon_operator)
+```
+
+- **`listen_operator`**: Returns a set of parameters when conditions are met
+- **`act_operator`**: Takes those parameters and returns a transition to execute
+
+## Example from Tendermint
+
+Let's look at how Tendermint uses this pattern for handling proposal messages:
+
+```quint
+// In the main listener
+choreo::cue(ctx, listen_proposal_in_propose, broadcast_prevote_for_proposal)
+```
+
+### The Listen Operator
+
+The listen operator checks what proposals we can receive in processes that are on the propose stage:
+
+```quint
+pure def listen_proposal_in_propose(ctx: LocalContext): Set[ProposeMsg] = {
+  val s = ctx.state
+  val messages = ctx.messages
+
+  val state_guard = s.stage == ProposeStage
+
+  // Message guards: predicates on the messages that can use the state as context
+  def message_guard = (p) => and {
+    p.valid_round == -1,
+    p.src == PROPOSER.get(s.round),
+  }
+
+  // Apply Guards and return matching proposals
+  val proposals = messages.get_proposals()
+  proposals.filter(p => and {
+    message_guard(p),
+    state_guard
+  })
+}
+```
+
+**Key points:**
+- Returns `Set[ProposeMsg]` - the proposals that match our conditions
+- Guards ensure we only process valid proposals in the correct state
+- Empty set means no transition will occur (there's nothing to react to)
+
+### The Act Operator
+
+The act operator defines what to do when we have a matching proposal:
+
+```quint
+pure def broadcast_prevote_for_proposal(ctx: LocalContext, p: ProposeMsg): Transition = {
+  val s = ctx.state
+
+  // Decide what to vote for based on validation and locking rules
+  pure val effects = if (valid(p.proposal) and (s.locked_round == -1 or s.locked_value == Some(p.proposal))) {
+    Set(choreo::Broadcast(PreVote({ src: s.process_id, round: s.round, id: Some(id(p.proposal)) })))
+  } else {
+    Set(choreo::Broadcast(PreVote({ src: s.process_id, round: s.round, id: None })))
+  }
+
+  {
+    post_state: { ...s, stage: PreVoteStage },
+    effects: effects.setAdd(choreo::CustomEffect(CollectEvidence(Propose(p))))
+  }
+}
+```
+
+**Key points:**
+- Takes the `ProposeMsg` from the listen operator as a parameter
+- Returns a `Transition` that changes the local state and produces effects
+
+### Cues in the `main_listener`
+
+Tendermint's main listener combines multiple cues:
+
+```quint
+pure def main_listener(ctx: LocalContext): Set[Transition] =
+  Set(
+    choreo::cue(ctx, listen_proposal_in_propose, broadcast_prevote_for_proposal),
+    choreo::cue(ctx, listen_proposal_in_propose_prevote, broadcast_prevote_with_validation),
+    choreo::cue(ctx, listen_proposal_in_precommit_no_decision, decide_on_proposal),
+    choreo::cue(ctx, listen_proposal_in_prevote_commit, lock_value_and_precommit),
+    choreo::cue(ctx, listen_quorum_prevotes_any, trigger_prevote_timeout),
+    choreo::cue(ctx, listen_quorum_nil_prevotes, broadcast_nil_precommit),
+    choreo::cue(ctx, listen_quorum_precommits_any, trigger_precommit_timeout),
+    on_propose_timeout(ctx),
+    on_prevote_timeout(ctx),
+    on_precommit_timeout(ctx)
+  ).flatten()
+```
+
+Notice how we can mix cues with regular operators that simply return transitions, like the timeout reactions in this example.
+
+## Protocol at-a-glance
+
+Looking at the `main_listener` above can give the reader a really good overview
+of the protocol, specially when we choose good names for the operators. Being
+able to see all rules at-a-glance like this helps a lot with clarity of
+specifications
+
+
+## The Cue pattern is the best approach for testing
+
+The main benefit of using cues comes when defining Quint tests, which are
+example runs of the protocol and very useful artifacts for validation and
+documentation. The cue pattern allows us to combine the two parts (listen and
+act) in a way where the test first checks that listening is met for a given
+parameter, and then react to it specifically by calling the act operator with
+that parameter, allowing maximum security and control.
+
+In the following example, the parameter is `v0_proposal`. `with_cue` will check that in fact `v0_proposal` is one of the proposals we can react to while in the current state (right after `init` in this case). Then, `perform` will only be called if this condition was met, executing the transition obtained from `broadcast_prevote_for_proposal(ctx, v0_proposal)`.
+
+```quint
+run testProposalHandling = {
+  val v0_proposal = { proposal: "v0", round: 0, src: "p1", valid_round: -1 }
+
+  init
+    .then("p1".with_cue(listen_proposal_in_propose, v0_proposal).perform(broadcast_prevote_for_proposal))
+    .expect(s.system.get("p1").stage == PreVoteStage)
+    .then("p2".with_cue(listen_proposal_in_propose, v0_proposal).perform(broadcast_prevote_for_proposal))
+}
+```
+
+## Final Thoughts
+
+When this separation of concerns exists on the protocol, the cue pattern can leverage it for clearer specifications and optimal testing, as we've done for Tendermint and Alpenglow. However, some protocol definitions might have too tight coupling between listening and acting, as it is the case in the Monad BFT example. In that case, implementing this pattern would require a big change in paradigm, similar to that of converting heavily procedural code into functional. If there's no previous protocol definition and you are starting with Quint right away, the cue pattern should help you end up with clearer definitions which can even make for a better paper.

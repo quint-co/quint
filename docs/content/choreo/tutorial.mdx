@@ -1,0 +1,466 @@
+import { Steps } from 'nextra/components'
+
+# Building a Two-Phase Commit Protocol with Choreo
+
+This tutorial will guide you step-by-step through implementing a distributed two-phase commit protocol using the Choreo framework. We'll start from the provided template and build up to a complete specification.
+
+## Prerequisites
+
+- [Quint](https://quint-lang.org/docs/getting-started) installed
+- Choreo files downloaded ([choreo.qnt](https://github.com/informalsystems/choreo/blob/main/choreo.qnt) and [template.qnt](https://github.com/informalsystems/choreo/blob/main/template.qnt))
+
+## Overview: What is Two-Phase Commit?
+
+The two-phase commit protocol is a distributed transaction protocol that ensures either all participants commit or all abort. It involves:
+
+1. **Coordinator**: Initiates the protocol and decides whether to commit or abort based on messages from participants
+2. **Participants**: Vote to prepare or abort, then follow coordinator's decision
+
+If Alice wants to withdraw 50 bucks from an ATM, the ATM acts as a coordinator while redundant database nodes are participants. The ATM asks "prepare a transaction where Alice withdraws $50", and each database node will check if she has enough balance and either send a "Commit" or an "Abort" message. Only when the ATM receives "Commit" from all nodes, it will tell them to execute the prepared transaction, while it can instead choose to abort at any point and tell all nodes to abort as well.
+
+<Steps>
+### Starting with the Template
+
+Let's begin with the template file that provides the structure for any Choreo protocol. The template includes:
+
+```quint filename="template.qnt"
+module my_protocol {
+  import basicSpells.* from "spells/basicSpells"
+  import choreo(processes = NODES) as choreo from "choreo"
+
+  // TODO: Define your protocol-specific types here
+
+  type Node = str
+  type Message = ExampleMessage(Node)
+  type StateFields = {
+    // TODO: Add your state fields here
+  }
+  type CustomEffects = ()
+  type Event = ()
+  type Extensions = ()
+
+  // ... rest of template
+}
+```
+
+The template gives us the basic structure, but we need to define our protocol-specific types and logic.
+
+### Define Protocol-Specific Types
+
+First, let's define the types specific to two-phase commit. We need to distinguish between coordinators and participants, and track the stage of the protocol.
+
+```diff filename="two_phase_commit.qnt"
+ module two_phase_commit {
+   import basicSpells.* from "../../spells/basicSpells"
+   import choreo(processes = NODES) as choreo from "../../choreo"
+
++  // Auxiliary types
++  type Role = Coordinator | Participant
++  type Stage = Working | Prepared | Committed | Aborted
+
+   // Mandatory types for the Choreo
+   type Node = str
+```
+
+**Why these types?**
+- `Role`: Each node is either the coordinator (makes decisions) or a participant (follows orders)
+- `Stage`: Tracks the current stage of a given node in the two-phase commit protocol
+
+### Define Message Types
+
+Now let's define the messages that nodes exchange during the protocol:
+
+```diff filename="two_phase_commit.qnt"
+   type Node = str
+-  type Message = ExampleMessage(Node)
++  type Message =
++    | CoordinatorAbort
++    | CoordinatorCommit
++    | ParticipantPrepared(Node)
+```
+
+**Message purposes:**
+- `CoordinatorAbort`: Coordinator tells participants to abort
+- `CoordinatorCommit`: Coordinator tells participants to commit
+- `ParticipantPrepared(Node)`: A participant signals they're prepared to commit
+
+### Define State Fields
+
+Each node needs to track its role and current stage:
+
+```diff filename="two_phase_commit.qnt"
+   type StateFields = {
+-    // TODO: Add your state fields here
++    role: Role,
++    stage: Stage,
+   }
+
+   type CustomEffects = ()
+   type Event = ()
+   type Extensions = ()
+```
+
+**State explanation:**
+- `role`: Whether this node is coordinator or participant (set at initialization)
+- `stage`: Current stage in the protocol (changes as protocol progresses)
+
+### Add Helper Functions
+
+We need a helper function to extract prepared messages from the message set:
+
+```quint filename="two_phase_commit.qnt"
+pure def get_prepared_msgs(msgs: Set[Message]): Set[Node] = {
+  msgs.filterMap(m => match m {
+    | ParticipantPrepared(n) => Some(n)
+    | _ => None
+  })
+}
+```
+
+This function filters the message set to find all `ParticipantPrepared` messages
+and returns the set of nodes that sent them. We hope to add an easier way of
+doing this to Quint soon, but currently, we need to `filterMap` by hand like this.
+
+### Implement Participant Transitions
+
+Let's implement the participant behavior. Participants can:
+1. Spontaneously prepare
+2. Spontaneously abort
+3. Follow coordinator's abort decision
+4. Follow coordinator's commit decision
+
+We implement one operator for each of these options. Each of them return a `Set`
+with the transition if we can take that action in the current state, or an empty
+`Set` otherwise. We could also do it with an `Option` type, but we choose `Set`
+as it's easier to combine the results later on (by simply calling `flatten()`).
+
+**Spontaneous Prepare**
+
+```quint filename="two_phase_commit.qnt"
+// --- Participant transitions ----------------------------------------------
+pure def spontaneously_prepares(ctx: LocalContext): Set[Transition] = {
+  if (ctx.state.role == Participant and ctx.state.stage == Working) {
+    Set({
+      effects: Set(choreo::Broadcast(ParticipantPrepared(ctx.state.process_id))),
+      post_state: { ...ctx.state, stage: Prepared }
+    })
+  } else {
+    Set()
+  }
+}
+```
+
+**Logic:**
+- **Guard**: Only participants in "Working" stage can prepare
+- **Effects**: Broadcast a prepared message to all nodes
+- **State change**: Move to "Prepared" stage
+
+**Spontaneous Abort**
+
+```quint filename="two_phase_commit.qnt"
+pure def spontaneously_aborts(ctx: LocalContext): Set[Transition] = {
+  if (ctx.state.role == Participant and ctx.state.stage == Working) {
+    Set({
+      effects: Set(),
+      post_state: { ...ctx.state, stage: Aborted }
+    })
+  } else {
+    Set()
+  }
+}
+```
+
+**Logic:**
+- **Guard**: Only participants in "Working" stage can abort
+- **Effects**: None (no message needed)
+- **State change**: Move to "Aborted" stage
+
+**Follow Coordinator's Instructions**
+
+```quint filename="two_phase_commit.qnt"
+pure def aborts_as_instructed(ctx: LocalContext): Set[Transition] = {
+  if (ctx.state.role == Participant and ctx.messages.contains(CoordinatorAbort)) {
+    Set({
+      effects: Set(),
+      post_state: { ...ctx.state, stage: Aborted }
+    })
+  } else {
+    Set()
+  }
+}
+
+pure def commits_as_instructed(ctx: LocalContext): Set[Transition] = {
+  if (ctx.state.role == Participant and ctx.messages.contains(CoordinatorCommit)) {
+    Set({
+      effects: Set(),
+      post_state: { ...ctx.state, stage: Committed }
+    })
+  } else {
+    Set()
+  }
+}
+```
+
+Both transitions check for the appropriate coordinator message and change state accordingly.
+
+### Implement Coordinator Transitions
+
+The coordinator has two main responsibilities:
+1. Decide to commit when all participants are prepared
+2. Decide to abort at any time
+
+**Decide on Commit**
+
+```quint filename="two_phase_commit.qnt"
+// --- Coordinator transitions ------------------------------
+pure def decides_on_commit(ctx: LocalContext): Set[Transition] = {
+  if (ctx.state.role == Coordinator
+      and ctx.state.stage == Working
+      and ctx.messages.get_prepared_msgs().size() == PARTICIPANTS.size()) {
+    Set({
+      effects: Set(choreo::Broadcast(CoordinatorCommit)),
+      post_state: { ...ctx.state, stage: Committed }
+    })
+  } else {
+    Set()
+  }
+}
+```
+
+**Guard Condition:**
+- Must be coordinator
+- Must be in "Working" stage
+- Must have received prepared messages from ALL participants
+
+**Decide on Abort**
+
+```quint filename="two_phase_commit.qnt"
+  pure def decides_on_abort(ctx: LocalContext): Set[Transition] = {
+    if (ctx.state.role == Coordinator and ctx.state.stage == Working) {
+      Set({
+        effects: Set(choreo::Broadcast(CoordinatorAbort)),
+        post_state: { ...ctx.state, stage: Aborted }
+      })
+    } else {
+      Set()
+    }
+  }
+```
+
+The coordinator can decide to abort at any time while in the "Working" stage.
+
+### Wire Everything Together
+
+**Main Listener**
+
+```diff filename="two_phase_commit.qnt"
+   pure def main_listener(ctx: LocalContext): Set[Transition] = {
+     Set(
+-      // ...
++      spontaneously_prepares(ctx),
++      spontaneously_aborts(ctx),
++      aborts_as_instructed(ctx),
++      commits_as_instructed(ctx),
++      decides_on_commit(ctx),
++      decides_on_abort(ctx)
+     ).flatten()
+   }
+```
+
+This combines all possible transitions. Choreo will check which ones are enabled and allow non-deterministic choice.
+
+**Node Configuration**
+
+```diff filename="two_phase_commit.qnt"
+   // =============================================================================
+   // PROTOCOL CONFIGURATION
+   // =============================================================================
+
+-  // TODO: Define your process set
+-  pure val NODES = Set("n1", "n2", "n3")  // Replace with your node set
++  pure val COORDINATOR: Node = "c"
++  pure val PARTICIPANTS: Set[Node] = Set("p1", "p2", "p3")
++  pure val NODES = PARTICIPANTS.union(Set(COORDINATOR))
+```
+
+We define one coordinator and three participants.
+
+**Initialization**
+
+```diff filename="two_phase_commit.qnt"
+   // =============================================================================
+   // INITIALIZATION
+   // =============================================================================
+
+-  // TODO: Define how to initialize each process's local state
+   pure def initialize(n: Node): LocalState = {
+     {
+       process_id: n,
+-      // TODO: Initialize your state fields
+-      // phase: Init,
+-      // value: None,
+-      // round: 0,
++      role: if (n == COORDINATOR) Coordinator else Participant,
++      stage: Working,
+     }
+   }
+
+- // TODO: Define initial global state
+   action init = choreo::init({
+     system: NODES.mapBy(n => initialize(n)),
+-    messages: NODES.mapBy(n => Set()),  // Or add initial messages if needed
++    messages: NODES.mapBy(n => Set()),
+-    events: NODES.mapBy(n => Set()),    // Or add initial events if needed
++    events: NODES.mapBy(n => Set()),
+-    extensions: ()  // Or initialize your extensions
++    extensions: ()
+   })
+```
+
+Each node starts in the "Working" stage with their role determined by whether they are the coordinator.
+
+**Step Function**
+
+```diff filename="two_phase_commit.qnt"
+   // =============================================================================
+   // STEP FUNCTION
+   // =============================================================================
+
+-  // TODO: Define how the system makes progress
+   action step = choreo::step(
+     main_listener,
+-    apply_custom_effect  // Use (c, _) => c if no custom effects
++    (c, _) => c
+   )
+```
+
+Since we don't have custom effects, we use the identity function.
+
+### Add Properties and Tests
+
+**Consistency Property**
+
+```diff filename="two_phase_commit.qnt"
+   // =============================================================================
+   // PROPERTIES
+   // =============================================================================
+
++  val consistency = PARTICIPANTS.forall(p1 => {
++    PARTICIPANTS.forall(p2 => {
++      not(choreo::s.system.get(p1).stage == Committed
++        and choreo::s.system.get(p2).stage == Aborted)
++    })
++  })
+```
+
+This ensures that no two participants can be in conflicting states (one committed, one aborted).
+
+**Test Scenario**
+
+```diff filename="two_phase_commit.qnt"
+   // =============================================================================
+   // TESTING AND DEBUGGING
+   // =============================================================================
+
++  run commitTest = init
++    .then(step_with("p1", spontaneously_prepares))
++    .then(step_with("p2", spontaneously_prepares))
++    .then(step_with("p3", spontaneously_prepares))
++    .then(step_with(COORDINATOR, decides_on_commit))
++    .then(step_with("p1", commits_as_instructed))
++    .then(step_with("p2", commits_as_instructed))
++    .then(step_with("p3", commits_as_instructed))
++    .expect({
++      // Check that all participants have committed
++      PARTICIPANTS.forall(p => {
++        choreo::s.system.get(p).stage == Committed
++      })
++    })
+```
+
+This test simulates a successful commit scenario.
+
+### Testing Your Implementation
+
+Let's simulate our specification:
+
+```bash
+quint run two_phase_commit.qnt --invariant consistency
+```
+
+```ansi
+[32m[ok][39m No violation found [90m(7045ms at 1419 traces/second).[39m
+[90mTrace length statistics: max=8, min=5, average=6.49[39m
+[90mYou may increase --max-samples and --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+[90mUse --seed=0x12954db3ea62c1 to reproduce.[39m
+```
+
+Let's run our `commitTest`:
+
+```bash
+quint test two_phase_commit.qnt --match commitTest
+```
+
+```ansi
+  two_phase_commit
+    [32mok[39m commitTest passed 1 test(s)
+
+[32m  1 passing[39m[90m (16ms)[39m
+```
+
+### Interactive Exploration
+
+You can also explore the protocol interactively using the Quint REPL:
+
+```bash
+quint -r two_phase_commit.qnt::two_phase_commit
+```
+
+```ansi
+[90mQuint REPL 0.27.0[39m
+[90m[39m[90mType ".exit" to exit, or ".help" for more information[39m
+[90m[39m>>> init
+[33mtrue[39m
+>>> choreo::s
+{
+  events[90m:[39m [32mMap[39m([32m"c"[39m[90m ->[39m [32mSet[39m(), [32m"p1"[39m[90m ->[39m [32mSet[39m(), [32m"p2"[39m[90m ->[39m [32mSet[39m(), [32m"p3"[39m[90m ->[39m [32mSet[39m()),
+  extensions[90m:[39m (),
+  messages[90m:[39m [32mMap[39m([32m"c"[39m[90m ->[39m [32mSet[39m(), [32m"p1"[39m[90m ->[39m [32mSet[39m(), [32m"p2"[39m[90m ->[39m [32mSet[39m(), [32m"p3"[39m[90m ->[39m [32mSet[39m()),
+  system[90m:[39m
+    [32mMap[39m(
+      [32m"c"[39m[90m ->[39m { process_id[90m:[39m [32m"c"[39m, role[90m:[39m [32mCoordinator[39m, stage[90m:[39m [32mWorking[39m },
+      [32m"p1"[39m[90m ->[39m { process_id[90m:[39m [32m"p1"[39m, role[90m:[39m [32mParticipant[39m, stage[90m:[39m [32mWorking[39m },
+      [32m"p2"[39m[90m ->[39m { process_id[90m:[39m [32m"p2"[39m, role[90m:[39m [32mParticipant[39m, stage[90m:[39m [32mWorking[39m },
+      [32m"p3"[39m[90m ->[39m { process_id[90m:[39m [32m"p3"[39m, role[90m:[39m [32mParticipant[39m, stage[90m:[39m [32mWorking[39m }
+    )
+}
+>>> step_with("p1", spontaneously_prepares)
+[33mtrue[39m
+>>> choreo::s.messages
+[32mMap[39m(
+  [32m"c"[39m[90m ->[39m [32mSet[39m([32mParticipantPrepared[39m([32m"p1"[39m)),
+  [32m"p1"[39m[90m ->[39m [32mSet[39m([32mParticipantPrepared[39m([32m"p1"[39m)),
+  [32m"p2"[39m[90m ->[39m [32mSet[39m([32mParticipantPrepared[39m([32m"p1"[39m)),
+  [32m"p3"[39m[90m ->[39m [32mSet[39m([32mParticipantPrepared[39m([32m"p1"[39m))
+)
+```
+</Steps>
+
+Check out the complete two phase commit spec using choreo [here](https://github.com/informalsystems/choreo/blob/main/examples/two_phase_commit/two_phase_commit.qnt).
+
+## Advanced Features
+
+This tutorial covered the basics of Choreo with a simple two-phase commit protocol. For more complex protocols, you'll need additional features:
+
+### Advanced Guides
+
+- **[Using the choreo::cue Pattern](./cue-pattern)**: Learn the listen-then-act pattern for clean protocol transitions
+- **[CustomEffect and Environment Extensions](./custom-effects-extensions)**: Add global state and evidence collection for accountability
+- **[Using step_micro](./step-micro)**: Process messages one at a time for easier debugging and testing
+
+### Complete Examples
+
+- [Tendermint](https://github.com/informalsystems/choreo/tree/main/examples/tendermint) - Uses all advanced features for consensus
+- [Alpenglow](https://github.com/informalsystems/choreo/blob/main/examples/alpenglow/alpenglow.qnt) - Byzantine agreement protocol
+- [Monad BFT](https://github.com/informalsystems/choreo/tree/main/examples/monadbft) - Another consensus implementation

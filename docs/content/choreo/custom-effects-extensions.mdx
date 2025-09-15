@@ -1,0 +1,131 @@
+# Using Custom Effects and Environment Extensions
+
+Custom effects and environment extensions allow you to extend Choreo beyond basic message passing. This guide shows how Tendermint uses these features for evidence collection and accountability.
+
+## Environment Extensions
+
+Extensions provide global state that all processes can access and modify. In Tendermint, this tracks evidence for Byzantine fault detection:
+
+```quint
+type Extensions = Bookkeeping
+
+type Bookkeeping = {
+  evidence_propose: Set[ProposeMsg],
+  evidence_prevote: Set[PreVoteMsg],
+  evidence_precommit: Set[PreVoteMsg],
+}
+```
+
+### Initializing Extensions
+
+Set up the initial extension state during system initialization:
+
+```quint
+pure val initial_bookkeeping = {
+  evidence_propose: Set(),
+  evidence_prevote: Set(),
+  evidence_precommit: Set(),
+}
+
+action init = choreo::init({
+  system: NODES.mapBy(n => initialize_process(n)),
+  messages: NODES.mapBy(n => Set(initial_message).union(byzantine_messages_1)),
+  events: NODES.mapBy(n => Set()),
+  extensions: initial_bookkeeping  // Global state accessible by all processes
+})
+```
+
+## CustomEffect
+
+CustomEffect allows processes to modify the global environment extensions during transitions:
+
+```quint
+type CustomEffects = CollectEvidence(Message)
+```
+
+### Emitting Custom Effects
+
+Processes can produce custom effects as part of their transitions:
+
+```quint /choreo::CustomEffect(CollectEvidence(Propose(p)))/
+pure def broadcast_prevote_for_proposal(ctx: LocalContext, p: ProposeMsg): Transition = {
+  val s = ctx.state
+
+  pure val effects = if (valid(p.proposal) and (s.locked_round == -1 or s.locked_value == Some(p.proposal))) {
+    Set(choreo::Broadcast(PreVote({ src: s.process_id, round: s.round, id: Some(id(p.proposal)) })))
+  } else {
+    Set(choreo::Broadcast(PreVote({ src: s.process_id, round: s.round, id: None })))
+  }
+
+  {
+    post_state: { ...s, stage: PreVoteStage },
+    effects: effects.setAdd(choreo::CustomEffect(CollectEvidence(Propose(p))))
+  }
+}
+```
+
+## Processing Custom Effects
+
+When using custom effects, you should define how they modify the global environment. For this example, we simply want to store the information in the extension we created for bookkeeping:
+
+```quint
+def apply_custom_effect(env: GlobalContext, effect: CustomEffects): GlobalContext = {
+  match effect {
+    | CollectEvidence(msg) => {
+      pure val updated_bookkeeping = match msg {
+        | Propose(p) => { ...env.extensions, evidence_propose: env.extensions.evidence_propose.setAdd(p) }
+        | PreVote(p) => { ...env.extensions, evidence_prevote: env.extensions.evidence_prevote.setAdd(p) }
+        | PreCommit(p) => { ...env.extensions, evidence_precommit: env.extensions.evidence_precommit.setAdd(p) }
+      }
+      { ...env, extensions: updated_bookkeeping }
+    }
+  }
+}
+```
+
+## Connecting to Step Function
+
+Wire everything together in the step function:
+
+```quint
+action step = choreo::step(
+  main_listener,
+  apply_custom_effect  // Pass the custom effect processor
+)
+```
+
+## Using Extensions for Properties
+
+Accessing the extensions in the properties is as simple as accessing the record fiel with `s.extensions` (aliased to `choreo::s.extensions`). See the following example of accountability checking:
+
+```quint
+/// Equivocation by a node n
+def equivocation_by(n: Node): bool = {
+  or {
+    n.equivocation_in(s.extensions.evidence_propose),
+    n.equivocation_in(s.extensions.evidence_prevote),
+    n.equivocation_in(s.extensions.evidence_precommit),
+  }
+}
+
+pure def equivocation_in(n: Node, evidence: Set[{ src: Node, round: Round | other }]): bool = {
+  tuples(evidence, evidence).exists(((e1, e2)) => {
+    e1 != e2 and e1.src == n and e2.src == n and e1.round == e2.round
+  })
+}
+
+val accountability = or {
+  agreement,
+  FAULTY.powerset().exists(f => and {
+    f.size() >= F + 1,
+    f.forall(n => equivocation_by(n) or amnesia_by(n)),
+  })
+}
+```
+
+## Final Thoughts
+
+These extensions generalize Choreo to most, if not all, use-cases. Another
+example of it's usage is in the Monad BFT spec, where we add an extension for a
+database mock which processes can use to lookup past proposals. Extensions might
+not be necessary in many scenarios, but they are there for when you do.

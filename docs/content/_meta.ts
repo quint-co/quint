@@ -11,6 +11,10 @@ export default {
     type: 'page',
     title: 'Documentation',
   },
+  choreo: {
+    type: 'page',
+    title: 'Choreo',
+  },
   blog: {
     type: 'page',
     href: '/blog',
