@@ -4,6 +4,7 @@ import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
+import { LogoSwitcher } from '../components/LogoSwitcher'
 
 export const metadata = {
   title: 'Quint',
@@ -20,28 +21,9 @@ export const metadata = {
   },
 }
 
-const QuintLogo = () => {
-  return (
-    <>
-      <img
-        src="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-dark.svg"
-        alt="Quint"
-        width="150px"
-        className="dark:hidden"
-      />
-      <img
-        src="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-light.svg"
-        alt="Quint"
-        width="150px"
-        className="hidden dark:block"
-      />
-    </>
-  )
-}
-
 const navbar = (
   <Navbar
-    logo={<QuintLogo />}
+    logo={<LogoSwitcher />}
     logoLink="/"
     projectLink="https://github.com/informalsystems/quint"
     chatLink="https://t.me/quint_lang"
