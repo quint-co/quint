@@ -18,7 +18,7 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { ofItf, toItf } from './itf'
+import { ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
@@ -136,7 +136,7 @@ export function processVerifyResult(
       return { ...stage, status: 'ok', errors: [] }
     })
     .mapLeft(err => {
-      const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
+      const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
       const status = trace !== undefined ? 'violation' : 'failure'
 
       if (trace !== undefined) {
