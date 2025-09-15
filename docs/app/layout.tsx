@@ -5,6 +5,7 @@ import { getPageMap } from 'nextra/page-map'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 import { LogoSwitcher } from '../components/LogoSwitcher'
+import { AnnouncementBanner } from '../components/AnnouncementBanner'
 
 export const metadata = {
   title: 'Quint',
@@ -80,6 +81,7 @@ export default async function RootLayout({ children }) {
         <Layout
           navbar={navbar}
           footer={footer}
+          banner={<AnnouncementBanner />}
           pageMap={await getPageMap()}
           docsRepositoryBase="https://github.com/informalsystems/quint/blob/main/docs"
           sidebar={{

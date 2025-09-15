@@ -76,3 +76,21 @@ dd {
   width: 100%;
 }
 
+/* Nextra Banner Customization */
+.nextra-banner {
+  background: linear-gradient(90deg, #9d6ce5 0%,  #6428bf 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+}
+
+.nextra-banner a {
+  color: white;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.nextra-banner a:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
