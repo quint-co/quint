@@ -20,4 +20,7 @@ export default {
     type: 'page',
     title: 'Community',
   },
+  posts: {
+    display: 'hidden',
+  }
 }
