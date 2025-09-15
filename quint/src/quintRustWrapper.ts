@@ -226,7 +226,7 @@ async function fetchEvaluator(version: string, assetName: string, executable: st
   console.log(chalk.gray(`Fetching Rust evaluator ${version}...`))
 
   // Create a GitHub client
-  const client = new GitHubClient(process.env.GITHUB_TOKEN)
+  const client = new GitHubClient()
 
   // Fetch the release from GitHub
   const release = await client.fetchRelease(version)
@@ -354,12 +354,6 @@ async function exists(filePath: string): Promise<boolean> {
 }
 
 class GitHubClient {
-  private token: string | undefined
-
-  constructor(token: string | undefined) {
-    this.token = token
-  }
-
   async fetch(url: string, accept: string): Promise<Response> {
     const options: any = {
       redirect: 'follow',
@@ -368,10 +362,6 @@ class GitHubClient {
         'User-Agent': 'quint-evaluator-fetch',
         Accept: accept,
       },
-    }
-
-    if (this.token) {
-      options.headers['Authorization'] = `Bearer ${this.token} `
     }
 
     const response = await fetch(url, options)
