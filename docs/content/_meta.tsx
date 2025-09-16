@@ -13,7 +13,7 @@ export default {
   },
   choreo: {
     type: 'page',
-    title: 'Choreo',
+    title: <span className="badge-new">Choreo</span>,
   },
   blog: {
     type: 'page',
