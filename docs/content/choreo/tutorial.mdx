@@ -7,7 +7,18 @@ This tutorial will guide you step-by-step through implementing a distributed two
 ## Prerequisites
 
 - [Quint](https://quint-lang.org/docs/getting-started) installed
-- Choreo files downloaded ([choreo.qnt](https://github.com/informalsystems/choreo/blob/main/choreo.qnt) and [template.qnt](https://github.com/informalsystems/choreo/blob/main/template.qnt))
+- Choreo files downloaded ([choreo.qnt](https://github.com/informalsystems/choreo/blob/main/choreo.qnt) and [template.qnt](https://github.com/informalsystems/choreo/blob/main/template.qnt), plus the Quint spells). Use the following commands to get them easily:
+
+```bash
+# Download the required Choreo files
+curl -O https://raw.githubusercontent.com/informalsystems/choreo/main/choreo.qnt
+curl -O https://raw.githubusercontent.com/informalsystems/choreo/main/template.qnt
+
+# Download the spells folder and files
+mkdir -p spells
+curl -o spells/basicSpells.qnt https://raw.githubusercontent.com/informalsystems/choreo/main/spells/basicSpells.qnt
+curl -o spells/rareSpells.qnt https://raw.githubusercontent.com/informalsystems/choreo/main/spells/rareSpells.qnt
+```
 
 ## Overview: What is Two-Phase Commit?
 
