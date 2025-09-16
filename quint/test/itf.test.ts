@@ -4,7 +4,7 @@ import { quintExAreEqual } from './util'
 import { zip } from '../src/util'
 
 import { buildExpression } from './builders/ir'
-import { ItfTrace, ofItf, toItf } from '../src/itf'
+import { ItfTrace, ofItf, ofItfNormalized, toItf } from '../src/itf'
 
 describe('toItf', () => {
   it('converts two states', () => {
@@ -111,5 +111,27 @@ describe('toItf', () => {
       zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
       `round trip conversion of trace failed`
     )
+  })
+})
+
+describe('ofItfNormalized', () => {
+  it('returns normalized quint expressions', () => {
+    const unnormalized = `{
+  a: Set(3, 2, 1),
+  b: { c: 3, b: 2, a: 1  },
+  c: Map("c" -> 3, "b" -> 2, "a" -> 1)
+}`
+
+    const normalized = `{
+  a: Set(1, 2, 3),
+  b: { a: 1, b: 2, c: 3 },
+  c: Map("a" -> 1, "b" -> 2, "c" -> 3)
+}`
+
+    const unnormalizedTrace = [buildExpression(unnormalized)]
+    const normalizedTrace = [buildExpression(normalized)]
+    const unnormalizedItf = toItf(['a', 'b', 'c'], unnormalizedTrace).unwrap()
+    const normalizedExp = ofItfNormalized(unnormalizedItf)
+    assert(zip(normalizedExp, normalizedTrace).every(([a, b]) => quintExAreEqual(a, b)))
   })
 })
