@@ -34,7 +34,11 @@ nodes also react to individual things.
 
 ## Tendermint with step_micro
 
-The `tendermintMicro.qnt` example shows how to structure a protocol for message-by-message processing. In `main_listener`, we have an `input`, which can be either a `Message` or an `Event`. Here, we define auxiliary operators `receive_message` and `handle_timeout` (as timeouts are the only event type we have), but you can do this however you want.
+The `tendermintMicro.qnt` example shows how to structure a protocol for
+message-by-message processing. In `main_listener`, we have an `input`, which can
+be either a `Message` or an `Event`. Here, we define auxiliary operators
+`receive_message` and `handle_timeout` (as timeouts are the only event type we
+have), but you can do this however you want.
 
 ```quint
 pure def main_listener(ctx: LocalContext, input: Input): Set[Transition] = {
@@ -100,7 +104,7 @@ pure def receive_message(input: LocalContext, m: Message): Set[Transition] = {
 }
 ```
 
-This means the local state has some extra fields in comparisson to the other version of Tendermint (that doesn't use micro steps):
+This means the local state has some extra fields in comparison to the other version of Tendermint (that doesn't use micro steps):
 
 ```quint {13-15}
 type StateFields = {
@@ -146,7 +150,7 @@ action step = choreo::micro_step(
 
 ## Why it is less efficient
 
-This is building a much bigger state machine than with regular `choreo::step`, since we make transitions for each received message, instead of only making transitions when we do something interesting (i.e. when quorum is reached). The blogpost [Message Soup: the Secret Sauce for Consensus Specifications](/posts/soup) goes over this in detail and shows benchmarks. In practice, this means you'll get longer executions (as it takes more steps for something to happen), less coverage on simulations and less chances of being able to model check (`quint verify`) in feasible time.
+This is building a much bigger state machine than with regular `choreo::step`, since we make transitions for each received message, instead of only making transitions when we do something interesting (i.e. when quorum is reached). The blog post [Message Soup: the Secret Sauce for Consensus Specifications](/posts/soup) goes over this in detail and shows benchmarks. In practice, this means you'll get longer executions (as it takes more steps for something to happen), less coverage on simulations and less chance of being able to model check (`quint verify`) in feasible time.
 
 Still, this can be useful for specifying how things happen in more detail and get closer correspondence with the implementation (or with existing informal specs like pseudocode).
 

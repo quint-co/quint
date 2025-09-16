@@ -1,6 +1,9 @@
 # Using the choreo::cue Pattern
 
-The `choreo::cue` pattern is a powerful abstraction in Choreo that separates the "when" from the "what" in protocol transitions. It follows a listen-then-act pattern where you first check for conditions (listen) and then perform actions based on those conditions (act).
+The `choreo::cue` pattern is a powerful abstraction in Choreo that separates the
+"when" from the "what" in protocol transitions. It follows a listen-then-act
+pattern where you first check for conditions (listen) and then perform actions
+based on those conditions (act).
 
 ## The Pattern
 
@@ -97,7 +100,8 @@ pure def main_listener(ctx: LocalContext): Set[Transition] =
   ).flatten()
 ```
 
-Notice how we can mix cues with regular operators that simply return transitions, like the timeout reactions in this example.
+Notice how we can mix cues with regular operators that simply return
+transitions, like the timeout reactions in this example.
 
 ## Protocol at-a-glance
 
@@ -116,7 +120,11 @@ act) in a way where the test first checks that listening is met for a given
 parameter, and then react to it specifically by calling the act operator with
 that parameter, allowing maximum security and control.
 
-In the following example, the parameter is `v0_proposal`. `with_cue` will check that in fact `v0_proposal` is one of the proposals we can react to while in the current state (right after `init` in this case). Then, `perform` will only be called if this condition was met, executing the transition obtained from `broadcast_prevote_for_proposal(ctx, v0_proposal)`.
+In the following example, the parameter is `v0_proposal`. `with_cue` will check
+that in fact `v0_proposal` is one of the proposals we can react to while in the
+current state (right after `init` in this case). Then, `perform` will only be
+called if this condition was met, executing the transition obtained from
+`broadcast_prevote_for_proposal(ctx, v0_proposal)`.
 
 ```quint
 run testProposalHandling = {
@@ -131,4 +139,12 @@ run testProposalHandling = {
 
 ## Final Thoughts
 
-When this separation of concerns exists on the protocol, the cue pattern can leverage it for clearer specifications and optimal testing, as we've done for Tendermint and Alpenglow. However, some protocol definitions might have too tight coupling between listening and acting, as it is the case in the Monad BFT example. In that case, implementing this pattern would require a big change in paradigm, similar to that of converting heavily procedural code into functional. If there's no previous protocol definition and you are starting with Quint right away, the cue pattern should help you end up with clearer definitions which can even make for a better paper.
+When this separation of concerns exists on the protocol, the cue pattern can
+leverage it for clearer specifications and optimal testing, as we've done for
+Tendermint and Alpenglow. However, some protocol definitions might have too
+tight coupling between listening and acting, as it is the case in the Monad BFT
+example. In that case, implementing this pattern would require a big change in
+paradigm, similar to that of converting heavily procedural code into functional.
+If there's no previous protocol definition, and you are starting with Quint
+right away, the cue pattern should help you end up with clearer definitions
+which can even make for a better paper.

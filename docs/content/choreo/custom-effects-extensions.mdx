@@ -1,10 +1,13 @@
 # Using Custom Effects and Environment Extensions
 
-Custom effects and environment extensions allow you to extend Choreo beyond basic message passing. This guide shows how Tendermint uses these features for evidence collection and accountability.
+Custom effects and environment extensions allow you to extend Choreo beyond
+basic message passing. This guide shows how Tendermint uses these features for
+evidence collection and accountability.
 
 ## Environment Extensions
 
-Extensions provide global state that all processes can access and modify. In Tendermint, this tracks evidence for Byzantine fault detection:
+Extensions provide global state that all processes can access and modify. In
+Tendermint, this tracks evidence for Byzantine fault detection:
 
 ```quint
 type Extensions = Bookkeeping
@@ -66,7 +69,9 @@ pure def broadcast_prevote_for_proposal(ctx: LocalContext, p: ProposeMsg): Trans
 
 ## Processing Custom Effects
 
-When using custom effects, you should define how they modify the global environment. For this example, we simply want to store the information in the extension we created for bookkeeping:
+When using custom effects, you should define how they modify the global
+environment. For this example, we simply want to store the information in the
+extension we created for bookkeeping:
 
 ```quint
 def apply_custom_effect(env: GlobalContext, effect: CustomEffects): GlobalContext = {
@@ -96,7 +101,9 @@ action step = choreo::step(
 
 ## Using Extensions for Properties
 
-Accessing the extensions in the properties is as simple as accessing the record fiel with `s.extensions` (aliased to `choreo::s.extensions`). See the following example of accountability checking:
+Accessing the extensions in the properties is as simple as accessing the record
+field with `s.extensions` (aliased to `choreo::s.extensions`). See the following
+example of accountability checking:
 
 ```quint
 /// Equivocation by a node n
@@ -126,6 +133,6 @@ val accountability = or {
 ## Final Thoughts
 
 These extensions generalize Choreo to most, if not all, use-cases. Another
-example of it's usage is in the Monad BFT spec, where we add an extension for a
+example of its usage is in the Monad BFT spec, where we add an extension for a
 database mock which processes can use to lookup past proposals. Extensions might
 not be necessary in many scenarios, but they are there for when you do.
