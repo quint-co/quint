@@ -20,6 +20,12 @@ bash -
 ### OK on repl input
 
 <!-- !test check repl 1 + 1 -->
+    quint "1 + 1"
+
+<!-- !test check repl with multiple cmds -->
+    quint "1 + 1" "2 + 2"
+
+<!-- !test check repl 1 + 1 with echo -->
     echo "1 + 1" | quint
 
 ### OK on parse Paxos

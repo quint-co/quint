@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added support for passing commands to the REPL (#1768)
+
 ### Changed
 
 - The REPL now prints file embedded expressions when executing them (#1774)

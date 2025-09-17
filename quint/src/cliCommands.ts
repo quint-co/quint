@@ -262,14 +262,14 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
 /**
  * Run REPL.
  *
- * @param _argv parameters as provided by yargs
+ * @param argv parameters as provided by yargs
  */
-export async function runRepl(_argv: any) {
+export async function runRepl(argv: any) {
   let filename: string | undefined = undefined
   let moduleName: string | undefined = undefined
-  if (_argv.require) {
+  if (argv.require) {
     // quint -r FILE.qnt or quint -r FILE.qnt::MODULE
-    const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(_argv.require)
+    const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(argv.require)
     if (m) {
       ;[filename, moduleName] = m.slice(1, 3)
     }
@@ -277,7 +277,8 @@ export async function runRepl(_argv: any) {
   const options: ReplOptions = {
     preloadFilename: filename,
     importModule: moduleName,
-    verbosity: _argv.quiet ? 0 : _argv.verbosity,
+    replInput: argv.commands,
+    verbosity: argv.quiet ? 0 : argv.verbosity,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
