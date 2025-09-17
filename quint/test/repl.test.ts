@@ -707,6 +707,11 @@ describe('repl ok', () => {
     const input = dedent(
       `>>> 1 + 1
       |
+      |>>> all {
+      |...   true,
+      |...   true
+      |... }
+      |
       | >>> if (true) {
       | ...   3
       | ... } else {
@@ -726,6 +731,12 @@ describe('repl ok', () => {
       `>>> >>> 1 + 1
       |... 
       |2
+      |>>> >>> all {
+      |... ...   true,
+      |... ...   true
+      |... ... }
+      |... 
+      |true
       |>>>  >>> if (true) {
       |...  ...   3
       |...  ... } else {
