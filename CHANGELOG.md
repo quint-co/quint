@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- The REPL now prints file embedded expressions when executing them (#1774)
+
 ### Deprecated
 ### Removed
 ### Fixed
