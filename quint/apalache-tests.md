@@ -189,6 +189,30 @@ An example execution:
 [violation] Found an issue (duration).
 ```
 
+## Violations are reported in normalized form
+
+NOTE: without trace normalization, the last map in the state may show with keys
+in any arbitrary order.
+
+<!-- !test in trace normalization -->
+```
+output=$(quint verify ./testFixture/apalache/mapStateVar.qnt --invariant never_full)
+exit_code=$?
+echo "$output" | grep '\[State 3\]'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test err trace normalization -->
+```
+error: found a counterexample
+```
+
+<!-- !test out trace normalization -->
+```
+[State 3] { data: Map("a" -> 42, "b" -> 42, "c" -> 42) }
+```
+
 ## Temporal properties
 
 ### Can verify with single temporal property

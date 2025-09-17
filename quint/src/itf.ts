@@ -11,9 +11,8 @@
 
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
-import { QuintApp, QuintStr } from './ir/quintIr'
-
-import { QuintEx } from './ir/quintIr'
+import { QuintApp, QuintEx, QuintStr } from './ir/quintIr'
+import rv from './runtime/impl/runtimeValue'
 
 /** The type of IFT traces.
  * See https://github.com/apalache-mc/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -249,4 +248,17 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
   }
 
   return itf.states.map(ofItfValue)
+}
+
+/**
+ * Normalizes the given ItfTrace by converting its state to runtime values and
+ * back to quint expressions. Note that this round trip results in normalized
+ * expression where, for example, maps and sets are sorted alphabetically.
+ * Usefull for pretty printing traces produced by Apalache.
+ *
+ * @param itf - The ItfTrace to normalize
+ * @returns An array of its states as normalized quint expressions
+ */
+export function ofItfNormalized(itf: ItfTrace): QuintEx[] {
+  return ofItf(itf).map(rv.fromQuintEx).map(rv.toQuintEx)
 }

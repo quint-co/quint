@@ -84,6 +84,11 @@ jobs:
         # These tests fail on windows currently
         # See https://github.com/anko/txm/issues/10
         if: matrix.operating-system != 'windows-latest'
+      - name: Rust backend integration tests
+        run: cd ./quint && npm run rust-integration
+        # These tests fail on windows currently
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
 
   quint-integration-tests-aggregator:
     name: TXM tests

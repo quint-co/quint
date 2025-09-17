@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
@@ -82,6 +82,7 @@
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
     "apalache-integration": "txm apalache-tests.md",
     "apalache-dist": "txm apalache-dist-tests.md",
+    "rust-integration": "txm rust-backend-tests.md",
     "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "api-docs": "quint docs ./src/builtin.qnt > ../docs/content/docs/builtin.md",

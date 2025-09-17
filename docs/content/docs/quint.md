@@ -264,7 +264,7 @@ Options:
  found during the execution. When the parameter `--out` is supplied, the trace
  is written as a JSON representation of Quint IR in the output file. When the
  parameter `--out-itf` is supplied, the traces are written in the [Informal Trace
- Format][]. This output can be conviently displayed with the [ITF Trace
+ Format][]. This output can be conveniently displayed with the [ITF Trace
  Viewer][], or just with [jq][].
 
  - If the specification cannot be run (e.g., due to a parsing error), the file
@@ -402,7 +402,7 @@ Viewer][], or just with [jq][].
 
 - When a `--inductive-invariant` is supplied, Quint will call Apalache multiple times:
   - 2 times if there is no ordinary invariant (`--invariant`)
-    - First, checking that the inductive invariant holds in all intiial states
+    - First, checking that the inductive invariant holds in all initial states
       - `init=init`, `invariant=inductive-invariant`, `max-steps=0`
     - Then, checking that, starting from a state where inductive invariant
       holds, if we take a step, the inductive invariant will continue to hold.
