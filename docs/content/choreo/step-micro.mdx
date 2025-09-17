@@ -1,0 +1,162 @@
+# Using `step_micro` for Message-by-Message Processing
+
+`step_micro` provides a simpler but less efficient abstraction where processes
+consume one message or event at a time. In some cases, this might be easier to
+understand and debug compared to the more general processing in regular `step`,
+and more similar to what happens in reality.
+
+For example, if you are writing a spec from an existing informal definition
+(i.e. pseudocode) that is oriented to receiving one message/event at a time,
+using `step_micro` might make the translation much more seamless, and you can
+consider converting the spec to use `step` later on.
+
+Or perhaps you want a model of something closer to your code to validate
+something less high-level, and `step_micro` will probably be a closer
+correspondence to how things happen in real life, with nodes reacting to
+individual messages.
+
+## The MicroListener Pattern
+
+Instead of reacting to a general environment, `step_micro` uses a `MicroListener`
+that takes an individual input:
+
+```quint
+type Input[m, e] = Message(m) | Event(e)
+
+type MicroListener[p, s, m, e, ce, ext] =
+  (LocalContext[p, s, m, e, ext], Input[m, e]) => Set[Transition[p, s, m, e, ce]]
+```
+
+The reactors can still look at the environment, but they are given something
+specific to react to (a message or an event), which makes the reaction more
+scoped and closer to what we have in the implementation of the protocol, where
+nodes also react to individual things.
+
+## Tendermint with step_micro
+
+The `tendermintMicro.qnt` example shows how to structure a protocol for
+message-by-message processing. In `main_listener`, we have an `input`, which can
+be either a `Message` or an `Event`. Here, we define auxiliary operators
+`receive_message` and `handle_timeout` (as timeouts are the only event type we
+have), but you can do this however you want.
+
+```quint
+pure def main_listener(ctx: LocalContext, input: Input): Set[Transition] = {
+  match input {
+    | Message(m) => {
+      // Process a single message
+      receive_message(ctx, m)
+    }
+    | Event(t) => {
+      // Process a single timeout event
+      handle_timeout(ctx, t)
+    }
+  }
+}
+```
+
+### Message Processing
+
+`receive_message` then will do something different depending on the type of message. One thing we always do is to **save the message to the local state**, so we can know when we have enough (quorum) messages of some type, like prevotes and precommits, in order to do something. Again, in a similar way to what we'd do in the implementation.
+
+```quint
+pure def receive_message(input: LocalContext, m: Message): Set[Transition] = {
+  match m {
+    | Propose(msg) => {
+      // First update local state with the new proposal
+      val s = { ...input.state, proposals: input.state.proposals.setAdd(msg) }
+      val updated_input = { ...input, state: s }
+
+      // Then check what transitions this enables
+      pure val results = Set(
+        process_proposal_at_propose_stage(updated_input, msg),
+        process_proposal_and_quorum_at_propose_stage(updated_input, msg),
+        process_proposal_and_quorum_after_prevote_stage_for_the_first_time(updated_input, msg),
+      ).flatten()
+
+      // Always update state, even if no transitions triggered
+      if (results.size() > 0) results else Set({ post_state: s, effects: Set() })
+    }
+
+    | PreVote(msg) => {
+      // Similar pattern for prevote messages
+      pure val s = { ...input.state, prevotes: input.state.prevotes.setAdd(msg) }
+      pure val updated_input = { ...input, state: s }
+
+      pure val results = Set(
+        process_prevote_quorum_on_prevote_stage(updated_input, msg),
+        process_prevote_quorum_at_prevote_stage(updated_input, msg),
+      ).flatten()
+
+      if (results.size() > 0) results else Set({ post_state: s, effects: Set() })
+    }
+
+    | PreCommit(msg) => {
+      // Handle precommit messages
+      pure val s = { ...input.state, precommits: input.state.precommits.setAdd(msg) }
+      pure val updated_input = { ...input, state: s }
+
+      pure val results = process_precommit_quorum_for_the_first_time(updated_input, msg)
+
+      if (results.size() > 0) results else Set({ post_state: s, effects: Set() })
+    }
+  }
+}
+```
+
+This means the local state has some extra fields in comparison to the other version of Tendermint (that doesn't use micro steps):
+
+```quint {13-15}
+type StateFields = {
+  round: Round,
+  stage: Stage,
+  decision: Option[Value],
+  locked_value: Option[Value],
+  locked_round: Round,
+  valid_value: Option[Value],
+  valid_round: Round,
+  after_prevote_for_first_time: bool,
+  precommit_quorum: bool,
+  process_id: Node,
+  decisions: Round -> Option[Value],
+  proposals: Set[ProposeMsg],    // Local copy of received proposals
+  prevotes: Set[PreVoteMsg],     // Local copy of received prevotes
+  precommits: Set[PreVoteMsg],   // Local copy of received precommits
+}
+```
+
+And that checking the existing messages is simpler: we just go over these variables instead of dealing with the heterogeneous set of all messages:
+
+```quint
+/// All received PreVotes with a given round and value id
+pure def get_prevotes(s: LocalState, round: Round, id: Option[ValueId]): Set[PreVoteMsg] =
+  s.prevotes.filter(p => p.round == round and p.id == id)
+
+/// All received PreCommits with a given round and value id
+pure def get_precommits(s: LocalState, round: Round, id: ValueId): Set[PreVoteMsg] =
+  s.precommits.filter(p => p.round == round and p.id == Some(id))
+```
+
+### Step Function
+
+Use `choreo::micro_step` instead of `choreo::step` (as the type of `main_listener` is different):
+
+```quint
+action step = choreo::micro_step(
+  main_listener,
+  apply_custom_effect
+)
+```
+
+## Why it is less efficient
+
+This is building a much bigger state machine than with regular `choreo::step`, since we make transitions for each received message, instead of only making transitions when we do something interesting (i.e. when quorum is reached). The blog post [Message Soup: the Secret Sauce for Consensus Specifications](/posts/soup) goes over this in detail and shows benchmarks. In practice, this means you'll get longer executions (as it takes more steps for something to happen), less coverage on simulations and less chance of being able to model check (`quint verify`) in feasible time.
+
+Still, this can be useful for specifying how things happen in more detail and get closer correspondence with the implementation (or with existing informal specs like pseudocode).
+
+## Examples
+
+We have two examples where there's both a version of the spec with regular `choreo::step` and one with `choreo::step_micro`. Check them out:
+
+- [tendermint.qnt](https://github.com/informalsystems/choreo/blob/main/examples/tendermint/tendermint.qnt) vs [tendermintMicro.qnt](https://github.com/informalsystems/choreo/blob/main/examples/tendermint/tendermintMicro.qnt)
+- [monadbft.qnt](https://github.com/informalsystems/choreo/blob/main/examples/monadbft/monadbft.qnt) vs [monadbftMicro.qnt](https://github.com/informalsystems/choreo/blob/main/examples/monadbft/monadbftMicro.qnt)
