@@ -70,21 +70,12 @@ fn one_of_empty_set_ok() {
         Some("oneOfEmptyTest"),
     )
     .unwrap();
-    // Should not cause runtime error - init should return false due to empty oneOf
+
     let result = parsed.simulate(10, 100, 0, None);
-    match &result {
-        Ok(_) => {}
-        Err(e) => panic!("Simulation failed with error: {e}"),
-    }
-    assert!(result.is_ok());
 
     // The simulation should succeed without runtime errors
-    // Since init returns false (due to empty oneOf), no traces will be generated
-    // But there should be no invariant violations since the invariant is simply 'true'
-    let sim_result = result.unwrap();
-    // The result should be true (no invariant violations found)
-    assert!(
-        sim_result.result,
-        "Expected no invariant violations, but result was false"
-    );
+    assert!(result.is_ok());
+
+    // `step` should never succeed, so we should have a trace of length 1 (the initial state)
+    assert!(result.unwrap().trace_statistics.max_trace_length == 1);
 }

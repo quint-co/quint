@@ -667,7 +667,6 @@ fn can_cache(def: &LookupDefinition) -> Cache {
     Cache::None
 }
 
-
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
     let mut interpreter = Interpreter::new(table);

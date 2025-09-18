@@ -3,20 +3,32 @@
 //! This module implements the retry logic for `nondet` expressions with `oneOf`,
 //! matching the behavior from the TypeScript implementation in PR #1670.
 
-use crate::{evaluator::{CompiledExpr, Env}, ir::QuintError, value::Value};
+use crate::{
+    evaluator::{CompiledExpr, Env},
+    ir::QuintError,
+    value::Value,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::OnceLock;
+
+static RETRY_THRESHOLD: OnceLock<usize> = OnceLock::new();
 
 /// The maximum size of set bounds for which we retry nondet expressions.
 /// If the set is too big, it is better to be greedy and let the execution fail
 /// if we pick a "wrong" value. As retrying large sets can take a long time.
 ///
 /// Configurable via QUINT_RETRY_NONDET_SMALLER_THAN environment variable.
+///
+/// Using OnceLock to avoid reading and parsing the environment variable on
+/// every call.
 fn get_retry_threshold() -> usize {
-    std::env::var("QUINT_RETRY_NONDET_SMALLER_THAN")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(100)
+    *RETRY_THRESHOLD.get_or_init(|| {
+        std::env::var("QUINT_RETRY_NONDET_SMALLER_THAN")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(100)
+    })
 }
 
 /// Check if we should retry nondet expressions based on set bounds.
@@ -64,7 +76,10 @@ pub fn eval_nondet_one_of(
         }
 
         // Generate initial random positions
-        let original_positions = bounds.iter().map(|&bound| env.rand.next(bound)).collect::<Vec<_>>();
+        let original_positions = bounds
+            .iter()
+            .map(|&bound| env.rand.next(bound))
+            .collect::<Vec<_>>();
         let mut new_positions = original_positions.clone();
 
         // Check if we should retry based on set size
@@ -73,7 +88,7 @@ pub fn eval_nondet_one_of(
         loop {
             let picked_value = set.pick(&mut new_positions.iter().copied());
 
-            // Cache the picked value and evaluate the body
+            // Set the picked value to the corresponding cache and evaluate the body
             cached_value.replace(Some(Ok(picked_value)));
             let result = body_expr.execute(env);
 
