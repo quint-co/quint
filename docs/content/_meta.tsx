@@ -11,6 +11,10 @@ export default {
     type: 'page',
     title: 'Documentation',
   },
+  choreo: {
+    type: 'page',
+    title: <span className="badge-new">Choreo</span>,
+  },
   blog: {
     type: 'page',
     href: '/blog',
@@ -20,4 +24,7 @@ export default {
     type: 'page',
     title: 'Community',
   },
+  posts: {
+    display: 'hidden',
+  }
 }

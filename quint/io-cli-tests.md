@@ -1546,6 +1546,19 @@ quint run ./examples/language-features/counters.qnt --n-traces 20000
 --n-traces (20000) cannot be greater than --max-samples (10000).
 ```
 
+### Error when non-array options are set more than once
+
+<!-- !test in non-array options set more than once -->
+```sh
+quint run ./examples/language-features/counters.qnt --max-steps 10 --max-steps 15
+```
+
+<!-- !test exit 1 -->
+<!-- !test err non-array options set more than once -->
+```text
+--max-steps can not be specified more than once
+```
+
 ### Regression on 428
 
 Errors from `amWrong` should not affect the definition and usage of `amRight`

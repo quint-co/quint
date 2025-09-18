@@ -399,8 +399,15 @@ const docsCmd = {
   handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
 
-// validate that --n-traces is not greater than --max-samples
-const validate = (argv: any) => {
+// Perform parser input validation.
+const validate = (argv: any, opts: any) => {
+  // Validate that only array options can be specified more than once.
+  for (const key in argv) {
+    if (key !== '_' && !opts.array.includes(key) && Array.isArray(argv[key])) {
+      throw new Error(`--${key} can not be specified more than once`)
+    }
+  }
+  // Validate that --n-traces is not greater than --max-samples.
   if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {
     if (argv['n-traces'] > argv['max-samples']) {
       throw new Error(`--n-traces (${argv['n-traces']}) cannot be greater than --max-samples (${argv['max-samples']}).`)
