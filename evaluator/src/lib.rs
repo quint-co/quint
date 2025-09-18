@@ -12,6 +12,7 @@ pub mod log;
 pub mod nondet;
 pub mod normalizer;
 pub mod picker;
+pub mod progress;
 pub mod rand;
 pub mod simulator;
 pub mod storage;
