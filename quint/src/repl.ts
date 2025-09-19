@@ -166,6 +166,7 @@ function defaultExit() {
 export interface ReplOptions {
   preloadFilename?: string
   importModule?: string
+  replInput?: string[]
   verbosity: number
 }
 
@@ -319,8 +320,7 @@ export function quintRepl(
     })
   }
 
-  // the read-eval-print loop
-  rl.on('line', line => {
+  function consumeLine(line: string) {
     const r = (s: string): string => {
       return chalk.red(s)
     }
@@ -375,7 +375,6 @@ export function quintRepl(
               } else {
                 load(filename, moduleName)
               }
-              rl.prompt()
             }
             break
 
@@ -395,7 +394,6 @@ export function quintRepl(
               } else {
                 saveToFile(out, state, args[1])
               }
-              rl.prompt()
             }
             break
 
@@ -441,6 +439,11 @@ export function quintRepl(
         }
       }
     }
+  }
+
+  // the read-eval-print loop
+  rl.on('line', line => {
+    consumeLine(line)
     rl.prompt()
   }).on('close', () => {
     out('\n')
@@ -452,8 +455,20 @@ export function quintRepl(
     load(options.preloadFilename, options.importModule)
   }
 
-  rl.prompt()
+  // Evaluate the repl's command input before starting the interactive loop
+  if (options.replInput && options.replInput.length > 0) {
+    out(prompt(settings.prompt))
+    options.replInput.forEach(input =>
+      input.split('\n').forEach(part => {
+        const line = `${part}\n` // put \n back in
+        out(prompt(line))
+        consumeLine(line)
+        out(prompt(rl.getPrompt()))
+      })
+    )
+  }
 
+  rl.prompt()
   return rl
 }
 

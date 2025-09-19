@@ -289,7 +289,7 @@ echo ".load ../examples/language-features/counters.qnt counters" \
 
 <!-- !test out repl loads a file with .load -->
 ```
->>> >>> >>> 
+>>> >>> 
 ```
 
 ### Repl saves a file with .save and loads it back
@@ -309,7 +309,7 @@ rm tmp-counters.qnt
 <!-- !test out repl saves a file with .save and loads it back -->
 ```
 >>> Session saved to: tmp-counters.qnt
->>> >>> 
+>>> 
 >>> true
 >>> 
 ```
