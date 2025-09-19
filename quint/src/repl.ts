@@ -616,7 +616,10 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       if (ex.kind === 'bool' && ex.value) {
         // A Boolean expression may be an action or a run.
         // Save the state, if there were any updates to variables.
-        const missing = state.evaluator.shiftAndCheck()
+        const [shifted, missing] = state.evaluator.shiftAndCheck()
+        if (shifted && verbosity.hasReplBanners(state.verbosity)) {
+          console.log(state.evaluator.trace.renderDiff(terminalWidth()))
+        }
         if (missing.length > 0) {
           out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
         }

@@ -90,19 +90,22 @@ export class Evaluator {
    *
    * @returns names of the variables that don't have values in the new state.
    */
-  shiftAndCheck(): string[] {
+  shiftAndCheck(): [boolean, string[]] {
     const missing = this.ctx.varStorage.nextVars.filter(reg => reg.value.isLeft())
 
     if (missing.size === this.ctx.varStorage.vars.size) {
       // Nothing was changed, don't shift
-      return []
+      return [false, []]
     }
 
     this.shift()
-    return missing
-      .valueSeq()
-      .map(reg => reg.name)
-      .toArray()
+    return [
+      true,
+      missing
+        .valueSeq()
+        .map(reg => reg.name)
+        .toArray(),
+    ]
   }
 
   /**
