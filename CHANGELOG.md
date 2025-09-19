@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added support for passing commands to the REPL (#1768)
+
 ### Changed
 
 - Behavior of `oneOf` in the rust simulator now matches the typescript one (#1773)
