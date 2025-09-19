@@ -618,7 +618,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
         // Save the state, if there were any updates to variables.
         const [shifted, missing] = state.evaluator.shiftAndCheck()
         if (shifted && verbosity.hasReplBanners(state.verbosity)) {
-          console.log(state.evaluator.trace.renderDiff(terminalWidth()))
+          console.log(state.evaluator.trace.renderDiff(terminalWidth(), { collapseThreshold: 2 }))
         }
         if (missing.length > 0) {
           out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))

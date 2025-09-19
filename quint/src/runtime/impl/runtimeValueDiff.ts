@@ -3,13 +3,68 @@ import { Doc, docJoin, group, line, linebreak, nest, richtext, text } from '../.
 import JSONbig from 'json-bigint'
 import { RuntimeValue } from './runtimeValue'
 
-const grayRV = (v: RuntimeValue) => prettyRVWith(v, GRAY)
-const greenRV = (v: RuntimeValue) => prettyRVWith(v, GREEN)
-const redRV = (v: RuntimeValue) => prettyRVWith(v, RED)
+/**
+ * Configuration for diff rendering behavior
+ */
+export interface DiffConfig {
+  /** Threshold for collapsing unchanged subtrees. If an unchanged subtree has more than this many items/fields, it will be shown as "..." */
+  collapseThreshold: number
+}
 
-export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
+const grayRV = (v: RuntimeValue, config?: DiffConfig) => prettyRVWith(v, GRAY, config)
+const greenRV = (v: RuntimeValue, config?: DiffConfig) => prettyRVWith(v, GREEN, config)
+const redRV = (v: RuntimeValue, config?: DiffConfig) => prettyRVWith(v, RED, config)
+
+/**
+ * Helper function to check if a runtime value should be collapsed based on its size
+ */
+function shouldCollapseValue(value: RuntimeValue, config?: DiffConfig): boolean {
+  if (!config || config.collapseThreshold <= 0) {
+    return false
+  }
+
+  try {
+    // Check records
+    const record = value.toOrderedMap()
+    return record.size > config.collapseThreshold
+  } catch {}
+
+  try {
+    // Check maps
+    const map = value.toMap()
+    return map.size > config.collapseThreshold
+  } catch {}
+
+  try {
+    // Check lists/tuples
+    const list = value.toList()
+    return list.size > config.collapseThreshold
+  } catch {}
+
+  try {
+    // Check sets
+    if (value.isSetLike) {
+      const set = value.toSet()
+      return set.size > config.collapseThreshold
+    }
+  } catch {}
+
+  return false
+}
+
+export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue, config?: DiffConfig): Doc {
+  return diffRuntimeValueDocInternal(a, b, config, false)
+}
+
+function diffRuntimeValueDocInternal(a: RuntimeValue, b: RuntimeValue, config?: DiffConfig, isNested: boolean = false): Doc {
   // Entire value equal -> all gray
-  if (a.equals(b)) return grayRV(a)
+  if (a.equals(b)) {
+    // Only collapse if we're in a nested context (part of a larger diff) and the value is large
+    if (isNested && shouldCollapseValue(a, config)) {
+      return tint('...', GRAY)
+    }
+    return grayRV(a, config)
+  }
 
   // Primitive old => new
   const atomOld = (() => {
@@ -51,12 +106,12 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
           inB = rb.has(k)
         if (inA && inB) {
           fields.push(
-            group([tint(k, GRAY), tint(':', GRAY), nest('  ', [line(), diffRuntimeValueDoc(ra.get(k)!, rb.get(k)!)])])
+            group([tint(k, GRAY), tint(':', GRAY), nest('  ', [line(), diffRuntimeValueDocInternal(ra.get(k)!, rb.get(k)!, config, true)])])
           )
         } else if (inA) {
-          fields.push(group([tint(k, RED), tint(':', RED), nest('  ', [line(), redRV(ra.get(k)!)])]))
+          fields.push(group([tint(k, RED), tint(':', RED), nest('  ', [line(), redRV(ra.get(k)!, config)])]))
         } else {
-          fields.push(group([tint(k, GREEN), tint(':', GREEN), nest('  ', [line(), greenRV(rb.get(k)!)])]))
+          fields.push(group([tint(k, GREEN), tint(':', GREEN), nest('  ', [line(), greenRV(rb.get(k)!, config)])]))
         }
       })
     return nary(GRAY, tint('{', GRAY), fields, tint('}', GRAY), line())
@@ -77,18 +132,18 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
         consumed.add(idx)
         pairs.push(
           group([
-            diffRuntimeValueDoc(ka, bKeys[idx]),
+            diffRuntimeValueDocInternal(ka, bKeys[idx], config, true),
             tint(' -> ', GRAY),
-            diffRuntimeValueDoc(ma.get(ka)!, mb.get(bKeys[idx])!),
+            diffRuntimeValueDocInternal(ma.get(ka)!, mb.get(bKeys[idx])!, config, true),
           ])
         )
       } else {
-        pairs.push(group([redRV(ka), tint(' -> ', RED), redRV(ma.get(ka)!)]))
+        pairs.push(group([redRV(ka, config), tint(' -> ', RED), redRV(ma.get(ka)!, config)]))
       }
     })
     bKeys.forEach((kb, i) => {
       if (!consumed.has(i)) {
-        pairs.push(group([greenRV(kb), tint(' -> ', GREEN), greenRV(mb.get(kb)!)]))
+        pairs.push(group([greenRV(kb, config), tint(' -> ', GREEN), greenRV(mb.get(kb)!, config)]))
       }
     })
 
@@ -100,13 +155,13 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
     const la = a.toList().toArray()
     const lb = b.toList().toArray()
     if (la.length === lb.length) {
-      const items = la.map((x, i) => diffRuntimeValueDoc(x, lb[i]))
+      const items = la.map((x, i) => diffRuntimeValueDocInternal(x, lb[i], config, true))
       return nary(GRAY, tint('[', GRAY), items, tint(']', GRAY))
     } else {
       return group([
-        nary(RED, tint('[', RED), la.map(redRV), tint(']', RED)),
+        nary(RED, tint('[', RED), la.map(x => redRV(x, config)), tint(']', RED)),
         text(' => '),
-        nary(GREEN, tint('[', GREEN), lb.map(greenRV), tint(']', GREEN)),
+        nary(GREEN, tint('[', GREEN), lb.map(x => greenRV(x, config)), tint(']', GREEN)),
       ])
     }
   } catch {}
@@ -128,7 +183,7 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
       const labelDoc = tint(label, color)
       return payloadIsEmptyTuple(payload)
         ? labelDoc
-        : group([labelDoc, text('('), prettyRVWith(payload, color), text(')')])
+        : group([labelDoc, text('('), prettyRVWith(payload, color, config), text(')')])
     }
 
     if (la === lb) {
@@ -137,7 +192,7 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
       if (payloadIsEmptyTuple(va) && payloadIsEmptyTuple(vb)) {
         return labelDoc
       } else {
-        return group([labelDoc, text('('), diffRuntimeValueDoc(va, vb), text(')')])
+        return group([labelDoc, text('('), diffRuntimeValueDocInternal(va, vb, config, true), text(')')])
       }
     } else {
       // Different label: show old (red) => new (green)
@@ -161,14 +216,14 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
           if (!matchedB[i] && ea.equals(sb[i])) {
             matchedB[i] = true
             matched = true
-            items.push(grayRV(ea))
+            items.push(grayRV(ea, config))
             break
           }
         }
-        if (!matched) items.push(redRV(ea))
+        if (!matched) items.push(redRV(ea, config))
       }
       for (let i = 0; i < sb.length; i++) {
-        if (!matchedB[i]) items.push(greenRV(sb[i]))
+        if (!matchedB[i]) items.push(greenRV(sb[i], config))
       }
 
       return group([tint('Set', GRAY), nary(GRAY, tint('(', GRAY), items, tint(')', GRAY))])
@@ -176,7 +231,7 @@ export function diffRuntimeValueDoc(a: RuntimeValue, b: RuntimeValue): Doc {
   }
 
   // Fallback when shapes differ
-  return group([prettyRVWith(a, RED), text(' => '), prettyRVWith(b, GREEN)])
+  return group([prettyRVWith(a, RED, config), text(' => '), prettyRVWith(b, GREEN, config)])
 }
 
 // Same indentation behavior as graphics.ts
@@ -193,7 +248,7 @@ const tint = (s: string, c: (s: string) => string): Doc => richtext(c, s)
 // A neutral pretty-printer for RuntimeValue that applies a single tint (gray/green/red).
 // It deliberately avoids the per-token color scheme in prettyQuintEx, since diff colors
 // carry the semantics here.
-function prettyRVWith(v: RuntimeValue, c: (s: string) => string): Doc {
+function prettyRVWith(v: RuntimeValue, c: (s: string) => string, config?: DiffConfig): Doc {
   // Bool
   try {
     return tint(String(v.toBool()), c)
@@ -214,7 +269,7 @@ function prettyRVWith(v: RuntimeValue, c: (s: string) => string): Doc {
     const om = v.toOrderedMap()
     const kvs: Doc[] = []
     om.forEach((val, key) => {
-      kvs.push(group([tint(key, c), tint(':', c), nest('  ', [line(), prettyRVWith(val, c)])]))
+      kvs.push(group([tint(key, c), tint(':', c), nest('  ', [line(), prettyRVWith(val, c, config)])]))
     })
     return nary(c, tint('{', c), kvs, tint('}', c), line())
   } catch (err) {}
@@ -224,7 +279,7 @@ function prettyRVWith(v: RuntimeValue, c: (s: string) => string): Doc {
     const m = v.toMap()
     const ps: Doc[] = []
     m.forEach((vv, kk) => {
-      ps.push(group([prettyRVWith(kk, c), tint(' -> ', c), prettyRVWith(vv, c)]))
+      ps.push(group([prettyRVWith(kk, c, config), tint(' -> ', c), prettyRVWith(vv, c, config)]))
     })
     return group([tint('Map', c), nary(c, tint('(', c), ps, tint(')', c))])
   } catch {}
@@ -232,7 +287,7 @@ function prettyRVWith(v: RuntimeValue, c: (s: string) => string): Doc {
   // List / Tuple (treated uniformly from outside runtimeValue.ts)
   try {
     const list = v.toList()
-    const items = list.toArray().map(x => prettyRVWith(x, c))
+    const items = list.toArray().map(x => prettyRVWith(x, c, config))
     return nary(c, tint('[', c), items, tint(']', c))
   } catch {}
 
@@ -247,13 +302,14 @@ function prettyRVWith(v: RuntimeValue, c: (s: string) => string): Doc {
     } catch {}
 
     const labelDoc = tint(label, c)
-    return isEmptyTuple ? labelDoc : group([labelDoc, nary(c, tint('(', c), [prettyRVWith(value, c)], tint(')', c))])
+    return isEmptyTuple ? labelDoc : group([labelDoc, nary(c, tint('(', c), [prettyRVWith(value, c, config)], tint(')', c))])
   } catch {}
 
   // Set-like (finite)
   if (v.isSetLike) {
     try {
-      const elems = Array.from(v.toSet()).map(x => prettyRVWith(x, c))
+      const set = v.toSet()
+      const elems = Array.from(set).map(x => prettyRVWith(x, c, config))
       return group([tint('Set', c), nary(c, tint('(', c), elems, tint(')', c))])
     } catch {
       // non-enumerable (infinite) falls through
