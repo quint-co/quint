@@ -14,7 +14,7 @@
 
 import { List } from 'immutable'
 import { RuntimeValue } from './runtimeValue'
-import { diffRuntimeValueDoc, DiffConfig } from './runtimeValueDiff'
+import { DiffConfig, diffRuntimeValueDoc } from './runtimeValueDiff'
 import { format } from '../../prettierimp'
 
 export class Trace {
