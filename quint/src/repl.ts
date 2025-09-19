@@ -327,7 +327,9 @@ export function quintRepl(
     const g = (s: string): string => {
       return chalk.gray(s)
     }
-    if (!line.startsWith('.')) {
+    // The continue prompt is handled by `nextLine` as the input may be acopy
+    // and paste from the reply itself.
+    if (!line.startsWith('.') || line.startsWith(settings.continuePrompt)) {
       // an input to evaluate
       nextLine(line)
     } else {
