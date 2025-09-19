@@ -11,10 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Behavior of `oneOf` in the rust simulator now matches the typescript one (#1773)
+- The REPL now prints file embedded expressions when executing them (#1774)
 
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed copying and pasting multi-line expressions from the REPL (#1776)
+
 ### Security
 
 ## v0.28.0 -- 2025-09-16

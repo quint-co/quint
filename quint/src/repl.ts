@@ -291,11 +291,11 @@ export function quintRepl(
     }
 
     if (newState.exprHist) {
-      const expressionsToEvaluate = newState.exprHist
+      const exprHist = newState.exprHist
       newState.exprHist = []
-      expressionsToEvaluate.forEach(expr => {
-        tryEvalAndClearRecorder(out, newState, expr)
-      })
+      if (exprHist.length > 0) {
+        replayExprHistory(newState, filename, exprHist)
+      }
     }
 
     state.moduleHist = newState.moduleHist
@@ -303,6 +303,20 @@ export function quintRepl(
     state.compilationState = newState.compilationState
     state.evaluator = newState.evaluator
     state.nameResolver = newState.nameResolver
+  }
+
+  function replayExprHistory(state: ReplState, filename: string, exprHist: string[]) {
+    if (verbosity.hasReplBanners(options.verbosity)) {
+      out(chalk.gray(`Evaluating expression history in ${filename}\n`))
+    }
+    exprHist.forEach(expr => {
+      if (verbosity.hasReplPrompt(options.verbosity)) {
+        out(settings.prompt)
+        out(expr.replaceAll('\n', `\n${settings.continuePrompt}`))
+        out('\n')
+      }
+      tryEvalAndClearRecorder(out, state, expr)
+    })
   }
 
   // the read-eval-print loop
@@ -313,7 +327,9 @@ export function quintRepl(
     const g = (s: string): string => {
       return chalk.gray(s)
     }
-    if (!line.startsWith('.')) {
+    // The continue prompt is handled by `nextLine` as the input may be acopy
+    // and paste from the reply itself.
+    if (!line.startsWith('.') || line.startsWith(settings.continuePrompt)) {
       // an input to evaluate
       nextLine(line)
     } else {

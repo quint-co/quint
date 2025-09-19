@@ -1052,6 +1052,36 @@ quint -q -r \
 cd - > /dev/null
 ```
 
+### REPL prints command history
+
+<!-- !test in repl prints command history -->
+```
+quint -r ../examples/tutorials/repl/kettle.qnt | tail -n +2 | head -n 19
+```
+
+<!-- !test out repl prints command history -->
+```
+Type ".exit" to exit, or ".help" for more information
+Evaluating expression history in ../examples/tutorials/repl/kettle.qnt
+>>> 1 + 3
+4
+>>> Set(1, 2, 3).map(i => i * 2)
+Set(2, 4, 6)
+>>> fahrenheit(freezingTemperature)
+32
+>>> fahrenheit(boilingTemperature)
+212
+>>> 0.to(100).exists(celsius => fahrenheit(celsius) == celsius)
+false
+>>> (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius)
+true
+>>> veryCold
+-40
+>>> veryHot
+104
+>>> temperature
+```
+
 ### test --verbosity=3 outputs a trace
 
 <!-- !test exit 1 -->
