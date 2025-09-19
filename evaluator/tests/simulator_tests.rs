@@ -56,3 +56,26 @@ fn instance_overrides_ok() {
     // Should not find violation
     assert!(result.unwrap().result);
 }
+
+#[test]
+/// Test that oneOf on empty sets returns false instead of causing runtime errors
+fn one_of_empty_set_ok() {
+    let file_path: &Path = Path::new("fixtures/oneOf_empty_test.qnt");
+
+    let parsed = helpers::parse_from_path(
+        file_path,
+        "init",
+        "step",
+        Some("inv"),
+        Some("oneOfEmptyTest"),
+    )
+    .unwrap();
+
+    let result = parsed.simulate(10, 100, 0, None);
+
+    // The simulation should succeed without runtime errors
+    assert!(result.is_ok());
+
+    // `step` should never succeed, so we should have a trace of length 1 (the initial state)
+    assert!(result.unwrap().trace_statistics.max_trace_length == 1);
+}

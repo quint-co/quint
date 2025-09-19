@@ -3,6 +3,7 @@
 //! Includes the compilation types and stateful datastructures used for
 //! memoization, caching, state variable storage, etc.
 
+use crate::nondet;
 use crate::rand::Rand;
 use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
@@ -540,24 +541,44 @@ impl<'a> Interpreter<'a> {
             }
 
             QuintEx::QuintLet { id: _, opdef, expr } => {
-                // First, we create a cached value (a register with optional value) for the definition in this let expression
-                let cached_value = {
-                    let cached = self
-                        .scoped_cached_values
-                        .entry(opdef.id)
-                        .or_insert_with(|| Rc::new(RefCell::new(None)));
-                    Rc::clone(cached)
-                };
-                // Then, we build the expression for the let body. It will use the lookup table and, every time it needs the value
-                // for the definition under the let, it will use the cached value (or eval a new value and store it).
-                let compiled_expr = self.compile(expr);
-                CompiledExpr::new(move |env| {
-                    let result = compiled_expr.execute(env);
-                    // After evaluating the whole let expression, we clear the cached value, as it is no longer in scope.
-                    // The next time the whole let expression is evaluated, the definition will be re-evaluated.
-                    cached_value.replace(None);
-                    result
-                })
+                // Check if this is a nondet expression with oneOf
+                if opdef.qualifier == OpQualifier::Nondet {
+                    // Check if this is specifically a oneOf application
+                    if let QuintEx::QuintApp { opcode, args, .. } = &opdef.expr {
+                        if opcode == "oneOf" && args.len() == 1 {
+                            // Special handling for nondet oneOf on potentially empty sets
+                            let set_expr = self.compile(&args[0]);
+                            let cached_value = {
+                                let cached = self
+                                    .scoped_cached_values
+                                    .entry(opdef.id)
+                                    .or_insert_with(|| Rc::new(RefCell::new(None)));
+                                Rc::clone(cached)
+                            };
+                            let body_expr = self.compile(expr);
+
+                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value);
+                        }
+                    }
+                    // Fall through to regular nondet handling for other cases
+                }
+
+                // Regular let expression handling (including non-oneOf nondet expressions)
+                {
+                    let cached_value = {
+                        let cached = self
+                            .scoped_cached_values
+                            .entry(opdef.id)
+                            .or_insert_with(|| Rc::new(RefCell::new(None)));
+                        Rc::clone(cached)
+                    };
+                    let compiled_expr = self.compile(expr);
+                    CompiledExpr::new(move |env| {
+                        let result = compiled_expr.execute(env);
+                        cached_value.replace(None);
+                        result
+                    })
+                }
             }
         }
     }
