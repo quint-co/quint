@@ -565,7 +565,6 @@ impl<'a> Interpreter<'a> {
 
                 // Regular let expression handling (including non-oneOf nondet expressions)
                 {
-                    // Regular let expression handling
                     let cached_value = {
                         let cached = self
                             .scoped_cached_values
