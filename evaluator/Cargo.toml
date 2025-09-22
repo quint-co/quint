@@ -6,6 +6,10 @@ edition = "2021"
 [profile.release]
 codegen-units = 1
 lto = "thin"
+panic = 'abort'
+
+[profile.dev]
+panic = 'abort'
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
