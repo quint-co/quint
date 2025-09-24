@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for passing commands to the REPL (#1768)
+- The REPL now prints a diff between states when it makes a transition (#1783)
 
 ### Changed
 
