@@ -617,7 +617,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
         // A Boolean expression may be an action or a run.
         // Save the state, if there were any updates to variables.
         const [shifted, missing] = state.evaluator.shiftAndCheck()
-        if (shifted && verbosity.hasReplBanners(state.verbosity)) {
+        if (shifted && verbosity.hasDiffs(state.verbosity)) {
           console.log(state.evaluator.trace.renderDiff(terminalWidth(), { collapseThreshold: 2 }))
         }
         if (missing.length > 0) {
