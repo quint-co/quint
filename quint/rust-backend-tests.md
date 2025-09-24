@@ -3,6 +3,8 @@
 Tests in this script verify that Quint can download and run simulation with the
 `rust` backend (`--backend rust`).
 
+Note that these tests only run before releases.
+
 <!-- !test program
 bash -
 -->
