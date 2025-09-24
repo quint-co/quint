@@ -9,7 +9,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 /// Simulation input that depends on the typescript Quint tool.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ParsedQuint {
     pub init: QuintEx,
     pub step: QuintEx,

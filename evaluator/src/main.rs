@@ -7,6 +7,7 @@
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Instant;
 
 use argh::FromArgs;
@@ -82,9 +83,11 @@ struct SimulateInput {
     nruns: usize,
     nsteps: usize,
     ntraces: usize,
+    #[serde(default)]
+    nthreads: usize,
 }
 
-#[derive(Serialize)]
+#[derive(Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 enum SimulationStatus {
     #[serde(rename = "ok")]
@@ -186,14 +189,25 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    let input: SimulateInput = serde_json::from_str(&input)?;
-    let reporter = progress::json_std_err_report(input.nruns);
-    let parsed = input.parsed;
+    let SimulateInput {
+        source,
+        parsed,
+        nsteps,
+        nruns,
+        ntraces,
+        nthreads,
+        ..
+    } = serde_json::from_str(&input)?;
 
-    let result = parsed.simulate(input.nsteps, input.nruns, input.ntraces, reporter);
+    let source = Arc::new(source);
 
-    // Transform the SimulationResult into the Outcome format expected by Quint
-    let outcome = to_outcome(input.source, result);
+    let outcome = if nthreads > 1 {
+        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads)
+    } else {
+        let reporter = progress::json_std_err_report(nruns);
+        let result = parsed.simulate(nsteps, nruns, ntraces, reporter);
+        to_outcome(source, result)
+    };
 
     // Serialize the outcome to JSON and print it to STDOUT
     println!("{}", serde_json::to_string(&outcome)?);
@@ -201,12 +215,79 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     Ok(())
 }
 
+/// Run simulation in parallel. It splits the `nruns` across `nthreads`. It
+/// returns the outcome of the first non-successful thread, or the last
+/// successful if all succeeded.
+fn simulate_in_parallel(
+    source: Arc<String>,
+    parsed: ParsedQuint,
+    nsteps: usize,
+    nruns: usize,
+    ntraces: usize,
+    mut nthreads: usize,
+) -> Outcome {
+    assert!(nthreads > 1, "nthreads must be > 1");
+    let mut threads = Vec::with_capacity(nthreads);
+    let (out_tx, out_rx) = std::sync::mpsc::channel();
+    let reporter_thread = progress::spawn_reporter_thread(nruns);
+
+    for i in 0..nthreads {
+        // FIXME: it should be possible to share the `ParsedQuint` across
+        // threads since it's immutable after the parsing phase. However, its
+        // internals use `hipstr::LocalHipStr` and other data structures that
+        // are thread-local. We'll clone the whole `ParsedQuint` here for now.
+        let parsed = parsed.clone();
+
+        // In the case of a non-exact split, the first thread executes the
+        // remain runs because it'll probably have the most CPU time avaible
+        // since it starts before the other threads.
+        let nruns = if i == 0 {
+            (nruns / nthreads) + (nruns % nthreads)
+        } else {
+            nruns / nthreads
+        };
+
+        let reporter = Arc::clone(&reporter_thread.reporter);
+        let source = Arc::clone(&source);
+        let out_tx = out_tx.clone();
+
+        let thread = std::thread::Builder::new()
+            .name(format!("simulator-thread-{}", i))
+            .spawn(move || {
+                let result = parsed.simulate(nsteps, nruns, ntraces, reporter);
+                let outcome = to_outcome(source, result);
+                let _ = out_tx.send(outcome);
+            })
+            .expect("failed to spawn simulator thread");
+
+        threads.push(thread);
+    }
+
+    let mut samples = 0;
+    loop {
+        let mut outcome = out_rx.recv().expect("closed channel");
+        samples += outcome.samples;
+        nthreads -= 1;
+        if nthreads == 0 || outcome.status != SimulationStatus::Success {
+            // Report back the total number of samples executed by all threads
+            // instead of just this one. Note that trace statistics are
+            // preserved, meaning that the final report will correspond to the
+            // trace statistics of a single thread. Presuming the workload is
+            // homogeneous (no thread is performing work that is significantly
+            // different from the other threads), the report should still be
+            // statistically correct when all threads succeed.
+            outcome.samples = samples;
+            return outcome;
+        }
+    }
+}
+
 /// Converts the result of a simulation into an `Outcome` struct.
 ///
 /// The status is determined based on whether the simulation result indicates success, violation, or error.
 /// Errors are collected into a vector if any are present.
 /// Best traces are converted to the intermediate trace format (ITF).
-fn to_outcome(source: String, result: Result<SimulationResult, QuintError>) -> Outcome {
+fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> Outcome {
     let status = match &result {
         Ok(r) if r.result => SimulationStatus::Success,
         Ok(_) => SimulationStatus::Violation,
@@ -225,7 +306,7 @@ fn to_outcome(source: String, result: Result<SimulationResult, QuintError>) -> O
             .map(|t| SimulationTrace {
                 // TODO: Fetch seed from the random generator state
                 seed: 0,
-                states: t.clone().to_itf(source.clone()),
+                states: t.clone().to_itf((*source).clone()),
                 result: !t.violation,
             })
             .collect()
