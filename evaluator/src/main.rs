@@ -12,7 +12,8 @@ use std::time::Instant;
 use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{QuintError, QuintEx};
-use quint_evaluator::simulator::{ParsedQuint, ProgressUpdate, SimulationResult, TraceStatistics};
+use quint_evaluator::progress;
+use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -148,7 +149,12 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(args.max_steps, args.max_samples, args.n_traces, None);
+    let result = parsed.simulate(
+        args.max_steps,
+        args.max_samples,
+        args.n_traces,
+        progress::no_report(),
+    );
 
     let elapsed = start.elapsed();
 
@@ -181,25 +187,10 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     let input: SimulateInput = serde_json::from_str(&input)?;
+    let reporter = progress::json_std_err_report(input.nruns);
     let parsed = input.parsed;
 
-    // Create a progress callback that writes progress to stderr in JSON format
-    let progress_callback = Box::new(|update: ProgressUpdate| {
-        let progress = serde_json::json!({
-            "type": "progress",
-            "current": update.current,
-            "total": update.total,
-            "percentage": update.percentage()
-        });
-        eprintln!("{progress}");
-    });
-
-    let result = parsed.simulate(
-        input.nsteps,
-        input.nruns,
-        input.ntraces,
-        Some(progress_callback),
-    );
+    let result = parsed.simulate(input.nsteps, input.nruns, input.ntraces, reporter);
 
     // Transform the SimulationResult into the Outcome format expected by Quint
     let outcome = to_outcome(input.source, result);

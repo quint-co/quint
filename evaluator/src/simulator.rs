@@ -4,6 +4,7 @@ use crate::{
     evaluator::{Env, Interpreter},
     ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
+    progress::Reporter,
 };
 use serde::{Deserialize, Serialize};
 
@@ -38,23 +39,6 @@ pub struct TraceStatistics {
     pub min_trace_length: usize,
 }
 
-/// Simulation progress update.
-pub struct ProgressUpdate {
-    /// Current sample
-    pub current: usize,
-    /// Total number of samples
-    pub total: usize,
-}
-
-impl ProgressUpdate {
-    pub fn percentage(&self) -> u32 {
-        (self.current as f64 / self.total as f64 * 100.0).round() as u32
-    }
-}
-
-/// Callback type for reporting simulation progress
-pub type ProgressCallback = Box<dyn FnMut(ProgressUpdate)>;
-
 impl ParsedQuint {
     /// Simulate a Quint model for a given number of steps and samples, storing
     /// up to `n_traces` traces of the greatest quality.
@@ -67,12 +51,12 @@ impl ParsedQuint {
     /// If `init` or `invariant` return false at any given point, simulation stops.
     /// If `step` returns false, we continue, as that just means we failed to progress
     /// in a specific setting.
-    pub fn simulate(
+    pub fn simulate<R: Reporter>(
         &self,
         steps: usize,
         samples: usize,
         n_traces: usize,
-        mut progress_callback: Option<ProgressCallback>,
+        mut reporter: R,
     ) -> Result<SimulationResult, QuintError> {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::new(interpreter.var_storage.clone());
@@ -86,13 +70,7 @@ impl ParsedQuint {
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
 
         for sample_number in 1..=samples {
-            if let Some(callback) = &mut progress_callback {
-                callback(ProgressUpdate {
-                    current: sample_number,
-                    total: samples,
-                });
-            }
-
+            reporter.next_sample();
             let mut trace = Vec::with_capacity(steps + 1);
 
             if !init.execute(&mut env)?.as_bool() {
