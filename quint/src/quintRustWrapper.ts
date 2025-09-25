@@ -69,7 +69,8 @@ export class QuintRustWrapper {
     witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
-    ntraces: number
+    ntraces: number,
+    nthreads: number
   ): Promise<Outcome> {
     const exe = await getRustEvaluatorPath()
     const args = ['simulate-from-stdin']
@@ -81,6 +82,7 @@ export class QuintRustWrapper {
         nruns: nruns,
         nsteps: nsteps,
         ntraces: ntraces,
+        nthreads: nthreads,
       },
       replacer
     )

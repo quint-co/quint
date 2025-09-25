@@ -234,8 +234,8 @@ fn simulate_in_parallel(
     for i in 0..nthreads {
         // FIXME: it should be possible to share the `ParsedQuint` across
         // threads since it's immutable after the parsing phase. However, its
-        // internals use `hipstr::LocalHipStr` and other data structures that
-        // are thread-local. We'll clone the whole `ParsedQuint` here for now.
+        // internals use data structures that are thread-local. We'll clone the
+        // whole `ParsedQuint` here for now.
         let parsed = parsed.clone();
 
         // In the case of a non-exact split, the first thread executes the

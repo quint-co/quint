@@ -37,10 +37,10 @@ pub type ImmutableVec<T> = GenericVector<T, RcK>;
 /// structure to hold them
 pub type ImmutableMap<K, V> = GenericHashMap<K, V, fxhash::FxBuildHasher, RcK>;
 
-/// Quint strings are immutable, use hipstr's LocalHipStr type, which provides
+/// Quint strings are immutable, use hipstr's HipStr type, which provides
 /// inlined (stack allocated) strings of length up to 23 bytes, and cheap clones
 /// for longer strings.
-pub type Str = hipstr::LocalHipStr<'static>;
+pub type Str = hipstr::HipStr<'static>;
 
 /// A Quint value produced by evaluation of a Quint expression.
 ///

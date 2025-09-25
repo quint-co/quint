@@ -2,13 +2,16 @@
 //! input.
 
 use fxhash::FxBuildHasher;
-use hipstr::LocalHipStr;
+use hipstr::HipStr;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub type QuintId = u64;
-pub type QuintName = LocalHipStr<'static>;
+// NOTE: be aware of a bug in HipStr where a LocalHipStr is allowed to cross
+// thread boundaries by implementing Send, however, it causes a double free on
+// large heap-allocated strings.
+pub type QuintName = HipStr<'static>;
 
 #[derive(Debug, Clone, Error, PartialEq, Serialize)]
 #[error("[{code}] {message}")]
