@@ -10,6 +10,7 @@
  * @author Igor Konnov, konnov.phd, 2024
  */
 
+import os from 'os'
 import yargs from 'yargs/yargs'
 
 import {
@@ -256,6 +257,11 @@ const runCmd = {
         desc: 'the maximum on the number of steps in every trace',
         type: 'number',
         default: 20,
+      })
+      .option('n-threads', {
+        desc: 'the number of threads to use when running simulations with the `rust` backend',
+        type: 'number',
+        default: os.cpus().length,
       })
       .option('init', {
         desc: 'name of the initializer action',
