@@ -58,7 +58,14 @@ export default async function PostsPage() {
           </h3>
           <ul className="space-y-6">
             {externalQuint.map(post => (
-              <PostCard key={post.url} route={post.url} title={post.title} excerpt={post.excerpt} date={post.date} />
+              <PostCard 
+                key={post.url} 
+                route={post.url} 
+                title={post.title} 
+                excerpt={post.excerpt} 
+                date={post.date}
+                coverImage={post.coverImage}
+              />
             ))}
           </ul>
         </div>
