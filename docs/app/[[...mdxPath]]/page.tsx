@@ -1,6 +1,7 @@
 import { generateStaticParamsFor, importPage } from 'nextra/pages'
 import type { FC } from 'react'
 import { useMDXComponents as getMDXComponents } from '../../mdx-components'
+import { SITE_CONFIG } from '../../config/site'
 
 export const generateStaticParams = generateStaticParamsFor('mdxPath')
 
@@ -8,7 +9,7 @@ function getPostCoverImage(mdxPath: string[]): string | null {
   // Check if this is a blog post
   if (mdxPath && mdxPath.length >= 2 && mdxPath[0] === 'posts') {
     const postName = mdxPath[1]
-    return `https://quint-lang.org/blog-covers/${postName}.jpg`
+    return `${SITE_CONFIG.siteUrl}/blog-covers/${postName}.jpg`
   }
 
   return null

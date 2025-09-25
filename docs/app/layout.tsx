@@ -5,19 +5,20 @@ import { getPageMap } from 'nextra/page-map'
 import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 import { LogoSwitcher } from '../components/LogoSwitcher'
+import { SITE_CONFIG } from '../config/site'
 
 export const metadata = {
-  title: 'Quint',
-  description: 'Quint - A modern and executable specification language',
+  title: SITE_CONFIG.title,
+  description: SITE_CONFIG.description,
   openGraph: {
-    images: [{ url: 'https://quint-lang.org/og.jpg' }],
-    url: 'https://quint-lang.org',
+    images: [{ url: `${SITE_CONFIG.siteUrl}/og.jpg` }],
+    url: SITE_CONFIG.siteUrl,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     creator: '@informalsystems',
-    images: ['https://quint-lang.org/og.jpg'],
+    images: [`${SITE_CONFIG.siteUrl}/og.jpg`],
   },
 }
 

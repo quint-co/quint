@@ -1,10 +1,11 @@
 import { getPosts } from '../blog/get-posts'
+import { SITE_CONFIG } from '../../config/site'
 
 const CONFIG = {
   title: 'Quint Blog',
-  siteUrl: 'https://quint-lang.org',
+  siteUrl: SITE_CONFIG.siteUrl,
   description: 'Stories, tutorials, and insights about Quint specifications',
-  lang: 'en-us',
+  lang: SITE_CONFIG.lang,
 }
 
 function getPostCoverImage(postRoute: string): string {

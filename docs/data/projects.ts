@@ -138,6 +138,6 @@ export const projects = [
     authors: ['Josef Widder', 'Yassine Boukhari', 'Gabriela Moreira'],
     description: 'Formalization from the pseudo-code in the Alpenglow paper.',
     repo: 'https://github.com/informalsystems/Alpenglow-spec/',
-    links: [{ label: 'Blog post', url: 'https://quint-lang.org/posts/alpenglow' }],
+    links: [{ label: 'Blog post', url: '/posts/alpenglow' }],
   },
 ]
