@@ -241,7 +241,7 @@ quint compile --target json --flatten=false ../examples/language-features/instan
 
 <!-- !test in repl loads a file -->
 ```
-echo -e "import counters.* \n init \n n" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
+echo -e "import counters.* \n init \n n" | quint -r ../examples/language-features/counters.qnt --verbosity 1 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file -->
@@ -256,26 +256,30 @@ echo -e "import counters.* \n init \n n" | quint -r ../examples/language-feature
 
 <!-- !test in repl loads a file and a module -->
 ```
-echo "init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1 | tail -n +3
+quint -r ../examples/language-features/counters.qnt::counters init .exit 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file and a module -->
 ```
->>> true
->>> 
+>>> init
+true
+{ n: 1 }
+>>> .exit
 ```
 
 ### Repl loads a file and a module with -r when the module is not the last one
 
 <!-- !test in repl loads module that is not the last -->
 ```
-echo "init" | quint -r ../examples/language-features/imports.qnt::E 2>&1 | tail -n +3
+quint -r ../examples/language-features/imports.qnt::E init .exit 2>&1 | tail -n 4
 ```
 
 <!-- !test out repl loads module that is not the last -->
 ```
->>> true
->>> 
+>>> init
+true
+{ x: 1 }
+>>> .exit
 ```
 
 
@@ -311,6 +315,7 @@ rm tmp-counters.qnt
 >>> Session saved to: tmp-counters.qnt
 >>> 
 >>> true
+{ n: 1 }
 >>> 
 ```
 
@@ -321,14 +326,17 @@ rm tmp-counters.qnt
 
 <!-- !test in repl loads a module directly -->
 ```
-echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 | tail -n +3
+quint -r ../examples/language-features/imports.qnt::imports init "MyF::ExportedBasics::double(2)" .exit 2>&1 | tail -n 6
 ```
 
 <!-- !test out repl loads a module directly -->
 ```
->>> true
->>> 4
->>> 
+>>> init
+true
+{ x: 1, y: 2 }
+>>> MyF::ExportedBasics::double(2)
+4
+>>> .exit
 ```
 
 ### Repl reports proper errors for malformed expressions 
@@ -609,19 +617,17 @@ This is a regression test for #648.
 
 <!-- !test in repl evaluates coin -->
 ```
-cat <<EOF \
-  | quint -r ../examples/tutorials/coin.qnt::coin 2>&1 \
-  | tail -n +3
-init
-balances
-EOF
+quint -r ../examples/tutorials/coin.qnt::coin init balances .exit --verbosity 1 2>&1 \
+  | tail -n 5
 ```
 
 <!-- !test out repl evaluates coin -->
 ```
->>> true
->>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
->>> 
+>>> init
+true
+>>> balances
+Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+>>> .exit
 ```
 
 ### Run finds an overflow in Coin
@@ -1056,7 +1062,7 @@ cd - > /dev/null
 
 <!-- !test in repl prints command history -->
 ```
-quint -r ../examples/tutorials/repl/kettle.qnt | tail -n +2 | head -n 19
+quint -r ../examples/tutorials/repl/kettle.qnt --verbosity 1  | tail -n +2 | head -n 19
 ```
 
 <!-- !test out repl prints command history -->
@@ -1182,30 +1188,30 @@ quint run --seed=NotANumber ../examples/tutorials/coin.qnt
 
 <!-- !test in compile imports -->
 ```
-echo "init" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 | tail -n +3
+quint -r ../examples/language-features/imports.qnt::imports init .exit --verbosity 1 2>&1 | tail -n 3
 ```
 
 <!-- !test out compile imports -->
 ```
->>> true
->>> 
+>>> init
+true
+>>> .exit
 ```
 
 ### OK on compile instances
 
 <!-- !test in compile instances -->
 ```
-{
-  echo "A1::f(1)"
-  echo "A2::f(1)"
-} | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n +3
+quint -r ../examples/language-features/instances.qnt::instances "A1::f(1)" "A2::f(1)" ".exit" --verbosity 1 2>&1 | tail -n 5
 ```
 
 <!-- !test out compile instances -->
 ```
->>> 34
->>> 16
->>> 
+>>> A1::f(1)
+34
+>>> A2::f(1)
+16
+>>> .exit
 ```
 
 ### Fail on test with compile error
@@ -1270,7 +1276,7 @@ Incremental evaluation from the REPL interacting with instance flattening leads 
 
 ```
 cd ../examples/cosmos/tendermint/
-output=$(echo -e "n4_f1::Init\nn4_f1::round" | quint -r TendermintModels.qnt::TendermintModels 2>&1 | tail -n +3)
+output=$(quint -r TendermintModels.qnt::TendermintModels "n4_f1::Init" "n4_f1::round" ".exit" --verbosity 1 2>&1 | tail -n 5)
 exit_code=$?
 cd - > /dev/null
 echo "$output"
@@ -1280,9 +1286,11 @@ exit $exit_code
 <!-- !test out repl with instance vars -->
 
 ```
->>> true
->>> Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
->>> 
+>>> n4_f1::Init
+true
+>>> n4_f1::round
+Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
+>>> .exit
 ```
 
 ### Invoking `q::debug` in REPL prints values to stdout
@@ -1601,7 +1609,7 @@ Errors from `amWrong` should not affect the definition and usage of `amRight`
   echo "amWrong"
   echo "action amRight = all { myVar' = true }"
   echo "amRight"
-} | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n7
+} | quint -r ../examples/language-features/instances.qnt::instances --verbosity 1 2>&1 | tail -n7
 ```
 
 <!-- !test out regression 428 -->
@@ -1613,4 +1621,27 @@ amWrong
 >>> 
 >>> true
 >>> 
+```
+
+### REPL diff
+
+<!-- !test in repl diff -->
+```
+quint -r ../examples/language-features/counters.qnt::counters init OnPositive OnEven .exit
+```
+
+<!-- !test out repl diff -->
+```
+Quint REPL 0.28.0
+Type ".exit" to exit, or ".help" for more information
+>>> init
+true
+{ n: 1 }
+>>> OnPositive
+true
+{ n: 1 => 2 }
+>>> OnEven
+true
+{ n: 2 => 1 }
+>>> .exit
 ```
