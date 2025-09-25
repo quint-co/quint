@@ -46,6 +46,7 @@ export default async function PostsPage() {
               title={post.title}
               excerpt={post.frontMatter.excerpt}
               date={post.frontMatter.date}
+              coverImage={post.coverImage}
             />
           ))}
         </div>

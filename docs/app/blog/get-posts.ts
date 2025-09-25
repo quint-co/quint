@@ -1,6 +1,12 @@
 import { normalizePages } from 'nextra/normalize-pages'
 import { getPageMap } from 'nextra/page-map'
 
+function getPostCoverImage(postRoute: string): string {
+  // Extract post name from route (e.g., "/posts/soup" -> "soup")
+  const postName = postRoute.split('/').pop()
+  return postName ? `/blog-covers/${postName}.jpg` : ''
+}
+
 export async function getPosts() {
   const { directories } = normalizePages({
     list: await getPageMap('/posts'),
@@ -8,6 +14,10 @@ export async function getPosts() {
   })
   return directories
     .filter(post => post.frontMatter)
+    .map(post => ({
+      ...post,
+      coverImage: getPostCoverImage(post.route),
+    }))
     .sort((a, b) => new Date(b.frontMatter.date).getTime() - new Date(a.frontMatter.date).getTime())
 }
 

@@ -4,9 +4,37 @@ import { useMDXComponents as getMDXComponents } from '../../mdx-components'
 
 export const generateStaticParams = generateStaticParamsFor('mdxPath')
 
+function getPostCoverImage(mdxPath: string[]): string | null {
+  // Check if this is a blog post
+  if (mdxPath && mdxPath.length >= 2 && mdxPath[0] === 'posts') {
+    const postName = mdxPath[1]
+    return `https://quint-lang.org/blog-covers/${postName}.jpg`
+  }
+
+  return null
+}
+
 export async function generateMetadata(props: PageProps) {
   const params = await props.params
   const { metadata } = await importPage(params.mdxPath, params.lang)
+
+  // Add cover image for blog posts
+  const coverImageUrl = getPostCoverImage(params.mdxPath)
+  if (coverImageUrl) {
+    return {
+      ...metadata,
+      openGraph: {
+        ...metadata.openGraph,
+        images: [{ url: coverImageUrl }],
+      },
+      twitter: {
+        ...metadata.twitter,
+        card: 'summary_large_image',
+        images: [coverImageUrl],
+      },
+    }
+  }
+
   return metadata
 }
 

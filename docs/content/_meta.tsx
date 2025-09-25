@@ -26,5 +26,5 @@ export default {
   },
   posts: {
     display: 'hidden',
-  }
+  },
 }
