@@ -21,8 +21,20 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Compile
         run: npm ci
-      - name: Test
+      - name: Run unit tests
         run: npm run test
+      - name: Run integration tests
+        run: |
+          # Link quint to the system path
+          npm link
+          # Fetch the latest apalache release
+          make -C .. apalache
+          # Start the apalache server
+          _build/apalache/bin/apalache-mc server &
+          # Wait for the server to start
+          sleep 5
+          # Run the integration tests
+          npm run all-integration
       - name: Extract release notes
         # Get the release notes for the version by printing all lines between lines
         # starting with the version header and ending with the next version header,
