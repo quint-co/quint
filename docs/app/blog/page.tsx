@@ -38,7 +38,7 @@ export default async function PostsPage() {
         </div>
 
         {/* Local posts */}
-        <div className="space-y-16">
+        <div className="space-y-8">
           {posts.map(post => (
             <PostCard
               key={post.route}
@@ -56,18 +56,18 @@ export default async function PostsPage() {
           <h3 className="text-xl text-center font-semibold mb-6 text-gray-800 dark:text-gray-100">
             Quint Posts on the Informal Systems Blog
           </h3>
-          <ul className="space-y-6">
+          <div className="space-y-8">
             {externalQuint.map(post => (
-              <PostCard 
-                key={post.url} 
-                route={post.url} 
-                title={post.title} 
-                excerpt={post.excerpt} 
+              <PostCard
+                key={post.url}
+                route={post.url}
+                title={post.title}
+                excerpt={post.excerpt}
                 date={post.date}
                 coverImage={post.coverImage}
               />
             ))}
-          </ul>
+          </div>
         </div>
       </div>
     </Layout>
