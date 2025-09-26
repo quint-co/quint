@@ -88,21 +88,26 @@ export class Evaluator {
    * Shift the context to the next state. That is, updated variables in the next state are moved to the current state,
    * and the trace is extended.
    *
-   * @returns names of the variables that don't have values in the new state.
+   * @returns a boolean indicating if there were any next variables that got
+   * shifted, and names of the variables that don't have values in the new
+   * state (empty list if no shifting happened).
    */
-  shiftAndCheck(): string[] {
+  shiftAndCheck(): [boolean, string[]] {
     const missing = this.ctx.varStorage.nextVars.filter(reg => reg.value.isLeft())
 
     if (missing.size === this.ctx.varStorage.vars.size) {
       // Nothing was changed, don't shift
-      return []
+      return [false, []]
     }
 
     this.shift()
-    return missing
-      .valueSeq()
-      .map(reg => reg.name)
-      .toArray()
+    return [
+      true,
+      missing
+        .valueSeq()
+        .map(reg => reg.name)
+        .toArray(),
+    ]
   }
 
   /**

@@ -83,6 +83,7 @@
     "apalache-integration": "txm apalache-tests.md",
     "apalache-dist": "txm apalache-dist-tests.md",
     "rust-integration": "txm rust-backend-tests.md",
+    "all-integration": "npm run integration && npm run apalache-integration && npm run rust-integration",
     "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "api-docs": "quint docs ./src/builtin.qnt > ../docs/content/docs/builtin.md",

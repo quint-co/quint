@@ -36,6 +36,14 @@ export const verbosity = {
   },
 
   /**
+   * Shall the tool print state diffs between state traces?
+   * (in REPL only, for now)
+   */
+  hasDiffs: (level: number): boolean => {
+    return level >= 2
+  },
+
+  /**
    * Shall the tool output the execution results.
    */
   hasResults: (level: number): boolean => {

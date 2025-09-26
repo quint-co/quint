@@ -14,6 +14,8 @@
 
 import { List } from 'immutable'
 import { RuntimeValue } from './runtimeValue'
+import { DiffConfig, diffRuntimeValueDoc } from './runtimeValueDiff'
+import { format } from '../../prettierimp'
 
 export class Trace {
   private states: List<RuntimeValue> = List<RuntimeValue>()
@@ -28,5 +30,16 @@ export class Trace {
 
   extend(state: RuntimeValue) {
     this.states = this.states.push(state)
+  }
+
+  renderDiff(width: number, config?: DiffConfig): string {
+    if (this.states.size == 0) {
+      return ''
+    }
+
+    const comparisonBase = this.states.size > 1 ? this.states.get(this.states.size - 2)! : this.states.last()!
+
+    const doc = diffRuntimeValueDoc(comparisonBase, this.states.last()!, config)
+    return format(width, 0, doc)
   }
 }
