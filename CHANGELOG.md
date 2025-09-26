@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.29.0 -- 2025-09-26
+
+### Added
 
 - Added support for passing commands to the REPL (#1768)
 - Added support for running simulations in multiple threads with the rust backend (#1637)
