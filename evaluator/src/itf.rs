@@ -89,7 +89,9 @@ impl Value {
             | ValueInner::MapSet(_, _) => {
                 itf::Value::Set(self.as_set().iter().map(|v| v.to_itf()).collect())
             }
-            ValueInner::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
+            ValueInner::Tuple(elems) => {
+                itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect())
+            }
             ValueInner::Record(fields) => itf::Value::Record(
                 fields
                     .iter()

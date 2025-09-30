@@ -25,8 +25,8 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use std::ops::Deref;
+use std::rc::Rc;
 
 /// Quint values that hold sets are immutable, use `GenericHashSet` immutable
 /// structure to hold them
@@ -187,7 +187,7 @@ impl Eq for ValueInner {}
 
 impl Deref for Value {
     type Target = ValueInner;
-    
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -198,55 +198,55 @@ impl Value {
     pub fn int(n: i64) -> Self {
         Value(Rc::new(ValueInner::Int(n)))
     }
-    
+
     pub fn bool(b: bool) -> Self {
         Value(Rc::new(ValueInner::Bool(b)))
     }
-    
+
     pub fn str(s: Str) -> Self {
         Value(Rc::new(ValueInner::Str(s)))
     }
-    
+
     pub fn set(s: ImmutableSet<Value>) -> Self {
         Value(Rc::new(ValueInner::Set(s)))
     }
-    
+
     pub fn tuple(t: ImmutableVec<Value>) -> Self {
         Value(Rc::new(ValueInner::Tuple(t)))
     }
-    
+
     pub fn record(r: ImmutableMap<QuintName, Value>) -> Self {
         Value(Rc::new(ValueInner::Record(r)))
     }
-    
+
     pub fn map(m: ImmutableMap<Value, Value>) -> Self {
         Value(Rc::new(ValueInner::Map(m)))
     }
-    
+
     pub fn list(l: ImmutableVec<Value>) -> Self {
         Value(Rc::new(ValueInner::List(l)))
     }
-    
+
     pub fn lambda(registers: Vec<Rc<RefCell<EvalResult>>>, body: CompiledExpr) -> Self {
         Value(Rc::new(ValueInner::Lambda(registers, body)))
     }
-    
+
     pub fn variant(name: QuintName, value: Value) -> Self {
         Value(Rc::new(ValueInner::Variant(name, value)))
     }
-    
+
     pub fn interval(start: i64, end: i64) -> Self {
         Value(Rc::new(ValueInner::Interval(start, end)))
     }
-    
+
     pub fn cross_product(values: Vec<Value>) -> Self {
         Value(Rc::new(ValueInner::CrossProduct(values)))
     }
-    
+
     pub fn power_set(value: Value) -> Self {
         Value(Rc::new(ValueInner::PowerSet(value)))
     }
-    
+
     pub fn map_set(a: Value, b: Value) -> Self {
         Value(Rc::new(ValueInner::MapSet(a, b)))
     }
@@ -260,7 +260,9 @@ impl Value {
             ValueInner::Map(map) => map.len(),
             ValueInner::List(elems) => elems.len(),
             ValueInner::Interval(start, end) => (end - start + 1).try_into().unwrap(),
-            ValueInner::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
+            ValueInner::CrossProduct(sets) => {
+                sets.iter().fold(1, |acc, set| acc * set.cardinality())
+            }
             ValueInner::PowerSet(value) => {
                 // 2^(cardinality of value)
                 2_usize.pow(value.cardinality().try_into().unwrap())
@@ -314,7 +316,9 @@ impl Value {
                         .zip(supersets)
                         .all(|(subset, superset)| subset.subseteq(superset))
             }
-            (ValueInner::PowerSet(subset), ValueInner::PowerSet(superset)) => subset.subseteq(superset),
+            (ValueInner::PowerSet(subset), ValueInner::PowerSet(superset)) => {
+                subset.subseteq(superset)
+            }
             (
                 ValueInner::MapSet(subset_domain, subset_range),
                 ValueInner::MapSet(superset_domain, superset_range),
@@ -374,7 +378,9 @@ impl Value {
     pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value>> {
         match self.0.as_ref() {
             ValueInner::Set(set) => Cow::Borrowed(set),
-            ValueInner::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::int).collect()),
+            ValueInner::Interval(start, end) => {
+                Cow::Owned((*start..=*end).map(Value::int).collect())
+            }
             ValueInner::CrossProduct(sets) => {
                 let size = self.cardinality();
                 if size == 0 {

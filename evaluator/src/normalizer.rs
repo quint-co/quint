@@ -20,7 +20,9 @@ impl Value {
                     .map(|v| v.normalize())
                     .collect(),
             ),
-            ValueInner::Tuple(elems) => Value::tuple(elems.iter().cloned().map(|v| v.normalize()).collect()),
+            ValueInner::Tuple(elems) => {
+                Value::tuple(elems.iter().cloned().map(|v| v.normalize()).collect())
+            }
             ValueInner::Record(fields) => Value::record(
                 fields
                     .iter()
@@ -32,7 +34,9 @@ impl Value {
                     .map(|(k, v)| (k.clone().normalize(), v.clone().normalize()))
                     .collect(),
             ),
-            ValueInner::List(elems) => Value::list(elems.iter().cloned().map(|v| v.normalize()).collect()),
+            ValueInner::List(elems) => {
+                Value::list(elems.iter().cloned().map(|v| v.normalize()).collect())
+            }
             ValueInner::Variant(label, value) => {
                 Value::variant(label.clone(), value.clone().normalize())
             }

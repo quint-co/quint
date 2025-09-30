@@ -698,12 +698,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             Ok(Value::map(set.iter().map(|v| v.as_tuple2()).collect()))
         },
         // A set of all possible maps with keys and values from the given sets.
-        "setOfMaps" => |_env, args| {
-            Ok(Value::map_set(
-                args[0].clone(),
-                args[1].clone(),
-            ))
-        },
+        "setOfMaps" => |_env, args| Ok(Value::map_set(args[0].clone(), args[1].clone())),
         // Expect a value to be false
         "fail" => |_env, args| Ok(Value::bool(!args[0].as_bool())),
         // Expect a value to be true, returning a runtime error if it is not
