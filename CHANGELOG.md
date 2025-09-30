@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Improved performance of small frequently allocated values (#1761)
+
 ### Deprecated
 ### Removed
 ### Fixed
