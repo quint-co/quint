@@ -225,10 +225,6 @@ in the time when they are bound to a value:
  - The `const` values are first declared and later they are substituted
    with actual values via an `instance` declaration.
 
-Constant declarations are not fully supported yet. They will be available
-as soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)
-is closed.
-
 At the moment, we simply declare the value for a small set of addresses `ADDR`,
 in order to be able to iterate on the protocol specification quickly.
         
