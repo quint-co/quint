@@ -10,61 +10,61 @@
     },
     {
       "title": "Boolean literals",
-      "description": "\nQuint has two built-in values of `bool` type, called Boolean literals:\n\n  - `false` is the value that represents the value \"false\".\n  - `true` is the value that represents the value \"true\".\n\nNote that Quint is strict with respect to Boolean values.\nThere are only `false` and `true`. They are comparable\nonly to Boolean values, and there are no implicit conversions\nfrom other types to the Boolean type.\n\nYou cannot modify Boolean values. You can carry them\naround as variable values, or in data structures.\n\nEvaluate the Boolean literals in REPL:\n          \n>> echo \"false\" | quint\n\n\n>> echo \"true\" | quint\n\n",
+      "description": "\nQuint has two built-in values of `bool` type, called Boolean literals:\n\n  - `false` is the value that represents the value \"false\".\n  - `true` is the value that represents the value \"true\".\n\nNote that Quint is strict with respect to Boolean values.\nThere are only `false` and `true`. They are comparable\nonly to Boolean values, and there are no implicit conversions\nfrom other types to the Boolean type.\n\nYou cannot modify Boolean values. You can carry them\naround as variable values, or in data structures.\n\nEvaluate the Boolean literals in REPL:\n          \n>> quint \"false\"\n\n\n>> quint \"true\"\n\n",
       "line": 11,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean negation",
-      "description": "\nThe simplest operation we can do with a Boolean value is negation.\n\nEvaluate the negation of `false` and `true`:\n\n          \n>> echo \"not(false)\" | quint\n\n\n>> echo \"not(true)\" | quint\n\n",
+      "description": "\nThe simplest operation we can do with a Boolean value is negation.\n\nEvaluate the negation of `false` and `true`:\n\n          \n>> quint \"not(false)\"\n\n\n>> quint \"not(true)\"\n\n",
       "line": 14,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean equality",
-      "description": "\n          \n\nWe can compare Booleans for equality. The rules for equality are straightforward.\n\nTry comparing `false` and `true` in all possible combinations:\n          \n>> echo \"false == false\" | quint\n\n\n>> echo \"false == true\" | quint\n\n\n>> echo \"true == false\" | quint\n\n\n>> echo \"true == true\" | quint\n\n\n\nOne important feature of equality is that the arguments should have the same type.\nHence, Booleans can be only compared to Booleans. The following expressions\nproduces type errors. Try them:\n          \n>> echo \"false == 0\" | quint\n\n\n>> echo \"true == 1\" | quint\n\n",
+      "description": "\n          \n\nWe can compare Booleans for equality. The rules for equality are straightforward.\n\nTry comparing `false` and `true` in all possible combinations:\n          \n>> quint \"false == false\"\n\n\n>> quint \"false == true\"\n\n\n>> quint \"true == false\"\n\n\n>> quint \"true == true\"\n\n\n\nOne important feature of equality is that the arguments should have the same type.\nHence, Booleans can be only compared to Booleans. The following expressions\nproduces type errors. Try them:\n          \n>> quint \"false == 0\"\n\n\n>> quint \"true == 1\"\n\n",
       "line": 17,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean inequality",
-      "description": "\nWe can compare Booleans for inequality. It is simply the opposite of `x == y`.\n\nTry comparing `false` and `true` in all possible combinations:\n\n          \n>> echo \"false != false\" | quint\n\n\n>> echo \"false != true\" | quint\n\n\n>> echo \"true != false\" | quint\n\n\n>> echo \"true != true\" | quint\n\n",
+      "description": "\nWe can compare Booleans for inequality. It is simply the opposite of `x == y`.\n\nTry comparing `false` and `true` in all possible combinations:\n\n          \n>> quint \"false != false\"\n\n\n>> quint \"false != true\"\n\n\n>> quint \"true != false\"\n\n\n>> quint \"true != true\"\n\n",
       "line": 20,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Dot form",
-      "description": "\n          \n\nIf you prefer object-oriented style, you can also write `x.not()`. Try it out:\n          \n>> echo \"false.not()\" | quint\n\n\n\n**This is a general principle:** You can write `foo(x)` as `x.foo()` and vice versa.\n\nBe careful about not writing `false.not`, as it would be understood as record access:\n          \n>> echo \"false.not\" | quint\n\n",
+      "description": "\n          \n\nIf you prefer object-oriented style, you can also write `x.not()`. Try it out:\n          \n>> quint \"false.not()\"\n\n\n\n**This is a general principle:** You can write `foo(x)` as `x.foo()` and vice versa.\n\nBe careful about not writing `false.not`, as it would be understood as record access:\n          \n>> quint \"false.not\"\n\n",
       "line": 23,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean \"and\"",
-      "description": "\nNow it is time to learn about Boolean \"and\".\n\nEvaluate all possible combinations of `false` and `true`:\n\n          \n>> echo \"false and false\" | quint\n\n\n>> echo \"false and true\" | quint\n\n\n>> echo \"true and false\" | quint\n\n\n>> echo \"true and true\" | quint\n\n",
+      "description": "\nNow it is time to learn about Boolean \"and\".\n\nEvaluate all possible combinations of `false` and `true`:\n\n          \n>> quint \"false and false\"\n\n\n>> quint \"false and true\"\n\n\n>> quint \"true and false\"\n\n\n>> quint \"true and true\"\n\n",
       "line": 26,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Dot form for binary operators",
-      "description": "\n          \n\nSimilar to the operator `not`, you can use the object-oriented form for\nBoolean \"and\". Try it:\n          \n>> echo \"false.and(true)\" | quint\n\n\n\n**This is a general principle:** You can replace `bar(x, y)` with `x.bar(y)`,\nand vice versa.\n\nThis form may be useful with nested formulas like:\n\n  ```\n  x.and(y).and(z)\n  ```\n          ",
+      "description": "\n          \n\nSimilar to the operator `not`, you can use the object-oriented form for\nBoolean \"and\". Try it:\n          \n>> quint \"false.and(true)\"\n\n\n\n**This is a general principle:** You can replace `bar(x, y)` with `x.bar(y)`,\nand vice versa.\n\nThis form may be useful with nested formulas like:\n\n  ```\n  x.and(y).and(z)\n  ```\n          ",
       "line": 29,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "And works for more than two arguments",
-      "description": "\nAs you see, \"and\" does not have to apply to two arguments only. You can use it with multiple arguments:\n\n          \n>> echo \"and(true, false, true)\" | quint\n\n\n>> echo \"and(true, false, true, false)\" | quint\n\n\n>> echo \"and(true, false, true, false, true)\" | quint\n\n",
+      "description": "\nAs you see, \"and\" does not have to apply to two arguments only. You can use it with multiple arguments:\n\n          \n>> quint \"and(true, false, true)\"\n\n\n>> quint \"and(true, false, true, false)\"\n\n\n>> quint \"and(true, false, true, false, true)\"\n\n",
       "line": 32,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "The and {...} form",
-      "description": "\n          \n\nSometimes, we have to write complex expressions over Booleans. Yeah, that happens.\n\nIn this case, you can use the convenient form and { ... }, which is just syntax sugar for and(...).\n\nTry it:\n          \n>> echo \"and { false == false, true == true }\" | quint\n\n",
+      "description": "\n          \n\nSometimes, we have to write complex expressions over Booleans. Yeah, that happens.\n\nIn this case, you can use the convenient form and { ... }, which is just syntax sugar for and(...).\n\nTry it:\n          \n>> quint \"and { false == false, true == true }\"\n\n",
       "line": 39,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean \"or\"",
-      "description": "\nIf there is \"and\", there must be \"or\".\nEvaluate all possible combinations of `false` and `true`:\n\n          \n>> echo \"false or false\" | quint\n\n\n>> echo \"false or true\" | quint\n\n\n>> echo \"true or false\" | quint\n\n\n>> echo \"true or true\" | quint\n\n",
+      "description": "\nIf there is \"and\", there must be \"or\".\nEvaluate all possible combinations of `false` and `true`:\n\n          \n>> quint \"false or false\"\n\n\n>> quint \"false or true\"\n\n\n>> quint \"true or false\"\n\n\n>> quint \"true or true\"\n\n",
       "line": 42,
       "file": "lesson1-booleans/booleans.qnt"
     },
@@ -76,13 +76,13 @@
     },
     {
       "title": "Boolean implication",
-      "description": "\nPerhaps, you remember Boolean implication from your math classes.\nIn some languages, it is written as `x -> y` or `x => y`.\nIn Quint is written as `x implies y`, or, alternatively, `x.implies(y)`.\n\nIf you don't like it, you don't have to use it:\n`x implies y` is equivalent to `not(x) or y`.\n\nTry the implication for all combinations of `false` and `true`:\n\n          \n>> echo \"false implies false\" | quint\n\n\n>> echo \"false implies true\" | quint\n\n\n>> echo \"true implies false\" | quint\n\n\n>> echo \"true implies true\" | quint\n\n",
+      "description": "\nPerhaps, you remember Boolean implication from your math classes.\nIn some languages, it is written as `x -> y` or `x => y`.\nIn Quint is written as `x implies y`, or, alternatively, `x.implies(y)`.\n\nIf you don't like it, you don't have to use it:\n`x implies y` is equivalent to `not(x) or y`.\n\nTry the implication for all combinations of `false` and `true`:\n\n          \n>> quint \"false implies false\"\n\n\n>> quint \"false implies true\"\n\n\n>> quint \"true implies false\"\n\n\n>> quint \"true implies true\"\n\n",
       "line": 59,
       "file": "lesson1-booleans/booleans.qnt"
     },
     {
       "title": "Boolean equivalence",
-      "description": "\nFinally, we have the equivalence operator `x iff y`, or, alternatively, `x.iff(y)`.\nIt is really like `x == y`, but `x iff y` does a bit more:\nIt requires `x` and `y` to be Booleans.\n\nWhat is it is good for? If you know what protocol invariants are,\n`x iff y` looks nice when writing invariants and temporal formulas.\nIf you are not familiar with invariants and temporal formulas,\nyou probably do not need `iff` yet.\n\nTry `iff` for all combinations of `false` and `true`:\n\n          \n>> echo \"false iff false\" | quint\n\n\n>> echo \"false iff true\" | quint\n\n\n>> echo \"true iff false\" | quint\n\n\n>> echo \"true iff true\" | quint\n\n",
+      "description": "\nFinally, we have the equivalence operator `x iff y`, or, alternatively, `x.iff(y)`.\nIt is really like `x == y`, but `x iff y` does a bit more:\nIt requires `x` and `y` to be Booleans.\n\nWhat is it is good for? If you know what protocol invariants are,\n`x iff y` looks nice when writing invariants and temporal formulas.\nIf you are not familiar with invariants and temporal formulas,\nyou probably do not need `iff` yet.\n\nTry `iff` for all combinations of `false` and `true`:\n\n          \n>> quint \"false iff false\"\n\n\n>> quint \"false iff true\"\n\n\n>> quint \"true iff false\"\n\n\n>> quint \"true iff true\"\n\n",
       "line": 64,
       "file": "lesson1-booleans/booleans.qnt"
     },

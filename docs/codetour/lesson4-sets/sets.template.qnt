@@ -90,13 +90,13 @@ has two kinds of operations:
             <block>
  - We can construct a tuple. For example:
             </block>
-            <run>echo '("BTC", "ETH")' | quint</run>
+            <run>quint '("BTC", "ETH")'</run>
 
             <block>
  - We can access a tuple element via special fields `_1`, `_2`, etc.
    For example:
             </block>
-            <run>echo '("BTC", "ETH")._2' | quint</run>
+            <run>quint '("BTC", "ETH")._2'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -130,8 +130,8 @@ implementation details. In this case, the set is the best data structure:
    @KryptoCoffeeCat wrote the pair `("ATOM", "JUNO")` twice.
    We can see that Quint removed the duplicates:
 
-            <run target="markdown">echo 'availablePairs' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'availablePairs' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'availablePairs'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'availablePairs'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -149,11 +149,11 @@ The simplest thing @KryptoCoffeeCat can do with `availablePairs` is
 to check, which pairs are in the table. For example, try the
 following definitions:
 
-            <run target="markdown">echo 'hasAtomJuno' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'hasAtomJuno' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'hasAtomJuno'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'hasAtomJuno'</run>
 
-            <run target="markdown">echo 'hasEvmosEth' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'hasEvmosEth' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'hasEvmosEth'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'hasEvmosEth'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -172,11 +172,11 @@ following definitions:
 Now @KryptoCoffeeCat check whether they could swap Atom for some coins
 and that they cannot swap Secret for any coin:
 
-            <run target="markdown">echo 'hasAtom' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'hasAtom' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'hasAtom'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'hasAtom'</run>
 
-            <run target="markdown">echo 'missingScrt' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'missingScrt' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'missingScrt'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'missingScrt'</run>
 
             <block>
 This works. However, @KryptoCoffeeCat notice that their definition of
@@ -187,7 +187,7 @@ to be the same as the pair `("JUNO", "ATOM")`. But this does not work as
 expected:
             </block>
 
-            <run>echo '("ATOM", "JUNO") == ("JUNO", "ATOM")' | quint</run>
+            <run>quint '("ATOM", "JUNO") == ("JUNO", "ATOM")'</run>
 
             <block>
 After a bit of thinking @KryptoCoffeeCat realizs that they already know how to
@@ -221,8 +221,8 @@ friends tell them that programming languages need a bit of boilerplate like
 defining hashes, comparators, and equality. Sets of sets work in Quint out of
 the box:
 
-            <run target="markdown">echo 'availableUnorderedPairs' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'availableUnorderedPairs' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'availableUnorderedPairs'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'availableUnorderedPairs'</run>
 
             <block>
 Now @KryptoCoffeeCat can fix the definition of `hasAtom`. They write down
@@ -244,8 +244,8 @@ The next thing @KryptoCoffeeCat want to do with `availableUnorderedPairs` is
 to see, which pairs can be swapped with Atom.
 To this end, they filter the set `availableUnorderedPairs` as in `atomPairs`:
 
-            <run target="markdown">echo 'atomPairs' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'atomPairs' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'atomPairs'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'atomPairs'</run>
 
             <block>
 The set `atomPairs` contains only those unordered pairs that satisfy this
@@ -266,8 +266,8 @@ condition.
 To see how many swap pairs are available, @KryptoCoffeeCat
 use the operator `size` in the definition `howMany`:
 
-            <run target="markdown">echo 'howMany' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'howMany' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'howMany'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'howMany'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -287,8 +287,8 @@ Now @KryptoCoffeeCat wonder what kind of coins could be swapped at all.
 This seems to be hard to figure out. Fortunately, they discover the right
 operator in the cheatsheet. It's called `flatten`:
 
-            <run target="markdown">echo 'availableUnorderedPairs.flatten()' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'availableUnorderedPairs.flatten()' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'availableUnorderedPairs.flatten()'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'availableUnorderedPairs.flatten()'</run>
 
             <block>
 It is easy to see how `flatten` works by evaluating
@@ -340,16 +340,16 @@ and `someCoinsExample`. If the pair involves a coin from
 `someCoinsExample`, such an intersection should contain exactly
 one coin. Let's check that:
 
-            <run target="markdown">echo 'Set("ATOM", "EVMOS").intersect(someCoinsExample)' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'Set("ATOM", "EVMOS").intersect(someCoinsExample)' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'Set("ATOM", "EVMOS").intersect(someCoinsExample)'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'Set("ATOM", "EVMOS").intersect(someCoinsExample)'</run>
 
             <block>
 This works, so @KryptoCoffeeCat filter the whole set of `availableUnorderedPairs`
 with the following condition:
             </block>
 
-            <run target="markdown">echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)'</run>
 
             <block>
 However, there is a small issue: The result has the type of a set of two-element
@@ -357,8 +357,8 @@ sets (of strings), whereas they need a set of strings (coins).
 @KryptoCoffeeCat already know how to solve this problem, by calling `flatten()`:
             </block>
 
-            <run target="markdown">echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()'</run>
 
             <block>
 Finally, they do not need the coins that they started with, that is, `someCoinsExample`.
@@ -368,8 +368,8 @@ definition is written in `buyableVia1Swap`.
 @KryptoCoffeeCat want to see how this actually works. So they try:
             </block>
 
-            <run target="markdown">echo 'buyableVia1Swap(Set("ATOM"))' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableVia1Swap(Set("ATOM"))' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableVia1Swap(Set("ATOM"))'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableVia1Swap(Set("ATOM"))'</run>
             
             <block>
 This seems to work!
@@ -378,16 +378,16 @@ Now @KryptoCoffeeCat want to see what is possible to buy by doing exactly two
 swaps. This is also easy: Just call `buyableVia1Swap` twice. This works:
             </block>
 
-            <run target="markdown">echo 'buyableVia2Swaps(Set("ATOM"))' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableVia2Swaps(Set("ATOM"))' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableVia2Swaps(Set("ATOM"))'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableVia2Swaps(Set("ATOM"))'</run>
 
             <block>
 And how would they find out what could be bought by one or two swaps?
 Also easy: Just take the set union of what is possible in one or two swaps:            
             </block>
 
-            <run target="markdown">echo 'buyableVia1or2Swaps(Set("ATOM"))' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableVia1or2Swaps(Set("ATOM"))' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableVia1or2Swaps(Set("ATOM"))'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableVia1or2Swaps(Set("ATOM"))'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -411,7 +411,7 @@ in this tutorial, we will see how to do that using sets.
 Quint has the operator `i.to(j)` that constructs the set `Set(i, ..., j)`.
 Let's try it:
 
-            <run>echo '3.to(10)' | quint</run>
+            <run>quint '3.to(10)'</run>
 
             <block>
 Now @KryptoCoffeeCat want to write something like this in pseudo JavaScript:
@@ -452,12 +452,12 @@ argument is not used:
 Now @KryptoCoffeeCat can compute what they can buy via various numbers of swaps:
             </block>
 
-            <run target="markdown">echo 'buyableNSwaps(Set("ATOM"), 3)' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableNSwaps(Set("ATOM"), 3)' | quint -r ./lesson4-sets/sets.qnt::sets</run>
-            <run target="markdown">echo 'buyableNSwaps(Set("ATOM"), 4)' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableNSwaps(Set("ATOM"), 4)' | quint -r ./lesson4-sets/sets.qnt::sets</run>
-            <run target="markdown">echo 'buyableNSwaps(Set("ATOM"), 5)' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'buyableNSwaps(Set("ATOM"), 5)' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 3)'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 3)'</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 4)'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 4)'</run>
+            <run target="markdown">quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 5)'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 5)'</run>
         </description>
         <file>$file</file>
         <line>$line</line>
@@ -535,8 +535,8 @@ blasts `availableUnorderedPairs` into a huge set that contains all combinations
 of pairs. These sets have all possible sizes. @KryptoCoffeeCat filter out the
 sets that are not quadruples. How many quadruples are there? Let's see:
 
-            <run target="markdown">echo 'quads.size()' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'quads.size()' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'quads.size()'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'quads.size()'</run>
 
             <block>
 Phew. It will take @KryptoCoffeeCat hours to analyze all these pairs by hand.
@@ -561,8 +561,8 @@ and finally the definition `cycles4`. Now they compute all these cycles in a
 single click:
             </block>
 
-            <run target="markdown">echo 'cycles4' | quint -r sets.qnt::sets</run>
-            <run target="codetour">echo 'cycles4' | quint -r ./lesson4-sets/sets.qnt::sets</run>
+            <run target="markdown">quint -r sets.qnt::sets 'cycles4'</run>
+            <run target="codetour">quint -r ./lesson4-sets/sets.qnt::sets 'cycles4'</run>
         </description>
         <file>$file</file>
         <line>$line</line>

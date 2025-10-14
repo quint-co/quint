@@ -50,8 +50,8 @@ You cannot modify Boolean values. You can carry them
 around as variable values, or in data structures.
 
 Evaluate the Boolean literals in REPL:
-          <run>echo "false" | quint</run>
-          <run>echo "true" | quint</run>
+          <run>quint "false"</run>
+          <run>quint "true"</run>
         </description>
       </step>
      !*/
@@ -68,8 +68,8 @@ The simplest operation we can do with a Boolean value is negation.
 
 Evaluate the negation of `false` and `true`:
 
-          <run>echo "not(false)" | quint</run>
-          <run>echo "not(true)" | quint</run>
+          <run>quint "not(false)"</run>
+          <run>quint "not(true)"</run>
         </description>
       </step>
      !*/
@@ -88,10 +88,10 @@ We can compare Booleans for equality. The rules for equality are straightforward
 Try comparing `false` and `true` in all possible combinations:
           </block>
 
-          <run>echo "false == false" | quint</run>
-          <run>echo "false == true" | quint</run>
-          <run>echo "true == false" | quint</run>
-          <run>echo "true == true" | quint</run>
+          <run>quint "false == false"</run>
+          <run>quint "false == true"</run>
+          <run>quint "true == false"</run>
+          <run>quint "true == true"</run>
 
           <block>
 One important feature of equality is that the arguments should have the same type.
@@ -99,8 +99,8 @@ Hence, Booleans can be only compared to Booleans. The following expressions
 produces type errors. Try them:
           </block>
 
-          <run>echo "false == 0" | quint</run>
-          <run>echo "true == 1" | quint</run>
+          <run>quint "false == 0"</run>
+          <run>quint "true == 1"</run>
         </description>
       </step>
      !*/
@@ -117,10 +117,10 @@ We can compare Booleans for inequality. It is simply the opposite of `x == y`.
 
 Try comparing `false` and `true` in all possible combinations:
 
-          <run>echo "false != false" | quint</run>
-          <run>echo "false != true" | quint</run>
-          <run>echo "true != false" | quint</run>
-          <run>echo "true != true" | quint</run>
+          <run>quint "false != false"</run>
+          <run>quint "false != true"</run>
+          <run>quint "true != false"</run>
+          <run>quint "true != true"</run>
         </description>
       </step>
      !*/
@@ -137,7 +137,7 @@ Try comparing `false` and `true` in all possible combinations:
 If you prefer object-oriented style, you can also write `x.not()`. Try it out:
           </block>
 
-          <run>echo "false.not()" | quint</run>
+          <run>quint "false.not()"</run>
 
           <block>
 **This is a general principle:** You can write `foo(x)` as `x.foo()` and vice versa.
@@ -145,7 +145,7 @@ If you prefer object-oriented style, you can also write `x.not()`. Try it out:
 Be careful about not writing `false.not`, as it would be understood as record access:
           </block>
 
-          <run>echo "false.not" | quint</run>
+          <run>quint "false.not"</run>
         </description>
       </step>
      !*/
@@ -162,10 +162,10 @@ Now it is time to learn about Boolean "and".
 
 Evaluate all possible combinations of `false` and `true`:
 
-          <run>echo "false and false" | quint</run>
-          <run>echo "false and true" | quint</run>
-          <run>echo "true and false" | quint</run>
-          <run>echo "true and true" | quint</run>
+          <run>quint "false and false"</run>
+          <run>quint "false and true"</run>
+          <run>quint "true and false"</run>
+          <run>quint "true and true"</run>
         </description>
       </step>
      !*/
@@ -183,7 +183,7 @@ Similar to the operator `not`, you can use the object-oriented form for
 Boolean "and". Try it:
           </block>
 
-          <run>echo "false.and(true)" | quint</run>
+          <run>quint "false.and(true)"</run>
 
           <block>
 **This is a general principle:** You can replace `bar(x, y)` with `x.bar(y)`,
@@ -209,9 +209,9 @@ This form may be useful with nested formulas like:
         <description>
 As you see, "and" does not have to apply to two arguments only. You can use it with multiple arguments:
 
-          <run>echo "and(true, false, true)" | quint</run>
-          <run>echo "and(true, false, true, false)" | quint</run>
-          <run>echo "and(true, false, true, false, true)" | quint</run>
+          <run>quint "and(true, false, true)"</run>
+          <run>quint "and(true, false, true, false)"</run>
+          <run>quint "and(true, false, true, false, true)"</run>
         </description>
       </step>
      !*/
@@ -236,7 +236,7 @@ In this case, you can use the convenient form and { ... }, which is just syntax 
 Try it:
           </block>
 
-          <run>echo "and { false == false, true == true }" | quint</run>
+          <run>quint "and { false == false, true == true }"</run>
         </description>
       </step>
      !*/
@@ -252,10 +252,10 @@ Try it:
 If there is "and", there must be "or".
 Evaluate all possible combinations of `false` and `true`:
 
-          <run>echo "false or false" | quint</run>
-          <run>echo "false or true" | quint</run>
-          <run>echo "true or false" | quint</run>
-          <run>echo "true or true" | quint</run>
+          <run>quint "false or false"</run>
+          <run>quint "false or true"</run>
+          <run>quint "true or false"</run>
+          <run>quint "true or true"</run>
         </description>
       </step>
      !*/
@@ -302,10 +302,10 @@ If you don't like it, you don't have to use it:
 
 Try the implication for all combinations of `false` and `true`:
 
-          <run>echo "false implies false" | quint</run>
-          <run>echo "false implies true" | quint</run>
-          <run>echo "true implies false" | quint</run>
-          <run>echo "true implies true" | quint</run>
+          <run>quint "false implies false"</run>
+          <run>quint "false implies true"</run>
+          <run>quint "true implies false"</run>
+          <run>quint "true implies true"</run>
         </description>
       </step>
      !*/
@@ -331,10 +331,10 @@ you probably do not need `iff` yet.
 
 Try `iff` for all combinations of `false` and `true`:
 
-          <run>echo "false iff false" | quint</run>
-          <run>echo "false iff true" | quint</run>
-          <run>echo "true iff false" | quint</run>
-          <run>echo "true iff true" | quint</run>
+          <run>quint "false iff false"</run>
+          <run>quint "false iff true"</run>
+          <run>quint "true iff false"</run>
+          <run>quint "true iff true"</run>
         </description>
       </step>
      !*/

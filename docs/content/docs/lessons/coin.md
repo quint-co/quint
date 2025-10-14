@@ -150,22 +150,22 @@ To see that no state is needed, evaluate these definitions in REPL
             
 
 ```sh
-echo "MAX_UINT" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "MAX_UINT"
 ```
 
 
 ```sh
-echo "isUInt(22)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(22)"
 ```
 
 
 ```sh
-echo "isUInt(-1)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(-1)"
 ```
 
 
 ```sh
-echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(MAX_UINT + 1)"
 ```
 
 
@@ -298,7 +298,7 @@ You can try to evaluate the definition of `state` in REPL right away:
             
 
 ```sh
-echo "state" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "state"
 ```
 
 
@@ -443,7 +443,7 @@ Now we can call `init` and evaluate an initialized state in REPL:
             
 
 ```sh
-echo "init\n state" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "init" "state"
 ```
 
 
@@ -514,7 +514,7 @@ Now it's time to mint some coins in REPL! Try the following:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'mint(minter, "bob", 2023)' 'state'
 ```
 
 
@@ -568,7 +568,7 @@ Play with `mint` and `send` in REPL! The simplest scenario would be:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'mint(minter, "bob", 2023)' 'send("bob", "eve", 1024)' 'state'
 ```
 
 ## 13. Defining a protocol step
@@ -659,7 +659,7 @@ We can immediately check this invariant for a few states:
             
 
 ```sh
-echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'balancesRangeInv' 'mint(minter, "bob", 2023)' 'balancesRangeInv' 'send("bob", "eve", 1024)' 'balancesRangeInv'
 ```
 
 
@@ -764,7 +764,7 @@ Go ahead and see if this test goes through:
             
 
 ```sh
-echo 'sendWithoutMintTest' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'sendWithoutMintTest'
 ```
 
 
@@ -803,7 +803,7 @@ through and the resulting balances have the expected values.
             
 
 ```sh
-echo 'mintSendTest' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'mintSendTest'
 ```
 
 
@@ -864,7 +864,7 @@ Let's run this test:
             
 
 ```sh
-echo 'mintTwiceThenSendError' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'mintTwiceThenSendError'
 ```
 
 
