@@ -25,6 +25,7 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::ops::Deref;
 use std::rc::Rc;
 
 /// Quint values that hold sets are immutable, use `GenericHashSet` immutable
@@ -43,11 +44,15 @@ pub type ImmutableMap<K, V> = GenericHashMap<K, V, fxhash::FxBuildHasher, RcK>;
 pub type Str = hipstr::HipStr<'static>;
 
 /// A Quint value produced by evaluation of a Quint expression.
-///
+/// Values are immutable and reference-counted for cheap cloning.
+#[derive(Clone, Debug)]
+pub struct Value(pub Rc<ValueInner>);
+
+/// The actual value enum wrapped in Rc for cheap cloning.
 /// Can be seen as a normal form of the expression, except for the intermediate
 /// values that enable lazy evaluation of some potentially expensive expressions.
-#[derive(Clone, Debug)]
-pub enum Value {
+#[derive(Debug, Clone)]
+pub enum ValueInner {
     Int(i64),
     Bool(bool),
     Str(Str),
@@ -57,15 +62,21 @@ pub enum Value {
     Map(ImmutableMap<Value, Value>),
     List(ImmutableVec<Value>),
     Lambda(Vec<Rc<RefCell<EvalResult>>>, CompiledExpr),
-    Variant(QuintName, Rc<Value>),
+    Variant(QuintName, Value),
     // "Intermediate" values using during evaluation to avoid expensive computations
     Interval(i64, i64),
     CrossProduct(Vec<Value>),
-    PowerSet(Rc<Value>),
-    MapSet(Rc<Value>, Rc<Value>),
+    PowerSet(Value),
+    MapSet(Value, Value),
 }
 
 impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.as_ref().hash(state);
+    }
+}
+
+impl Hash for ValueInner {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // First, hash the discriminant, as we want hashes of Set(1, 2, 3) and
         // List(1, 2, 3) to be different.
@@ -73,56 +84,56 @@ impl Hash for Value {
         discr.hash(state);
 
         match self {
-            Value::Int(n) => n.hash(state),
-            Value::Bool(b) => b.hash(state),
-            Value::Str(s) => s.hash(state),
-            Value::Set(set) => {
+            ValueInner::Int(n) => n.hash(state),
+            ValueInner::Bool(b) => b.hash(state),
+            ValueInner::Str(s) => s.hash(state),
+            ValueInner::Set(set) => {
                 for elem in set {
                     elem.hash(state);
                 }
             }
-            Value::Tuple(elems) => {
+            ValueInner::Tuple(elems) => {
                 for elem in elems {
                     elem.hash(state);
                 }
             }
-            Value::Record(fields) => {
+            ValueInner::Record(fields) => {
                 for (name, value) in fields {
                     name.hash(state);
                     value.hash(state);
                 }
             }
-            Value::Map(map) => {
+            ValueInner::Map(map) => {
                 for (key, value) in map {
                     key.hash(state);
                     value.hash(state);
                 }
             }
-            Value::List(elems) => {
+            ValueInner::List(elems) => {
                 for elem in elems {
                     elem.hash(state);
                 }
             }
-            Value::Lambda(_, _) => {
+            ValueInner::Lambda(_, _) => {
                 panic!("Cannot hash lambda");
             }
-            Value::Variant(label, value) => {
+            ValueInner::Variant(label, value) => {
                 label.hash(state);
                 value.hash(state);
             }
-            Value::Interval(start, end) => {
+            ValueInner::Interval(start, end) => {
                 start.hash(state);
                 end.hash(state);
             }
-            Value::CrossProduct(sets) => {
+            ValueInner::CrossProduct(sets) => {
                 for value in sets {
                     value.hash(state);
                 }
             }
-            Value::PowerSet(value) => {
+            ValueInner::PowerSet(value) => {
                 value.hash(state);
             }
-            Value::MapSet(a, b) => {
+            ValueInner::MapSet(a, b) => {
                 a.hash(state);
                 b.hash(state);
             }
@@ -132,51 +143,131 @@ impl Hash for Value {
 
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
+        self.0.as_ref() == other.0.as_ref()
+    }
+}
+
+impl PartialEq for ValueInner {
+    fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Value::Int(a), Value::Int(b)) => a == b,
-            (Value::Bool(a), Value::Bool(b)) => a == b,
-            (Value::Str(a), Value::Str(b)) => a == b,
-            (Value::Set(a), Value::Set(b)) => *a == *b,
-            (Value::Tuple(a), Value::Tuple(b)) => *a == *b,
-            (Value::Record(a), Value::Record(b)) => *a == *b,
-            (Value::Map(a), Value::Map(b)) => *a == *b,
-            (Value::List(a), Value::List(b)) => *a == *b,
-            (Value::Lambda(_, _), Value::Lambda(_, _)) => panic!("Cannot compare lambdas"),
-            (Value::Variant(a_label, a_value), Value::Variant(b_label, b_value)) => {
+            (Self::Int(a), Self::Int(b)) => a == b,
+            (Self::Bool(a), Self::Bool(b)) => a == b,
+            (Self::Str(a), Self::Str(b)) => a == b,
+            (Self::Set(a), Self::Set(b)) => *a == *b,
+            (Self::Tuple(a), Self::Tuple(b)) => *a == *b,
+            (Self::Record(a), Self::Record(b)) => *a == *b,
+            (Self::Map(a), Self::Map(b)) => *a == *b,
+            (Self::List(a), Self::List(b)) => *a == *b,
+            (Self::Lambda(_, _), Self::Lambda(_, _)) => panic!("Cannot compare lambdas"),
+            (Self::Variant(a_label, a_value), Self::Variant(b_label, b_value)) => {
                 a_label == b_label && a_value == b_value
             }
-            (Value::Interval(a_start, a_end), Value::Interval(b_start, b_end)) => {
+            (Self::Interval(a_start, a_end), Self::Interval(b_start, b_end)) => {
                 a_start == b_start && a_end == b_end
             }
-            (Value::CrossProduct(a), Value::CrossProduct(b)) => *a == *b,
-            (Value::PowerSet(a), Value::PowerSet(b)) => *a == *b,
-            (Value::MapSet(a1, b1), Value::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            (Self::CrossProduct(a), Self::CrossProduct(b)) => *a == *b,
+            (Self::PowerSet(a), Self::PowerSet(b)) => *a == *b,
+            (Self::MapSet(a1, b1), Self::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
             // To compare two sets represented in different ways, we need to enumerate them both
-            (a, b) if a.is_set() && b.is_set() => a.as_set() == b.as_set(),
-            _ => false,
+            _ => {
+                let self_value = Value(Rc::new(self.clone()));
+                let other_value = Value(Rc::new(other.clone()));
+                if self_value.is_set() && other_value.is_set() {
+                    self_value.as_set() == other_value.as_set()
+                } else {
+                    false
+                }
+            }
         }
     }
 }
 
 impl Eq for Value {}
+impl Eq for ValueInner {}
+
+impl Deref for Value {
+    type Target = ValueInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl Value {
+    // Constructor functions for Value
+    pub fn int(n: i64) -> Self {
+        Value(Rc::new(ValueInner::Int(n)))
+    }
+
+    pub fn bool(b: bool) -> Self {
+        Value(Rc::new(ValueInner::Bool(b)))
+    }
+
+    pub fn str(s: Str) -> Self {
+        Value(Rc::new(ValueInner::Str(s)))
+    }
+
+    pub fn set(s: ImmutableSet<Value>) -> Self {
+        Value(Rc::new(ValueInner::Set(s)))
+    }
+
+    pub fn tuple(t: ImmutableVec<Value>) -> Self {
+        Value(Rc::new(ValueInner::Tuple(t)))
+    }
+
+    pub fn record(r: ImmutableMap<QuintName, Value>) -> Self {
+        Value(Rc::new(ValueInner::Record(r)))
+    }
+
+    pub fn map(m: ImmutableMap<Value, Value>) -> Self {
+        Value(Rc::new(ValueInner::Map(m)))
+    }
+
+    pub fn list(l: ImmutableVec<Value>) -> Self {
+        Value(Rc::new(ValueInner::List(l)))
+    }
+
+    pub fn lambda(registers: Vec<Rc<RefCell<EvalResult>>>, body: CompiledExpr) -> Self {
+        Value(Rc::new(ValueInner::Lambda(registers, body)))
+    }
+
+    pub fn variant(name: QuintName, value: Value) -> Self {
+        Value(Rc::new(ValueInner::Variant(name, value)))
+    }
+
+    pub fn interval(start: i64, end: i64) -> Self {
+        Value(Rc::new(ValueInner::Interval(start, end)))
+    }
+
+    pub fn cross_product(values: Vec<Value>) -> Self {
+        Value(Rc::new(ValueInner::CrossProduct(values)))
+    }
+
+    pub fn power_set(value: Value) -> Self {
+        Value(Rc::new(ValueInner::PowerSet(value)))
+    }
+
+    pub fn map_set(a: Value, b: Value) -> Self {
+        Value(Rc::new(ValueInner::MapSet(a, b)))
+    }
     /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
     pub fn cardinality(&self) -> usize {
-        match self {
-            Value::Set(set) => set.len(),
-            Value::Tuple(elems) => elems.len(),
-            Value::Record(fields) => fields.len(),
-            Value::Map(map) => map.len(),
-            Value::List(elems) => elems.len(),
-            Value::Interval(start, end) => (end - start + 1).try_into().unwrap(),
-            Value::CrossProduct(sets) => sets.iter().fold(1, |acc, set| acc * set.cardinality()),
-            Value::PowerSet(value) => {
+        match self.0.as_ref() {
+            ValueInner::Set(set) => set.len(),
+            ValueInner::Tuple(elems) => elems.len(),
+            ValueInner::Record(fields) => fields.len(),
+            ValueInner::Map(map) => map.len(),
+            ValueInner::List(elems) => elems.len(),
+            ValueInner::Interval(start, end) => (end - start + 1).try_into().unwrap(),
+            ValueInner::CrossProduct(sets) => {
+                sets.iter().fold(1, |acc, set| acc * set.cardinality())
+            }
+            ValueInner::PowerSet(value) => {
                 // 2^(cardinality of value)
                 2_usize.pow(value.cardinality().try_into().unwrap())
             }
-            Value::MapSet(domain, range) => {
+            ValueInner::MapSet(domain, range) => {
                 // (cardinality of range)^(cardinality of domain()
                 range
                     .cardinality()
@@ -189,22 +280,22 @@ impl Value {
     /// Check for membership of a value in a set, without having to enumerate
     /// the set.
     pub fn contains(&self, elem: &Value) -> bool {
-        match (self, elem) {
-            (Value::Set(elems), _) => elems.contains(elem),
-            (Value::Interval(start, end), Value::Int(n)) => start <= n && n <= end,
-            (Value::CrossProduct(sets), Value::Tuple(elems)) => {
+        match (self.0.as_ref(), elem.0.as_ref()) {
+            (ValueInner::Set(elems), _) => elems.contains(elem),
+            (ValueInner::Interval(start, end), ValueInner::Int(n)) => start <= n && n <= end,
+            (ValueInner::CrossProduct(sets), ValueInner::Tuple(elems)) => {
                 sets.len() == elems.len()
                     && sets.iter().zip(elems).all(|(set, elem)| set.contains(elem))
             }
-            (Value::PowerSet(base), Value::Set(elems)) => {
+            (ValueInner::PowerSet(base), ValueInner::Set(elems)) => {
                 let base_elems = base.as_set();
                 elems.len() <= base_elems.len()
                     && elems.iter().all(|elem| base_elems.contains(elem))
             }
-            (Value::MapSet(domain, range), Value::Map(map)) => {
-                let map_domain = Value::Set(map.keys().cloned().collect::<ImmutableSet<_>>());
+            (ValueInner::MapSet(domain, range), ValueInner::Map(map)) => {
+                let map_domain = Value::set(map.keys().cloned().collect::<ImmutableSet<_>>());
                 // Check if domains are equal and all map values are in the range set
-                map_domain == **domain && map.values().all(|v| range.contains(v))
+                map_domain == *domain && map.values().all(|v| range.contains(v))
             }
             _ => panic!("contains not implemented for {self:?}"),
         }
@@ -212,34 +303,36 @@ impl Value {
 
     /// Check if a set is a subset of another set, avoiding enumeration when possible
     pub fn subseteq(&self, superset: &Value) -> bool {
-        match (self, superset) {
-            (Value::Set(subset), Value::Set(superset)) => subset.is_subset(superset),
+        match (self.0.as_ref(), superset.0.as_ref()) {
+            (ValueInner::Set(subset), ValueInner::Set(superset)) => subset.is_subset(superset),
             (
-                Value::Interval(subset_start, subset_end),
-                Value::Interval(superset_start, superset_end),
+                ValueInner::Interval(subset_start, subset_end),
+                ValueInner::Interval(superset_start, superset_end),
             ) => subset_start >= superset_start && subset_end <= superset_end,
-            (Value::CrossProduct(subsets), Value::CrossProduct(supersets)) => {
+            (ValueInner::CrossProduct(subsets), ValueInner::CrossProduct(supersets)) => {
                 subsets.len() == supersets.len()
                     && subsets
                         .iter()
                         .zip(supersets)
                         .all(|(subset, superset)| subset.subseteq(superset))
             }
-            (Value::PowerSet(subset), Value::PowerSet(superset)) => subset.subseteq(superset),
+            (ValueInner::PowerSet(subset), ValueInner::PowerSet(superset)) => {
+                subset.subseteq(superset)
+            }
             (
-                Value::MapSet(subset_domain, subset_range),
-                Value::MapSet(superset_domain, superset_range),
+                ValueInner::MapSet(subset_domain, subset_range),
+                ValueInner::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range),
             // Fall back to the native implementation (`is_subset`) if no optimization is possible
-            (subset, superset) => subset.as_set().is_subset(superset.as_set().as_ref()),
+            (_, _) => self.as_set().is_subset(superset.as_set().as_ref()),
         }
     }
 
     /// Convert an integer value to `i64`. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_int(&self) -> i64 {
-        match self {
-            Value::Int(n) => *n,
+        match self.0.as_ref() {
+            ValueInner::Int(n) => *n,
             _ => panic!("Expected integer"),
         }
     }
@@ -247,8 +340,8 @@ impl Value {
     /// Convert a boolean value to `bool`. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_bool(&self) -> bool {
-        match self {
-            Value::Bool(b) => *b,
+        match self.0.as_ref() {
+            ValueInner::Bool(b) => *b,
             _ => panic!("Expected boolean"),
         }
     }
@@ -256,8 +349,8 @@ impl Value {
     /// Convert a string value to `Str`. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_str(&self) -> Str {
-        match self {
-            Value::Str(s) => s.clone(),
+        match self.0.as_ref() {
+            ValueInner::Str(s) => s.clone(),
             _ => panic!("Expected string"),
         }
     }
@@ -266,12 +359,12 @@ impl Value {
     /// that are also sets, just not enumerated yet.
     pub fn is_set(&self) -> bool {
         matches!(
-            self,
-            Value::Set(_)
-                | Value::Interval(_, _)
-                | Value::CrossProduct(_)
-                | Value::PowerSet(_)
-                | Value::MapSet(_, _)
+            self.0.as_ref(),
+            ValueInner::Set(_)
+                | ValueInner::Interval(_, _)
+                | ValueInner::CrossProduct(_)
+                | ValueInner::PowerSet(_)
+                | ValueInner::MapSet(_, _)
         )
     }
 
@@ -283,10 +376,12 @@ impl Value {
     /// clone-on-write (Cow) pointer, avoiding unnecessary clones that would be
     /// required if we always wanted to return Owned data.
     pub fn as_set(&self) -> Cow<'_, ImmutableSet<Value>> {
-        match self {
-            Value::Set(set) => Cow::Borrowed(set),
-            Value::Interval(start, end) => Cow::Owned((*start..=*end).map(Value::Int).collect()),
-            Value::CrossProduct(sets) => {
+        match self.0.as_ref() {
+            ValueInner::Set(set) => Cow::Borrowed(set),
+            ValueInner::Interval(start, end) => {
+                Cow::Owned((*start..=*end).map(Value::int).collect())
+            }
+            ValueInner::CrossProduct(sets) => {
                 let size = self.cardinality();
                 if size == 0 {
                     // an empty set produces the empty product
@@ -298,13 +393,13 @@ impl Value {
                     .iter()
                     .map(|set| set.as_set().into_owned().into_iter().collect::<Vec<_>>())
                     .multi_cartesian_product()
-                    .map(|product| Value::Tuple(ImmutableVec::from(product)))
+                    .map(|product| Value::tuple(ImmutableVec::from(product)))
                     .collect::<ImmutableSet<_>>();
 
                 Cow::Owned(product_sets)
             }
 
-            Value::PowerSet(value) => {
+            ValueInner::PowerSet(value) => {
                 let base = value.as_set();
                 let size = 1 << base.len(); // 2^n subsets for a set of size n
                 Cow::Owned(
@@ -314,11 +409,11 @@ impl Value {
                 )
             }
 
-            Value::MapSet(domain, range) => {
+            ValueInner::MapSet(domain, range) => {
                 if domain.cardinality() == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
                     return Cow::Owned(
-                        std::iter::once(Value::Map(ImmutableMap::default())).collect(),
+                        std::iter::once(Value::map(ImmutableMap::default())).collect(),
                     );
                 }
 
@@ -343,7 +438,7 @@ impl Value {
                         pairs.push((key.clone(), range_vec[index % nvalues].clone()));
                         index /= nvalues;
                     }
-                    result_set.insert(Value::Map(ImmutableMap::from_iter(pairs)));
+                    result_set.insert(Value::map(ImmutableMap::from_iter(pairs)));
                 }
 
                 Cow::Owned(result_set)
@@ -355,8 +450,8 @@ impl Value {
     /// Convert a map value to a map. Panics if the wrong type is given, which
     /// should never happen as input expressions are type-checked.
     pub fn as_map(&self) -> &ImmutableMap<Value, Value> {
-        match self {
-            Value::Map(map) => map,
+        match self.0.as_ref() {
+            ValueInner::Map(map) => map,
             _ => panic!("Expected map"),
         }
     }
@@ -364,9 +459,9 @@ impl Value {
     /// Convert a list or a tuple value to a vector. Panics if the wrong type is
     /// given, which should never happen as input expressions are type-checked.
     pub fn as_list(&self) -> &ImmutableVec<Value> {
-        match self {
-            Value::Tuple(elems) => elems,
-            Value::List(elems) => elems,
+        match self.0.as_ref() {
+            ValueInner::Tuple(elems) => elems,
+            ValueInner::List(elems) => elems,
             _ => panic!("Expected list, got {self:?}"),
         }
     }
@@ -374,8 +469,8 @@ impl Value {
     /// Convert a record value to a map. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_record_map(&self) -> &ImmutableMap<QuintName, Value> {
-        match self {
-            Value::Record(fields) => fields,
+        match self.0.as_ref() {
+            ValueInner::Record(fields) => fields,
             _ => panic!("Expected record"),
         }
     }
@@ -383,8 +478,8 @@ impl Value {
     /// Convert a lambda value to a closure. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_closure(&self) -> impl Fn(&mut Env, Vec<Value>) -> EvalResult + '_ {
-        match self {
-            Value::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value>| {
+        match self.0.as_ref() {
+            ValueInner::Lambda(registers, body) => move |env: &mut Env, args: Vec<Value>| {
                 args.into_iter().enumerate().for_each(|(i, arg)| {
                     *registers[i].borrow_mut() = Ok(arg);
                 });
@@ -400,8 +495,8 @@ impl Value {
     /// wrong type is given, which should never happen as input expressions are
     /// type-checked.
     pub fn as_variant(&self) -> (&QuintName, &Value) {
-        match self {
-            Value::Variant(label, value) => (label, value),
+        match self.0.as_ref() {
+            ValueInner::Variant(label, value) => (label, value),
             _ => panic!("Expected variant"),
         }
     }
@@ -436,21 +531,21 @@ pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
             elems.insert(elem.clone());
         }
     }
-    Value::Set(elems)
+    Value::set(elems)
 }
 
 /// Display implementation, used for debugging only. Users should not need to see a [`Value`].
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Value::Int(n) => write!(f, "{n}"),
-            Value::Bool(b) => write!(f, "{b}"),
-            Value::Str(s) => write!(f, "{s:?}"),
-            Value::Set(_)
-            | Value::Interval(_, _)
-            | Value::CrossProduct(_)
-            | Value::PowerSet(_)
-            | Value::MapSet(_, _) => {
+        match self.0.as_ref() {
+            ValueInner::Int(n) => write!(f, "{n}"),
+            ValueInner::Bool(b) => write!(f, "{b}"),
+            ValueInner::Str(s) => write!(f, "{s:?}"),
+            ValueInner::Set(_)
+            | ValueInner::Interval(_, _)
+            | ValueInner::CrossProduct(_)
+            | ValueInner::PowerSet(_)
+            | ValueInner::MapSet(_, _) => {
                 write!(f, "Set(")?;
                 for (i, set) in self.as_set().iter().enumerate() {
                     if i > 0 {
@@ -460,7 +555,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
-            Value::Tuple(elems) => {
+            ValueInner::Tuple(elems) => {
                 write!(f, "(")?;
                 for (i, elem) in elems.iter().enumerate() {
                     if i > 0 {
@@ -470,7 +565,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
-            Value::Record(fields) => {
+            ValueInner::Record(fields) => {
                 write!(f, "{{ ")?;
                 for (i, (name, value)) in fields.iter().enumerate() {
                     if i > 0 {
@@ -480,7 +575,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, " }}")
             }
-            Value::Map(map) => {
+            ValueInner::Map(map) => {
                 write!(f, "Map(")?;
                 for (i, (key, value)) in map.iter().enumerate() {
                     if i > 0 {
@@ -490,7 +585,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
-            Value::List(elems) => {
+            ValueInner::List(elems) => {
                 write!(f, "List(")?;
                 for (i, elem) in elems.iter().enumerate() {
                     if i > 0 {
@@ -500,9 +595,9 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
-            Value::Lambda(_, _) => write!(f, "<lambda>"),
-            Value::Variant(label, value) => {
-                if let Value::Tuple(elems) = &**value {
+            ValueInner::Lambda(_, _) => write!(f, "<lambda>"),
+            ValueInner::Variant(label, value) => {
+                if let ValueInner::Tuple(elems) = value.0.as_ref() {
                     if elems.is_empty() {
                         return write!(f, "{label}");
                     }
@@ -512,3 +607,18 @@ impl fmt::Display for Value {
         }
     }
 }
+
+// NOTE: The `Value` data structure is used within immutable containers from the
+// `imbl` crate. Those containers have optimizations that are well suited for
+// small datas tructures. For example, vectors are represented as RRB trees but,
+// the space that an RRB tree would occupy in the stack is first used by an
+// array that can hold a portion of the vector elements inline before promoting
+// them to a RRB tree. This means that the larger the `Value` structure is, the
+// quicker the RRB tree promotion needs to happen, which requires additional
+// heap allocations.
+//
+// We've seem cosiderable performance improvements from reducing the size of the
+// `Value` representation. This compile time assertion serves as feedback to
+// developers that, if changing the size of the `Value` structure, need to make
+// sure that benchmarks don't regress.
+const _: [bool; std::mem::size_of::<Value>()] = [false; 8];
