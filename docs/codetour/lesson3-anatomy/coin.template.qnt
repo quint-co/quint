@@ -116,7 +116,7 @@ type [name] = [tp];
 In the above definition, `[name]` is a unique identifier that will be associated
 with the type, and `[tp]` is the type to be associated with the name, e.g.,
 `int` or `Set[int]`. To see a complete description of all available types, visit the Section
-[Type System 1.2](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12)
+[Type System 1.2](https://github.com/informalsystems/quint/blob/main/docs/content/docs/lang.md#type-system-12)
 of the language manual.
 
 Although it is convenient to declare type aliases, it is not mandatory.
@@ -400,7 +400,7 @@ The user may submit different inputs, even if the protocol resides in
 two identical states.
 
 For more details, check
-[oneOf](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-oneof-seta--a)
+[oneOf](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#oneof)
 in the reference manual.
 
         </description>
@@ -483,14 +483,14 @@ the explanation:
    in the map `balances`. If the key `receiver` has no value assigned in
    the map `balances`, REPL would show a runtime error.
    For more details, check
-   [get](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-get-a---b-a--b)
+   [get](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#get)
    in the reference manual.
 
  - `balances.set(receiver, newBal)` produces a new map, that assigns
    the value of `newBal` to the key `receiver`, and keeps the other key-value
    pairs as in `balances`.
    For more details, check
-   [set](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-set-a---b-a-b--a---b)
+   [set](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#set)
    in the reference manual.
 
 Now it's time to mint some coins in REPL! Try the following:
