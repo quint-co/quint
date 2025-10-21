@@ -258,7 +258,7 @@ module B {
     assert.isEmpty(errors)
   })
 
-  it('reports a type error for match expressions that return inconsitent types in cases', () => {
+  it('reports a type error for match expressions that return inconsistent types in cases', () => {
     const defs = [
       'type T = A(int) | B',
       'val a = variant("A", 3)',
@@ -274,7 +274,7 @@ module B {
     const defs = [
       'type T = A(int) | B | C',
       'val a = variant("A", 3)',
-      'val nine = match B { A(n) => "OK" | _ => "first wilcard" | _ => "second, invalid wildcard" }',
+      'val nine = match B { A(n) => "OK" | _ => "first wildcard" | _ => "second, invalid wildcard" }',
     ]
 
     const [errors, _] = inferTypesForDefs(defs)
@@ -286,7 +286,7 @@ module B {
     const defs = [
       'type T = A(int) | B | C',
       'val a = variant("A", 3)',
-      'val nine = match B { A(n) => "OK" | _ => "invalid, non-final wilcard" | C => "OK" }',
+      'val nine = match B { A(n) => "OK" | _ => "invalid, non-final wildcard" | C => "OK" }',
     ]
 
     const [errors, _] = inferTypesForDefs(defs)

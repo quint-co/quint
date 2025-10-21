@@ -56,7 +56,7 @@ Cons:
   it's likely only used intermittently.
 - Requires platform-dependent error message / intervention if Shai is not
   running.
-- Additional logic in Quint for checking version compatilibity with Apalache.
+- Additional logic in Quint for checking version compatibility with Apalache.
 
 #### 3.1.2 Manually by the user (in a separate terminal, ...)
 
@@ -73,7 +73,7 @@ Pros:
 Cons:
 
 - Increased user overhead, for a task that could be automated.
-- Additional logic in Quint for checking version compatilibity with Apalache.
+- Additional logic in Quint for checking version compatibility with Apalache.
 
 ##### Launching of a system service by the user
 
@@ -108,7 +108,7 @@ Pros:
 Cons:
 
 - Additional logic in Quint for managing Shai.
-- Additional logic in Quint for managing version compatilibity with Apalache.
+- Additional logic in Quint for managing version compatibility with Apalache.
 - Increased complexity if Shai is launched as long-lived server with a timeout,
   due to book-keeping demands.
 
