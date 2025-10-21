@@ -281,7 +281,7 @@ export function matchConstraints(
         )
       : !wildCardMatch && labelExpr.value === '_'
       ? (wildCardMatch = true) // The wildcard case, `_ => foo`, means we can match anything else
-      : wildCardMatch // There should only ever be 1 wilcard match, and it should be the last case
+      : wildCardMatch // There should only ever be 1 wildcard match, and it should be the last case
       ? fieldValidationError(
           `Invalid wildcard match ('_') in match expression: ${expressionToString(
             elimExpr

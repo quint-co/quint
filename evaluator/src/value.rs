@@ -610,7 +610,7 @@ impl fmt::Display for Value {
 
 // NOTE: The `Value` data structure is used within immutable containers from the
 // `imbl` crate. Those containers have optimizations that are well suited for
-// small datas tructures. For example, vectors are represented as RRB trees but,
+// small datas structures. For example, vectors are represented as RRB trees but,
 // the space that an RRB tree would occupy in the stack is first used by an
 // array that can hold a portion of the vector elements inline before promoting
 // them to a RRB tree. This means that the larger the `Value` structure is, the
