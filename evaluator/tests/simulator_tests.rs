@@ -21,10 +21,19 @@ fn tictactoe_violation() {
     let parsed =
         helpers::parse_from_path(file_path, "init", "step", Some("XHasNotWon"), None).unwrap();
     // Pass an invariant that should not hold
-    let result = parsed.simulate(10, 100, 0, progress::no_report());
+    let result = parsed.simulate(10, 100, 1, progress::no_report());
     assert!(result.is_ok());
     // Should find violation
-    assert!(!result.unwrap().result);
+    assert!(!result.as_ref().unwrap().result);
+    // The best trace should be a violation
+    assert!(
+        result
+            .unwrap()
+            .best_traces
+            .first()
+            .expect("best_traces should not be empty")
+            .violation
+    );
 }
 
 #[test]

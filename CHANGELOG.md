@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 
-- Improved performance of small frequently allocated values (#1761)
+- Improved performance of small frequently allocated values in the rust backend (#1761)
 
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix an issue where an arbitrary trace was reported as a counterexample in the rust backend (#1802)
+
 ### Security
 
 ## v0.29.0 -- 2025-09-26
