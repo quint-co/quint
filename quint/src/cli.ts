@@ -411,7 +411,7 @@ const validate = (argv: any, opts: any) => {
   for (const key in argv) {
     if (key == 'commands' && (argv['_'][0] || 'repl') === 'repl') {
       // Skip checking repl's positional arguments for both `quint ...` and
-      // `quint repl ...` commands. Note that `opts` don't have enought information
+      // `quint repl ...` commands. Note that `opts` don't have enough information
       // on positional arguments, thus making this special case necessary.
       continue
     }

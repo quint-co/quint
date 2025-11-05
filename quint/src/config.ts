@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Setting up the configuration directoty for Quint.
+ * Setting up the configuration directory for Quint.
  *
  * This is ~/.quint by default, but can be overridden by setting the
  * QUINT_HOME environment variable.

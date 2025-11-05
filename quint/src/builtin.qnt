@@ -1050,7 +1050,7 @@ module builtin {
 
   // /// `variant("Label", expr)` is a value of type `T` when
   // ///
-  // /// - `T` is a predifined sum type
+  // /// - `T` is a predefined sum type
   // /// - `T` has a data constructor `Label`, paired with type `E`
   // /// - `expr` has type `E`
   // ///

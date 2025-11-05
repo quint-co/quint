@@ -425,7 +425,7 @@ async function fetchApalache(apalacheVersion: string, verbosityLevel: number): P
   //     const versions = resp.data.map((element: any) => element.tag_name)
   //     const latestTaggedVersion = semver.parse(semver.maxSatisfying(versions, APALACHE_VERSION_TAG))
   //     if (latestTaggedVersion === null) {
-  //       return err(`Failed to deteremine a valid semver version vesion from ${versions} and ${APALACHE_VERSION_TAG}`)
+  //       return err(`Failed to determine a valid semver version version from ${versions} and ${APALACHE_VERSION_TAG}`)
   //     }
   //     // Check if we have already downloaded this release
   //     const unpackPath = apalacheDistDir()
