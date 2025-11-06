@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump Apalache to 0.51.1 (critical bugfix in generics [#3204](https://github.com/apalache-mc/apalache/issues/3204))
+  
+- Improved performance of small frequently allocated values in the rust backend (#1761)
 
 ### Deprecated
 ### Removed
