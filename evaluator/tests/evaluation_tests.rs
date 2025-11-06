@@ -85,7 +85,7 @@ fn assert_var_after_run(
 
     let run_result = interpreter.eval(&mut env, run_def.expr.clone());
 
-    assert_eq!(run_result, Ok(Value::Bool(true)));
+    assert_eq!(run_result, Ok(Value::bool(true)));
 
     let storage = env.var_storage.borrow();
     let var_value = storage
@@ -1077,7 +1077,7 @@ fn run_then_false_when_rhs_is_false() -> Result<(), Box<dyn std::error::Error>> 
     let result = eval_run("run1", input);
 
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Bool(false));
+    assert_eq!(result.unwrap(), Value::bool(false));
 
     Ok(())
 }
@@ -1117,7 +1117,7 @@ fn run_fail() -> Result<(), Box<dyn std::error::Error>> {
                  run run1 = (n' = 1).fail()";
     let result = eval_run("run1", input);
 
-    assert_eq!(result, Ok(Value::Bool(false)));
+    assert_eq!(result, Ok(Value::bool(false)));
 
     Ok(())
 }

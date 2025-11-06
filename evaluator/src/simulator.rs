@@ -96,7 +96,7 @@ impl ParsedQuint {
                         n_traces,
                         Trace {
                             states: trace,
-                            violation: false,
+                            violation: true,
                         },
                     );
                     return Ok(SimulationResult {

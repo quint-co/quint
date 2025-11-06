@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix an issue where an arbitrary trace was reported as a counterexample in the rust backend (#1802)
+
 ### Security
 
 ## v0.29.0 -- 2025-09-26

@@ -195,7 +195,7 @@ module apply_fancy {
 
     } else {
       // At least one child is updated and the path can't be collapsed.
-      // Update the currenct node and return
+      // Update the current node and return
 
       pure val new_left_child_and_tree = match left_outcome {
         | Updated(node) => {

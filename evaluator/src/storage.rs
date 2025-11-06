@@ -69,7 +69,7 @@ impl Storage {
         });
 
         // TODO: add nondet picks and action taken
-        Value::Record(ImmutableMap::from_iter(map))
+        Value::record(ImmutableMap::from_iter(map))
     }
 
     pub fn take_snapshot(&self) -> Snapshot {
