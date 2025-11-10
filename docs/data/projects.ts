@@ -30,10 +30,10 @@ export const projects = [
   },
   {
     name: 'Malachite',
-    owner: 'Informal and Starkware',
+    owner: 'Informal (acquired by Circle)',
     authors: ['Josef Widder', 'Daniel Cason'],
-    description: 'Spec & several protocol-level tests, all running on the CI for the Malachite consensus engine.',
-    repo: 'https://github.com/informalsystems/malachite/tree/main/specs/consensus/quint',
+    description: 'Spec & several protocol-level tests, all running on the CI for the Malachite consensus engine (powering Arc).',
+    repo: 'https://github.com/circlefin/malachite/tree/main/specs/consensus/quint',
     links: [
       { label: 'Blog post', url: 'https://informal.systems/blog/interchain-meet-starknet' },
       { label: 'Talk', url: 'https://www.youtube.com/watch?v=_2A_6vPM8AA' },
@@ -139,5 +139,32 @@ export const projects = [
     description: 'Formalization from the pseudo-code in the Alpenglow paper.',
     repo: 'https://github.com/informalsystems/Alpenglow-spec/',
     links: [{ label: 'Blog post', url: '/posts/alpenglow' }],
+  },
+  {
+    name: 'Minimmit',
+    owner: 'commonware',
+    authors: ['Denis Kolegov', 'Patrick O\'Grady'],
+    description: 'Formal specification for the Minimmit Byzantine Fault-Tolerant consensus protocol',
+    repo: 'https://github.com/commonwarexyz/monorepo/tree/main/pipeline/minimmit/quint',
+  },
+  {
+    name: 'Timewave Vault',
+    owner: 'Neutron',
+    authors: ['Carlos Rodriguez'],
+    description: 'Quint spec of one way vault for rounding analysis',
+    repo: 'https://github.com/informalsystems/timewave-vault-quint-spec',
+  },
+  {
+    name: 'Universal Composability',
+    owner: 'IOG',
+    authors: ['Denis Firsov', 'Pooya Farshim'],
+    description: 'Modeling of Universal Composability functionalities for model checking',
+    repo: 'https://github.com/dfirsov/uc_model_checking',
+  },
+  {
+    name: '[Your Project Here]',
+    authors: ['You'],
+    description: 'Let us know about your project using Quint!',
+    links: [{ label: 'Telegram Group', url: 'https://t.me/quint_lang' }],
   },
 ]

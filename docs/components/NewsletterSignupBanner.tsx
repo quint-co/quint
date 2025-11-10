@@ -48,7 +48,7 @@ export function NewsletterSignupBanner() {
             font-pj
           "
         >
-          A modern and executable specification language
+          Executable specs for reliable systems
         </h2>
       </div>
 
@@ -68,7 +68,8 @@ export function NewsletterSignupBanner() {
       >
         <FontAwesomeIcon icon={faEnvelope} className="text-quint-purple text-6xl" />
 
-        <p className="text-2xl">Subscribe to our newsletter for the latest updates&nbsp;and&nbsp;features</p>
+        <p className="text-2xl">Need Help Getting Started with Quint?</p>
+        <p className="text-1xl">Quint is free and open source (Apache 2.0). We offer a 1-hour free consultation to discuss your project, answer questions, and help you evaluate if executable specifications are right for your team. If there's a fit, we can explore ways to support your adoption journey.</p>
 
         <div className="flex items-center gap-3 w-full">
           <label className="w-full">
@@ -103,7 +104,7 @@ export function NewsletterSignupBanner() {
           variant="primary"
           className="w-full justify-center"
         >
-          Subscribe
+          Schedule your consultation
         </Button>
       </form>
     </div>
