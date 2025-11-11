@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.29.1 -- 2025-11-11
+
+### Added
+### Changed
 
 - Bump Apalache to 0.51.1 (critical bugfix in generics [#3204](https://github.com/apalache-mc/apalache/issues/3204))
   
