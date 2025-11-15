@@ -138,8 +138,8 @@ export class Builder {
   }
 }
 
-/* Bulding functionality is given by functions that take a builder instead of Builder methods.
- * This should help separating responsability and splitting this into multiple files if ever needed */
+/* Building functionality is given by functions that take a builder instead of Builder methods.
+ * This should help separating responsibility and splitting this into multiple files if ever needed */
 
 /**
  * Builds an evaluation function for a given Quint expression.

@@ -341,7 +341,7 @@ describe('unify', () => {
       )
     })
 
-    it('returs error when effect names are cyclical', () => {
+    it('returns error when effect names are cyclical', () => {
       const e1 = parseEffectOrThrow('e1')
       const e2 = parseEffectOrThrow('() => e1')
 
@@ -358,7 +358,7 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
     })
 
-    it('returs error when effect names are cyclical in other way', () => {
+    it('returns error when effect names are cyclical in other way', () => {
       const e1 = parseEffectOrThrow('() => e1')
       const e2 = parseEffectOrThrow('e1')
 

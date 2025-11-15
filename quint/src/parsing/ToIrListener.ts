@@ -348,7 +348,7 @@ export class ToIrListener implements QuintListener {
     const defHead = ctx.typeDefHead()
     const name = defHead._typeName.text
 
-    // Build the type declaraion
+    // Build the type declaration
     const fields: RowField[] = popMany(this.variantStack, this.variantStack.length, this.undefinedVariant(ctx))
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
     const type: QuintSumType = { id, kind: 'sum', fields: row }
@@ -1005,7 +1005,7 @@ export class ToIrListener implements QuintListener {
     // the syntax rules ensure that at least this expression is given
     const expr = exprs.shift()!
 
-    // after shifting off the match expr, the remaing exprs are the cases of the match expression
+    // after shifting off the match expr, the remaining exprs are the cases of the match expression
     const cases: (QuintStr | QuintLambda)[] = zip(exprs, ctx._matchCase).reduce(
       (acc: (QuintStr | QuintLambda)[], matchCase: [QuintEx, p.MatchSumCaseContext]) =>
         acc.concat(this.formMatchCase(matchCase)),

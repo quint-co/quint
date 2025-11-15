@@ -109,7 +109,7 @@ export class IRTransformer {
  * @param transformer: the IRTransformer instance with the functions to be invoked
  * @param quintModule: the Quint module to be navigated
  *
- * @returns the tranformed Quint module
+ * @returns the transformed Quint module
  */
 export function transformModule(transformer: IRTransformer, quintModule: ir.QuintModule): ir.QuintModule {
   let newModule = cloneDeep(quintModule)

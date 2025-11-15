@@ -133,7 +133,7 @@ export class NameCollector implements IRVisitor {
     }
 
     // For each override, check if the name exists in the instantiated module and is a constant.
-    // If so, update the value definition to point to the expression being overriden
+    // If so, update the value definition to point to the expression being overridden
     decl.overrides.forEach(([param, _ex]) => {
       // Constants are always top-level
       const constDef = getTopLevelDef(instanceTable, param.name)

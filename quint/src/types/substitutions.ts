@@ -94,7 +94,7 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
         return {
           ...t,
           // We know this has to end up as a concrete fixed row, since it must
-          // start as one, and applying substitions cannot result in a wider type
+          // start as one, and applying substitutions cannot result in a wider type
           fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
         }
       case 'app':

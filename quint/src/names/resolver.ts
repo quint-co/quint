@@ -93,7 +93,7 @@ export class NameResolver implements IRVisitor {
   }
 
   exitLet(expr: QuintLet): void {
-    // When exiting a let, delete the operator defintition so it is not acessed
+    // When exiting a let, delete the operator definition so it is not accessed
     // outside of the let scope
     this.collector.deleteDefinition(expr.opdef.name)
   }
@@ -135,7 +135,7 @@ export class NameResolver implements IRVisitor {
   }
 
   enterInstance(def: QuintInstance): void {
-    // Resolve overriden param names in the current module
+    // Resolve overridden param names in the current module
     def.overrides.forEach(([param, _]) => {
       const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${param.name}` : param.name
       this.resolveName(qualifiedName, param.id)
