@@ -6,7 +6,7 @@ import Link from 'next/link'
  */
 export type Project = {
   name: string
-  owner: string
+  owner?: string
   authors: string[]
   /** Short, one‑sentence summary. */
   description: string
@@ -18,8 +18,14 @@ export type Project = {
 
 /** Grid of cards showcasing Quint projects. */
 export const ProjectsGridCompact: React.FC<{ projects: Project[] }> = ({ projects }) => {
-  // Sort projects alphabetically by name (case‑insensitive)
-  const sorted = [...projects].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+  // Sort projects alphabetically by name (case‑insensitive), but keep "[Your Project Here]" last
+  const sorted = [...projects].sort((a, b) => {
+    const aIsSpecial = a.name === '[Your Project Here]'
+    const bIsSpecial = b.name === '[Your Project Here]'
+    if (aIsSpecial && !bIsSpecial) return 1
+    if (!aIsSpecial && bIsSpecial) return -1
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  })
 
   return (
     <div className="grid gap-6 grid-cols-2 lg:grid-cols-4 mt-6">
@@ -31,7 +37,11 @@ export const ProjectsGridCompact: React.FC<{ projects: Project[] }> = ({ project
           {/* Header */}
           <header className="mb-4 space-y-1">
             <h3 className="text-lg font-semibold leading-tight text-quint-purple dark:text-primary-100">{p.name}</h3>
-            <p className="text-sm font-medium x:text-gray-800 dark:text-gray-200">{p.owner}</p>
+            {p.name === '[Your Project Here]' ? (
+              <p className="text-sm font-medium x:text-gray-800 dark:text-gray-200">Tell us about it!</p>
+            ) : p.owner && (
+              <p className="text-sm font-medium x:text-gray-800 dark:text-gray-200">{p.owner}</p>
+            )}
           </header>
 
           {/* Links */}

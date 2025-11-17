@@ -16,6 +16,6 @@ function getSiteUrl(): string {
 export const SITE_CONFIG = {
   siteUrl: getSiteUrl(),
   title: 'Quint',
-  description: 'Quint - A modern and executable specification language',
+  description: 'Quint - Executable specs for reliable systems',
   lang: 'en-us',
 } as const

@@ -65,11 +65,10 @@ export function Home() {
             <div className="relative z-10">
               <h1 className="text-4xl/tight sm:text-5xl/tight font-extrabold tracking-tight">Quint</h1>
               <h2 className="text-2xl sm:text-3xl font-bold text-primary-700 dark:text-primary-400">
-                A modern and executable specification language
+                Executable specs for reliable systems
               </h2>
               <p className="mt-4 max-w-prose text-lg text-zinc-600 dark:text-zinc-300">
-                Quint helps you write precise specifications and check them automatically. Find subtle bugs before they
-                reach production.
+                Feel more confident about your code (human written or AI-generated)
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-4">
