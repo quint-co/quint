@@ -42,12 +42,12 @@ Evaluate the Boolean literals in REPL:
           
 
 ```sh
-echo "false" | quint
+quint "false"
 ```
 
 
 ```sh
-echo "true" | quint
+quint "true"
 ```
 
 ## 3. Boolean negation
@@ -70,12 +70,12 @@ Evaluate the negation of `false` and `true`:
           
 
 ```sh
-echo "not(false)" | quint
+quint "not(false)"
 ```
 
 
 ```sh
-echo "not(true)" | quint
+quint "not(true)"
 ```
 
 ## 4. Boolean equality
@@ -99,22 +99,22 @@ Try comparing `false` and `true` in all possible combinations:
           
 
 ```sh
-echo "false == false" | quint
+quint "false == false"
 ```
 
 
 ```sh
-echo "false == true" | quint
+quint "false == true"
 ```
 
 
 ```sh
-echo "true == false" | quint
+quint "true == false"
 ```
 
 
 ```sh
-echo "true == true" | quint
+quint "true == true"
 ```
 
 
@@ -124,12 +124,12 @@ produces type errors. Try them:
           
 
 ```sh
-echo "false == 0" | quint
+quint "false == 0"
 ```
 
 
 ```sh
-echo "true == 1" | quint
+quint "true == 1"
 ```
 
 ## 5. Boolean inequality
@@ -152,22 +152,22 @@ Try comparing `false` and `true` in all possible combinations:
           
 
 ```sh
-echo "false != false" | quint
+quint "false != false"
 ```
 
 
 ```sh
-echo "false != true" | quint
+quint "false != true"
 ```
 
 
 ```sh
-echo "true != false" | quint
+quint "true != false"
 ```
 
 
 ```sh
-echo "true != true" | quint
+quint "true != true"
 ```
 
 ## 6. Dot form
@@ -189,7 +189,7 @@ If you prefer object-oriented style, you can also write `x.not()`. Try it out:
           
 
 ```sh
-echo "false.not()" | quint
+quint "false.not()"
 ```
 
 
@@ -199,7 +199,7 @@ Be careful about not writing `false.not`, as it would be understood as record ac
           
 
 ```sh
-echo "false.not" | quint
+quint "false.not"
 ```
 
 ## 7. Boolean "and"
@@ -222,22 +222,22 @@ Evaluate all possible combinations of `false` and `true`:
           
 
 ```sh
-echo "false and false" | quint
+quint "false and false"
 ```
 
 
 ```sh
-echo "false and true" | quint
+quint "false and true"
 ```
 
 
 ```sh
-echo "true and false" | quint
+quint "true and false"
 ```
 
 
 ```sh
-echo "true and true" | quint
+quint "true and true"
 ```
 
 ## 8. Dot form for binary operators
@@ -260,7 +260,7 @@ Boolean "and". Try it:
           
 
 ```sh
-echo "false.and(true)" | quint
+quint "false.and(true)"
 ```
 
 
@@ -291,17 +291,17 @@ As you see, "and" does not have to apply to two arguments only. You can use it w
           
 
 ```sh
-echo "and(true, false, true)" | quint
+quint "and(true, false, true)"
 ```
 
 
 ```sh
-echo "and(true, false, true, false)" | quint
+quint "and(true, false, true, false)"
 ```
 
 
 ```sh
-echo "and(true, false, true, false, true)" | quint
+quint "and(true, false, true, false, true)"
 ```
 
 ## 10. The and {...} form
@@ -331,7 +331,7 @@ Try it:
           
 
 ```sh
-echo "and { false == false, true == true }" | quint
+quint "and { false == false, true == true }"
 ```
 
 ## 11. Boolean "or"
@@ -353,22 +353,22 @@ Evaluate all possible combinations of `false` and `true`:
           
 
 ```sh
-echo "false or false" | quint
+quint "false or false"
 ```
 
 
 ```sh
-echo "false or true" | quint
+quint "false or true"
 ```
 
 
 ```sh
-echo "true or false" | quint
+quint "true or false"
 ```
 
 
 ```sh
-echo "true or true" | quint
+quint "true or true"
 ```
 
 ## 12. Other forms of "or"
@@ -423,22 +423,22 @@ Try the implication for all combinations of `false` and `true`:
           
 
 ```sh
-echo "false implies false" | quint
+quint "false implies false"
 ```
 
 
 ```sh
-echo "false implies true" | quint
+quint "false implies true"
 ```
 
 
 ```sh
-echo "true implies false" | quint
+quint "true implies false"
 ```
 
 
 ```sh
-echo "true implies true" | quint
+quint "true implies true"
 ```
 
 ## 14. Boolean equivalence
@@ -470,22 +470,22 @@ Try `iff` for all combinations of `false` and `true`:
           
 
 ```sh
-echo "false iff false" | quint
+quint "false iff false"
 ```
 
 
 ```sh
-echo "false iff true" | quint
+quint "false iff true"
 ```
 
 
 ```sh
-echo "true iff false" | quint
+quint "true iff false"
 ```
 
 
 ```sh
-echo "true iff true" | quint
+quint "true iff true"
 ```
 
 ## 15. Suming it up

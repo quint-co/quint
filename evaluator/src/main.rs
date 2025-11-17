@@ -239,7 +239,7 @@ fn simulate_in_parallel(
         let parsed = parsed.clone();
 
         // In the case of a non-exact split, the first thread executes the
-        // remain runs because it'll probably have the most CPU time avaible
+        // remain runs because it'll probably have the most CPU time available
         // since it starts before the other threads.
         let nruns = if i == 0 {
             (nruns / nthreads) + (nruns % nthreads)
@@ -252,7 +252,7 @@ fn simulate_in_parallel(
         let out_tx = out_tx.clone();
 
         let thread = std::thread::Builder::new()
-            .name(format!("simulator-thread-{}", i))
+            .name(format!("simulator-thread-{i}"))
             .spawn(move || {
                 let result = parsed.simulate(nsteps, nruns, ntraces, reporter);
                 let outcome = to_outcome(source, result);

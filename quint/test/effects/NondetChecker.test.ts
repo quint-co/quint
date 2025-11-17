@@ -47,7 +47,7 @@ describe('checkNondets', () => {
     ])
   })
 
-  it('finds an error when oneOf is not the outtermost expression', () => {
+  it('finds an error when oneOf is not the outermost expression', () => {
     const text = `module A {
       var x: int
 

@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.29.1 -- 2025-11-11
+
+### Added
+### Changed
+
+- Bump Apalache to 0.51.1 (critical bugfix in generics [#3204](https://github.com/apalache-mc/apalache/issues/3204))
+  
+- Improved performance of small frequently allocated values in the rust backend (#1761)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fix an issue where an arbitrary trace was reported as a counterexample in the rust backend (#1802)
+
+### Security
+
+## v0.29.0 -- 2025-09-26
+
+### Added
 
 - Added support for passing commands to the REPL (#1768)
 - Added support for running simulations in multiple threads with the rust backend (#1637)

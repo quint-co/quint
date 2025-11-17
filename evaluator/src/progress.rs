@@ -66,7 +66,7 @@ pub fn json_std_err_report(total_samples: usize) -> impl Reporter {
     }
 }
 
-/// The interval beteween reports when using a reporter thread.
+/// The interval between reports when using a reporter thread.
 const REPORT_THREAD_INTERVAL: Duration = Duration::from_millis(100);
 
 /// A reporter thread handler.

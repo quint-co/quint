@@ -70,30 +70,30 @@ in the following steps.
 To get a better intuition at how `i^j` works, run the following examples:
 
           </block>
-          <run>echo "2^32" | quint</run>
+          <run>quint "2^32"</run>
           <expect>4294967296</expect>
-          <run>echo "2^64" | quint</run>
+          <run>quint "2^64"</run>
           <expect>18446744073709551616</expect>
-          <run>echo "2^256" | quint</run>
+          <run>quint "2^256"</run>
           <expect>115792089237316195423570985008687907853269984665640564039457584007913129639936</expect>
-          <run>echo "2^512" | quint</run>
+          <run>quint "2^512"</run>
           <expect>13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096</expect>
 
           <block>
 Exponentiation is not defined on all of its arguments.
 Try the following examples to get the intuition.
           </block>
-          <run>echo "(-2)^3" | quint</run>
+          <run>quint "(-2)^3"</run>
           <expect>-8</expect>
-          <run>echo "(-2)^4" | quint</run>
+          <run>quint "(-2)^4"</run>
           <expect>16</expect>
-          <run>echo "2^(-4)" | quint</run>
+          <run>quint "2^(-4)"</run>
           <expect>error</expect>
-          <run>echo "0^3" | quint</run>
+          <run>quint "0^3"</run>
           <expect>0</expect>
-          <run>echo "0^0" | quint</run>
+          <run>quint "0^0"</run>
           <expect>error</expect>
-          <run>echo "0^(-2)" | quint</run>
+          <run>quint "0^(-2)"</run>
           <expect>error</expect>
         </description>
       </step>
@@ -114,7 +114,7 @@ overflow, as they are big integers.
 Try this simple example:
 
           </block>
-          <run>echo "2022 + 2023" | quint</run>
+          <run>quint "2022 + 2023"</run>
           <expect>4045</expect>
           <block>
 
@@ -122,9 +122,9 @@ It is important to remember that integer addition satisfies the laws
 of commutativity and associativity in Quint:
 
           </block>
-          <run>echo "11 + 17 == 17 + 11" | quint</run>
+          <run>quint "11 + 17 == 17 + 11"</run>
           <expect>true</expect>
-          <run>echo "(11 + 17) + 19 == 11 + (17 + 19)" | quint</run>
+          <run>quint "(11 + 17) + 19 == 11 + (17 + 19)"</run>
           <expect>true</expect>
         </description>
       </step>
@@ -144,7 +144,7 @@ We can add two integers by writing `i - j`.
  - Try this and see the result of the evaluation:
 
           </block>
-          <run>echo "2022 - 2023" | quint</run>
+          <run>quint "2022 - 2023"</run>
           <expect>-1</expect>
           <block>
 
@@ -152,7 +152,7 @@ We can add two integers by writing `i - j`.
    Hence they are applied from left to right.
 
           </block>
-          <run>echo "11 + 13 - 17" | quint</run>
+          <run>quint "11 + 13 - 17"</run>
           <expect>7</expect>
           <block>
  **Exercise:** Is subtraction commutative?
@@ -174,7 +174,7 @@ We can multiply two integers by writing `i * j`.
 Remember that multiplication cannot produce any side effects like overflows:
 
           </block>
-          <run>echo "2^32 * 2^32 == 2^64" | quint</run>
+          <run>quint "2^32 * 2^32 == 2^64"</run>
           <expect>true</expect>
           <block>
 
@@ -182,9 +182,9 @@ It is important to remember that integer multiplication satisfies the laws
 of commutativity and associativity in Quint:
 
           </block>
-          <run>echo "11 * 17 == 17 * 11" | quint</run>
+          <run>quint "11 * 17 == 17 * 11"</run>
           <expect>true</expect>
-          <run>echo "(11 * 17) * 19 == 11 * (17 * 19)" | quint</run>
+          <run>quint "(11 * 17) * 19 == 11 * (17 * 19)"</run>
           <expect>true</expect>
         </description>
       </step>
@@ -211,15 +211,15 @@ property for all integer values of `i` and all integer values of `j != 0`:
 Try the following examples to check your intuition:
 
           </block>
-          <run>echo "99 / 2 == 49" | quint</run>
+          <run>quint "99 / 2 == 49"</run>
           <expect>true</expect>
-          <run>echo "99 % 2 == 1" | quint</run>
+          <run>quint "99 % 2 == 1"</run>
           <expect>true</expect>
-          <run>echo "98 % 2 == 0" | quint</run>
+          <run>quint "98 % 2 == 0"</run>
           <expect>true</expect>
-          <run>echo "((2^64 - 1) % 2^64 + 1) % 2^64" | quint</run>
+          <run>quint "((2^64 - 1) % 2^64 + 1) % 2^64"</run>
           <expect>0</expect>
-          <run>echo "(2^64 - 123) % 2^63" | quint</run>
+          <run>quint "(2^64 - 123) % 2^63"</run>
           <expect>0</expect>
 
           <block>
@@ -265,33 +265,33 @@ These are the standard comparison operators that you know, for sure:
 
 Check your intuition by running the following examples:
           </block>
-          <run>echo "10 &lt; 11" | quint</run>
+          <run>quint "10 &lt; 11"</run>
           <expect>true</expect>
-          <run>echo "10 &lt; 10" | quint</run>
+          <run>quint "10 &lt; 10"</run>
           <expect>false</expect>
-          <run>echo "10 &lt;= 11" | quint</run>
+          <run>quint "10 &lt;= 11"</run>
           <expect>true</expect>
-          <run>echo "10 &lt;= 10" | quint</run>
+          <run>quint "10 &lt;= 10"</run>
           <expect>true</expect>
-          <run>echo "10 &lt;= 9" | quint</run>
+          <run>quint "10 &lt;= 9"</run>
           <expect>true</expect>
-          <run>echo "11 &gt; 10" | quint</run>
+          <run>quint "11 &gt; 10"</run>
           <expect>true</expect>
-          <run>echo "10 &gt; 10" | quint</run>
+          <run>quint "10 &gt; 10"</run>
           <expect>false</expect>
-          <run>echo "11 &gt;= 10" | quint</run>
+          <run>quint "11 &gt;= 10"</run>
           <expect>true</expect>
-          <run>echo "10 &gt;= 10" | quint</run>
+          <run>quint "10 &gt;= 10"</run>
           <expect>true</expect>
-          <run>echo "10 &gt;= 9" | quint</run>
+          <run>quint "10 &gt;= 9"</run>
           <expect>true</expect>
-          <run>echo "10 == 10" | quint</run>
+          <run>quint "10 == 10"</run>
           <expect>true</expect>
-          <run>echo "10 == 11" | quint</run>
+          <run>quint "10 == 11"</run>
           <expect>false</expect>
-          <run>echo "10 != 10" | quint</run>
+          <run>quint "10 != 10"</run>
           <expect>false</expect>
-          <run>echo "10 != 11" | quint</run>
+          <run>quint "10 != 11"</run>
           <expect>true</expect>
         </description>
       </step>
@@ -314,9 +314,9 @@ Hence, no overflow is possible.
 Try a few examples:
 
           </block>
-          <run>echo "-(3 + 2)" | quint</run>
+          <run>quint "-(3 + 2)"</run>
           <expect>-5</expect>
-          <run>echo "-(-2^63) == 2^63" | quint</run>
+          <run>quint "-(-2^63) == 2^63"</run>
           <expect>true</expect>
         </description>
       </step>

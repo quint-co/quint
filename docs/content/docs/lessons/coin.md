@@ -150,22 +150,22 @@ To see that no state is needed, evaluate these definitions in REPL
             
 
 ```sh
-echo "MAX_UINT" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "MAX_UINT"
 ```
 
 
 ```sh
-echo "isUInt(22)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(22)"
 ```
 
 
 ```sh
-echo "isUInt(-1)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(-1)"
 ```
 
 
 ```sh
-echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "isUInt(MAX_UINT + 1)"
 ```
 
 
@@ -224,10 +224,6 @@ in the time when they are bound to a value:
 
  - The `const` values are first declared and later they are substituted
    with actual values via an `instance` declaration.
-
-Constant declarations are not fully supported yet. They will be available
-as soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)
-is closed.
 
 At the moment, we simply declare the value for a small set of addresses `ADDR`,
 in order to be able to iterate on the protocol specification quickly.
@@ -298,7 +294,7 @@ You can try to evaluate the definition of `state` in REPL right away:
             
 
 ```sh
-echo "state" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "state"
 ```
 
 
@@ -411,7 +407,7 @@ The user may submit different inputs, even if the protocol resides in
 two identical states.
 
 For more details, check
-[oneOf](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-oneof-seta--a)
+[oneOf](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#oneof)
 in the reference manual.
 
         
@@ -443,7 +439,7 @@ Now we can call `init` and evaluate an initialized state in REPL:
             
 
 ```sh
-echo "init\n state" | quint -r coin.qnt::coin
+quint -r coin.qnt::coin "init" "state"
 ```
 
 
@@ -499,14 +495,14 @@ the explanation:
    in the map `balances`. If the key `receiver` has no value assigned in
    the map `balances`, REPL would show a runtime error.
    For more details, check
-   [get](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-get-a---b-a--b)
+   [get](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#get)
    in the reference manual.
 
  - `balances.set(receiver, newBal)` produces a new map, that assigns
    the value of `newBal` to the key `receiver`, and keeps the other key-value
    pairs as in `balances`.
    For more details, check
-   [set](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-set-a---b-a-b--a---b)
+   [set](https://github.com/informalsystems/quint/blob/main/docs/content/docs/builtin.md#set)
    in the reference manual.
 
 Now it's time to mint some coins in REPL! Try the following:
@@ -514,7 +510,7 @@ Now it's time to mint some coins in REPL! Try the following:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'mint(minter, "bob", 2023)' 'state'
 ```
 
 
@@ -568,7 +564,7 @@ Play with `mint` and `send` in REPL! The simplest scenario would be:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'mint(minter, "bob", 2023)' 'send("bob", "eve", 1024)' 'state'
 ```
 
 ## 13. Defining a protocol step
@@ -659,7 +655,7 @@ We can immediately check this invariant for a few states:
             
 
 ```sh
-echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'init' 'balancesRangeInv' 'mint(minter, "bob", 2023)' 'balancesRangeInv' 'send("bob", "eve", 1024)' 'balancesRangeInv'
 ```
 
 
@@ -764,7 +760,7 @@ Go ahead and see if this test goes through:
             
 
 ```sh
-echo 'sendWithoutMintTest' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'sendWithoutMintTest'
 ```
 
 
@@ -803,7 +799,7 @@ through and the resulting balances have the expected values.
             
 
 ```sh
-echo 'mintSendTest' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'mintSendTest'
 ```
 
 
@@ -864,7 +860,7 @@ Let's run this test:
             
 
 ```sh
-echo 'mintTwiceThenSendError' | quint -r coin.qnt::coin
+quint -r coin.qnt::coin 'mintTwiceThenSendError'
 ```
 
 

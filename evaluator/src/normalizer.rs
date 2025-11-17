@@ -2,42 +2,45 @@
 //! map keys and set elements, to make sure we don't end up with something like
 //! `Map(Set(1, 2, 3) -> "a", 1.to(3) -> "b")` (the two keys are the same).
 
-use crate::value::Value;
-use std::rc::Rc;
+use crate::value::{Value, ValueInner};
 
 impl Value {
     #[allow(clippy::unnecessary_to_owned)]
     pub fn normalize(self) -> Value {
-        match self {
-            Value::Int(_) | Value::Bool(_) | Value::Str(_) => self,
-            Value::Set(_)
-            | Value::Interval(_, _)
-            | Value::CrossProduct(_)
-            | Value::PowerSet(_)
-            | Value::MapSet(_, _) => Value::Set(
+        match self.0.as_ref() {
+            ValueInner::Int(_) | ValueInner::Bool(_) | ValueInner::Str(_) => self,
+            ValueInner::Set(_)
+            | ValueInner::Interval(_, _)
+            | ValueInner::CrossProduct(_)
+            | ValueInner::PowerSet(_)
+            | ValueInner::MapSet(_, _) => Value::set(
                 self.as_set()
                     .into_owned()
                     .into_iter()
                     .map(|v| v.normalize())
                     .collect(),
             ),
-            Value::Tuple(elems) => Value::Tuple(elems.into_iter().map(|v| v.normalize()).collect()),
-            Value::Record(fields) => Value::Record(
-                fields
-                    .into_iter()
-                    .map(|(k, v)| (k, v.normalize()))
-                    .collect(),
-            ),
-            Value::Map(map) => Value::Map(
-                map.into_iter()
-                    .map(|(k, v)| (k.normalize(), v.normalize()))
-                    .collect(),
-            ),
-            Value::List(elems) => Value::List(elems.into_iter().map(|v| v.normalize()).collect()),
-            Value::Variant(label, value) => {
-                Value::Variant(label, Rc::new(<Value as Clone>::clone(&value).normalize()))
+            ValueInner::Tuple(elems) => {
+                Value::tuple(elems.iter().cloned().map(|v| v.normalize()).collect())
             }
-            Value::Lambda(_, _) => panic!("Cannot normalize lambda"),
+            ValueInner::Record(fields) => Value::record(
+                fields
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone().normalize()))
+                    .collect(),
+            ),
+            ValueInner::Map(map) => Value::map(
+                map.iter()
+                    .map(|(k, v)| (k.clone().normalize(), v.clone().normalize()))
+                    .collect(),
+            ),
+            ValueInner::List(elems) => {
+                Value::list(elems.iter().cloned().map(|v| v.normalize()).collect())
+            }
+            ValueInner::Variant(label, value) => {
+                Value::variant(label.clone(), value.clone().normalize())
+            }
+            ValueInner::Lambda(_, _) => panic!("Cannot normalize lambda"),
         }
     }
 }

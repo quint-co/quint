@@ -66,22 +66,22 @@ To get a better intuition at how `i^j` works, run the following examples:
           
 
 ```sh
-echo "2^32" | quint
+quint "2^32"
 ```
 
 
 ```sh
-echo "2^64" | quint
+quint "2^64"
 ```
 
 
 ```sh
-echo "2^256" | quint
+quint "2^256"
 ```
 
 
 ```sh
-echo "2^512" | quint
+quint "2^512"
 ```
 
 
@@ -90,32 +90,32 @@ Try the following examples to get the intuition.
           
 
 ```sh
-echo "(-2)^3" | quint
+quint "(-2)^3"
 ```
 
 
 ```sh
-echo "(-2)^4" | quint
+quint "(-2)^4"
 ```
 
 
 ```sh
-echo "2^(-4)" | quint
+quint "2^(-4)"
 ```
 
 
 ```sh
-echo "0^3" | quint
+quint "0^3"
 ```
 
 
 ```sh
-echo "0^0" | quint
+quint "0^0"
 ```
 
 
 ```sh
-echo "0^(-2)" | quint
+quint "0^(-2)"
 ```
 
 ## 4. Integer addition
@@ -141,7 +141,7 @@ Try this simple example:
           
 
 ```sh
-echo "2022 + 2023" | quint
+quint "2022 + 2023"
 ```
 
 
@@ -152,12 +152,12 @@ of commutativity and associativity in Quint:
           
 
 ```sh
-echo "11 + 17 == 17 + 11" | quint
+quint "11 + 17 == 17 + 11"
 ```
 
 
 ```sh
-echo "(11 + 17) + 19 == 11 + (17 + 19)" | quint
+quint "(11 + 17) + 19 == 11 + (17 + 19)"
 ```
 
 ## 5. Integer subtraction
@@ -182,7 +182,7 @@ We can add two integers by writing `i - j`.
           
 
 ```sh
-echo "2022 - 2023" | quint
+quint "2022 - 2023"
 ```
 
 
@@ -193,7 +193,7 @@ echo "2022 - 2023" | quint
           
 
 ```sh
-echo "11 + 13 - 17" | quint
+quint "11 + 13 - 17"
 ```
 
 
@@ -220,7 +220,7 @@ Remember that multiplication cannot produce any side effects like overflows:
           
 
 ```sh
-echo "2^32 * 2^32 == 2^64" | quint
+quint "2^32 * 2^32 == 2^64"
 ```
 
 
@@ -231,12 +231,12 @@ of commutativity and associativity in Quint:
           
 
 ```sh
-echo "11 * 17 == 17 * 11" | quint
+quint "11 * 17 == 17 * 11"
 ```
 
 
 ```sh
-echo "(11 * 17) * 19 == 11 * (17 * 19)" | quint
+quint "(11 * 17) * 19 == 11 * (17 * 19)"
 ```
 
 ## 7. Integer division and remainder
@@ -268,27 +268,27 @@ Try the following examples to check your intuition:
           
 
 ```sh
-echo "99 / 2 == 49" | quint
+quint "99 / 2 == 49"
 ```
 
 
 ```sh
-echo "99 % 2 == 1" | quint
+quint "99 % 2 == 1"
 ```
 
 
 ```sh
-echo "98 % 2 == 0" | quint
+quint "98 % 2 == 0"
 ```
 
 
 ```sh
-echo "((2^64 - 1) % 2^64 + 1) % 2^64" | quint
+quint "((2^64 - 1) % 2^64 + 1) % 2^64"
 ```
 
 
 ```sh
-echo "(2^64 - 123) % 2^63" | quint
+quint "(2^64 - 123) % 2^63"
 ```
 
 
@@ -338,72 +338,72 @@ Check your intuition by running the following examples:
           
 
 ```sh
-echo "10 < 11" | quint
+quint "10 < 11"
 ```
 
 
 ```sh
-echo "10 < 10" | quint
+quint "10 < 10"
 ```
 
 
 ```sh
-echo "10 <= 11" | quint
+quint "10 <= 11"
 ```
 
 
 ```sh
-echo "10 <= 10" | quint
+quint "10 <= 10"
 ```
 
 
 ```sh
-echo "10 <= 9" | quint
+quint "10 <= 9"
 ```
 
 
 ```sh
-echo "11 > 10" | quint
+quint "11 > 10"
 ```
 
 
 ```sh
-echo "10 > 10" | quint
+quint "10 > 10"
 ```
 
 
 ```sh
-echo "11 >= 10" | quint
+quint "11 >= 10"
 ```
 
 
 ```sh
-echo "10 >= 10" | quint
+quint "10 >= 10"
 ```
 
 
 ```sh
-echo "10 >= 9" | quint
+quint "10 >= 9"
 ```
 
 
 ```sh
-echo "10 == 10" | quint
+quint "10 == 10"
 ```
 
 
 ```sh
-echo "10 == 11" | quint
+quint "10 == 11"
 ```
 
 
 ```sh
-echo "10 != 10" | quint
+quint "10 != 10"
 ```
 
 
 ```sh
-echo "10 != 11" | quint
+quint "10 != 11"
 ```
 
 ## 9. Integer negation
@@ -431,12 +431,12 @@ Try a few examples:
           
 
 ```sh
-echo "-(3 + 2)" | quint
+quint "-(3 + 2)"
 ```
 
 
 ```sh
-echo "-(-2^63) == 2^63" | quint
+quint "-(-2^63) == 2^63"
 ```
 
 ## The end

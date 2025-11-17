@@ -43,7 +43,7 @@ function parseErrorsFrom(sourceName: string, code: string): QuintError[] {
 function parseAndCompare(artifact: string): void {
   // read the expected result as JSON
   const expected = readJson(artifact)
-  // We're not interested in testing the contens of the table here
+  // We're not interested in testing the contents of the table here
   delete expected.table
   let outputToCompare
 
@@ -52,7 +52,7 @@ function parseAndCompare(artifact: string): void {
   const basepath = resolve(__dirname, '../../testFixture')
   const resolver = fileSourceResolver(new Map(), (path: string) => {
     // replace the absolute path with a generic mocked path,
-    // so the same fixtures work accross different setups
+    // so the same fixtures work across different setups
     return path.replace(basepath, 'mocked_path/testFixture')
   })
   const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
@@ -72,7 +72,7 @@ function parseAndCompare(artifact: string): void {
 
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
   }
-  // All phases succeeded, check that the module is correclty output
+  // All phases succeeded, check that the module is correctly output
   outputToCompare = {
     stage: 'parsing',
     warnings: [],

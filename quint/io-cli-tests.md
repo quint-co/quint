@@ -1627,12 +1627,11 @@ amWrong
 
 <!-- !test in repl diff -->
 ```
-quint -r ../examples/language-features/counters.qnt::counters init OnPositive OnEven .exit
+quint -r ../examples/language-features/counters.qnt::counters init OnPositive OnEven .exit | tail -n11
 ```
 
 <!-- !test out repl diff -->
 ```
-Quint REPL 0.28.0
 Type ".exit" to exit, or ".help" for more information
 >>> init
 true
