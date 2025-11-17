@@ -88,7 +88,7 @@ has two kinds of operations:
             
 
 ```sh
-echo '("BTC", "ETH")' | quint
+quint '("BTC", "ETH")'
 ```
 
 
@@ -97,7 +97,7 @@ echo '("BTC", "ETH")' | quint
             
 
 ```sh
-echo '("BTC", "ETH")._2' | quint
+quint '("BTC", "ETH")._2'
 ```
 
 ## 3. Defining available pairs
@@ -137,7 +137,7 @@ implementation details. In this case, the set is the best data structure:
             
 
 ```sh
-echo 'availablePairs' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'availablePairs'
 ```
 
 ## 4. Testing set elements
@@ -161,12 +161,12 @@ following definitions:
             
 
 ```sh
-echo 'hasAtomJuno' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'hasAtomJuno'
 ```
 
 
 ```sh
-echo 'hasEvmosEth' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'hasEvmosEth'
 ```
 
 ## 5. Testing some elements and all elements
@@ -191,12 +191,12 @@ and that they cannot swap Secret for any coin:
             
 
 ```sh
-echo 'hasAtom' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'hasAtom'
 ```
 
 
 ```sh
-echo 'missingScrt' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'missingScrt'
 ```
 
 
@@ -209,7 +209,7 @@ expected:
             
 
 ```sh
-echo '("ATOM", "JUNO") == ("JUNO", "ATOM")' | quint
+quint '("ATOM", "JUNO") == ("JUNO", "ATOM")'
 ```
 
 
@@ -248,7 +248,7 @@ the box:
             
 
 ```sh
-echo 'availableUnorderedPairs' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'availableUnorderedPairs'
 ```
 
 
@@ -275,7 +275,7 @@ To this end, they filter the set `availableUnorderedPairs` as in `atomPairs`:
             
 
 ```sh
-echo 'atomPairs' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'atomPairs'
 ```
 
 
@@ -301,7 +301,7 @@ use the operator `size` in the definition `howMany`:
             
 
 ```sh
-echo 'howMany' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'howMany'
 ```
 
 ## 9. Flattening sets
@@ -327,7 +327,7 @@ operator in the cheatsheet. It's called `flatten`:
             
 
 ```sh
-echo 'availableUnorderedPairs.flatten()' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'availableUnorderedPairs.flatten()'
 ```
 
 
@@ -384,7 +384,7 @@ one coin. Let's check that:
             
 
 ```sh
-echo 'Set("ATOM", "EVMOS").intersect(someCoinsExample)' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'Set("ATOM", "EVMOS").intersect(someCoinsExample)'
 ```
 
 
@@ -393,7 +393,7 @@ with the following condition:
             
 
 ```sh
-echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1)'
 ```
 
 
@@ -403,7 +403,7 @@ sets (of strings), whereas they need a set of strings (coins).
             
 
 ```sh
-echo 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'availableUnorderedPairs.filter(p => p.intersect(someCoinsExample).size() == 1).flatten()'
 ```
 
 
@@ -415,7 +415,7 @@ definition is written in `buyableVia1Swap`.
             
 
 ```sh
-echo 'buyableVia1Swap(Set("ATOM"))' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableVia1Swap(Set("ATOM"))'
 ```
 
 
@@ -426,7 +426,7 @@ swaps. This is also easy: Just call `buyableVia1Swap` twice. This works:
             
 
 ```sh
-echo 'buyableVia2Swaps(Set("ATOM"))' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableVia2Swaps(Set("ATOM"))'
 ```
 
 
@@ -435,7 +435,7 @@ Also easy: Just take the set union of what is possible in one or two swaps:
             
 
 ```sh
-echo 'buyableVia1or2Swaps(Set("ATOM"))' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableVia1or2Swaps(Set("ATOM"))'
 ```
 
 ## 11. Reachability via multiple swaps
@@ -465,7 +465,7 @@ Let's try it:
             
 
 ```sh
-echo '3.to(10)' | quint
+quint '3.to(10)'
 ```
 
 
@@ -508,17 +508,17 @@ Now @KryptoCoffeeCat can compute what they can buy via various numbers of swaps:
             
 
 ```sh
-echo 'buyableNSwaps(Set("ATOM"), 3)' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 3)'
 ```
 
 
 ```sh
-echo 'buyableNSwaps(Set("ATOM"), 4)' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 4)'
 ```
 
 
 ```sh
-echo 'buyableNSwaps(Set("ATOM"), 5)' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'buyableNSwaps(Set("ATOM"), 5)'
 ```
 
 ## 12. Power to the folds!
@@ -604,7 +604,7 @@ sets that are not quadruples. How many quadruples are there? Let's see:
             
 
 ```sh
-echo 'quads.size()' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'quads.size()'
 ```
 
 
@@ -631,7 +631,7 @@ single click:
             
 
 ```sh
-echo 'cycles4' | quint -r sets.qnt::sets
+quint -r sets.qnt::sets 'cycles4'
 ```
 
 ## 14. Conclusions

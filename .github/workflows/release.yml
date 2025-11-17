@@ -17,7 +17,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: "17"
+          node-version: "18"
           registry-url: "https://registry.npmjs.org"
       - name: Compile
         run: npm ci
@@ -35,6 +35,11 @@ jobs:
           sleep 5
           # Run the integration tests
           npm run all-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # These tests fail on windows currently
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
       - name: Extract release notes
         # Get the release notes for the version by printing all lines between lines
         # starting with the version header and ending with the next version header,

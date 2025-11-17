@@ -14,7 +14,7 @@ macro_rules! run_test {
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 123_456);
 
         let init = interpreter.eval(&mut env, init_def.expr.clone());
-        assert_eq!(init.unwrap(), Value::Bool(true));
+        assert_eq!(init.unwrap(), Value::bool(true));
 
         for expected_value in $expected_values {
             interpreter.shift();
@@ -24,7 +24,7 @@ macro_rules! run_test {
 
             let step_def = parsed.find_definition_by_name("step")?;
             let step = interpreter.eval(&mut env, step_def.expr.clone());
-            assert_eq!(step.unwrap(), Value::Bool(true));
+            assert_eq!(step.unwrap(), Value::bool(true));
         }
 
         Ok(())
@@ -40,7 +40,7 @@ fn assign_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x + 1
         }";
 
-    run_test!(quint_content, [Value::Int(0), Value::Int(1)])
+    run_test!(quint_content, [Value::int(0), Value::int(1)])
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn action_all_test() -> Result<(), Box<dyn std::error::Error>> {
           }
         }";
 
-    run_test!(quint_content, [Value::Int(2), Value::Int(5)])
+    run_test!(quint_content, [Value::int(2), Value::int(5)])
 }
 
 #[test]
@@ -79,6 +79,6 @@ fn action_any_test() -> Result<(), Box<dyn std::error::Error>> {
 
     run_test!(
         quint_content,
-        [Value::Int(2), Value::Int(8), Value::Int(32)]
+        [Value::int(2), Value::int(8), Value::int(32)]
     )
 }

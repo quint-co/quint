@@ -14,7 +14,7 @@ macro_rules! run_test {
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
         let init = interpreter.eval(&mut env, init_def.expr.clone());
-        assert_eq!(init.unwrap(), Value::Bool(true));
+        assert_eq!(init.unwrap(), Value::bool(true));
 
         interpreter.shift();
 
@@ -38,7 +38,7 @@ fn set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x
         }";
 
-    run_test!(quint_content, Value::Int(3))
+    run_test!(quint_content, Value::int(3))
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn interval_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x
         }";
 
-    run_test!(quint_content, Value::Int(5))
+    run_test!(quint_content, Value::int(5))
 }
 
 #[test]
@@ -75,5 +75,5 @@ fn nested_set_of_maps_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = myMap' = myMap
         }";
 
-    run_test!(quint_content, Value::Str("x".into()))
+    run_test!(quint_content, Value::str("x".into()))
 }

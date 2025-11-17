@@ -178,7 +178,7 @@ Pros:
  - Quint is written in TypeScript and submitting JSON is no brainer, especially
    given that we are using [ITF Format][] for serialization.
 
- - Language agnostic. Non-Quint code may be writte in JavaScript, Golang, and
+ - Language agnostic. Non-Quint code may be written in JavaScript, Golang, and
  Rust.
 
  - Relatively easy to implement in Quint.

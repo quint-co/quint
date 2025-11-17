@@ -16,43 +16,43 @@
     },
     {
       "title": "Integer exponentiation",
-      "description": "\n          \n\nWe start with the exponentiation `i^j` over integers,\nwhich is also written as `pow(i, j)` in many languages.\nThe result of `i^j` is simply `i` multiplied by itself `j - 1` times.\nThis is the first operator, as it lets us to write nice examples\nin the following steps.\n\nTo get a better intuition at how `i^j` works, run the following examples:\n\n          \n>> echo \"2^32\" | quint\n\n\n>> echo \"2^64\" | quint\n\n\n>> echo \"2^256\" | quint\n\n\n>> echo \"2^512\" | quint\n\n\n\nExponentiation is not defined on all of its arguments.\nTry the following examples to get the intuition.\n          \n>> echo \"(-2)^3\" | quint\n\n\n>> echo \"(-2)^4\" | quint\n\n\n>> echo \"2^(-4)\" | quint\n\n\n>> echo \"0^3\" | quint\n\n\n>> echo \"0^0\" | quint\n\n\n>> echo \"0^(-2)\" | quint\n\n",
+      "description": "\n          \n\nWe start with the exponentiation `i^j` over integers,\nwhich is also written as `pow(i, j)` in many languages.\nThe result of `i^j` is simply `i` multiplied by itself `j - 1` times.\nThis is the first operator, as it lets us to write nice examples\nin the following steps.\n\nTo get a better intuition at how `i^j` works, run the following examples:\n\n          \n>> quint \"2^32\"\n\n\n>> quint \"2^64\"\n\n\n>> quint \"2^256\"\n\n\n>> quint \"2^512\"\n\n\n\nExponentiation is not defined on all of its arguments.\nTry the following examples to get the intuition.\n          \n>> quint \"(-2)^3\"\n\n\n>> quint \"(-2)^4\"\n\n\n>> quint \"2^(-4)\"\n\n\n>> quint \"0^3\"\n\n\n>> quint \"0^0\"\n\n\n>> quint \"0^(-2)\"\n\n",
       "line": 18,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer addition",
-      "description": "\n          \n\nWe can add two integers by writing `i + j`. Importantly, integers cannot\noverflow, as they are big integers.\n\nTry this simple example:\n\n          \n>> echo \"2022 + 2023\" | quint\n\n\n\n\nIt is important to remember that integer addition satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> echo \"11 + 17 == 17 + 11\" | quint\n\n\n>> echo \"(11 + 17) + 19 == 11 + (17 + 19)\" | quint\n\n",
+      "description": "\n          \n\nWe can add two integers by writing `i + j`. Importantly, integers cannot\noverflow, as they are big integers.\n\nTry this simple example:\n\n          \n>> quint \"2022 + 2023\"\n\n\n\n\nIt is important to remember that integer addition satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> quint \"11 + 17 == 17 + 11\"\n\n\n>> quint \"(11 + 17) + 19 == 11 + (17 + 19)\"\n\n",
       "line": 21,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer subtraction",
-      "description": "\n          \n\nWe can add two integers by writing `i - j`.\n\n - Try this and see the result of the evaluation:\n\n          \n>> echo \"2022 - 2023\" | quint\n\n\n\n\n - Addition and subtraction have the same priority.\n   Hence they are applied from left to right.\n\n          \n>> echo \"11 + 13 - 17\" | quint\n\n\n\n **Exercise:** Is subtraction commutative?\n          ",
+      "description": "\n          \n\nWe can add two integers by writing `i - j`.\n\n - Try this and see the result of the evaluation:\n\n          \n>> quint \"2022 - 2023\"\n\n\n\n\n - Addition and subtraction have the same priority.\n   Hence they are applied from left to right.\n\n          \n>> quint \"11 + 13 - 17\"\n\n\n\n **Exercise:** Is subtraction commutative?\n          ",
       "line": 24,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer multiplication",
-      "description": "\n          \n\nWe can multiply two integers by writing `i * j`.\nRemember that multiplication cannot produce any side effects like overflows:\n\n          \n>> echo \"2^32 * 2^32 == 2^64\" | quint\n\n\n\n\nIt is important to remember that integer multiplication satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> echo \"11 * 17 == 17 * 11\" | quint\n\n\n>> echo \"(11 * 17) * 19 == 11 * (17 * 19)\" | quint\n\n",
+      "description": "\n          \n\nWe can multiply two integers by writing `i * j`.\nRemember that multiplication cannot produce any side effects like overflows:\n\n          \n>> quint \"2^32 * 2^32 == 2^64\"\n\n\n\n\nIt is important to remember that integer multiplication satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> quint \"11 * 17 == 17 * 11\"\n\n\n>> quint \"(11 * 17) * 19 == 11 * (17 * 19)\"\n\n",
       "line": 27,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer division and remainder",
-      "description": "\n          \n\nThe operators `i / j` and `i % j` compute the integer part and the remainder\nwhen dividing `i` by `j`, respectively. These operators have the following\nproperty for all integer values of `i` and all integer values of `j != 0`:\n`i == (i / j) * j + i % j`.\n\nTry the following examples to check your intuition:\n\n          \n>> echo \"99 / 2 == 49\" | quint\n\n\n>> echo \"99 % 2 == 1\" | quint\n\n\n>> echo \"98 % 2 == 0\" | quint\n\n\n>> echo \"((2^64 - 1) % 2^64 + 1) % 2^64\" | quint\n\n\n>> echo \"(2^64 - 123) % 2^63\" | quint\n\n\n\n **Exercise:** Is division commutative?\n          ",
+      "description": "\n          \n\nThe operators `i / j` and `i % j` compute the integer part and the remainder\nwhen dividing `i` by `j`, respectively. These operators have the following\nproperty for all integer values of `i` and all integer values of `j != 0`:\n`i == (i / j) * j + i % j`.\n\nTry the following examples to check your intuition:\n\n          \n>> quint \"99 / 2 == 49\"\n\n\n>> quint \"99 % 2 == 1\"\n\n\n>> quint \"98 % 2 == 0\"\n\n\n>> quint \"((2^64 - 1) % 2^64 + 1) % 2^64\"\n\n\n>> quint \"(2^64 - 123) % 2^63\"\n\n\n\n **Exercise:** Is division commutative?\n          ",
       "line": 34,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer comparison",
-      "description": "\n          \n\nThese are the standard comparison operators that you know, for sure:\n\n - Less than: `i < j`\n - Less than or equal: `i <= j`\n - Greater than: `i > j`\n - Greater than or equal: `i >= j`\n - Equals to: `i == j`\n - Not equal to: `i != j`\n\nCheck your intuition by running the following examples:\n          \n>> echo \"10 < 11\" | quint\n\n\n>> echo \"10 < 10\" | quint\n\n\n>> echo \"10 <= 11\" | quint\n\n\n>> echo \"10 <= 10\" | quint\n\n\n>> echo \"10 <= 9\" | quint\n\n\n>> echo \"11 > 10\" | quint\n\n\n>> echo \"10 > 10\" | quint\n\n\n>> echo \"11 >= 10\" | quint\n\n\n>> echo \"10 >= 10\" | quint\n\n\n>> echo \"10 >= 9\" | quint\n\n\n>> echo \"10 == 10\" | quint\n\n\n>> echo \"10 == 11\" | quint\n\n\n>> echo \"10 != 10\" | quint\n\n\n>> echo \"10 != 11\" | quint\n\n",
+      "description": "\n          \n\nThese are the standard comparison operators that you know, for sure:\n\n - Less than: `i < j`\n - Less than or equal: `i <= j`\n - Greater than: `i > j`\n - Greater than or equal: `i >= j`\n - Equals to: `i == j`\n - Not equal to: `i != j`\n\nCheck your intuition by running the following examples:\n          \n>> quint \"10 < 11\"\n\n\n>> quint \"10 < 10\"\n\n\n>> quint \"10 <= 11\"\n\n\n>> quint \"10 <= 10\"\n\n\n>> quint \"10 <= 9\"\n\n\n>> quint \"11 > 10\"\n\n\n>> quint \"10 > 10\"\n\n\n>> quint \"11 >= 10\"\n\n\n>> quint \"10 >= 10\"\n\n\n>> quint \"10 >= 9\"\n\n\n>> quint \"10 == 10\"\n\n\n>> quint \"10 == 11\"\n\n\n>> quint \"10 != 10\"\n\n\n>> quint \"10 != 11\"\n\n",
       "line": 53,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer negation",
-      "description": "\n          \n\nWe almost forgot about the integer negation!\nNot surprisingly, `-i` negates an integer `i`.\nRecall that Quint integers are big integers.\nHence, no overflow is possible.\n\nTry a few examples:\n\n          \n>> echo \"-(3 + 2)\" | quint\n\n\n>> echo \"-(-2^63) == 2^63\" | quint\n\n",
+      "description": "\n          \n\nWe almost forgot about the integer negation!\nNot surprisingly, `-i` negates an integer `i`.\nRecall that Quint integers are big integers.\nHence, no overflow is possible.\n\nTry a few examples:\n\n          \n>> quint \"-(3 + 2)\"\n\n\n>> quint \"-(-2^63) == 2^63\"\n\n",
       "line": 56,
       "file": "lesson2-integers/integers.qnt"
     }

@@ -56,7 +56,7 @@ module builtin {
 
   /// `not(p)` is `true` when `p` is `false`.
   ///
-  /// This is the negation opearator.
+  /// This is the negation operator.
   pure def not(a): (bool) => bool
 
   /// `s.exists(p)` is true when there is an element in `s` that satisfies `p`.
@@ -218,7 +218,7 @@ module builtin {
   /// `s.allLists()` is the set of all lists containing elements in `s`.
   /// This is an infinite set unless `s` is the empty set.
   ///
-  /// Like other inifite sets, this is not supported in any execution/verification form.
+  /// Like other infinite sets, this is not supported in any execution/verification form.
   ///
   /// ### Examples
   ///
@@ -1050,7 +1050,7 @@ module builtin {
 
   // /// `variant("Label", expr)` is a value of type `T` when
   // ///
-  // /// - `T` is a predifined sum type
+  // /// - `T` is a predefined sum type
   // /// - `T` has a data constructor `Label`, paired with type `E`
   // /// - `expr` has type `E`
   // ///

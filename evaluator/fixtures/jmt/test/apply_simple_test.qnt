@@ -548,7 +548,7 @@ module apply_simple_test {
            { key_hash: [], version: 2 } -> expected_root_2,
            { key_hash: [0], version: 2 } -> expected_left_2,
            { key_hash: [1], version: 2 } -> expected_right_2,
-           // version 3 after updateing "a"
+           // version 3 after updating "a"
            { key_hash: [], version: 3 } -> expected_root_3,
            { key_hash: [0], version: 2 } -> expected_left_2,
            { key_hash: [1], version: 3 } -> expected_right_3
@@ -583,7 +583,7 @@ module apply_simple_test {
            { key_hash: [], version: 2 } -> expected_root_2,
            { key_hash: [0], version: 2 } -> expected_left_2,
            { key_hash: [1], version: 2 } -> expected_right_2,
-           // version 3 after updateing "a"
+           // version 3 after updating "a"
            { key_hash: [], version: 3 } -> expected_root_3,
            { key_hash: [0], version: 2 } -> expected_left_2,
            { key_hash: [1], version: 3 } -> expected_right_3,

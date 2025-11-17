@@ -82,7 +82,7 @@ Signature: `pure def not: (bool) => bool`
 
 `not(p)` is `true` when `p` is `false`.
 
-This is the negation opearator.
+This is the negation operator.
 
 ## exists
 
@@ -286,7 +286,7 @@ Signature: `pure def allLists: (Set[a]) => Set[List[a]]`
 `s.allLists()` is the set of all lists containing elements in `s`.
 This is an infinite set unless `s` is the empty set.
 
-Like other inifite sets, this is not supported in any execution/verification form.
+Like other infinite sets, this is not supported in any execution/verification form.
 
 ### Examples
 
