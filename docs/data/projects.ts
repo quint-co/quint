@@ -155,10 +155,9 @@ export const projects = [
     repo: 'https://github.com/informalsystems/timewave-vault-quint-spec',
   },
   {
-    name: 'Universal Composability',
-    owner: 'IOG',
-    authors: ['Denis Firsov', 'Pooya Farshim'],
-    description: 'Modeling of Universal Composability functionalities for model checking',
+    name: 'Universally Composable Security',
+    authors: ['Denis Firsov (IOG)', 'Pooya Farshim (IOG)'],
+    description: 'Model-checking UC ideal functionalities, protocols and simulators in Quint',
     repo: 'https://github.com/dfirsov/uc_model_checking',
   },
   {
