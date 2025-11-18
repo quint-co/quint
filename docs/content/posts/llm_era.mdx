@@ -66,7 +66,7 @@ We started with an existing Tendermint spec in Quint - specifically one using th
 
 Let me be clear: **we are not delegating protocol design to AI.** We're not asking AI to design state of the art BFT consensus algorithms.
 
-Manuel Bravo, one of our best protocol designers, did the actual work: research, the English protocol description, draft proofs and paper. We wanted to validate that his protocol was correct. That's where Quint comes in - but this time, with help from AI.
+Manu, one of our best protocol designers, did the actual work: research, the English protocol description, draft proofs and paper. We wanted to validate that his protocol was correct. That's where Quint comes in - but this time, with help from AI.
 
 So we started with **two artifacts**: A Quint specification for the original Tendermint, and an English description of the new Fast Tendermint.
 
@@ -76,7 +76,7 @@ So we started with **two artifacts**: A Quint specification for the original Ten
 
 ### Spec Change
 
-**Input:** Existing Tendermint spec + Manuel's English protocol description<br />**Process:** AI modifies the Quint spec based on the new protocol<br />**Output:** First version of Fast Tendermint spec
+**Input:** Existing Tendermint spec + Manu's English protocol description<br />**Process:** AI modifies the Quint spec based on the new protocol<br />**Output:** First version of Fast Tendermint spec
 
 After each change, we run Quint's basic validation tools - `quint parse` to check syntax, and `quint typecheck` to verify types, references, and function signatures. This tight feedback loop catches basic errors immediately before moving forward, iterating until we have a structurally sound spec.
 
@@ -97,7 +97,7 @@ For Fast Tendermint, we validated:
 
 The goal: **test that all flows are reachable** and explore the state space systematically. Once we're confident about coverage, we check properties. This brings *connection* back - the opposite of the disconnected feeling you get when AI generates code and you just hope it's right.
 
-**Results:** We found two small bugs in Manuel's English spec in one afternoon. They were easy to fix at this stage.
+**Results:** We found two small bugs in Manu's English spec in one afternoon. They were easy to fix at this stage.
 
 Once validation passes - all flows reachable, properties hold, assumptions verified - we have a spec we are confident about. This becomes our source of truth for code generation.
 
