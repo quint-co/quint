@@ -1,12 +1,12 @@
 function getSiteUrl(): string {
-  // Check for Netlify deploy preview URL
-  if (process.env.DEPLOY_PRIME_URL) {
-    return process.env.DEPLOY_PRIME_URL
-  }
-
   // Check for custom site URL environment variable
   if (process.env.SITE_URL) {
     return process.env.SITE_URL
+  }
+
+  // Check for Netlify deploy URL
+  if (process.env.DEPLOY_PRIME_URL) {
+    return process.env.DEPLOY_PRIME_URL
   }
 
   // Default to production URL
@@ -16,6 +16,6 @@ function getSiteUrl(): string {
 export const SITE_CONFIG = {
   siteUrl: getSiteUrl(),
   title: 'Quint',
-  description: 'Quint - A modern and executable specification language',
+  description: 'Quint - Executable specs for reliable systems',
   lang: 'en-us',
 } as const
