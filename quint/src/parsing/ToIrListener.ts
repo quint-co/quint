@@ -99,6 +99,10 @@ export class ToIrListener implements QuintListener {
   protected rowStack: Row[] = []
   // the stack of variants for a sum
   protected variantStack: RowField[] = []
+  // the stack for destructuring pattern identifiers
+  protected patternIdentStack: string[] = []
+  // the stack for destructuring pattern types ('tuple' or 'record')
+  protected patternTypeStack: string[] = []
   // an internal counter to assign unique numbers
   protected idGen: IdGenerator
 
@@ -719,6 +723,30 @@ export class ToIrListener implements QuintListener {
       fail('internal error: the grammar guarantees a type should be on the stack')
     )
     this.paramStack.push({ id, name, typeAnnotation })
+  }
+
+  // Tuple destructuring pattern: (a, b, c)
+  exitTuplePattern(ctx: p.TuplePatternContext) {
+    const identifiers = ctx.identOrHole().map(id => id.text)
+    this.patternIdentStack.push(...identifiers)
+    this.patternTypeStack.push('tuple')
+  }
+
+  // Record destructuring pattern: { foo, bar }
+  exitRecordPattern(ctx: p.RecordPatternContext) {
+    const identifiers = ctx.simpleId().map(id => id.text)
+    this.patternIdentStack.push(...identifiers)
+    this.patternTypeStack.push('record')
+  }
+
+  // val (a, b, c) = expr
+  exitValDestructuring(ctx: p.ValDestructuringContext) {
+    this.handleDestructuring(ctx, 'val')
+  }
+
+  // pure val { foo, bar } = expr
+  exitPureValDestructuring(ctx: p.PureValDestructuringContext) {
+    this.handleDestructuring(ctx, 'pureval')
   }
 
   // an identifier or star '*' in import
@@ -1385,6 +1413,92 @@ export class ToIrListener implements QuintListener {
         expr: body,
       }
     }
+  }
+
+  /**
+   * Handle destructuring patterns for val declarations.
+   * Desugars patterns like `val (a, b) = expr` or `val { foo, bar } = expr`
+   * into multiple val declarations using temporary variables and field/item access.
+   *
+   * @param ctx         parser context
+   * @param qualifier   'val' or 'pureval'
+   */
+  private handleDestructuring(ctx: p.ValDestructuringContext | p.PureValDestructuringContext, qualifier: OpQualifier) {
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+    const patternType = this.patternTypeStack.pop()
+
+    // Determine the number of identifiers based on the pattern type
+    const destructPattern = ctx.destructuringPattern()
+    const tuplePattern = destructPattern.tuplePattern()
+    const recordPattern = destructPattern.recordPattern()
+    const identCount = tuplePattern ? tuplePattern.identOrHole().length : recordPattern ? recordPattern.simpleId().length : 0
+
+    const identifiers = this.patternIdentStack.splice(
+      this.patternIdentStack.length - identCount,
+      identCount
+    )
+
+    if (!patternType || identifiers.length === 0) {
+      console.error('Internal error: pattern stack mismatch in destructuring')
+      return
+    }
+
+    // Create a temporary variable to hold the RHS expression
+    const tempVarId = this.idGen.nextId()
+    const tempVarName = `quintDestructTemp${tempVarId}`
+    const tempVarDef: QuintOpDef = {
+      id: tempVarId,
+      kind: 'def',
+      name: tempVarName,
+      qualifier,
+      expr,
+    }
+    this.declarationStack.push(tempVarDef)
+
+    // Create a val declaration for each identifier in the pattern
+    identifiers.forEach((name, index) => {
+      // Skip holes (_)
+      if (name === '_') {
+        return
+      }
+
+      const elemDefId = this.idGen.nextId()
+      const appId = this.idGen.nextId()
+      const nameId = this.idGen.nextId()
+      const accessorId = this.idGen.nextId()
+
+      // For tuples, use item access with 1-based indexing
+      // For records, use field access
+      const accessExpr: QuintEx =
+        patternType === 'tuple'
+          ? {
+              id: appId,
+              kind: 'app',
+              opcode: 'item',
+              args: [
+                { id: nameId, kind: 'name', name: tempVarName },
+                { id: accessorId, kind: 'int', value: BigInt(index + 1) },
+              ],
+            }
+          : {
+              id: appId,
+              kind: 'app',
+              opcode: 'field',
+              args: [
+                { id: nameId, kind: 'name', name: tempVarName },
+                { id: accessorId, kind: 'str', value: name },
+              ],
+            }
+
+      const elemDef: QuintOpDef = {
+        id: elemDefId,
+        kind: 'def',
+        name,
+        qualifier,
+        expr: accessExpr,
+      }
+      this.declarationStack.push(elemDef)
+    })
   }
 
   private checkForUppercaseTypeName(id: bigint, qualifiedName: string) {

@@ -652,6 +652,22 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('(4, 5, 6) == (5, 5, 6)', 'false')
     })
 
+    it('tuple destructuring', () => {
+      assertResultAsString('x', '1', 'val (x, y) = (1, 2)')
+      assertResultAsString('y', '2', 'val (x, y) = (1, 2)')
+      assertResultAsString('x + y', '3', 'val (x, y) = (1, 2)')
+      assertResultAsString('a + b + c', '6', 'val (a, b, c) = (1, 2, 3)')
+      assertResultAsString('first', 'Tup(1, 2)', 'val nested = ((1, 2), (3, 4)) val (first, second) = nested')
+      assertResultAsString('b', '30', 'val (a, _, b) = (10, 20, 30)')
+    })
+
+    it('record destructuring', () => {
+      assertResultAsString('name', '"Alice"', 'val { name, age } = { name: "Alice", age: 30 }')
+      assertResultAsString('age', '30', 'val { name, age } = { name: "Alice", age: 30 }')
+      assertResultAsString('x', '1', 'val { x, y } = { x: 1, y: 2, z: 3 }')
+      assertResultAsString('x + y', '15', 'val { x, y } = { x: 10, y: 5, z: 3 }')
+    })
+
     it('cross products', () => {
       assertResultAsString('tuples(Set(), Set(), Set())', 'Set()')
       assertResultAsString('tuples(Set(), 2.to(3))', 'Set()')

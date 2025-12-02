@@ -56,6 +56,11 @@ operDef
         // Optionally terminated with a semicolon
         ';'?
         # deprecatedOperDef
+    // Destructuring patterns for val declarations
+    | 'val' destructuringPattern '=' expr ';'?
+        # valDestructuring
+    | 'pure' 'val' destructuringPattern '=' expr ';'?
+        # pureValDestructuring
     ;
 
 typeDef
@@ -234,6 +239,18 @@ identOrHole : '_' | qualId;
 //       Requires https://github.com/informalsystems/quint/issues/923
 parameter: paramName=identOrHole;
 annotatedParameter: paramName=identOrHole ':' type;
+
+// Destructuring patterns for val declarations
+destructuringPattern
+    : tuplePattern
+    | recordPattern
+    ;
+
+// Tuple destructuring: (a, b, c) - must have at least 2 elements
+tuplePattern: '(' identOrHole (',' identOrHole)+ ')';
+
+// Record destructuring: { foo, bar } - field names without colons
+recordPattern: '{' simpleId["record field"] (',' simpleId["record field"])* '}';
 
 // an identifier or a star '*'
 identOrStar :   '*' | qualId
