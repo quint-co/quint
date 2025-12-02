@@ -264,7 +264,7 @@ describe('inferEffects', () => {
     assert.deepEqual([...errors.values()][0], {
       children: [],
       location: 'Inferring effect for f',
-      message: 'Result cannot be an opperator',
+      message: 'Result cannot be an operator',
     })
   })
 

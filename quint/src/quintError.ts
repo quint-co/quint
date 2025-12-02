@@ -97,7 +97,7 @@ export type ErrorCode =
   | 'QNT501'
   /* QNT502: Variable not set */
   | 'QNT502'
-  /* QNT503: Invalid arithmetics */
+  /* QNT503: Invalid arithmetic */
   | 'QNT503'
   /* QNT504: Range out of bounds */
   | 'QNT504'
@@ -111,7 +111,7 @@ export type ErrorCode =
   | 'QNT508'
   /* QNT509: Called oneOf() in an empty set */
   | 'QNT509'
-  /* QNT510: Array acces out of bounds */
+  /* QNT510: Array access out of bounds */
   | 'QNT510'
   /* QNT511: Test returned false */
   | 'QNT511'

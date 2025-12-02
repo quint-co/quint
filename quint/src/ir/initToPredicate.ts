@@ -31,7 +31,7 @@ import { OpQualifier, QuintApp, QuintDef, QuintModule, QuintName } from './quint
  * @param lookupTable: the lookup table for the module
  * @param modes: the result of mode checking the module
  *
- * @returns The converted module, or errors intructing manual fix.
+ * @returns The converted module, or errors instructing manual fix.
  */
 export function convertInit(
   module: QuintModule,

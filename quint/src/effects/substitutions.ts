@@ -66,7 +66,7 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
       break
     }
     case 'arrow': {
-      // e takes effects as parameters and returs an effect as result
+      // e takes effects as parameters and returns an effect as result
       const arrowParams = mergeInMany(e.params.map(ef => applySubstitution(subs, ef)))
       result = arrowParams
         .chain(ps => {

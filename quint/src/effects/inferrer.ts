@@ -314,7 +314,7 @@ export class EffectInferrer implements IRVisitor {
         }
 
         if (effect.result.kind == 'arrow') {
-          const error = buildErrorLeaf(this.location, `Result cannot be an opperator`)
+          const error = buildErrorLeaf(this.location, `Result cannot be an operator`)
           // Add result to the lambda body (instead of entire lambda expression)
           // to make reporting more precise
           this.addToResults(lambda.expr.id, left(error))

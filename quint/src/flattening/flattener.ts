@@ -98,7 +98,7 @@ class Flattener implements IRVisitor {
   }
 
   exitDecl(decl: QuintDeclaration) {
-    // Add declarations to the buffer as they are visited. This way, new declarations are addded in between, allowing us
+    // Add declarations to the buffer as they are visited. This way, new declarations are added in between, allowing us
     // to keep the topological order.
     this.newDeclarations.push(decl)
   }
