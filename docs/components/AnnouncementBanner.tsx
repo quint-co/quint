@@ -5,12 +5,13 @@ import { Banner } from 'nextra/components'
 
 export const AnnouncementBanner = () => {
   return (
-    <Banner dismissible={true} storageKey="choreo-release">
+    <Banner dismissible={true} storageKey="quint-connect-release">
       <b>
-        🎉 Listen to the Choreo's{' '}
-        <Link href="http://bit.ly/3Kne3iR" target="_blank" rel="noopener noreferrer">
-          launch event on Sep 23rd
+        We launched{' '}
+        <Link href="https://github.com/informalsystems/quint-connect" target="_blank" rel="noopener noreferrer">
+          Quint Connect
         </Link>
+        , a library for Model-Based Testing in Rust!
       </b>
     </Banner>
   )
