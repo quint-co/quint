@@ -736,7 +736,8 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
       if (stage.args.out) {
         writeOutputToJson(stage.args.out, stage)
       } else if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} to reproduce.`))
+        const backend = stage.args.backend ?? 'typescript'
+        console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
       }
 
       process.exit(0)
@@ -750,7 +751,8 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
         const finders = createFinders(sourceCode!)
         uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
         if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
-          console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} to reproduce.`))
+          const backend = stage.args.backend ?? 'typescript'
+          console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
         }
         console.error(`error: ${msg}`)
       }
