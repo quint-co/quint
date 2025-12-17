@@ -427,10 +427,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.nThreads
     )
 
-    // Write ITF traces if --out-itf was specified
     if (options.onTrace) {
-      // Extract variable names from the first state.
-      // A state is a record, stored as args = [key1, val1, key2, val2, ...], so we take every other element.
       const firstState = outcome.bestTraces[0].states[0] as QuintApp
       const vars: string[] = []
       for (let i = 0; i < firstState.args.length; i += 2) {
