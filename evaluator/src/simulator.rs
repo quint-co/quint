@@ -71,6 +71,7 @@ impl ParsedQuint {
 
         for sample_number in 1..=samples {
             reporter.next_sample();
+            let seed = env.rand.get_state();
             let mut trace = Vec::with_capacity(steps + 1);
 
             if !init.execute(&mut env)?.as_bool() {
@@ -97,6 +98,7 @@ impl ParsedQuint {
                         Trace {
                             states: trace,
                             violation: true,
+                            seed,
                         },
                     );
                     return Ok(SimulationResult {
@@ -125,6 +127,7 @@ impl ParsedQuint {
                 Trace {
                     states: trace,
                     violation: false,
+                    seed,
                 },
             );
         }

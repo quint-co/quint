@@ -304,8 +304,7 @@ fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>)
             .iter()
             .cloned()
             .map(|t| SimulationTrace {
-                // TODO: Fetch seed from the random generator state
-                seed: 0,
+                seed: t.seed as usize,
                 states: t.clone().to_itf((*source).clone()),
                 result: !t.violation,
             })
