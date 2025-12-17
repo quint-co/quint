@@ -27,7 +27,7 @@ import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTable } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintEx, QuintModule } from './ir/quintIr'
+import { OpQualifier, QuintApp, QuintEx, QuintModule, QuintStr } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
@@ -426,6 +426,22 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.nTraces ?? 1,
       prev.args.nThreads
     )
+
+    // Write ITF traces if --out-itf was specified
+    if (options.onTrace) {
+      // Extract variable names from the first state.
+      // A state is a record, stored as args = [key1, val1, key2, val2, ...], so we take every other element.
+      const firstState = outcome.bestTraces[0].states[0] as QuintApp
+      const vars: string[] = []
+      for (let i = 0; i < firstState.args.length; i += 2) {
+        vars.push((firstState.args[i] as QuintStr).value)
+      }
+
+      outcome.bestTraces.forEach((trace, index) => {
+        const status = trace.result ? 'ok' : 'violation'
+        options.onTrace!(index, status, vars, trace.states)
+      })
+    }
   } else {
     // Use the typescript simulator
     const evaluator = new Evaluator(prev.resolver.table, recorder, options.rng, options.storeMetadata)
