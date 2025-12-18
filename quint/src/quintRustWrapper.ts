@@ -11,8 +11,9 @@
  *
  * @module
  */
-import { QuintEx, QuintModule } from './ir/quintIr'
+import { QuintEx, QuintModule, QuintApp, QuintStr } from './ir/quintIr'
 import { Outcome } from './simulation'
+import { TraceHook } from './cliReporting'
 import { debugLog } from './verbosity'
 import JSONbig from 'json-bigint'
 import { LookupTable } from './names/base'
@@ -59,6 +60,8 @@ export class QuintRustWrapper {
    * @param {number} nruns - The number of runs for the simulation.
    * @param {number} nsteps - The number of steps per run.
    * @param {number} ntraces - The number of traces to store.
+   * @param {number} nthreads - The number of threads to use.
+   * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
    *
    * @returns {Outcome} The outcome of the simulation.
    * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
@@ -70,7 +73,8 @@ export class QuintRustWrapper {
     nruns: number,
     nsteps: number,
     ntraces: number,
-    nthreads: number
+    nthreads: number,
+    onTrace?: TraceHook
   ): Promise<Outcome> {
     const exe = await getRustEvaluatorPath()
     const args = ['simulate-from-stdin']
@@ -168,6 +172,20 @@ export class QuintRustWrapper {
 
       // Convert errors
       parsed.errors = parsed.errors.map((err: any): QuintError => ({ ...err, reference: BigInt(err.reference) }))
+
+      // Call onTrace callback for each trace
+      if (onTrace) {
+        const firstState = parsed.bestTraces[0].states[0] as QuintApp
+        const vars: string[] = []
+        for (let i = 0; i < firstState.args.length; i += 2) {
+          vars.push((firstState.args[i] as QuintStr).value)
+        }
+
+        parsed.bestTraces.forEach((trace: any, index: number) => {
+          const status = trace.result ? 'ok' : 'violation'
+          onTrace(index, status, vars, trace.states)
+        })
+      }
 
       return parsed
     } catch (error) {
