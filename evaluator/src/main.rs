@@ -302,7 +302,6 @@ fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>)
     let best_traces = result.as_ref().ok().map_or_else(Vec::new, |r| {
         r.best_traces
             .iter()
-            .cloned()
             .map(|t| SimulationTrace {
                 // TODO: Fetch seed from the random generator state
                 seed: 0,
