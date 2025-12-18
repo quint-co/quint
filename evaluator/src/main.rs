@@ -227,6 +227,7 @@ fn simulate_in_parallel(
     mut nthreads: usize,
 ) -> Outcome {
     assert!(nthreads > 1, "nthreads must be > 1");
+    nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
     let (out_tx, out_rx) = std::sync::mpsc::channel();
     let reporter_thread = progress::spawn_reporter_thread(nruns);
