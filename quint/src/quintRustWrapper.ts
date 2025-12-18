@@ -11,7 +11,7 @@
  *
  * @module
  */
-import { QuintEx, QuintModule, QuintApp, QuintStr } from './ir/quintIr'
+import { QuintApp, QuintEx, QuintModule, QuintStr } from './ir/quintIr'
 import { Outcome } from './simulation'
 import { TraceHook } from './cliReporting'
 import { debugLog } from './verbosity'
