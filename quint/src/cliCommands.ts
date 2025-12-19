@@ -400,9 +400,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt || prev.args.seed || prev.args.witnesses.length > 0) {
+    if (prev.args.mbt || prev.args.witnesses.length > 0) {
       console.warn(
-        chalk.yellow('Warning: --mbt, --seed and --witnesses are ignored when using the Rust backend (at this time).')
+        chalk.yellow('Warning: --mbt and --witnesses are ignored when using the Rust backend (at this time).')
       )
       console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
     }
@@ -424,7 +424,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
-      prev.args.nThreads
+      prev.args.nThreads,
+      prev.args.seed
     )
   } else {
     // Use the typescript simulator

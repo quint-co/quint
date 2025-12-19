@@ -51,15 +51,22 @@ impl ParsedQuint {
     /// If `init` or `invariant` return false at any given point, simulation stops.
     /// If `step` returns false, we continue, as that just means we failed to progress
     /// in a specific setting.
+    ///
+    /// If `seed` is provided, it will be used to initialize the random number generator
+    /// for reproducibility. Otherwise, a random seed will be generated.
     pub fn simulate<R: Reporter>(
         &self,
         steps: usize,
         samples: usize,
         n_traces: usize,
         mut reporter: R,
+        seed: Option<u64>,
     ) -> Result<SimulationResult, QuintError> {
         let mut interpreter = Interpreter::new(&self.table);
-        let mut env = Env::new(interpreter.var_storage.clone());
+        let mut env = match seed {
+            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
+            None => Env::new(interpreter.var_storage.clone()),
+        };
 
         let init = interpreter.compile(&self.init);
         let step = interpreter.compile(&self.step);

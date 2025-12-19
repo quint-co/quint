@@ -59,6 +59,8 @@ export class QuintRustWrapper {
    * @param {number} nruns - The number of runs for the simulation.
    * @param {number} nsteps - The number of steps per run.
    * @param {number} ntraces - The number of traces to store.
+   * @param {number} nthreads - The number of threads to use.
+   * @param {bigint} [seed] - Optional seed for reproducibility.
    *
    * @returns {Outcome} The outcome of the simulation.
    * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
@@ -70,7 +72,8 @@ export class QuintRustWrapper {
     nruns: number,
     nsteps: number,
     ntraces: number,
-    nthreads: number
+    nthreads: number,
+    seed?: bigint
   ): Promise<Outcome> {
     const exe = await getRustEvaluatorPath()
     const args = ['simulate-from-stdin']
@@ -83,6 +86,7 @@ export class QuintRustWrapper {
         nsteps: nsteps,
         ntraces: ntraces,
         nthreads: nthreads,
+        seed: seed,
       },
       replacer
     )
