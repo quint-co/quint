@@ -425,7 +425,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
-      nThreads
+      nThreads,
+      options.onTrace
     )
   } else {
     // Use the typescript simulator
