@@ -476,7 +476,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x308623f2a4957 to reproduce.
+Use --seed=0x308623f2a4957 --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -510,7 +510,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x308623f2a4957 to reproduce.
+Use --seed=0x308623f2a4957 --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -548,7 +548,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0xcc198528dea8b to reproduce.
+Use --seed=0xcc198528dea8b --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -575,7 +575,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0xcc198528dea8b to reproduce.
+Use --seed=0xcc198528dea8b --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -608,7 +608,7 @@ An example execution:
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
-Use --seed=0x11 to reproduce.
+Use --seed=0x11 --backend=typescript to reproduce.
 ```
 
 ### Repl evaluates coin
@@ -686,7 +686,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x1e352e16100007 to reproduce.
+Use --seed=0x1e352e16100007 --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -773,7 +773,7 @@ q::stepAndInvariant => false
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x136507ae9037f5 to reproduce.
+Use --seed=0x136507ae9037f5 --backend=typescript to reproduce.
 error: Invariant violated
 ```
 
@@ -1264,7 +1264,7 @@ HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: im
 5:   action init = { x' = N }
                           ^
 
-Use --seed=0x1 to reproduce.
+Use --seed=0x1 --backend=typescript to reproduce.
 error: Runtime error
 ```
 
@@ -1510,7 +1510,7 @@ exit $exit_code
 Witnesses:
 won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
 stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
-Use --seed=0x2b442ab439177 to reproduce.
+Use --seed=0x2b442ab439177 --backend=typescript to reproduce.
 ```
 
 ### Run produces normal output on `--out-itf` with default verbosity
@@ -1557,7 +1557,7 @@ exit $exit_code
 [violation] Found an issue (duration).
   ❌ not(won(X))
 Use --verbosity=3 to show executions.
-Use --seed=0x2b442ab439177 to reproduce.
+Use --seed=0x2b442ab439177 --backend=typescript to reproduce.
 ```
 
 ### Error when --n-traces is greater than --max-samples
