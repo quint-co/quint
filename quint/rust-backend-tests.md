@@ -32,6 +32,46 @@ QUINT_HOME="$(mktemp -d)" quint run \
 Downloading Rust evaluator from https://api.github.com/repos/informalsystems/quint/releases/assets/
 ```
 
+## Seed produces reproducible results
+
+This test verifies that running with the same seed produces identical traces.
+
+<!-- !test in rust backend seed reproducibility -->
+```
+# Run once with ITF output to capture the trace and seed
+quint run \
+  --backend=rust \
+  --out-itf=seed-test-1.itf.json \
+  --max-steps=5 \
+  --max-samples=1 \
+  ./testFixture/simulator/gettingStarted.qnt 2>&1 | grep -o "Use --seed=0x[0-9a-f]*" | head -1 > seed.txt
+
+# Extract just the seed value
+SEED=$(cat seed.txt | sed 's/Use //')
+
+# Run again with the captured seed
+quint run \
+  --backend=rust \
+  --out-itf=seed-test-2.itf.json \
+  --max-steps=5 \
+  --max-samples=1 \
+  $SEED \
+  ./testFixture/simulator/gettingStarted.qnt > /dev/null 2>&1
+
+# Compare the traces (excluding metadata that contains timestamps)
+jq '.states' seed-test-1.itf.json > trace1.json
+jq '.states' seed-test-2.itf.json > trace2.json
+diff trace1.json trace2.json && echo "Traces are identical"
+
+# Cleanup
+rm -f seed-test-1.itf.json seed-test-2.itf.json seed.txt trace1.json trace2.json
+```
+
+<!-- !test out rust backend seed reproducibility -->
+```
+Traces are identical
+```
+
 ## Produces ITF trace with --out-itf
 
 <!-- !test in rust backend itf output -->
