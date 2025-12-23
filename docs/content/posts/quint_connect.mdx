@@ -1,0 +1,320 @@
+---
+title: "A new LLM-friendly library for Model-Based Testing"
+date: 2025-12-23
+excerpt: We launched Quint Connect, a library for Model-Based Testing in Rust
+authors:
+    - name: Gabriela Moreira
+    - name: Erick Pintor
+tags:
+    - intermediate
+---
+
+import { Callout, Cards } from 'nextra/components'
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+
+# A new LLM-friendly library for Model-Based Testing
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+<Image src="/robot-connect.jpg" alt="Robot connecting a plug with a Quint artifact on the left and Rust artifact on the right" width={1000} height={500} />
+
+We're launching [**Quint Connect**](https://github.com/informalsystems/quint-connect), a library that extends your confidence from Quint specifications to production code by paving the way to model-based testing in Rust.
+
+Writing models in Quint can give you confidence that your design is correct. You can verify properties, explore edge cases, and validate your system's behavior. Quint Connect lets you transfer that confidence to your implementation code by automatically testing that the code behaves like the spec. You can then run these tests in your CI to get confidence that the code stays in sync with your trusted spec.
+
+The library was designed to work with LLMs, which means we can leverage AI to handle the repetitive work of generating and maintaining the test code that bridges the specification to the implementation.
+
+## The complete picture: from design to implementation
+
+By interacting with your Quint specification, you can gain confidence in several aspects of the system. You can check properties, explore specific paths to make sure you can hit edge cases, and validate that your mechanisms for handling those edge cases are working properly. This is very valuable.
+
+But there's a very natural next question: "How do I know that my code actually implements this design?"
+
+One thing you can do is manually review the code against the spec. I've heard multiple accounts of teams doing this at first: when they first write a specification, they'll manually look at the code and check if the code is properly implementing the spec. What can happen over time is that the code evolves through refactoring, optimizations, and bug fixes. Manual review cannot be done at every single change to the code, which means we can introduce a divergence without noticing (and this actually happens in practice).
+
+We need an automated connection between spec and code to prevent them from drifting apart over time and to make the spec a living artifact in our project.
+
+This is where model-based testing can help. You can create an automated connection between the specification and implementation. It takes scenarios from your specification - random scenarios, scenarios from witnesses, or even [Quint runs](/docs/lang#runs) - and replays them in your code, checking that the behavior from your code matches the one from the spec.
+
+**Quint helps you gain confidence that the design is correct** through its [simulator](/docs/simulator) and [model checker](/docs/model-checkers). <br /> **Model-based testing helps you gain confidence that the code matches the design.**
+
+The challenge has always been that writing and maintaining this bridge is very labor-intensive. That's what we can solve with Quint Connect and LLMs in combination.
+
+## How it works
+
+There are two main things we need to define in order to connect a Quint spec to an implementation:
+1. How to convert a state of the application into a state of the spec, to check that it conforms to what was expected
+2. How to reproduce transitions from the spec into the application
+
+The library provides interfaces to do both. Let's see how this works with a [two-phase commit example](https://github.com/informalsystems/quint-connect/tree/main/connect/examples/two_phase_commit/spec):
+
+Here, we extract data from the concrete implementation into types that match the spec. We convert the state of each process into a `ProcState` that mirrors the spec's state representation, collecting them into a `Map` (or `BTreeMap` in Rust):
+
+```rust
+#[derive(Eq, PartialEq, Deserialize, Debug)]
+struct ProcState {
+    stage: Stage,
+}
+
+#[derive(Eq, PartialEq, Deserialize, Debug)]
+struct SpecState(BTreeMap<NodeId, ProcState>);
+
+impl State<TwoPhaseCommitDriver> for SpecState {
+    fn from_driver(driver: &TwoPhaseCommitDriver) -> Result<Self> {
+        let procs = driver
+            .processes
+            .iter()
+            .map(|(id, node)| {
+                let stage = node.stage();
+                (id.clone(), ProcState { stage })
+            })
+            .collect();
+
+        Ok(Self(procs))
+    }
+}
+```
+
+The `TwoPhaseCommitDriver` here is a typical auxiliary structure to hold the state of the implementation in this test environment. In the implementation itself, we have no global state combining the state of all nodes. For a test, we need that global state:
+
+```rust
+#[derive(Default)]
+struct TwoPhaseCommitDriver {
+    processes: BTreeMap<NodeId, Node>,
+    messages_sent: BTreeMap<NodeId, BTreeSet<Message>>,
+}
+```
+
+Now, we just have to define what we need to call, in the implementation, to reproduce each transition from the model. In Quint, a transition is defined by the action that was picked (from inside an `any` statement), and each of the picks from `nondet foo = bar.oneOf()` definitions. The Quint Connect library nicely handles that complexity for us, and provides all this info in a nice `switch!` macro.
+
+```rust
+impl Driver for TwoPhaseCommitDriver {
+    type State = SpecState;
+
+    fn step(&mut self, step: &Step) -> Result {
+        switch!(step {
+            Init => self.init(),
+            SpontaneouslyPrepares(node) => self.spontaneously_prepares(node),
+            SpontaneouslyAborts(node) => self.spontaneously_aborts(node),
+            AbortsAsInstructed(node) => self.aborts_as_instructed(node),
+            CommitsAsInstructed(node) => self.commits_as_instructed(node),
+            DecidesOnCommit(node) => self.decides_on_commit(node),
+            DecidesOnAbort(node) => self.decides_on_abort(node)
+        })
+    }
+}
+```
+> [!NOTE]
+>
+> If you forget any transitions or parameters, don't worry! The Quint Connect library will tell you what's missing. You can start with an empty `switch!` and let the library guide you through what you should add next.
+
+Let's look into one of these auxiliary functions:
+
+```rust
+impl TwoPhaseCommitDriver {
+    // ...
+
+    fn commits_as_instructed(&mut self, node: NodeId) {
+        let commit_msg = self.commit_msg();
+        let (node, msgs) = self.locate_node(node);
+        Self::record_reply(msgs, node.receive(commit_msg));
+    }
+
+    // ...
+}
+```
+
+We build a new `Commit` message, take the implementation state of the node, and deliver that message to the node, saving its reply to the `messages_sent` buffer.
+
+With this, you now just have to define what will be recognized by Rust as a test. In this case, let's run a thousand random simulations:
+```rust
+#[quint_run(
+    spec = "examples/two_phase_commit/spec/two_phase_commit.qnt",
+    max_samples = 1000
+)]
+fn test_simulation() -> impl Driver {
+    TwoPhaseCommitDriver::default()
+}
+```
+
+And we can also reproduce tests from Quint into Rust. Let's make sure that our implementation can reproduce the `commitTest` scenario we have defined in the model:
+```rust
+#[quint_test(
+    spec = "examples/two_phase_commit/spec/two_phase_commit.qnt",
+    test = "commitTest"
+)]
+fn test_commit() -> impl Driver {
+    TwoPhaseCommitDriver::default()
+}
+```
+
+Now a simple `cargo test` can run all MBT tests, and we can add more scenarios using the same driver, leveraging Quint to find edge cases and interesting executions.
+
+> [!NOTE]
+>
+> For this example, we used a specification written with [Choreo](https://quint-lang.org/choreo). The Choreo framework hides the complexity of nondeterminism from `any` and `oneOf` from the spec writer. In order for Quint Connect to access what transitions were made, we instrument the spec slightly and add a config to tell Quint Connect where to find the needed transition information. You can see the [full example on GitHub](https://github.com/informalsystems/quint-connect/blob/main/connect/examples/two_phase_commit/mbt.rs).
+
+And that's it! The glue code (the bridge between spec and implementation, also called "driver" or "test harness") is what has traditionally been labor-intensive to write and maintain. With Quint Connect's LLM-friendly API, AI can generate and maintain this bridge for you (more on that [below](#building-an-llm-compatible-library)).
+
+## A real-world story: AWS October 2025 outage
+
+Now that you've seen how it works, let's look at why this problem matters in production systems.
+
+A recent [talk](https://www.youtube.com/watch?v=YZUNNzLDWb8) from [Craig Howard](https://www.linkedin.com/in/craig-howard-aa26272/) on the DynamoDB outage gives some useful context on the problem that Quint Connect addresses. Here are some key points from the video's transcription from around the 38min mark.
+
+    First, they used AI (Amazon Q) for quickly getting a model for the original design (which was correct):
+
+> And so we started with a description of the algorithm that we had, you know, looking at old design documents and comments in the code and things like that. And so we use [TLA+](https://lamport.azurewebsites.net/tla/tla.html) (there's lots of options, this is just the one that we chose). But we're able to iterate with Q and have go back and forth and it helped us come up with a bunch of invariants in this formal model. One of the cool things for me as somebody who's been working on the system for a while is it validated the original design. The design was the original design was actually correct. Over time, the system had diverged from the design in like little details in the implementation.
+
+Then, they asked AI whether the model corresponded to the code:
+
+> But the next step was super cool because we said, "Hey, Q, we got this model over here. You can see the source code that was running in production on that day. Where did we screw up?"
+>
+> And Q helped us find some inconsistencies.
+> [...]
+> it did show us differences that were critical and that led to this latent race condition.
+
+So AI found a divergence that was related to the outage bug!
+
+They were running this post-outage, leveraging formal models to give them confidence that their fix to the bug was actually correct. This is what they checked next:
+
+> We were then able to make fixes in the codebase and rerun this analysis with [Q](https://aws.amazon.com/q/). We got a nice pat on the back: "Hey, this did fix it."
+>
+> So this is how we gained confidence that we could go enable the system again in every region and we wouldn't hit this particular bug again.
+
+He highlights the value of formal modeling:
+
+> And so formal modeling absolutely has a place in your toolkit.
+>
+> Anything timing related, those consensus algorithms in disguise.
+>
+> Yes. I wish we'd thought about doing a formal modeling system way back, but we certainly have now.
+
+And he finished with a timely message that matches our motivation:
+
+> And previously, it was really hard to know if that formal model actually matched what you had running in production. And so Q can help validate that because that's what matters to your customers.
+
+### TL;DR
+
+[Lorin Hochstein](https://www.linkedin.com/in/lhochstein) wrote a very good summary of this in his [blog](https://surfingcomplexity.blog/2025/12/14/aws-reinvent-talk-on-their-oct-25-incident/):
+> This incident was triggered by a race condition, and race conditions are generally very difficult to identify in development without formal modeling. They had not initialized modeling this aspect of DynamoDB beforehand. When they did build a formal model (using TLA+) after the incident, they discovered that the original design didn't have this race condition, but later incremental changes to the system did introduce it. This means that, at design time, if they had formally modeled the system, they wouldn't have caught it then either, because it wasn't there at design time.
+
+> Interestingly, they were able to use AI (Amazon Q, of course) to check correspondence between the model and the code. This gives me some hope that AI might make it a lot easier to keep models and implementation in sync over time, which **would increase the value of maintaining these models.**
+
+## Approaches to bridging the gap
+
+AWS's experience highlights a different way to tackle this problem. Let's compare the main approaches to bridge the gap between specification and implementation:
+
+**Approach 1: Ask AI to verify correspondence**
+
+As we've seen, this is what AWS has tried in their recent experiment, and we've also been using this extensively to find potential ambiguities or missing pieces in documentation. We can ask AI whether documentation, code, and specification match, and it sometimes can find divergences.
+
+This is a nice, cheap first option, and we should definitely use it. But there are two problems with this approach. First, it's not deterministic. We cannot rely on what AI is telling us, and this does not give us a lot of confidence. Second, this is something that ideally should be run recurrently to keep the two artifacts in sync. Using AI like this might not be something we want to do on CI, as you can get intermittent failures, which makes this harder to integrate in a workflow and run recurrently.
+
+This is good for a first pass, but I wouldn't rely only on this for the long term.
+
+**Approach 2: Use AI to generate deterministic tests (Model-Based Testing)**
+
+This is the approach that Quint Connect helps with. Instead of just asking AI to check if they match, you ask AI to generate the glue code that connects the specification to the implementation. The glue code replays scenarios from the model in your code and asserts that behaviors match, implementing model-based testing for you.
+
+It's much harder for AI to hallucinate in this scenario, especially if you review the code. The key difference here is that this is something you can review with much more confidence and inspect the results. You only need to run AI once (or a few times over time when the modeled behavior or interface changes). Then for every subsequent change, you can execute the tests on CI without depending on AI judgment. You get automated validation without AI in the critical path.
+
+**Approach 3: Trace validation (future work)**
+
+There's a third approach: trace validation, leveraging production traces and validating them against the model. We hope that we can use the wiring made for Quint Connect in a trace validation setting, and we're exploring solutions in that direction. This is a hard problem, and a few big projects have tried it in the past and faced challenges. Stay tuned for that, and let us know if you're interested in collaborating towards something like this.
+
+## Why MBT is practical now
+
+One thing that is important to recognize here is that MBT had failure stories in the past. There were a few teams trying to implement MBT who invested significant upfront work but eventually had to abandon it because the maintenance burden didn't make sense. Sometimes that was because the team had to learn entire new technologies just to maintain the test code, and that was not worth the benefits for them. Other times it was because the models became so detailed that they were essentially duplicates of the implementation that had to be manually kept in sync: any changes to the code would also need to be made to the spec manually.
+
+Even inside Informal Systems we struggled with MBT. We knew it was important but we couldn't justify the cost.
+
+But now things are different because LLMs excel at exactly what MBT requires: translating between representations and keeping them in sync.
+
+### Building an LLM-compatible library
+
+When we started building an agent to generate MBT glue code for us, we realized that the approach we used to use was full of boilerplate. There was a lot of repetition, not a lot of structure, and all of those are bad things for AI.
+
+So we built a library. In this library we provide the guardrails that make LLMs work well. You might have noticed that when you have good interfaces and these good guardrails, LLMs perform better because they cannot hallucinate too much outside of that scope or those rules. The library also provides high-quality information so LLMs can understand what went wrong or what is missing when something breaks. For instance, this was a response from an LLM where it was able to fix a problem autonomously, simply from the feedback from the library:
+
+> The issue is that we're trying to get block data from the node that's syncing (node2), but it doesn't have that data yet - that's why it's syncing! We need to get the block data from the original proposer or from the
+  driver's stored values. Let me fix this:
+
+```diff
+diff --git a/tests/mbt/src/driver/handle_process_synced_value.rs b/tests/mbt/src/driver/handle_process_synced_value.rs
+index 1234567..abcdefg 100644
+--- a/tests/mbt/src/driver/handle_process_synced_value.rs
++++ b/tests/mbt/src/driver/handle_process_synced_value.rs
+@@ -24,18 +24,24 @@ impl EmeraldDriver {
+             .expect("Unknown proposer")
+             .clone();
+
+-        let app = self.nodes.get_mut(&node).expect("Node should exist");
++        // Get the block data from the proposer's node (not the syncing node)
++        // We need to do this before getting a mutable borrow on the target node
++        let proposer_app = self
++            .nodes
++            .get(&proposal.proposer)
++            .expect("Proposer node should exist");
+
+-        self.runtime.block_on(async {
+-            // Get the block data (extensions)
+-            let block_bytes = app
++        let block_bytes = self.runtime.block_on(async {
++            // Get the block data (extensions) from the proposer's store
++            proposer_app
+                 .state
+                 .get_block_data(
+                     EmeraldHeight::new(proposal.height),
+                     EmeraldRound::new(proposal.round),
+                     value.id(),
+                 )
+                 .await
+-                .expect("Block data must exist for synced value");
++                .expect("Block data must exist on proposer for synced value")
++        });
++
++        // Now get the mutable borrow for the target node
++        let app = self.nodes.get_mut(&node).expect("Node should exist");
++
++        self.runtime.block_on(async {
+
+             // Encode the value (combining consensus data and block data)
+
+```
+
+We built this library and used it with LLMs iteratively. When LLMs were struggling or trying to do something they were not supposed to, we would tighten the interfaces of the library to prevent LLMs from being able to even try to do something different. For instance, we removed certain arguments that could be used in the wrong way and, instead, made that information flow in another way that AI couldn't have access to. We hid all unnecessary functionality, which also makes the library easier for humans to use because there are fewer things to worry about.
+
+For both LLMs and humans, we believe it is better to use Quint Connect than to do free-form connection between spec and code.
+
+From our experience, we believe that MBT is no longer that labor-intensive to set up and maintain, and we have a few use cases that corroborate this. In these cases, we managed to leverage LLMs to speed us up significantly.
+
+## Use cases
+
+In our previous post, [Reliable Software in the LLM Era](/posts/llm_era), we explained a full workflow to working with Quint and LLMs to make changes to complex codebases. The step 4 of that workflow involved testing, and the example in which we tried that workflow (changing [Malachite](https://github.com/circlefin/malachite/) to use Fast Tendermint) was also our first experiment with the Quint Connect library, which drove many improvements we made on the interface.
+
+More recently, we have started building a Quint-backed test suite for [Emerald](https://informal.systems/emerald). In less than 1 person/week of work of writing a simple spec and setting up Quint Connect, we have found a bug! It turned out to be a known issue for the team which had already planned a workaround in case it happens, but that served as a good validation point for this testing approach. You can find the code for this [here](https://github.com/informalsystems/emerald/tree/gabriela/mbt-exploration/tests/mbt).
+
+We are still figuring out the best AI-assisted workflow for this work, and we'll keep sharing as we learn. For the Emerald setup, we did the following:
+1. Got AI to write a Quint spec using Choreo by providing it a specific scope and which Rust files from the Emerald project to consider.
+2. Used the agent we have written for the Fast Tendermint experiment to do the initial setup.
+3. Guided AI manually (via prompts) until we had the first couple of transitions being reproduced.
+4. At this point, AI had produced some code we didn't like, and continuing the process would result in that code being replicated for other transitions. So we did a cleanup pass, removing a lot of code, and made one of the transitions look exactly how we wanted.
+5. Then, we used AI to replicate those patterns for the other transitions. The loop here is: AI runs the test, Quint Connect complains that some transition is not implemented yet, or that there is a divergence in results after that transition, and AI takes that feedback to increment or improve the glue code.
+
+We expect much less manual intervention to be needed once we have more examples on how to use the library, and our agents can learn from them.
+
+Our first version of the model (and, therefore, of MBT) did not consider crashes, as we wanted to test the happy paths first. Once that was working, we introduced the possibility of crashing to the model, and wrote a Quint run to reproduce one scenario that led to a [specific bug](https://github.com/informalsystems/emerald/issues/100) that was already fixed. Our plan was to revert that fix and see if MBT could catch the bug or not. Turns out there was a different bug in a similar scenario and we ended up hitting that instead. We could also have caught this problem with random simulation, but having a Quint run defining the scenario provides a level of clarity and precision that we believe to be very valuable: check it out [here](https://github.com/informalsystems/emerald/blob/cbb6aa971d158a6fb9e9c07251eb2ed7d97aaea6/specs/emerald_tests.qnt#L92).
+
+## Try it out
+
+Quint Connect extends the confidence you've built in your Quint specifications to your production code. If you have a Rust implementation and a Quint spec, you can start building model-based tests *today*. If you don't have a Quint spec yet, this could be the extra motivation for you (and your boss) to write one! LLMs can help on that too - more on that in 2026.
+
+The library is [available on GitHub](https://github.com/informalsystems/quint-connect) with instructions on how to start using it and a few examples. We'd love to hear your feedback, especially from teams trying this with their own systems. Join the conversation in our [Telegram group](https://t.me/quint_lang)!
+
+<Comments/>
