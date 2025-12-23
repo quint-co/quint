@@ -106,7 +106,7 @@ export function Home() {
             <div className="xl:col-span-5 ml-auto">
               <div className={classNames.container}>
                 {benefits.map(([label, [prosLabel, pros], [consLabel, cons]]) => (
-                  <div className={classNames.benefitContainer}>
+                  <div key={label} className={classNames.benefitContainer}>
                     <h1 className={classNames.benefitTitle}>
                       <div className={classNames.benefitIcon}>
                         <FontAwesomeIcon icon={faCheckCircle} />
