@@ -8,10 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added support for passing `--seed` to the Rust backend for reproducible simulations (#1827)
+
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed ITF trace output when using the Rust backend with `--out-itf` (#1823)
+- Fixed a crash in the Rust backend when `--nthreads` exceeds `--max-samples` (#1825)
+
 ### Security
 
 ## v0.29.1 -- 2025-11-11
