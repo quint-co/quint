@@ -2,6 +2,10 @@ import { Callout, Steps } from 'nextra/components'
 
 # Model-based Testing
 
+> [!NOTE]
+>
+> In December 2025, we launched [Quint Connect](https://github.com/informalsystems/quint-connect), a library for Model-Based Testing in Rust. Check out the [blog post](/posts/quint_connect) about it.
+
 Quint is a specification language that shines in building complex distributed systems. In such projects there are two questions one needs to address:
 1. Am I building the right system?
 2. Am I building the system the right way?
@@ -47,6 +51,11 @@ Trace validation can be seen as the other way around (from MBT). Instead of usin
 ## MBT in a concrete example
 
 Let's use a toy bank application written in Rust to go through the process. Everything is available [here](https://github.com/informalsystems/quint-sandbox/tree/main/SimpleBank). Assuming we already have the implementation (under `src`) and the model (`bank.qnt`), this is how we'd set up model-based testing for the code.
+
+<Callout type="warning" emoji="🚧️">
+  These instructions are deprecated. Refer to the [Quint Connect](https://github.com/informalsystems/quint-connect) library if you are using Rust. If you are using a different language, these instructions can still apply, but you might want to consider building a version of Quint Connect for your language to make the test setup easier to maintain.
+</Callout>
+
 
 <Steps>
 ### Generate traces from the model
