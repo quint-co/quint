@@ -453,7 +453,19 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
       // If the operator is a lazy operator, we can't evaluate the arguments before evaluating application
       if (lazyOps.includes(expr.opcode)) {
         const op = lazyBuiltinLambda(expr.opcode)
-        return ctx => op(ctx, args)
+        return ctx => op(ctx, args).mapLeft(err => {
+          // Improve reference of `then`-related errors
+          if (expr.opcode == 'then' && err.reference == undefined) {
+            if (err.code == 'QNT513') {
+              if (expr.args[0].kind === 'app' && expr.args[0].opcode === 'then') {
+                return { ...err, reference: expr.args[0].args[1].id }
+              }
+              return { ...err, reference: expr.args[0].id }
+            }
+          }
+
+          return err
+        })
       }
 
       // Otherwise, this is either a normal (eager) builtin, or an user-defined operator.
