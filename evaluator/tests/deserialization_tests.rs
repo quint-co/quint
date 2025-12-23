@@ -1,5 +1,5 @@
 use quint_evaluator::ir::QuintOutput;
-use std::{env, fs::File};
+use std::fs::File;
 
 #[test]
 fn simple() {

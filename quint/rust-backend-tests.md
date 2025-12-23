@@ -31,3 +31,23 @@ QUINT_HOME="$(mktemp -d)" quint run \
 ```
 Downloading Rust evaluator from https://api.github.com/repos/informalsystems/quint/releases/assets/
 ```
+
+## Produces ITF trace with --out-itf
+
+<!-- !test in rust backend itf output -->
+```
+quint run \
+  --backend=rust \
+  --out-itf=rust-out.itf.json \
+  --max-steps=5 \
+  ./testFixture/simulator/gettingStarted.qnt > /dev/null
+cat rust-out.itf.json | jq '.vars'
+rm rust-out.itf.json
+```
+
+<!-- !test out rust backend itf output -->
+```
+[
+  "balances"
+]
+```
