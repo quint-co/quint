@@ -1,4 +1,5 @@
 export default {
+  quint_connect: '',
   llm_era: '',
   soup: '',
   inductive_invariants: '',

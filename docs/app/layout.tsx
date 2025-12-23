@@ -6,6 +6,7 @@ import { InformalSystemsLogo } from '../components/home/InformalSystemsLogo'
 import '../style.css'
 import { LogoSwitcher } from '../components/LogoSwitcher'
 import { SITE_CONFIG } from '../config/site'
+import { AnnouncementBanner } from '../components/AnnouncementBanner'
 
 export const metadata = {
   title: SITE_CONFIG.title,
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }) {
         <Layout
           navbar={navbar}
           footer={footer}
+          banner={<AnnouncementBanner />}
           pageMap={await getPageMap()}
           docsRepositoryBase="https://github.com/informalsystems/quint/blob/main/docs"
           sidebar={{
