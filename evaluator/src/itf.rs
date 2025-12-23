@@ -14,6 +14,7 @@ use std::collections::BTreeMap;
 pub struct Trace {
     pub states: Vec<Value>,
     pub violation: bool,
+    pub seed: u64,
 }
 
 impl Trace {

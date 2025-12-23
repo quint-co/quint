@@ -67,6 +67,10 @@ struct RunArgs {
     /// how many traces to generate (only affects output to out-itf) (default: 1)
     #[argh(option, default = "1")]
     n_traces: usize,
+
+    /// random seed for reproducibility
+    #[argh(option)]
+    seed: Option<u64>,
 }
 
 /// Run simulation with input from STDIN
@@ -85,6 +89,9 @@ struct SimulateInput {
     ntraces: usize,
     #[serde(default)]
     nthreads: usize,
+    /// Optional seed for reproducibility. If provided, the simulation will use this seed.
+    #[serde(default)]
+    seed: Option<u64>,
 }
 
 #[derive(Eq, PartialEq, Serialize)]
@@ -157,6 +164,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
         args.max_samples,
         args.n_traces,
         progress::no_report(),
+        args.seed,
     );
 
     let elapsed = start.elapsed();
@@ -196,16 +204,18 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         nruns,
         ntraces,
         nthreads,
+        seed,
         ..
     } = serde_json::from_str(&input)?;
 
     let source = Arc::new(source);
 
-    let outcome = if nthreads > 1 {
+    // When a seed is provided, we use single-threaded execution for reproducibility
+    let outcome = if nthreads > 1 && seed.is_none() {
         simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter);
+        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed);
         to_outcome(source, result)
     };
 
@@ -255,7 +265,7 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter);
+                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None);
                 let outcome = to_outcome(source, result);
                 let _ = out_tx.send(outcome);
             })
@@ -304,8 +314,7 @@ fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>)
         r.best_traces
             .iter()
             .map(|t| SimulationTrace {
-                // TODO: Fetch seed from the random generator state
-                seed: 0,
+                seed: t.seed as usize,
                 states: t.clone().to_itf((*source).clone()),
                 result: !t.violation,
             })

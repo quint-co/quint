@@ -61,6 +61,7 @@ export class QuintRustWrapper {
    * @param {number} nsteps - The number of steps per run.
    * @param {number} ntraces - The number of traces to store.
    * @param {number} nthreads - The number of threads to use.
+   * @param {bigint} [seed] - Optional seed for reproducibility.
    * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
    *
    * @returns {Outcome} The outcome of the simulation.
@@ -74,6 +75,7 @@ export class QuintRustWrapper {
     nsteps: number,
     ntraces: number,
     nthreads: number,
+    seed?: bigint,
     onTrace?: TraceHook
   ): Promise<Outcome> {
     const exe = await getRustEvaluatorPath()
@@ -87,6 +89,7 @@ export class QuintRustWrapper {
         nsteps: nsteps,
         ntraces: ntraces,
         nthreads: nthreads,
+        seed: seed,
       },
       replacer
     )

@@ -400,9 +400,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt || prev.args.seed || prev.args.witnesses.length > 0) {
+    if (prev.args.mbt || prev.args.witnesses.length > 0) {
       console.warn(
-        chalk.yellow('Warning: --mbt, --seed and --witnesses are ignored when using the Rust backend (at this time).')
+        chalk.yellow('Warning: --mbt and --witnesses are ignored when using the Rust backend (at this time).')
       )
       console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
     }
@@ -426,6 +426,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
       nThreads,
+      prev.args.seed,
       options.onTrace
     )
   } else {
@@ -738,7 +739,8 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
       if (stage.args.out) {
         writeOutputToJson(stage.args.out, stage)
       } else if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} to reproduce.`))
+        const backend = stage.args.backend ?? 'typescript'
+        console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
       }
 
       process.exit(0)
@@ -752,7 +754,8 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
         const finders = createFinders(sourceCode!)
         uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
         if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
-          console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} to reproduce.`))
+          const backend = stage.args.backend ?? 'typescript'
+          console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
         }
         console.error(`error: ${msg}`)
       }
