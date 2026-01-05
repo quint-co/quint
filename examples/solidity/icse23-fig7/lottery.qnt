@@ -235,9 +235,10 @@ module lotteryMempool {
 
     // an auxiliary action that assigns variables from a method execution result
     action fromResult(tx: Transaction, r: LotteryResult): bool = all {
-        val status = if (r._1 != "") r._1 else "success"
+        val (errorMsg, newState) = r
+        val status = if (errorMsg != "") errorMsg else "success"
         lastTx' = tx.with("status", status),
-        lotteryState' = r._2,
+        lotteryState' = newState,
     }
 
     // commit a transaction from the memory pool

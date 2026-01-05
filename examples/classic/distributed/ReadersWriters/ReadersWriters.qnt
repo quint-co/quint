@@ -20,9 +20,9 @@ module ReadersWriters {
   def read(s)  = s._1 == "read"
   def write(s) = s._1 == "write"
   
-  val WaitingToRead  = ToSet(waiting.select(read)).map( p => p._2 )
-  
-  val WaitingToWrite = ToSet(waiting.select(write)).map( p => p._2 )
+  val WaitingToRead  = ToSet(waiting.select(read)).map( ((_, actor)) => actor )
+
+  val WaitingToWrite = ToSet(waiting.select(write)).map( ((_, actor)) => actor )
   
   //---------------------------------------------------------------------------
   
@@ -55,7 +55,7 @@ module ReadersWriters {
       waiting != [],
       writers == Set(),
       val pair = waiting.head()
-      val actor = pair._2
+      val (_, actor) = pair
       if (read(pair)) all {
           Read(actor),
           writers' = writers,
