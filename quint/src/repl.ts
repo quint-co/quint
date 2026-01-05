@@ -713,13 +713,9 @@ function printErrorMessages(
 ) {
   const modulesText = state.moduleHist
   const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
-  // display the error messages and highlight the error places
-  // FIXME(#1052): moudulesText can come from multiple files, but `compileFromCode` ignores that.
-  // We use a fallback here to '<modules>'
-  const sourceCode = new Map([
-    ['<modules>', modulesText],
-    ...state.compilationState.sourceCode.entries(),
-  ])
+  // Contents in `moudulesText` can come from multiple files, but we don't keep track of that in our
+  // `sourceCode` map. So we use a fallback here to '<modules>'
+  const sourceCode = new Map([['<modules>', modulesText], ...state.compilationState.sourceCode.entries()])
   const finders = createFinders(sourceCode)
 
   messages.forEach(e => {
