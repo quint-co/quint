@@ -246,7 +246,7 @@ export function lazyBuiltinLambda(
           if (!firstResult.toBool()) {
             return left({
               code: 'QNT513',
-              message: "Cannot continue in \`then\` because the highlighted expression evaluated to false",
+              message: 'Cannot continue in `then` because the highlighted expression evaluated to false',
             })
           }
 
