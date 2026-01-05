@@ -537,8 +537,8 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
   state.compilationState = { idGen, sourceCode, modules, sourceMap, analysisOutput }
 
   if (errors.length > 0 || analysisErrors.length > 0) {
-    printErrorMessages(out, state, 'syntax error', modulesText, errors)
-    printErrorMessages(out, state, 'static analysis error', modulesText, analysisErrors)
+    printErrorMessages(out, state, 'syntax error', errors)
+    printErrorMessages(out, state, 'static analysis error', analysisErrors)
     return false
   }
 
@@ -579,7 +579,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     state.compilationState.sourceMap
   )
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, state, 'syntax error', newInput, parseResult.errors)
+    printErrorMessages(out, state, 'syntax error', parseResult.errors)
     out('\n') // be nice to external programs
     return false
   }
@@ -591,7 +591,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   if (parseResult.kind === 'expr') {
     walkExpression(state.nameResolver, parseResult.expr)
     if (state.nameResolver.errors.length > 0) {
-      printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
+      printErrorMessages(out, state, 'static analysis error', state.nameResolver.errors)
       state.nameResolver.errors = []
       return false
     }
@@ -612,7 +612,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     )
 
     if (analysisErrors.length > 0) {
-      printErrorMessages(out, state, 'static analysis error', newInput, analysisErrors)
+      printErrorMessages(out, state, 'static analysis error', analysisErrors)
       return false
     }
 
@@ -650,7 +650,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     }
 
     if (evalResult.isLeft()) {
-      printErrorMessages(out, state, 'runtime error', newInput, [evalResult.value])
+      printErrorMessages(out, state, 'runtime error', [evalResult.value])
       return false
     }
 
@@ -662,7 +662,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       walkDeclaration(state.nameResolver, decl)
     })
     if (state.nameResolver.errors.length > 0) {
-      printErrorMessages(out, state, 'static analysis error', newInput, state.nameResolver.errors)
+      printErrorMessages(out, state, 'static analysis error', state.nameResolver.errors)
       out('\n')
 
       parseResult.decls.forEach(decl => {
@@ -682,7 +682,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     )
 
     if (analysisErrors.length > 0) {
-      printErrorMessages(out, state, 'static analysis error', newInput, analysisErrors)
+      printErrorMessages(out, state, 'static analysis error', analysisErrors)
       parseResult.decls.forEach(decl => {
         if (isDef(decl)) {
           state.nameResolver.collector.deleteDefinition(decl.name)
@@ -708,17 +708,15 @@ function printErrorMessages(
   out: writer,
   state: ReplState,
   kind: string,
-  inputText: string,
   errors: QuintError[],
   color: (_text: string) => string = chalk.red
 ) {
-  const modulesText = state.moduleHist + inputText
+  const modulesText = state.moduleHist
   const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
   // FIXME(#1052): moudulesText can come from multiple files, but `compileFromCode` ignores that.
   // We use a fallback here to '<modules>'
   const sourceCode = new Map([
-    ['<input>', inputText],
     ['<modules>', modulesText],
     ...state.compilationState.sourceCode.entries(),
   ])
