@@ -456,8 +456,8 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
         return ctx =>
           op(ctx, args).mapLeft(err => {
             // Improve reference of `then`-related errors
-            if (expr.opcode == 'then' && err.reference == undefined) {
-              if (err.code == 'QNT513') {
+            if (expr.opcode === 'then' && err.reference === undefined) {
+              if (err.code === 'QNT513') {
                 if (expr.args[0].kind === 'app' && expr.args[0].opcode === 'then') {
                   return { ...err, reference: expr.args[0].args[1].id }
                 }
