@@ -376,6 +376,7 @@ exit $exit_code
   1) failingTest:
       HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
+                   ^^^^^^^^^^^^^^
     Use --seed=0x1 --match=failingTest to repeat.
 
 
@@ -436,6 +437,7 @@ exit $exit_code
   1) failingTest:
       HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
+                   ^^^^^^^^^^^^^^
 
 [Frame 0]
 init => true
@@ -1111,6 +1113,41 @@ exit $exit_code
   1) mintTwiceThenSendError:
       HOME/coin.qnt:176:5 - error: [QNT511] Test mintTwiceThenSendError returned false
       176:     run mintTwiceThenSendError = {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      177:         // non-deterministically pick some amounts to mint and send
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      178:         nondet mintEve = 0.to(MAX_UINT).oneOf()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      179:         nondet mintBob = 0.to(MAX_UINT).oneOf()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      180:         nondet eveToBob = 0.to(MAX_UINT).oneOf()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      181:         // execute a fixed sequence `init`, `mint`, `mint`, `send`
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      182:         init.then(mint(minter, "eve", mintEve))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      183:             .then(mint(minter, "bob", mintBob))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      184:             .then(
+           ^^^^^^^^^^^^^^^^^^
+      185:                 if (eveToBob <= balances.get("eve")) {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      186:                     // if Eve has enough tokens, send to Bob should pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      187:                     send("eve", "bob", eveToBob)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      188:                 } else {
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+      189:                     // otherwise, just ignore the test
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      190:                     all { minter' = minter, balances' = balances }
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      191:                 }
+           ^^^^^^^^^^^^^^^^^
+      192:             )
+           ^^^^^^^^^^^^^
+      193:     }
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [Frame 0]
 init => true
@@ -1236,6 +1273,7 @@ exit $exit_code
   1) myTest:
       HOME/_1040compileError.qnt:5:12 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
       5:     assert(n > 0)
+                    ^
     Use --seed=0x1 --match=myTest to repeat.
 
 
@@ -1643,4 +1681,52 @@ true
 true
 { n: 2 => 1 }
 >>> .exit
+```
+
+### Error messages from `then`
+
+We do a few tricks to make the location from `then` failures be more informative.
+
+<!-- !test exit 1 -->
+<!-- !test in then error messages -->
+```
+output=$(quint test --seed=1 ./testFixture/thenErrorMessages.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*thenErrorMessages.qnt#      HOME/thenErrorMessages.qnt#g'
+exit $exit_code
+```
+
+<!-- !test out then error messages -->
+```
+
+  test
+    1) bFailsTest failed after 1 test(s)
+    2) initFailsTest failed after 1 test(s)
+    3) lastActionFailsTest failed after 1 test(s)
+
+  3 failed
+
+  1) bFailsTest:
+      HOME/thenErrorMessages.qnt:11:11 - error: [QNT513] Cannot continue in `then` because the highlighted expression evaluated to false
+      11:     .then(b)
+                    ^
+    Use --seed=0x1 --match=bFailsTest to repeat.
+  2) initFailsTest:
+      HOME/thenErrorMessages.qnt:15:23 - error: [QNT513] Cannot continue in `then` because the highlighted expression evaluated to false
+      15:   run initFailsTest = init(false)
+                                ^^^^^^^^^^^
+    Use --seed=0x1 --match=initFailsTest to repeat.
+  3) lastActionFailsTest:
+      HOME/thenErrorMessages.qnt:18:3 - error: [QNT511] Test lastActionFailsTest returned false
+      18:   run lastActionFailsTest = init(true)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      19:     .then(a)
+          ^^^^^^^^^^^^
+      20:     .then(b)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Use --seed=0x1 --match=lastActionFailsTest to repeat.
+
+
+  Use --verbosity=3 to show executions.
+      HOME/thenErrorMessages.qnt
 ```
