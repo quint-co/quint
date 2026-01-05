@@ -103,6 +103,8 @@ export class ToIrListener implements QuintListener {
   protected patternIdentStack: string[] = []
   // the stack for destructuring pattern types ('tuple' or 'record')
   protected patternTypeStack: string[] = []
+  // Map from temp variable name to destructuring metadata
+  protected destructuringMetadata: Map<string, { pattern: 'tuple' | 'record'; identifiers: string[] }> = new Map()
   // an internal counter to assign unique numbers
   protected idGen: IdGenerator
 
@@ -172,12 +174,80 @@ export class ToIrListener implements QuintListener {
   }
 
   exitLetIn(ctx: p.LetInContext) {
+    // Check if we have a destructuring declaration
     const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
     const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
-    const id = this.getId(ctx)
-    const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
-    this.exprStack.push(letExpr)
+    // Check if this is a destructuring temp variable
+    if (def.kind === 'def' && def.name.startsWith('quintDestructTemp')) {
+      const metadata = this.destructuringMetadata.get(def.name)
+
+      if (metadata) {
+        // Build the nested let expressions for destructuring
+        let letExpr = expr
+
+        // Create field/item binding declarations
+        metadata.identifiers.forEach((name, index) => {
+          const elemDefId = this.idGen.nextId()
+          const appId = this.idGen.nextId()
+          const nameId = this.idGen.nextId()
+          const accessorId = this.idGen.nextId()
+
+          // For tuples, use item access with 1-based indexing
+          // For records, use field access
+          const accessExpr: QuintEx =
+            metadata.pattern === 'tuple'
+              ? {
+                  id: appId,
+                  kind: 'app',
+                  opcode: 'item',
+                  args: [
+                    { id: nameId, kind: 'name', name: def.name },
+                    { id: accessorId, kind: 'int', value: BigInt(index + 1) },
+                  ],
+                }
+              : {
+                  id: appId,
+                  kind: 'app',
+                  opcode: 'field',
+                  args: [
+                    { id: nameId, kind: 'name', name: def.name },
+                    { id: accessorId, kind: 'str', value: name },
+                  ],
+                }
+
+          const elemDef: QuintOpDef = {
+            id: elemDefId,
+            kind: 'def',
+            name,
+            qualifier: def.qualifier,
+            expr: accessExpr,
+          }
+
+          // Create a let expression for this binding
+          const letId = this.idGen.nextId()
+          letExpr = { id: letId, kind: 'let', opdef: elemDef, expr: letExpr }
+        })
+
+        // Create the let expression for the temp variable itself
+        const id = this.getId(ctx)
+        const finalLetExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr: letExpr }
+        this.exprStack.push(finalLetExpr)
+
+        // Clean up metadata
+        this.destructuringMetadata.delete(def.name)
+      } else {
+        // Shouldn't happen but handle gracefully
+        const id = this.getId(ctx)
+        const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
+        this.exprStack.push(letExpr)
+      }
+    } else {
+      // Normal case: single declaration
+      const id = this.getId(ctx)
+      const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
+      this.exprStack.push(letExpr)
+    }
   }
 
   /** **************** translate operator definititons **********************/
@@ -1453,52 +1523,68 @@ export class ToIrListener implements QuintListener {
       qualifier,
       expr,
     }
+
+    // Check if we're in a let-in context by examining the parent
+    // If parent is LetIn, we're inside a function/action body
+    const parent = ctx.parent
+    const isLetInContext = parent instanceof p.LetInContext
+
+    // Store metadata for let-in handling
+    this.destructuringMetadata.set(tempVarName, {
+      pattern: patternType as 'tuple' | 'record',
+      identifiers: identifiers.filter(id => id !== '_'),
+    })
+
     this.declarationStack.push(tempVarDef)
 
-    // Create a val declaration for each identifier in the pattern
-    identifiers.forEach((name, index) => {
-      // Skip holes (_)
-      if (name === '_') {
-        return
-      }
+    // Only create and push field binding declarations at module level
+    // In let-in context, exitLetIn will handle these using the metadata
+    if (!isLetInContext) {
+      // Create field binding declarations for module level
+      identifiers.forEach((name, index) => {
+        // Skip holes (_)
+        if (name === '_') {
+          return
+        }
 
-      const elemDefId = this.idGen.nextId()
-      const appId = this.idGen.nextId()
-      const nameId = this.idGen.nextId()
-      const accessorId = this.idGen.nextId()
+        const elemDefId = this.idGen.nextId()
+        const appId = this.idGen.nextId()
+        const nameId = this.idGen.nextId()
+        const accessorId = this.idGen.nextId()
 
-      // For tuples, use item access with 1-based indexing
-      // For records, use field access
-      const accessExpr: QuintEx =
-        patternType === 'tuple'
-          ? {
-              id: appId,
-              kind: 'app',
-              opcode: 'item',
-              args: [
-                { id: nameId, kind: 'name', name: tempVarName },
-                { id: accessorId, kind: 'int', value: BigInt(index + 1) },
-              ],
-            }
-          : {
-              id: appId,
-              kind: 'app',
-              opcode: 'field',
-              args: [
-                { id: nameId, kind: 'name', name: tempVarName },
-                { id: accessorId, kind: 'str', value: name },
-              ],
-            }
+        // For tuples, use item access with 1-based indexing
+        // For records, use field access
+        const accessExpr: QuintEx =
+          patternType === 'tuple'
+            ? {
+                id: appId,
+                kind: 'app',
+                opcode: 'item',
+                args: [
+                  { id: nameId, kind: 'name', name: tempVarName },
+                  { id: accessorId, kind: 'int', value: BigInt(index + 1) },
+                ],
+              }
+            : {
+                id: appId,
+                kind: 'app',
+                opcode: 'field',
+                args: [
+                  { id: nameId, kind: 'name', name: tempVarName },
+                  { id: accessorId, kind: 'str', value: name },
+                ],
+              }
 
-      const elemDef: QuintOpDef = {
-        id: elemDefId,
-        kind: 'def',
-        name,
-        qualifier,
-        expr: accessExpr,
-      }
-      this.declarationStack.push(elemDef)
-    })
+        const elemDef: QuintOpDef = {
+          id: elemDefId,
+          kind: 'def',
+          name,
+          qualifier,
+          expr: accessExpr,
+        }
+        this.declarationStack.push(elemDef)
+      })
+    }
   }
 
   private checkForUppercaseTypeName(id: bigint, qualifiedName: string) {
