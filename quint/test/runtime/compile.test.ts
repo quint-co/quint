@@ -1038,7 +1038,7 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
     })
 
-    it('expect does not add dummy state to trace', () => {
+    it('expect does not add stuttering state to trace', () => {
       const input = dedent(
         `var n: int
         |run run1 = (n' = 0).then(n' = 3).expect(n == 3)
@@ -1050,9 +1050,9 @@ describe('compiling specs to runtime values', () => {
       evaluator.shift()
 
       // Should have exactly 2 states: initial (n=0) and after then (n=3)
-      // Without the fix, it would have 3 states (including a dummy state from expect)
+      // and no stuttering states.
       const trace = evaluator.ctx.trace.get()
-      assert.equal(trace.length, 2, 'Trace should have exactly 2 states, not including a dummy state from expect')
+      assert.equal(trace.length, 2, 'Trace should have exactly 2 states, not including a stuttering state from expect')
     })
 
     it('q::debug', () => {
