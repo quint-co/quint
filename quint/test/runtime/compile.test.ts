@@ -934,7 +934,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"))
+        .mapLeft(m => assert.equal(m, "[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false"))
     })
 
     it('then returns false when rhs is false', () => {
