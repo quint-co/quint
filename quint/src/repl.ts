@@ -92,6 +92,8 @@ class ReplState {
   evaluator: Evaluator
   // The name resolver to be used
   nameResolver: NameResolver
+  // Counter for generating unique source names for each REPL input
+  inputCounter: number
 
   constructor(verbosityLevel: number, rng: Rng) {
     const recorder = newTraceRecorder(verbosityLevel, rng)
@@ -101,6 +103,7 @@ class ReplState {
     this.compilationState = newCompilationState()
     this.evaluator = new Evaluator(new Map(), recorder, rng)
     this.nameResolver = new NameResolver()
+    this.inputCounter = 0
   }
 
   clone() {
@@ -109,6 +112,7 @@ class ReplState {
     copy.exprHist = this.exprHist
     copy.lastLoadedFileAndModule = this.lastLoadedFileAndModule
     copy.compilationState = this.compilationState
+    copy.inputCounter = this.inputCounter
     return copy
   }
 
@@ -128,6 +132,7 @@ class ReplState {
     this.compilationState = newCompilationState()
     this.evaluator = new Evaluator(new Map(), recorder, rng)
     this.nameResolver = new NameResolver()
+    this.inputCounter = 0
   }
 
   get recorder(): TraceRecorder {
@@ -562,9 +567,14 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     tryEvalModule(out, state, '__repl__')
   }
 
+  // Generate a unique source name for this input to avoid line number conflicts in the source map
+  const inputSource = `<input-${state.inputCounter}>`
+  state.compilationState.sourceCode.set(inputSource, newInput)
+  state.inputCounter++
+
   const parseResult = parseExpressionOrDeclaration(
     newInput,
-    '<input>',
+    inputSource,
     state.compilationState.idGen,
     state.compilationState.sourceMap
   )
