@@ -145,11 +145,11 @@ quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
 
 <!-- !test err typecheck failure gives non-zero exit -->
 ```
-./testFixture/TrivialTypeError.qnt:2:3 - error: [QNT000] Couldn't unify str and int
+./testFixture/TrivialTypeError.qnt:2:7 - error: [QNT000] Couldn't unify str and int
 Trying to unify str and int
 
 2:   val x : int = "not an int"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+         ^
 
 error: typechecking failed
 ```
@@ -1111,43 +1111,9 @@ exit $exit_code
   1 failed
 
   1) mintTwiceThenSendError:
-      HOME/coin.qnt:176:5 - error: [QNT511] Test mintTwiceThenSendError returned false
+      HOME/coin.qnt:176:9 - error: [QNT511] Test mintTwiceThenSendError returned false
       176:     run mintTwiceThenSendError = {
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      177:         // non-deterministically pick some amounts to mint and send
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      178:         nondet mintEve = 0.to(MAX_UINT).oneOf()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      179:         nondet mintBob = 0.to(MAX_UINT).oneOf()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      180:         nondet eveToBob = 0.to(MAX_UINT).oneOf()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      181:         // execute a fixed sequence `init`, `mint`, `mint`, `send`
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      182:         init.then(mint(minter, "eve", mintEve))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      183:             .then(mint(minter, "bob", mintBob))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      184:             .then(
-           ^^^^^^^^^^^^^^^^^^
-      185:                 if (eveToBob <= balances.get("eve")) {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      186:                     // if Eve has enough tokens, send to Bob should pass
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      187:                     send("eve", "bob", eveToBob)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      188:                 } else {
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-      189:                     // otherwise, just ignore the test
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      190:                     all { minter' = minter, balances' = balances }
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      191:                 }
-           ^^^^^^^^^^^^^^^^^
-      192:             )
-           ^^^^^^^^^^^^^
-      193:     }
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   ^^^^^^^^^^^^^^^^^^^^^^
 
 [Frame 0]
 init => true
@@ -1378,11 +1344,11 @@ echo -e 'def farenheit(celsius) = celsius * 9 / 5 + 32\ndef farenheit(celsius) =
 
 static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
 def farenheit(celsius) = celsius * 9 / 5 + 32
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^^^^^^^
 
 static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
 def farenheit(celsius) = celsius * 9 / 5 + 32
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^^^^^^^
 
 
 33
@@ -1433,11 +1399,11 @@ quint typecheck ./testFixture/typechecking/ImportFileWithError.qnt 2>&1 | sed 's
 
 <!-- !test out error for file -->
 ```
-HOME/testFixture/typechecking/FileWithError.qnt:2:3 - error: [QNT000] Couldn't unify bool and int
+HOME/testFixture/typechecking/FileWithError.qnt:2:7 - error: [QNT000] Couldn't unify bool and int
 Trying to unify bool and int
 
 2:   val a: int = true
-     ^^^^^^^^^^^^^^^^^
+         ^
 
 error: typechecking failed
 ```
@@ -1717,13 +1683,9 @@ exit $exit_code
                                 ^^^^^^^^^^^
     Use --seed=0x1 --match=initFailsTest to repeat.
   3) lastActionFailsTest:
-      HOME/thenErrorMessages.qnt:18:3 - error: [QNT511] Test lastActionFailsTest returned false
+      HOME/thenErrorMessages.qnt:18:7 - error: [QNT511] Test lastActionFailsTest returned false
       18:   run lastActionFailsTest = init(true)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      19:     .then(a)
-          ^^^^^^^^^^^^
-      20:     .then(b)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                ^^^^^^^^^^^^^^^^^^^
     Use --seed=0x1 --match=lastActionFailsTest to repeat.
 
 
