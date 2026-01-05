@@ -234,7 +234,7 @@ export class ToIrListener implements QuintListener {
           { id: this.getId(ctx), kind: 'lambda', params, qualifier, expr }
 
     const def: QuintOpDef = {
-      id: this.getId(ctx),
+      id: this.getId(ctx.normalCallName()),
       kind: 'def',
       name,
       qualifier,
