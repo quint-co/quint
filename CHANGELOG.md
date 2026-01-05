@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Error messages from `then` failures were improved (#1832)
+- Errors referring to an entire definition will now be shown at the definition's name location only (#1833)
 
 ### Deprecated
 ### Removed
