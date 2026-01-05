@@ -263,7 +263,7 @@ describe('repl ok', () => {
       |div(2, 0) => none
       |
       |runtime error: error: [QNT503] Division by zero
-      |div(2, 0)
+      |pure def div(x, y) = x / y
       |                     ^^^^^
       |
       |>>> `
