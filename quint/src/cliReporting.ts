@@ -317,8 +317,8 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
       // output the header
       out(`  ${index + 1}) ${testResult.name}:`)
       const lines = details.split('\n')
-      // output the first 15 lines in red
-      lines.slice(0, 15).forEach(l => out(chalk.red('      ' + l)))
+      // output the error lines in red
+      lines.filter(l => l.trim().length > 0).forEach(l => out(chalk.red('      ' + l)))
 
       if (verbosity.hasActionTracking(verbosityLevel)) {
         out('')
