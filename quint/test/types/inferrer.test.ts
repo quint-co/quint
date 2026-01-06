@@ -530,6 +530,8 @@ Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
       'val sum = x + y + z',
       'val (a, _, b) = (10, 20, 30)',
       'val diff = a - b',
+      'pure def foo(pair) = { pure val (p, q) = pair p + q }',
+      'val result = foo((5, 7))',
     ]
 
     const [errors, types] = inferTypesForDefs(defs)
@@ -548,6 +550,8 @@ Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
       'val sum = x + y',
       'val person = { name: "Alice", age: 30 }',
       'val { name, age } = person',
+      'pure def greet(p) = { pure val { name, age } = p name }',
+      'val greeting = greet({ name: "Bob", age: 25 })',
     ]
 
     const [errors, types] = inferTypesForDefs(defs)

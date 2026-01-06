@@ -7,6 +7,7 @@
  * - Partial field extraction
  * - Using destructured values in computations
  * - Different record types
+ * - Destructuring in let-in expressions (function bodies)
  */
 module recordDestructuring {
   // Basic record destructuring
@@ -42,4 +43,40 @@ module recordDestructuring {
   // Single field extraction
   val record1 = { value: 42 }
   val { value } = record1
+
+  // Destructuring in let-in expressions
+  def getName(person) = {
+    val { name, age } = person
+    name
+  }
+
+  pure def computeArea(rect) = {
+    pure val { width, height } = rect
+    width * height
+  }
+
+  // Multiple destructuring in same function body
+  def sumAreas(rect1, rect2) = {
+    val area1 = {
+      val { width, height } = rect1
+      width * height
+    }
+    val area2 = {
+      val { width, height } = rect2
+      width * height
+    }
+    area1 + area2
+  }
+
+  // Destructuring with function parameters still visible
+  pure def scalePoint(factor, point) = {
+    pure val { x, y } = point
+    { x: x * factor, y: y * factor }
+  }
+
+  // Partial field extraction in let-in
+  def getHost(config) = {
+    val { host } = config
+    host
+  }
 }

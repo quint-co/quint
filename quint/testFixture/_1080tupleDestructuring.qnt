@@ -7,6 +7,7 @@
  * - Holes in patterns
  * - Nested expressions
  * - Using destructured values in computations
+ * - Destructuring in let-in expressions (function bodies)
  */
 module tupleDestructuring {
   // Basic tuple destructuring
@@ -40,4 +41,34 @@ module tupleDestructuring {
   val coords = (100, 200)
   val (x_coord, y_coord) = coords
   val distance = x_coord + y_coord
+
+  // Destructuring in let-in expressions
+  def addPair(pair) = {
+    val (left, right) = pair
+    left + right
+  }
+
+  pure def multiply(tuple) = {
+    pure val (a, b, c) = tuple
+    a * b * c
+  }
+
+  // Multiple destructuring in same function body
+  def combine(t1, t2) = {
+    val (x1, y1) = t1
+    val (x2, y2) = t2
+    (x1 + x2, y1 + y2)
+  }
+
+  // Destructuring with function parameters still visible
+  pure def scale(factor, pair) = {
+    pure val (x, y) = pair
+    (x * factor, y * factor)
+  }
+
+  // Destructuring with holes in let-in
+  def getMiddle(triple) = {
+    val (_, mid, _) = triple
+    mid * 2
+  }
 }

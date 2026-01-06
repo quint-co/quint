@@ -668,6 +668,16 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('x + y', '15', 'val { x, y } = { x: 10, y: 5, z: 3 }')
     })
 
+    it('tuple destructuring in let-in', () => {
+      const def = 'pure def test(packet, data) = { pure val result = (data, packet) pure val (d, p) = result d + p }'
+      assertResultAsString('test(5, 10)', '15', def)
+    })
+
+    it('record destructuring in let-in', () => {
+      const def = 'pure def area(rect) = { pure val { width, height } = rect width * height }'
+      assertResultAsString('area({ width: 5, height: 10 })', '50', def)
+    })
+
     it('cross products', () => {
       assertResultAsString('tuples(Set(), Set(), Set())', 'Set()')
       assertResultAsString('tuples(Set(), 2.to(3))', 'Set()')
