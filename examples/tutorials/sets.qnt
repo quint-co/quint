@@ -8,10 +8,10 @@ module sets {
   type Pair = (str, str)
 
   // the first element of a pair
-  pure def fst((first, _): Pair): str = first
+  pure def fst(pair: Pair): str = pair._1
 
   // the second element of a pair
-  pure def snd((_, second): Pair): str = second
+  pure def snd(pair: Pair): str = pair._2
 
   // all available swap pairs as a set of tuples
   pure val availablePairs = Set(

@@ -570,7 +570,7 @@ Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
       'val total = a + b + c + d',
     ]
 
-    const [errors, types] = inferTypesForDefs(defs)
+    const [errors, _] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
   })
 

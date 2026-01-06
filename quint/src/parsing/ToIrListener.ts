@@ -1501,12 +1501,13 @@ export class ToIrListener implements QuintListener {
     const destructPattern = ctx.destructuringPattern()
     const tuplePattern = destructPattern.tuplePattern()
     const recordPattern = destructPattern.recordPattern()
-    const identCount = tuplePattern ? tuplePattern.identOrHole().length : recordPattern ? recordPattern.simpleId().length : 0
+    const identCount = tuplePattern
+      ? tuplePattern.identOrHole().length
+      : recordPattern
+      ? recordPattern.simpleId().length
+      : 0
 
-    const identifiers = this.patternIdentStack.splice(
-      this.patternIdentStack.length - identCount,
-      identCount
-    )
+    const identifiers = this.patternIdentStack.splice(this.patternIdentStack.length - identCount, identCount)
 
     if (!patternType || identifiers.length === 0) {
       console.error('Internal error: pattern stack mismatch in destructuring')
@@ -1532,7 +1533,7 @@ export class ToIrListener implements QuintListener {
     // Store metadata for let-in handling
     this.destructuringMetadata.set(tempVarName, {
       pattern: patternType as 'tuple' | 'record',
-      identifiers: identifiers.filter(id => id !== '_'),
+      identifiers: identifiers,
     })
 
     this.declarationStack.push(tempVarDef)
