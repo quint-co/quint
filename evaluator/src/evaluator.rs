@@ -573,13 +573,9 @@ impl<'a> Interpreter<'a> {
                     };
                     let compiled_expr = self.compile(expr);
                     CompiledExpr::new(move |env| {
-                        let saved = cached_value.borrow().clone();
-
-                        cached_value.replace(None);
+                        let saved = cached_value.replace(None);
                         let result = compiled_expr.execute(env);
-
                         cached_value.replace(saved);
-
                         result
                     })
                 }
