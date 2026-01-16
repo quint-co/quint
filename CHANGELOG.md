@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ITF trace output when using the Rust backend with `--out-itf` (#1823)
 - Fixed a crash in the Rust backend when `--nthreads` exceeds `--max-samples` (#1825)
 - Fixed a problem where the REPL error reporting showed an incorrect location (#1835)
+- Fixed a problem where `expect` would add a stuttering state to the trace (#1846)
+- Fixed a problem where tests without and `expect` at the end would be missing
+  the last state in the ITF trace (#1846)
 
 ### Security
 
