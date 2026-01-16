@@ -531,7 +531,12 @@ impl<'a> Interpreter<'a> {
                             // Improve reference of `then`-related errors
                             if opcode == "then" && err.code == "QNT513" && err.reference.is_none() {
                                 // Check if first arg is a nested 'then' call
-                                if let QuintEx::QuintApp { opcode: inner_opcode, args: inner_args, .. } = &args_for_ref[0] {
+                                if let QuintEx::QuintApp {
+                                    opcode: inner_opcode,
+                                    args: inner_args,
+                                    ..
+                                } = &args_for_ref[0]
+                                {
                                     if inner_opcode == "then" && inner_args.len() >= 2 {
                                         return err.with_reference(inner_args[1].id());
                                     }
