@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Quint wrapper for model checkers (Apalache)
+ * Quint wrapper for model checkers (Apalache, TLC)
  *
  * @author Yassine Boukhari, 2025
  *
@@ -13,10 +13,73 @@
  */
 
 import chalk from 'chalk'
+import { QuintModule } from './ir/quintIr'
 import { ApalacheResult, ServerEndpoint, connect, createConfig } from './apalache'
+import { loadTlcConfig, verify as runTlc } from './tlc'
+import { compileToTlaplus } from './compileToTlaplus'
+import { convertInit } from './ir/initToPredicate'
 import { CLIProcedure, CompiledStage, TracingStage } from './cliCommands'
-import { outputJson, printInductiveInvariantProgress, processApalacheResult } from './cliReporting'
-import { PLACEHOLDERS, getInvariants, loadApalacheConfig } from './cliHelpers'
+import {
+  cliErr,
+  outputJson,
+  printInductiveInvariantProgress,
+  processApalacheResult,
+  processTlcResult,
+} from './cliReporting'
+import { PLACEHOLDERS, getInvariants, loadApalacheConfig, mkErrorMessage } from './cliHelpers'
+
+// --------------------------------------------------------------------------------
+// TLC
+// --------------------------------------------------------------------------------
+
+export async function verifyWithTlcBackend(
+  prev: CompiledStage,
+  verifying: TracingStage,
+  verbosityLevel: number
+): Promise<CLIProcedure<TracingStage>> {
+  const args = prev.args
+
+  const removeRuns = (module: QuintModule): QuintModule => {
+    return { ...module, declarations: module.declarations.filter(d => d.kind !== 'def' || d.qualifier !== 'run') }
+  }
+  const mainModule = convertInit(removeRuns(prev.mainModule), prev.table, prev.modes)
+  if (mainModule.isLeft()) {
+    return cliErr('Failed to convert init to predicate', {
+      ...verifying,
+      errors: mainModule.value.map(mkErrorMessage(prev.sourceMap)),
+    })
+  }
+
+  const verifyingFlat = { ...prev, modules: [mainModule.value] }
+  const parsedSpec = outputJson(verifyingFlat)
+
+  console.log(chalk.green('[TLC]') + ' Compiling to TLA+...')
+
+  const tlaResult = await compileToTlaplus(args.serverEndpoint, args.apalacheVersion, parsedSpec, verbosityLevel)
+
+  if (tlaResult.isLeft()) {
+    return cliErr('error', { ...verifying, errors: tlaResult.value.errors })
+  }
+
+  const [, invariantsList] = getInvariants(args)
+  const tlcRuntimeConfig = loadTlcConfig(args.tlcConfig)
+
+  console.log(chalk.green('[TLC]') + ' Running TLC model checker...\n')
+
+  const startMs = Date.now()
+  const tlcResult = await runTlc(
+    {
+      tlaCode: tlaResult.value,
+      moduleName: prev.main!,
+      hasInvariant: invariantsList.length > 0,
+      hasTemporal: !!args.temporal,
+    },
+    args.apalacheVersion,
+    tlcRuntimeConfig
+  )
+
+  return processTlcResult(tlcResult, startMs, verbosityLevel, verifying)
+}
 
 // --------------------------------------------------------------------------------
 // Apalache

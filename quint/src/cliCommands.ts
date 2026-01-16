@@ -35,7 +35,7 @@ import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
-import { verifyWithApalacheBackend } from './quintMCWrapper'
+import { verifyWithApalacheBackend, verifyWithTlcBackend } from './quintMCWrapper'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { newTraceRecorder } from './runtime/trace'
@@ -576,13 +576,17 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 }
 
 /**
- * Verify a spec via Apalache.
+ * Verify a spec via a model checker(Apalache or TLC).
  *
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
   const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
+
+  if (prev.args.backend === 'tlc') {
+    return verifyWithTlcBackend(prev, verifying, verbosityLevel)
+  }
   return verifyWithApalacheBackend(prev, verifying, verbosityLevel)
 }
 
