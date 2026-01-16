@@ -115,7 +115,7 @@ export function printViolatedInvariants(state: QuintEx, invariants: string[], pr
  * @param prev The previous stage context.
  * @returns The processed result.
  */
-export function processVerifyResult(
+export function processApalacheResult(
   res: ApalacheResult<void>,
   startMs: number,
   verbosityLevel: number,

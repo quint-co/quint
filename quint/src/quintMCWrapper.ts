@@ -15,7 +15,7 @@
 import chalk from 'chalk'
 import { ApalacheResult, ServerEndpoint, connect, createConfig } from './apalache'
 import { CLIProcedure, CompiledStage, TracingStage } from './cliCommands'
-import { outputJson, printInductiveInvariantProgress, processVerifyResult } from './cliReporting'
+import { outputJson, printInductiveInvariantProgress, processApalacheResult } from './cliReporting'
 import { PLACEHOLDERS, getInvariants, loadApalacheConfig } from './cliHelpers'
 
 // --------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ export async function verifyWithApalacheBackend(
     const startMs = Date.now()
     return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
       if (res.isLeft()) {
-        return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+        return processApalacheResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
       }
 
       // Checking whether the inductive invariant is preserved by the step
@@ -84,7 +84,7 @@ export async function verifyWithApalacheBackend(
 
       return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
         if (res.isLeft() || !hasOrdinaryInvariant) {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+          return processApalacheResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
         }
 
         // Checking whether the inductive invariant implies the ordinary invariant
@@ -99,7 +99,7 @@ export async function verifyWithApalacheBackend(
         )
 
         return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+          return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList)
         })
       })
     })
@@ -111,6 +111,6 @@ export async function verifyWithApalacheBackend(
   const startMs = Date.now()
 
   return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
-    return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
+    return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList)
   })
 }
