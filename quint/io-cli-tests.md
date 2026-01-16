@@ -1692,3 +1692,42 @@ exit $exit_code
   Use --verbosity=3 to show executions.
       HOME/thenErrorMessages.qnt
 ```
+
+### `expect` does not duplicate states in traces for `quint run`
+
+Regression test to ensure that `expect` does not add duplicate states to the trace
+when using `quint run` with `--out-itf`.
+
+<!-- !test in expect no duplicate states in run -->
+```
+quint run --out-itf=expect-run.itf.json --max-steps=20 --seed=42 --verbosity=0 \
+  ./testFixture/expectNoStateDuplication.qnt
+cat expect-run.itf.json | jq '.states | length'
+rm expect-run.itf.json
+```
+
+<!-- !test out expect no duplicate states in run -->
+```
+42
+```
+
+### `expect` does not duplicate states in traces for `quint test`
+
+Regression test to ensure that `expect` does not add duplicate states to the trace
+when using `quint test` with `--out-itf`. Both tests should produce the same number
+of states, as the final `expect` in `WithExpectTest` should not add an extra state.
+
+<!-- !test in expect no duplicate states in test -->
+```
+quint test --out-itf='{test}.itf.json' \
+  ./testFixture/expectNoStateDuplication.qnt > /dev/null
+cat NoExpectTest.itf.json | jq '.states | length'
+cat WithExpectTest.itf.json | jq '.states | length'
+rm NoExpectTest.itf.json WithExpectTest.itf.json
+```
+
+<!-- !test out expect no duplicate states in test -->
+```
+6
+6
+```
