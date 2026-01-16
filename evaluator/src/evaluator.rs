@@ -522,9 +522,25 @@ impl<'a> Interpreter<'a> {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
                     let opcode = opcode.clone();
+
+                    // Capture args for reference improvement in 'then' operator
+                    let args_for_ref = args.clone();
                     CompiledExpr::new(move |env| {
                         let op = compile_lazy_op(&opcode);
-                        op.execute(env, &compiled_args)
+                        op.execute(env, &compiled_args).map_err(|err| {
+                            // Improve reference of `then`-related errors
+                            if opcode == "then" && err.code == "QNT513" && err.reference.is_none() {
+                                // Check if first arg is a nested 'then' call
+                                if let QuintEx::QuintApp { opcode: inner_opcode, args: inner_args, .. } = &args_for_ref[0] {
+                                    if inner_opcode == "then" && inner_args.len() >= 2 {
+                                        return err.with_reference(inner_args[1].id());
+                                    }
+                                }
+                                // Otherwise, point to the first argument
+                                return err.with_reference(args_for_ref[0].id());
+                            }
+                            err
+                        })
                     })
                 } else {
                     // Otherwise, this is either a normal (eager) builtin, or an user-defined operator.
