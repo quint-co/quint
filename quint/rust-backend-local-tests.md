@@ -68,3 +68,16 @@ rm rust-out.itf.json
   "balances"
 ]
 ```
+
+## Nested parameterized calls with let
+
+This test verifies that the Rust backend handles nested parameterized function calls with let bindings correctly.
+
+<!-- !test check rust backend nested parameterized calls -->
+```
+quint run \
+  --backend=rust \
+  --max-steps=5 \
+  --max-samples=1 \
+  ./testFixture/nestedParameterizedCallsWithLet.qnt
+```

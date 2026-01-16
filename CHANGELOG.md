@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a problem where `expect` would add a stuttering state to the trace (#1846)
 - Fixed a problem where tests without and `expect` at the end would be missing
   the last state in the ITF trace (#1846)
+- Fixed an edge case with nested operators that had operators as arguments could cause a runtime issue (#1843)
 
 ### Security
 

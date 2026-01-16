@@ -410,3 +410,11 @@ Tests that `quint run` works with nested setOfMaps and oneOf.
 
 <!-- !test check 1736 -->
     quint run testFixture/bug1736setOfMaps.qnt
+
+### OK on run nested parameterized calls with let
+
+Tests that `quint run` works with nested parameterized function calls with let bindings.
+
+<!-- !test check nested parameterized calls with let -->
+    quint run --backend=typescript --max-steps=5 --max-samples=1 \
+      ./testFixture/nestedParameterizedCallsWithLet.qnt
