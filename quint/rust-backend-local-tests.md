@@ -115,3 +115,21 @@ rm /tmp/debug_test.qnt
 ```
 > this tests debug 42
 ```
+
+## `expect` does not duplicate states in traces for `quint run`
+
+Regression test to ensure that `expect` does not add duplicate states to the trace
+when using `quint run` with `--out-itf` and the Rust backend.
+
+<!-- !test in rust backend expect no duplicate states in run -->
+```
+quint run --backend=rust --out-itf=expect-run-rust.itf.json --max-steps=20 --seed=42 --verbosity=0 \
+  ./testFixture/expectNoStateDuplication.qnt
+cat expect-run-rust.itf.json | jq '.states | length'
+rm expect-run-rust.itf.json
+```
+
+<!-- !test out rust backend expect no duplicate states in run -->
+```
+42
+```
