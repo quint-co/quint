@@ -1038,6 +1038,23 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
     })
 
+    it('expect does not add stuttering state to trace', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n == 3)
+        `
+      )
+
+      const [evaluator, runExpr] = prepareEvaluator('run1', input)
+      evaluator.evaluate(runExpr)
+      evaluator.shift()
+
+      // Should have exactly 2 states: initial (n=0) and after then (n=3)
+      // and no stuttering states.
+      const trace = evaluator.ctx.trace.get()
+      assert.equal(trace.length, 2, 'Trace should have exactly 2 states, not including a stuttering state from expect')
+    })
+
     it('q::debug', () => {
       // `q::debug(s, a)` returns `a`
       const input = dedent(

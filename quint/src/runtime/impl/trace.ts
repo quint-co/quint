@@ -32,6 +32,10 @@ export class Trace {
     this.states = this.states.push(state)
   }
 
+  dropLast() {
+    this.states = this.states.pop()
+  }
+
   renderDiff(width: number, config?: DiffConfig): string {
     if (this.states.size == 0) {
       return ''
