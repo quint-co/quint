@@ -93,10 +93,11 @@ module simplePonziTest {
   // only if no error is returned.
   action onReceive(investor: Addr, amount: int): bool = {
     val result = receive(evmState, ponziState, investor, amount)
+    val { error, evm, ponzi } = result
     all {
-      result.error == "",
-      evmState' = result.evm,
-      ponziState' = result.ponzi,
+      error == "",
+      evmState' = evm,
+      ponziState' = ponzi,
     }
   }
 

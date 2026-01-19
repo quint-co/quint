@@ -188,7 +188,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             if !first.as_bool() {
                 return Err(QuintError::new(
                     "QNT513",
-                    "Cannot continue in A.then(B), A evaluates to 'false'",
+                    "Cannot continue in `then` because the highlighted expression evaluated to false",
                 ));
             }
 

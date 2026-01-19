@@ -70,7 +70,7 @@ module teaching {
         processes.exists(i => state.get(i).y == 1)
 
   def TypeOK =
-    val local_states = tuples(Set(0, 1), domain, Set(Start, Middle, End)).map(t => { x: t._1, y: t._2, pc: t._3 })
+    val local_states = tuples(Set(0, 1), domain, Set(Start, Middle, End)).map(((x, y, pc)) => { x: x, y: y, pc: pc })
     state.in(processes.setOfMaps(local_states))
 
   def IndInv = and {
