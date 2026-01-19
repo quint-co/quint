@@ -34,7 +34,7 @@ jobs:
           # Wait for the server to start
           sleep 5
           # Download the rust evaluator before the tests
-          quint run testFixture/simulator/gettingStarted.qnt --backend rust
+          quint run testFixture/simulator/gettingStarted.qnt --backend rust --max-samples=1 --max-steps=1
           # Run the integration tests
           npm run all-integration
         env:
