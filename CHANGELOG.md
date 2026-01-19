@@ -8,8 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.30.0 -- 2026-01-19
+
+### Added
 
 - Added support for passing `--seed` to the Rust backend for reproducible simulations (#1827)
+- Added simple destructuring of records and tuples, i.e. `val (foo, bar) = my_value` (#1837)
 
 ### Changed
 
@@ -23,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ITF trace output when using the Rust backend with `--out-itf` (#1823)
 - Fixed a crash in the Rust backend when `--nthreads` exceeds `--max-samples` (#1825)
 - Fixed a problem where the REPL error reporting showed an incorrect location (#1835)
+- Fixed a problem where `expect` would add a stuttering state to the trace (#1846)
+- Fixed a problem where tests without and `expect` at the end would be missing
+  the last state in the ITF trace (#1846)
+- Fixed an edge case with nested operators that had operators as arguments could cause a runtime issue (#1843)
 
 ### Security
 

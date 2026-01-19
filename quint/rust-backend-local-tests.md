@@ -68,3 +68,50 @@ rm rust-out.itf.json
   "balances"
 ]
 ```
+
+## Nested parameterized calls with let
+
+This test verifies that the Rust backend handles nested parameterized function calls with let bindings correctly.
+
+<!-- !test check rust backend nested parameterized calls -->
+```
+quint run \
+  --backend=rust \
+  --max-steps=5 \
+  --max-samples=1 \
+  ./testFixture/nestedParameterizedCallsWithLet.qnt
+```
+
+## Debug output in init action
+
+This test verifies that q::debug output is printed when using the Rust backend.
+
+<!-- !test in rust backend debug -->
+```
+cat > /tmp/debug_test.qnt << 'EOF'
+module debugTest {
+  var x: int
+
+  action init = {
+    x' = q::debug("this tests debug", 42)
+  }
+
+  action step = {
+    x' = x + 1
+  }
+}
+EOF
+
+quint run \
+  --backend=rust \
+  --max-samples=1 \
+  --main=debugTest \
+  /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
+
+rm /tmp/debug_test.qnt
+```
+
+<!-- !test out rust backend debug -->
+```
+> this tests debug 42
+```

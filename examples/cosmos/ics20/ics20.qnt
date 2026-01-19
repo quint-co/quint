@@ -125,8 +125,7 @@ module ics20 {
       (bankResult, "mint coins failed")
     }
 
-    pure val bankResult = result._1
-    pure val errorMessage = result._2
+    pure val (bankResult, errorMessage) = result
 
     pure val newChainState = chainState.with("bank", bankResult.accounts)
     pure val ack = if (bankResult.success) {
@@ -310,8 +309,7 @@ module ics20Test {
       all {
         // (3) Compute updated destination chain state: call `onRecvPacket` callback:
         val recvResult = onRecvPacket(chainStates.get(destChain), packet)
-        val newDestChainState = recvResult._1
-        val acknowledgement   = recvResult._2
+        val (newDestChainState, acknowledgement) = recvResult
 
         // (4) Compute updated source chain state:
         // Update packet sets, moving `packet` from `outPackets` to `receivedButUnacknowledgedPackets`
