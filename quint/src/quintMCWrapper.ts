@@ -27,6 +27,7 @@ import {
   processTlcResult,
 } from './cliReporting'
 import { PLACEHOLDERS, getInvariants, loadApalacheConfig, mkErrorMessage } from './cliHelpers'
+import { verbosity } from './verbosity'
 
 // --------------------------------------------------------------------------------
 // TLC
@@ -53,7 +54,9 @@ export async function verifyWithTlcBackend(
   const verifyingFlat = { ...prev, modules: [mainModule.value] }
   const parsedSpec = outputJson(verifyingFlat)
 
-  console.log(chalk.green('[TLC]') + ' Compiling to TLA+...')
+  if (verbosity.hasProgress(verbosityLevel)) {
+    console.log(chalk.green('[TLC]') + ' Compiling to TLA+ (via Apalache)...')
+  }
 
   const tlaResult = await compileToTlaplus(args.serverEndpoint, args.apalacheVersion, parsedSpec, verbosityLevel)
 
@@ -64,7 +67,9 @@ export async function verifyWithTlcBackend(
   const [, invariantsList] = getInvariants(args)
   const tlcRuntimeConfig = loadTlcConfig(args.tlcConfig)
 
-  console.log(chalk.green('[TLC]') + ' Running TLC model checker...\n')
+  if (verbosity.hasProgress(verbosityLevel)) {
+    console.log(chalk.green('[TLC]') + ' Running TLC model checker...\n')
+  }
 
   const startMs = Date.now()
   const tlcResult = await runTlc(
