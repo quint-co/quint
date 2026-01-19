@@ -80,7 +80,8 @@ export async function verifyWithTlcBackend(
       hasTemporal: !!args.temporal,
     },
     args.apalacheVersion,
-    tlcRuntimeConfig
+    tlcRuntimeConfig,
+    verbosityLevel
   )
 
   return processTlcResult(tlcResult, startMs, verbosityLevel, verifying)

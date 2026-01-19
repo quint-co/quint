@@ -18,12 +18,16 @@ import fs, { readFileSync } from 'fs'
 import path from 'path'
 import os from 'os'
 import { apalacheDistDir } from './config'
+import { verbosity } from './verbosity'
 import { ErrorMessage } from './ErrorMessage'
 
 // Default JVM configuration for TLC
 const JVM_MAX_HEAP = '-Xmx8G'
 const JVM_STACK_SIZE = '-Xss515m'
 const DEFAULT_WORKERS: number | 'auto' = 'auto'
+
+// Verbosity level at which to show TLC's raw output
+const TLC_OUTPUT_VERBOSITY = 3
 
 export interface TlcRuntimeConfig {
   maxHeap?: string
@@ -95,7 +99,8 @@ function tlcErr(explanation: string, isViolation: boolean): TlcError {
 export async function verify(
   config: TlcConfig,
   apalacheVersion: string,
-  runtimeConfig: TlcRuntimeConfig = {}
+  runtimeConfig: TlcRuntimeConfig = {},
+  verbosityLevel: number = 2
 ): Promise<TlcResult<void>> {
   const jarResult = findApalacheJar(apalacheVersion)
   if (jarResult.isLeft()) {
@@ -128,11 +133,15 @@ export async function verify(
     ])
 
     proc.stdout.on('data', data => {
-      process.stdout.write(data.toString())
+      if (verbosityLevel >= TLC_OUTPUT_VERBOSITY) {
+        process.stdout.write(data.toString())
+      }
     })
 
     proc.stderr.on('data', data => {
-      process.stderr.write(data.toString())
+      if (verbosityLevel >= TLC_OUTPUT_VERBOSITY) {
+        process.stderr.write(data.toString())
+      }
     })
 
     proc.on('close', code => {
