@@ -35,7 +35,7 @@ import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
-import { verify } from './quintVerifier'
+import { verifyWithApalacheBackend } from './verify'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { newTraceRecorder } from './runtime/trace'
@@ -56,26 +56,14 @@ import {
   outputTestErrors,
   outputTestResults,
   prepareOnTrace,
-  printInductiveInvariantProgress,
   printViolatedInvariants,
-  processVerifyResult,
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import {
-  PLACEHOLDERS,
-  deriveVerbosity,
-  getInvariants,
-  guessMainModule,
-  isMatchingTest,
-  loadApalacheConfig,
-  mkErrorMessage,
-  toExpr,
-} from './cliHelpers'
+import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions } from './runtime/testing'
-import { createConfig } from './apalache'
 
 export type stage =
   | 'loading'
@@ -593,84 +581,9 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
-  const verifying = { ...prev, stage: 'verifying' as stage }
-  const args = verifying.args
+  const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
-
-  const itfFile: string | undefined = prev.args.outItf
-  if (itfFile) {
-    if (itfFile.includes(PLACEHOLDERS.test) || itfFile.includes(PLACEHOLDERS.seq)) {
-      console.log(
-        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(PLACEHOLDERS.test)} or ${chalk.grey(
-          PLACEHOLDERS.seq
-        )}, but this has no effect since at most a single trace will be produced.`
-      )
-    }
-  }
-
-  const loadedConfig = loadApalacheConfig(verifying, args.apalacheConfig)
-
-  const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
-  const parsedSpec = outputJson(veryfiyingFlat)
-
-  const [invariantsString, invariantsList] = getInvariants(prev.args)
-
-  if (args.inductiveInvariant) {
-    const hasOrdinaryInvariant = invariantsList.length > 0
-    const nPhases = hasOrdinaryInvariant ? 3 : 2
-    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
-
-    // Checking whether the inductive invariant holds in the initial state(s)
-    printInductiveInvariantProgress(verbosityLevel, args, 1, nPhases)
-
-    const startMs = Date.now()
-    return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
-      if (res.isLeft()) {
-        return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
-      }
-
-      // Checking whether the inductive invariant is preserved by the step
-      printInductiveInvariantProgress(verbosityLevel, args, 2, nPhases)
-
-      const stepConfig = createConfig(
-        loadedConfig,
-        parsedSpec,
-        { ...args, maxSteps: 1 },
-        ['q::inductiveInv'],
-        'q::inductiveInv'
-      )
-
-      return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
-        if (res.isLeft() || !hasOrdinaryInvariant) {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
-        }
-
-        // Checking whether the inductive invariant implies the ordinary invariant
-        printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
-
-        const propConfig = createConfig(
-          loadedConfig,
-          parsedSpec,
-          { ...args, maxSteps: 0 },
-          ['q::inv'],
-          'q::inductiveInv'
-        )
-
-        return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
-        })
-      })
-    })
-  }
-
-  // We need to insert the data form CLI args into their appropriate locations
-  // in the Apalache config
-  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? ['q::inv'] : [])
-  const startMs = Date.now()
-
-  return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
-    return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
-  })
+  return verifyWithApalacheBackend(prev, verifying, verbosityLevel)
 }
 
 /** output a compiled spec in the format specified in the `compiled.args.target` to stdout
