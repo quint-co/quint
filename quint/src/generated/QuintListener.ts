@@ -59,6 +59,8 @@ import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
 import { AnnotatedOperDefContext } from "./QuintParser";
 import { DeprecatedOperDefContext } from "./QuintParser";
+import { ValDestructuringContext } from "./QuintParser";
+import { PureValDestructuringContext } from "./QuintParser";
 import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
@@ -102,6 +104,9 @@ import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { AnnotatedParameterContext } from "./QuintParser";
+import { DestructuringPatternContext } from "./QuintParser";
+import { TuplePatternContext } from "./QuintParser";
+import { RecordPatternContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
 import { RecElemContext } from "./QuintParser";
@@ -772,6 +777,32 @@ export interface QuintListener extends ParseTreeListener {
 	exitDeprecatedOperDef?: (ctx: DeprecatedOperDefContext) => void;
 
 	/**
+	 * Enter a parse tree produced by the `valDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 */
+	enterValDestructuring?: (ctx: ValDestructuringContext) => void;
+	/**
+	 * Exit a parse tree produced by the `valDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 */
+	exitValDestructuring?: (ctx: ValDestructuringContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `pureValDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 */
+	enterPureValDestructuring?: (ctx: PureValDestructuringContext) => void;
+	/**
+	 * Exit a parse tree produced by the `pureValDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 */
+	exitPureValDestructuring?: (ctx: PureValDestructuringContext) => void;
+
+	/**
 	 * Enter a parse tree produced by the `const`
 	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
@@ -1259,6 +1290,39 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitAnnotatedParameter?: (ctx: AnnotatedParameterContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.destructuringPattern`.
+	 * @param ctx the parse tree
+	 */
+	enterDestructuringPattern?: (ctx: DestructuringPatternContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.destructuringPattern`.
+	 * @param ctx the parse tree
+	 */
+	exitDestructuringPattern?: (ctx: DestructuringPatternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.tuplePattern`.
+	 * @param ctx the parse tree
+	 */
+	enterTuplePattern?: (ctx: TuplePatternContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.tuplePattern`.
+	 * @param ctx the parse tree
+	 */
+	exitTuplePattern?: (ctx: TuplePatternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.recordPattern`.
+	 * @param ctx the parse tree
+	 */
+	enterRecordPattern?: (ctx: RecordPatternContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.recordPattern`.
+	 * @param ctx the parse tree
+	 */
+	exitRecordPattern?: (ctx: RecordPatternContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.identOrStar`.

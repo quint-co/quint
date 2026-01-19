@@ -557,9 +557,7 @@ module Tendermint {
       tuples(Rounds, Rounds).exists( ((r1, r2)) =>
           and {
             r1 < r2,
-            tuples(ValidValues, ValidValues).exists(vs =>
-              val v1 = vs._1
-              val v2 = vs._2
+            tuples(ValidValues, ValidValues).exists(((v1, v2)) =>
               and {
                 v1 != v2,
                 evidencePrecommit.contains({

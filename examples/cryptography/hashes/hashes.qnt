@@ -73,14 +73,16 @@ module hashes {
   /// @returns the length of the sequence
   pure def hlen(input: HMessage): int = {
     input._bytes.foldl((0, false),
-      (p, b) =>
+      (p, b) => {
+        val (len, inHash) = p
         if (b == -1) {
-          val newLen = p._1 + if (p._2) HASH_LEN else 0 // We add the total hash length at the terminator
-          (newLen, not(p._2)) // toggle the "in hash" flag
+          val newLen = len + if (inHash) HASH_LEN else 0 // We add the total hash length at the terminator
+          (newLen, not(inHash)) // toggle the "in hash" flag
         } else {
-          val newLen = p._1 + if (p._2) 0 else 1 // if in hash, the total hash length gets added in the terminator
-          (newLen, p._2)
+          val newLen = len + if (inHash) 0 else 1 // if in hash, the total hash length gets added in the terminator
+          (newLen, inHash)
         }
+      }
     )._1
   }
 }

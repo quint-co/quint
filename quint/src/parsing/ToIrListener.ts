@@ -99,6 +99,12 @@ export class ToIrListener implements QuintListener {
   protected rowStack: Row[] = []
   // the stack of variants for a sum
   protected variantStack: RowField[] = []
+  // the stack for destructuring pattern identifiers
+  protected patternIdentStack: string[] = []
+  // the stack for destructuring pattern types ('tuple' or 'record')
+  protected patternTypeStack: string[] = []
+  // Map from temp variable name to destructuring metadata
+  protected destructuringMetadata: Map<string, { pattern: 'tuple' | 'record'; identifiers: string[] }> = new Map()
   // an internal counter to assign unique numbers
   protected idGen: IdGenerator
 
@@ -171,9 +177,15 @@ export class ToIrListener implements QuintListener {
     const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
     const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
-    const id = this.getId(ctx)
-    const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
-    this.exprStack.push(letExpr)
+    // Check if what we popped is a destructuring temp variable
+    if (def.kind === 'def' && def.name.startsWith('quintDestructTemp')) {
+      this.handleDestructuringForLetDef(def, expr, ctx)
+    } else {
+      // Normal case: single declaration
+      const id = this.getId(ctx)
+      const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
+      this.exprStack.push(letExpr)
+    }
   }
 
   /** **************** translate operator definititons **********************/
@@ -719,6 +731,30 @@ export class ToIrListener implements QuintListener {
       fail('internal error: the grammar guarantees a type should be on the stack')
     )
     this.paramStack.push({ id, name, typeAnnotation })
+  }
+
+  // Tuple destructuring pattern: (a, b, c)
+  exitTuplePattern(ctx: p.TuplePatternContext) {
+    const identifiers = ctx.identOrHole().map(id => id.text)
+    this.patternIdentStack.push(...identifiers)
+    this.patternTypeStack.push('tuple')
+  }
+
+  // Record destructuring pattern: { foo, bar }
+  exitRecordPattern(ctx: p.RecordPatternContext) {
+    const identifiers = ctx.simpleId().map(id => id.text)
+    this.patternIdentStack.push(...identifiers)
+    this.patternTypeStack.push('record')
+  }
+
+  // val (a, b, c) = expr
+  exitValDestructuring(ctx: p.ValDestructuringContext) {
+    this.handleDestructuring(ctx, 'val')
+  }
+
+  // pure val { foo, bar } = expr
+  exitPureValDestructuring(ctx: p.PureValDestructuringContext) {
+    this.handleDestructuring(ctx, 'pureval')
   }
 
   // an identifier or star '*' in import
@@ -1385,6 +1421,154 @@ export class ToIrListener implements QuintListener {
         expr: body,
       }
     }
+  }
+
+  /**
+   * Handle destructuring patterns for val declarations.
+   * Desugars patterns like `val (a, b) = expr` or `val { foo, bar } = expr`
+   * into multiple val declarations using temporary variables and field/item access.
+   *
+   * @param ctx         parser context
+   * @param qualifier   'val' or 'pureval'
+   */
+  private handleDestructuring(ctx: p.ValDestructuringContext | p.PureValDestructuringContext, qualifier: OpQualifier) {
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+    const patternType = this.patternTypeStack.pop()
+
+    assert(patternType !== undefined, 'must have a pattern on the stack')
+
+    // Determine the number of identifiers based on the pattern type
+    const destructPattern = ctx.destructuringPattern()
+    const tuplePattern = destructPattern.tuplePattern()
+    const recordPattern = destructPattern.recordPattern()
+    const identCount = tuplePattern
+      ? tuplePattern.identOrHole().length
+      : recordPattern
+      ? recordPattern.simpleId().length
+      : 0
+
+    const identifiers = popMany(this.patternIdentStack, identCount, () => 'undefined_destructured_field')
+
+    // Create a temporary variable to hold the RHS expression
+    const tempVarId = this.getId(ctx)
+    const tempVarName = `quintDestructTemp${tempVarId}`
+    const tempVarDef: QuintOpDef = {
+      id: tempVarId,
+      kind: 'def',
+      name: tempVarName,
+      qualifier,
+      expr,
+    }
+
+    this.declarationStack.push(tempVarDef)
+
+    // Store metadata for let-in handling
+    this.destructuringMetadata.set(tempVarName, {
+      pattern: patternType as 'tuple' | 'record',
+      identifiers: identifiers,
+    })
+
+    // Check if we're in a let-in context by examining the parent
+    const parent = ctx.parent
+    const isLetInContext = parent instanceof p.LetInContext
+
+    // Only create and push field binding declarations at module level
+    // In let-in context, exitLetIn will handle these using the metadata
+    // and create bindings at the correct scope
+    if (!isLetInContext) {
+      // Create module level field binding declarations
+      identifiers.forEach((name, index) => {
+        // Skip holes (_)
+        if (name === '_') {
+          return
+        }
+
+        const elemDef: QuintOpDef = this.defForDestructuredField(patternType, tempVarName, index, name, qualifier)
+
+        this.declarationStack.push(elemDef)
+      })
+    }
+  }
+
+  private handleDestructuringForLetDef(def: QuintOpDef, expr: QuintEx, ctx: p.LetInContext) {
+    const metadata = this.destructuringMetadata.get(def.name)
+
+    if (!metadata) {
+      // Shouldn't happen but handle gracefully
+      console.debug(`[DEBUG] couldn't find metadata for destructured let def: ${def.name}`)
+      const id = this.getId(ctx)
+      const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
+      this.exprStack.push(letExpr)
+      return
+    }
+
+    // Iteractively build the nested let expressions for destructuring
+    let letExpr = expr
+    metadata.identifiers.forEach((name, index) => {
+      // Skip holes (_)
+      if (name === '_') {
+        return
+      }
+
+      const elemDef = this.defForDestructuredField(metadata.pattern, def.name, index, name, def.qualifier)
+      const letId = this.getId(ctx)
+      // Nest the let expression into another let expression with the new def
+      letExpr = { id: letId, kind: 'let', opdef: elemDef, expr: letExpr }
+    })
+
+    // Create the let expression for the temp variable itself
+    const id = this.getId(ctx)
+    const finalLetExpr: QuintEx = { id, kind: 'let', opdef: def, expr: letExpr }
+    this.exprStack.push(finalLetExpr)
+
+    // Clean up metadata
+    this.destructuringMetadata.delete(def.name)
+  }
+
+  private defForDestructuredField(
+    patternType: string,
+    tempVarName: string,
+    index: number,
+    name: string,
+    qualifier: OpQualifier
+  ) {
+    const elemDefId = this.idGen.nextId()
+    const appId = this.idGen.nextId()
+    const nameId = this.idGen.nextId()
+    const accessorId = this.idGen.nextId()
+
+    // For tuples, use item access with 1-based indexing
+    // For records, use field access
+    const accessExpr: QuintEx =
+      patternType === 'tuple'
+        ? {
+            id: appId,
+            kind: 'app',
+            opcode: 'item',
+            args: [
+              { id: nameId, kind: 'name', name: tempVarName },
+              { id: accessorId, kind: 'int', value: BigInt(index + 1) }, // ._1 access starts at 1
+            ],
+          }
+        : {
+            id: appId,
+            kind: 'app',
+            opcode: 'field',
+            args: [
+              { id: nameId, kind: 'name', name: tempVarName },
+              { id: accessorId, kind: 'str', value: name },
+            ],
+          }
+
+    const elemDef: QuintOpDef = {
+      id: elemDefId,
+      kind: 'def',
+      name,
+      qualifier,
+      expr: accessExpr,
+    }
+
+    return elemDef
   }
 
   private checkForUppercaseTypeName(id: bigint, qualifiedName: string) {
