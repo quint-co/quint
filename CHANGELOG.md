@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.30.0 -- 2026-01-19
+
+### Added
 
 - Added support for passing `--seed` to the Rust backend for reproducible simulations (#1827)
 - Added simple destructuring of records and tuples, i.e. `val (foo, bar) = my_value` (#1837)
