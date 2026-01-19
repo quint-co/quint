@@ -79,8 +79,6 @@ impl ParsedQuint {
         for sample_number in 1..=samples {
             reporter.next_sample();
             let seed = env.rand.get_state();
-            // Clear the trace for this sample
-            env.trace.borrow_mut().clear();
 
             if !init.execute(&mut env)?.as_bool() {
                 trace_lengths.push(0);
@@ -97,8 +95,8 @@ impl ParsedQuint {
                 env.shift();
 
                 if !invariant.execute(&mut env)?.as_bool() {
-                    trace_lengths.push(env.trace.borrow().len());
-                    let trace = env.trace.borrow().clone();
+                    trace_lengths.push(env.trace.len());
+                    let trace = std::mem::take(&mut env.trace);
                     // Found a counterexample
                     collect_trace(
                         &mut best_traces,
@@ -124,12 +122,12 @@ impl ParsedQuint {
                     // the run. Hence, do not report an error here, but simply
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
-                    trace_lengths.push(env.trace.borrow().len());
+                    trace_lengths.push(env.trace.len());
                     break;
                 }
             }
-            trace_lengths.push(env.trace.borrow().len());
-            let trace = env.trace.borrow().clone();
+            trace_lengths.push(env.trace.len());
+            let trace = std::mem::take(&mut env.trace);
             collect_trace(
                 &mut best_traces,
                 n_traces,

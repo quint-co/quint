@@ -242,7 +242,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 env.shift();
                 // Drop the state from the trace, as we don't want to include it
                 // (expect is checking a condition and then rolling back)
-                env.trace.borrow_mut().pop();
+                env.trace.pop();
                 let predicate_result = predicate.execute(env)?;
                 env.var_storage.borrow_mut().restore(&next_vars_snapshot);
 

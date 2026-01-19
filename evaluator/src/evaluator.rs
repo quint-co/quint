@@ -85,7 +85,7 @@ pub struct Env {
 
     // The trace collector, used to track state transitions during evaluation.
     // This is collected whenever `then` advances the state by calling `shift()`.
-    pub trace: Rc<RefCell<Vec<Value>>>,
+    pub trace: Vec<Value>,
     // TODO: trace recorder (for --verbosity)
 }
 
@@ -94,7 +94,7 @@ impl Env {
         Self {
             var_storage,
             rand: Rand::new(),
-            trace: Rc::new(RefCell::new(Vec::new())),
+            trace: Vec::new(),
         }
     }
 
@@ -103,7 +103,7 @@ impl Env {
         Self {
             var_storage,
             rand: Rand::with_state(state),
-            trace: Rc::new(RefCell::new(Vec::new())),
+            trace: Vec::new(),
         }
     }
 
@@ -112,7 +112,7 @@ impl Env {
         self.var_storage.borrow_mut().shift_vars();
         // After shifting, the current state is in `vars`, so we record it
         let state = self.var_storage.borrow().as_record();
-        self.trace.borrow_mut().push(state);
+        self.trace.push(state);
     }
 }
 
