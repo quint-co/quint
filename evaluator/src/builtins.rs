@@ -192,8 +192,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 ));
             }
 
+            // Shift the state and record it in the trace
             env.shift();
-            // TODO: record state on recorder
             args[1].execute(env)
         },
         "reps" => {
@@ -240,6 +240,9 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
                 let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
                 env.shift();
+                // Drop the state from the trace, as we don't want to include it
+                // (expect is checking a condition and then rolling back)
+                env.trace.pop();
                 let predicate_result = predicate.execute(env)?;
                 env.var_storage.borrow_mut().restore(&next_vars_snapshot);
 
