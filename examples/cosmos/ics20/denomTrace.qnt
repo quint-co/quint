@@ -221,8 +221,7 @@ module denomTraceSimulation {
     }
 
   action step =
-    val sourceChain = transferSequence[counter]._1
-    val destChain = transferSequence[counter]._2
+    val (sourceChain, destChain) = transferSequence[counter]
     val movingBack = movingBackAlongTrace(trace, { port: "transfer", channel: channelTopology.get(sourceChain).get(destChain) })
     all {
       trace' = updateTrace(movingBack, trace, { port: "transfer", channel: channelTopology.get(destChain).get(sourceChain) }),
