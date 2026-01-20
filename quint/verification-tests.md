@@ -536,25 +536,31 @@ Use --verbosity to produce more (or less) output.
 
 ## TLC Backend
 
-### Can verify spec successfully with TLC backend
+### TLC verifies a simple counter spec successfully
 
-<!-- !test check TLC backend success case -->
-```
-quint verify --backend tlc ../examples/verification/defaultOpNames.qnt 2>&1 | grep '\[ok\]'
-```
+Test that TLC can verify a basic spec with state variables and invariants.
 
-### TLC backend reports invariant violations
-
-<!-- !test check TLC backend violation case -->
+<!-- !test check TLC success -->
 ```
-quint verify --backend tlc --invariant inv ./testFixture/apalache/violateOnFive.qnt 2>&1 | grep '\[violation\]'
+quint verify --backend tlc --invariant inv ./testFixture/apalache/tlcCounter.qnt 2>&1 | grep '\[ok\]'
 ```
 
-### TLC backend reports configuration errors
+### TLC reports error message on violation
 
-<!-- !test in TLC backend error case -->
+Test that TLC properly detects and reports invariant violations.
+
+<!-- !test check TLC violation -->
 ```
-quint verify --backend tlc --init=invalidInit ../examples/language-features/booleans.qnt 2>&1 | grep 'error:'
+quint verify --backend tlc --invariant inv --max-steps=10 ./testFixture/apalache/violateOnFive.qnt 2>&1 | grep '\[violation\]'
+```
+
+### TLC reports configuration errors properly
+
+Test that TLC reports errors when given invalid configuration.
+
+<!-- !test in TLC config error -->
+```
+quint verify --backend tlc --init=nonExistentInit ./testFixture/apalache/tlcConfigError.qnt 2>&1 | grep 'error:'
 ```
 
 <!-- !test exit 1 -->
