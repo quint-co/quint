@@ -66,7 +66,8 @@ impl TestCase {
                         let error = QuintError::new(
                             "QNT511",
                             &format!("Test {} returned false", test_name),
-                        );
+                        )
+                        .with_reference(self.test.id());
                         return TestResult {
                             name: test_name,
                             status: TestStatus::Failed,
