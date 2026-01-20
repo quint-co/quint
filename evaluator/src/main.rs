@@ -12,9 +12,10 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{QuintError, QuintEx};
+use quint_evaluator::ir::{LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
+use quint_evaluator::tester::TestCase;
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +31,7 @@ struct TopLevel {
 enum Command {
     Run(RunArgs),
     SimulateFromStdin(SimulateQuintArgs),
+    TestFromStdin(TestQuintArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -78,6 +80,11 @@ struct RunArgs {
 #[argh(subcommand, name = "simulate-from-stdin")]
 struct SimulateQuintArgs {}
 
+/// Run test with input from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "test-from-stdin")]
+struct TestQuintArgs {}
+
 /// Data expected on STDIN for simulation
 #[derive(Serialize, Deserialize)]
 struct SimulateInput {
@@ -123,6 +130,18 @@ struct SimulationTrace {
     result: bool,
 }
 
+/// Data expected on STDIN for test execution
+#[derive(Deserialize)]
+struct TestInput {
+    test: QuintEx,
+    table: LookupTable,
+    seed: u64,
+    max_samples: usize,
+}
+
+/// Data to be written to STDOUT after test execution
+type TestOutput = quint_evaluator::tester::TestResult;
+
 /// The CLI has two main commands: 1. `run`: Runs the simulation on a file with
 /// specified parameters, to be used for development and tests. 2.
 /// `simulate-from-stdin`: Reads input from standard input (STDIN) and simulates
@@ -133,6 +152,7 @@ fn main() -> eyre::Result<()> {
     match top_level.command {
         Command::Run(args) => run_simulation(args),
         Command::SimulateFromStdin(_) => simulate_from_stdin(),
+        Command::TestFromStdin(_) => test_from_stdin(),
     }
 }
 
@@ -221,6 +241,32 @@ fn simulate_from_stdin() -> eyre::Result<()> {
 
     // Serialize the outcome to JSON and print it to STDOUT
     println!("{}", serde_json::to_string(&outcome)?);
+
+    Ok(())
+}
+
+/// Reads input from standard input (STDIN), parses it, and executes a test based on the parsed input.
+/// The result of the test is then printed in JSON format to standard output (STDOUT).
+fn test_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+
+    // Read all input from STDIN
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input)?;
+
+    let TestInput {
+        test,
+        table,
+        seed,
+        max_samples,
+    } = serde_json::from_str(&input)?;
+
+    // Create test case and execute
+    let test_case = TestCase { test, table };
+    let result = test_case.execute(seed, max_samples);
+
+    // Serialize the result to JSON and print it to STDOUT
+    println!("{}", serde_json::to_string(&result)?);
 
     Ok(())
 }
