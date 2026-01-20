@@ -150,7 +150,7 @@ export async function verify(
       if (code === TLC_EXIT_SUCCESS) {
         resolve(right(undefined))
       } else if (code !== null && isViolationExitCode(code)) {
-        resolve(left(tlcErr('Found an issue (see counterexample above)', true)))
+        resolve(left(tlcErr('found a counterexample', true)))
       } else {
         resolve(left(tlcErr('TLC error (see output above)', false)))
       }
