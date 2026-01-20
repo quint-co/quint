@@ -373,6 +373,12 @@ const verifyCmd = {
         type: 'string',
         default: 'localhost:8822',
       })
+      .option('backend', {
+        desc: 'the backend to use for verification',
+        type: 'string',
+        choices: ['apalache'],
+        default: 'apalache',
+      })
       .coerce('server-endpoint', (arg: string) => {
         const errorOrEndpoint = parseServerEndpoint(arg)
         if (errorOrEndpoint.isLeft()) {

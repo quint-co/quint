@@ -302,6 +302,7 @@ export function lazyBuiltinLambda(
           ctx.shift()
           return args[1](ctx).chain(expectation => {
             ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
+            ctx.trace.dropLast()
 
             if (!expectation.toBool()) {
               return left({ code: 'QNT508', message: 'Expect condition does not hold true' })

@@ -118,7 +118,7 @@ module DiningPhilosophers {
       forks.subseteq(philosophers.map(p => leftFork(p)).union(philosophers.map(p => rightFork(p)))),
 
       // Taken pairs must contain valid philosophers and valid forks
-      taken.forall(pair => pair._1.in(philosophers) and pair._2.in(forks)),
+      taken.forall(((p, f)) => p.in(philosophers) and f.in(forks)),
     }
 
     val Safety = and {
@@ -129,7 +129,7 @@ module DiningPhilosophers {
 
      // MutualExclusion = Each fork must be held by at most one philosopher
       forks.forall(f =>
-          size(taken.filter(pair => pair._2 == f)) <= 1
+          size(taken.filter(((_, fork)) => fork == f)) <= 1
       )
     }
 

@@ -59,6 +59,8 @@ import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
 import { AnnotatedOperDefContext } from "./QuintParser";
 import { DeprecatedOperDefContext } from "./QuintParser";
+import { ValDestructuringContext } from "./QuintParser";
+import { PureValDestructuringContext } from "./QuintParser";
 import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
@@ -102,6 +104,9 @@ import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { AnnotatedParameterContext } from "./QuintParser";
+import { DestructuringPatternContext } from "./QuintParser";
+import { TuplePatternContext } from "./QuintParser";
+import { RecordPatternContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
 import { RecElemContext } from "./QuintParser";
@@ -525,6 +530,22 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitDeprecatedOperDef?: (ctx: DeprecatedOperDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `valDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitValDestructuring?: (ctx: ValDestructuringContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `pureValDestructuring`
+	 * labeled alternative in `QuintParser.operDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPureValDestructuring?: (ctx: PureValDestructuringContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `const`
 	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
@@ -832,6 +853,27 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitAnnotatedParameter?: (ctx: AnnotatedParameterContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.destructuringPattern`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDestructuringPattern?: (ctx: DestructuringPatternContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.tuplePattern`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTuplePattern?: (ctx: TuplePatternContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.recordPattern`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRecordPattern?: (ctx: RecordPatternContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.identOrStar`.

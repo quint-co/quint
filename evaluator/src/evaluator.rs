@@ -82,8 +82,11 @@ pub struct Env {
 
     // The random number generator, used for nondeterministic choices. This is stateful.
     pub rand: Rand,
-    // TODO: trace recorder (for --verbosity) and trace collector (for proper
-    // trace tracking in runs)
+
+    // The trace collector, used to track state transitions during evaluation.
+    // This is collected whenever `then` advances the state by calling `shift()`.
+    pub trace: Vec<Value>,
+    // TODO: trace recorder (for --verbosity)
 }
 
 impl Env {
@@ -91,6 +94,7 @@ impl Env {
         Self {
             var_storage,
             rand: Rand::new(),
+            trace: Vec::new(),
         }
     }
 
@@ -99,12 +103,16 @@ impl Env {
         Self {
             var_storage,
             rand: Rand::with_state(state),
+            trace: Vec::new(),
         }
     }
 
-    /// Shift the state, moving `next_vars` to `vars`.
+    /// Shift the state, moving `next_vars` to `vars`, and record the new state in the trace.
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
+        // After shifting, the current state is in `vars`, so we record it
+        let state = self.var_storage.borrow().as_record();
+        self.trace.push(state);
     }
 }
 
@@ -522,9 +530,30 @@ impl<'a> Interpreter<'a> {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
                     let opcode = opcode.clone();
+
+                    // Capture args for reference improvement in 'then' operator
+                    let args_for_ref = args.clone();
                     CompiledExpr::new(move |env| {
                         let op = compile_lazy_op(&opcode);
-                        op.execute(env, &compiled_args)
+                        op.execute(env, &compiled_args).map_err(|err| {
+                            // Improve reference of `then`-related errors
+                            if opcode == "then" && err.code == "QNT513" && err.reference.is_none() {
+                                // Check if first arg is a nested 'then' call
+                                if let QuintEx::QuintApp {
+                                    opcode: inner_opcode,
+                                    args: inner_args,
+                                    ..
+                                } = &args_for_ref[0]
+                                {
+                                    if inner_opcode == "then" && inner_args.len() >= 2 {
+                                        return err.with_reference(inner_args[1].id());
+                                    }
+                                }
+                                // Otherwise, point to the first argument
+                                return err.with_reference(args_for_ref[0].id());
+                            }
+                            err
+                        })
                     })
                 } else {
                     // Otherwise, this is either a normal (eager) builtin, or an user-defined operator.
@@ -573,8 +602,9 @@ impl<'a> Interpreter<'a> {
                     };
                     let compiled_expr = self.compile(expr);
                     CompiledExpr::new(move |env| {
+                        let saved = cached_value.replace(None);
                         let result = compiled_expr.execute(env);
-                        cached_value.replace(None);
+                        cached_value.replace(saved);
                         result
                     })
                 }
