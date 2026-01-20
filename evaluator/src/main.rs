@@ -261,9 +261,10 @@ fn test_from_stdin() -> eyre::Result<()> {
         max_samples,
     } = serde_json::from_str(&input)?;
 
-    // Create test case and execute
+    // Create test case and execute with progress reporting
     let test_case = TestCase { test, table };
-    let result = test_case.execute(seed, max_samples);
+    let reporter = progress::json_std_err_report(max_samples);
+    let result = test_case.execute(seed, max_samples, reporter);
 
     // Serialize the result to JSON and print it to STDOUT
     println!("{}", serde_json::to_string(&result)?);

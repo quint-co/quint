@@ -1,5 +1,6 @@
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintError, QuintEx};
+use crate::progress::Reporter;
 use serde::Serialize;
 use std::collections::HashSet;
 
@@ -33,7 +34,12 @@ impl TestCase {
     ///
     /// Tests are run repeatedly up to `max_samples` times. If the RNG state
     /// repeats (indicating a deterministic test), execution stops early.
-    pub fn execute(&self, seed: u64, max_samples: usize) -> TestResult {
+    pub fn execute<R: Reporter>(
+        &self,
+        seed: u64,
+        max_samples: usize,
+        mut reporter: R,
+    ) -> TestResult {
         let test_name = extract_test_name(&self.test);
 
         // Create interpreter and environment with the provided seed
@@ -49,6 +55,7 @@ impl TestCase {
 
         // Run the test up to max_samples times
         for _ in 0..max_samples {
+            reporter.next_sample();
             nsamples += 1;
 
             // Track RNG state to detect deterministic tests
