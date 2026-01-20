@@ -18,7 +18,6 @@ import fs, { readFileSync } from 'fs'
 import path from 'path'
 import os from 'os'
 import { apalacheDistDir } from './config'
-import { verbosity } from './verbosity'
 import { ErrorMessage } from './ErrorMessage'
 
 // Default JVM configuration for TLC
