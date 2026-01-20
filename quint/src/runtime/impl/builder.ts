@@ -531,10 +531,13 @@ function buildExprCore(builder: Builder, expr: QuintEx): EvalFunction {
       // for the definition under the let, it will use the cached value (or eval a new value and store it).
       const bodyEval = buildExpr(builder, expr.expr)
       return ctx => {
+        const saved = cachedValue!.value
+        cachedValue!.value = undefined
+
         const result = bodyEval(ctx)
         // After evaluating the whole let expression, we clear the cached value, as it is no longer in scope.
         // The next time the whole let expression is evaluated, the definition will be re-evaluated.
-        cachedValue!.value = undefined
+        cachedValue!.value = saved
         return result
       }
     }

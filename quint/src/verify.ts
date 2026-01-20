@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Quint wrapper for model checkers (Apalache, TLC)
+ * Core verification functionality
  *
  * @author Yassine Boukhari, 2025
  *
@@ -91,6 +91,17 @@ export async function verifyWithTlcBackend(
 // Apalache
 // --------------------------------------------------------------------------------
 
+/**
+ * Verifies the configuration `config` by model checking it with the Apalache server
+ *
+ * @param serverEndpoint
+ *   a server endpoint
+ *
+ * @param config
+ *   an apalache configuration. See https://github.com/apalache-mc/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
+ *
+ * @returns right(void) if verification succeeds, or left(err) explaining the failure
+ */
 async function verifyWithApalache(
   serverEndpoint: ServerEndpoint,
   apalacheVersion: string,

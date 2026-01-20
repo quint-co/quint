@@ -1063,7 +1063,7 @@ fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::
     let err = result.unwrap_err();
     assert_eq!(
         err.to_string(),
-        "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"
+        "[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false"
     );
     assert!(err.reference.is_some());
 

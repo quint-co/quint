@@ -11,6 +11,8 @@ jobs:
     defaults:
       run:
         working-directory: ./quint
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +35,8 @@ jobs:
           _build/apalache/bin/apalache-mc server &
           # Wait for the server to start
           sleep 5
+          # Download the rust evaluator before the tests
+          quint run testFixture/simulator/gettingStarted.qnt --backend rust --max-samples=1 --max-steps=1
           # Run the integration tests
           npm run all-integration
         env:
@@ -108,6 +112,8 @@ jobs:
   upload-binaries:
     needs: check-on-arch
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4

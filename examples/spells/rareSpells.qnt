@@ -58,7 +58,7 @@ module rareSpells {
     // We need to track whether __x has been inserted, and the accumulator for the new list
     val __init = { is_inserted: false, acc: List() }
 
-    val __result = __l.foldl(__init, (__state, __y) =>
+    val { is_inserted, acc } = __l.foldl(__init, (__state, __y) =>
       if (__state.is_inserted)
         { ...__state, acc: __state.acc.append(__y) }
       else
@@ -67,11 +67,11 @@ module rareSpells {
           | _  => { is_inserted: true, acc: __state.acc.append(__x).append(__y)  }
         })
 
-    if (not(__result.is_inserted))
+    if (not(is_inserted))
       // If __x was not inserted, it was GT than every other element, so it goes at the end
-      __result.acc.append(__x)
+      acc.append(__x)
     else
-      __result.acc
+      acc
   }
 
   run sortedListInsertTest = all {

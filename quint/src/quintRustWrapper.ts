@@ -24,12 +24,11 @@ import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 import readline from 'readline'
-import { Buffer } from 'buffer'
 import { spawn } from 'child_process'
 import { rustEvaluatorDir } from './config'
 import { QuintError } from './quintError'
 
-const QUINT_EVALUATOR_VERSION = 'v0.3.0'
+const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -125,9 +124,18 @@ export class QuintRustWrapper {
     })
 
     // Collect output from stdout
+    const stdout = readline.createInterface({
+      input: process.stdout,
+      terminal: false,
+    })
+
     let output = ''
-    process.stdout.on('data', (data: Buffer) => {
-      output += data.toString('utf8')
+    stdout.on('line', (line: string) => {
+      if (line.trimStart()[0] !== '{') {
+        console.log(line)
+      } else {
+        output = line
+      }
     })
 
     // Convert stderr to a readable stream that emits its output line by line
@@ -158,8 +166,6 @@ export class QuintRustWrapper {
 
     progressBar.stop()
 
-    debugLog(this.verbosityLevel, `Received data from Rust evaluator: ${output}`)
-
     if (exitCode !== 0) {
       throw new Error(`Rust evaluator exited with code ${exitCode}`)
     }
@@ -177,7 +183,7 @@ export class QuintRustWrapper {
       parsed.errors = parsed.errors.map((err: any): QuintError => ({ ...err, reference: BigInt(err.reference) }))
 
       // Call onTrace callback for each trace
-      if (onTrace) {
+      if (onTrace && parsed.bestTraces.length > 0) {
         const firstState = parsed.bestTraces[0].states[0] as QuintApp
         const vars: string[] = []
         for (let i = 0; i < firstState.args.length; i += 2) {
