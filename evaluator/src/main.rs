@@ -139,9 +139,6 @@ struct TestInput {
     max_samples: usize,
 }
 
-/// Data to be written to STDOUT after test execution
-type TestOutput = quint_evaluator::tester::TestResult;
-
 /// The CLI has two main commands: 1. `run`: Runs the simulation on a file with
 /// specified parameters, to be used for development and tests. 2.
 /// `simulate-from-stdin`: Reads input from standard input (STDIN) and simulates
