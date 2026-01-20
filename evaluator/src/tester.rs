@@ -42,33 +42,26 @@ impl TestCase {
     ) -> TestResult {
         let test_name = extract_test_name(&self.test);
 
-        // Create interpreter and environment with the provided seed
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
-
-        // Compile the test expression
         let compiled_test = interpreter.compile(&self.test);
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
         let mut seen_rng_states = HashSet::new();
 
-        // Run the test up to max_samples times
         for _ in 0..max_samples {
             reporter.next_sample();
             nsamples += 1;
 
-            // Track RNG state to detect deterministic tests
             let rng_state = env.rand.get_state();
             if !seen_rng_states.insert(rng_state) {
-                // Test is deterministic (RNG state repeated), stop early
+                // Deterministic test: RNG state repeated
                 break;
             }
 
-            // Evaluate the test
             match compiled_test.execute(&mut env) {
                 Ok(result) => {
-                    // Check if test returned false (failure)
                     if !result.as_bool() {
                         let error = QuintError::new(
                             "QNT511",
