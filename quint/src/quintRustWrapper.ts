@@ -241,6 +241,7 @@ export class QuintRustWrapper {
     testName: string
   ): Promise<TestResult> {
     const input = {
+      name: testName,
       test: test,
       table: table,
       seed: seed,
