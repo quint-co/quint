@@ -5,8 +5,10 @@ module tlcCounter {
 
   action init = counter' = 0
 
-  action step = counter' = counter + 1
+  action step = all {
+    counter < 3,
+    counter' = counter + 1
+    }
 
-  // Invariant that always holds for bounded model checking
   val inv = counter >= 0
 }

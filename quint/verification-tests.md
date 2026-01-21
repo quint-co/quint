@@ -558,9 +558,7 @@ quint verify --backend tlc --invariant inv --max-steps=10 ./testFixture/apalache
 
 Test that TLC reports errors when given invalid configuration.
 
-<!-- !test in TLC config error -->
+<!-- !test check TLC config error -->
 ```
 quint verify --backend tlc --init=nonExistentInit ./testFixture/apalache/tlcConfigError.qnt 2>&1 | grep 'error:'
 ```
-
-<!-- !test exit 1 -->
