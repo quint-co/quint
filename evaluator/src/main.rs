@@ -133,6 +133,7 @@ struct SimulationTrace {
 /// Data expected on STDIN for test execution
 #[derive(Deserialize)]
 struct TestInput {
+    name: String,
     test: QuintEx,
     table: LookupTable,
     seed: u64,
@@ -252,6 +253,7 @@ fn test_from_stdin() -> eyre::Result<()> {
     io::stdin().read_to_string(&mut input)?;
 
     let TestInput {
+        name,
         test,
         table,
         seed,
@@ -259,7 +261,7 @@ fn test_from_stdin() -> eyre::Result<()> {
     } = serde_json::from_str(&input)?;
 
     // Create test case and execute with progress reporting
-    let test_case = TestCase { test, table };
+    let test_case = TestCase { test, table, name };
     let reporter = progress::json_std_err_report(max_samples);
     let result = test_case.execute(seed, max_samples, reporter);
 
