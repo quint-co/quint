@@ -24,6 +24,7 @@ import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
 import { ApalacheResult } from './apalache'
+import { TlcError } from './tlc'
 import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
@@ -102,6 +103,37 @@ export function printViolatedInvariants(state: QuintEx, invariants: string[], pr
       console.log(chalk.red(`  ❌ ${inv}`))
     }
   }
+}
+
+/**
+ * Process verification result from TLC.
+ */
+export function processTlcResult(
+  res: Either<TlcError, void>,
+  startMs: number,
+  verbosityLevel: number,
+  stage: TracingStage
+): CLIProcedure<TracingStage> {
+  const elapsedMs = Date.now() - startMs
+
+  return res
+    .map((): TracingStage => {
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log('\n' + chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+      }
+      return { ...stage, status: 'ok', errors: [] }
+    })
+    .mapLeft(err => {
+      const status = err.isViolation ? 'violation' : 'failure'
+      const summary = err.isViolation ? 'Found an issue' : 'TLC encountered an error'
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log('\n' + chalk.red(`[${status}]`) + ' ' + summary + ' ' + chalk.gray(`(${elapsedMs}ms).`))
+      }
+      return {
+        msg: err.explanation,
+        stage: { ...stage, status, errors: err.errors },
+      }
+    })
 }
 
 /**

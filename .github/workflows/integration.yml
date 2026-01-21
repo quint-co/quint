@@ -78,7 +78,7 @@ jobs:
           # Wait for the server to start
           sleep 5
           # Run the integration tests
-          npm run apalache-integration
+          npm run verification-integration
         env:
           GH_TOKEN: ${{ github.token }}
         # These tests fail on windows currently
