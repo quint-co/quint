@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 /// A test case that can be executed
 pub struct TestCase {
+    pub name: String,
     pub test: QuintEx,
     pub table: LookupTable,
 }
@@ -40,7 +41,7 @@ impl TestCase {
         max_samples: usize,
         mut reporter: R,
     ) -> TestResult {
-        let test_name = extract_test_name(&self.test);
+        let test_name = &self.name;
 
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
@@ -69,7 +70,7 @@ impl TestCase {
                         )
                         .with_reference(self.test.id());
                         return TestResult {
-                            name: test_name,
+                            name: test_name.clone(),
                             status: TestStatus::Failed,
                             errors: vec![error],
                             seed,
@@ -91,19 +92,11 @@ impl TestCase {
         };
 
         TestResult {
-            name: test_name,
+            name: test_name.clone(),
             status,
             errors,
             seed,
             nsamples,
         }
-    }
-}
-
-/// Extract the test name from a test expression
-fn extract_test_name(test: &QuintEx) -> String {
-    match test {
-        QuintEx::QuintName { name, .. } => name.to_string(),
-        _ => "unknown_test".to_string(),
     }
 }

@@ -12,6 +12,7 @@ fn parse_test_from_path(file_path: &Path, test_name: &str) -> Result<TestCase, B
     let test_def = output.find_definition_by_name(test_name)?.expr.clone();
 
     Ok(TestCase {
+        name: test_name.to_string(),
         test: test_def,
         table: output.table,
     })
