@@ -27,6 +27,7 @@ import readline from 'readline'
 import { spawn } from 'child_process'
 import { rustEvaluatorDir } from './config'
 import { QuintError } from './quintError'
+import { TestResult } from './runtime/testing'
 
 const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
@@ -51,71 +52,41 @@ export class QuintRustWrapper {
   }
 
   /**
-   * Simulate the parsed Quint model using the Rust evaluator
-   *
-   * @param {ParsedQuint} parsed - The parsed Quint model.
-   * @param {string} source - The source code of the Quint model.
-   * @param {QuintEx[]} witnesses - The witnesses for the simulation.
-   * @param {number} nruns - The number of runs for the simulation.
-   * @param {number} nsteps - The number of steps per run.
-   * @param {number} ntraces - The number of traces to store.
-   * @param {number} nthreads - The number of threads to use.
-   * @param {bigint} [seed] - Optional seed for reproducibility.
-   * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
-   *
-   * @returns {Outcome} The outcome of the simulation.
-   * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
+   * Run the Rust evaluator with the given command and input
    */
-  async simulate(
-    parsed: ParsedQuint,
-    source: string,
-    witnesses: QuintEx[],
-    nruns: number,
-    nsteps: number,
-    ntraces: number,
-    nthreads: number,
-    seed?: bigint,
-    onTrace?: TraceHook
-  ): Promise<Outcome> {
+  private async runRustEvaluator(
+    command: string,
+    input: any,
+    progressFormat: string,
+    iterations: number
+  ): Promise<string> {
     const exe = await getRustEvaluatorPath()
-    const args = ['simulate-from-stdin']
-    const input = JSONbig.stringify(
-      {
-        parsed: parsed,
-        source: source,
-        witnesses: witnesses,
-        nruns: nruns,
-        nsteps: nsteps,
-        ntraces: ntraces,
-        nthreads: nthreads,
-        seed: seed,
-      },
-      replacer
-    )
+    const args = [command]
+    const inputStr = JSONbig.stringify(input, replacer)
 
-    debugLog(this.verbosityLevel, 'Starting Rust evaluator synchronously')
+    debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
 
     // Create progress bar
     const progressBar = new SingleBar(
       {
         clearOnComplete: true,
         forceRedraw: true,
-        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
+        format: progressFormat,
       },
       Presets.rect
     )
-    progressBar.start(nruns, 0, { speed: '0' })
+    progressBar.start(iterations, 0, { speed: '0' })
 
     const startTime = Date.now()
 
     // Spawn the Rust evaluator in subprocess
     const process = spawn(exe, args, {
       shell: false,
-      stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr
+      stdio: ['pipe', 'pipe', 'pipe'],
     })
 
     // Write the input to stdin
-    process.stdin.write(input)
+    process.stdin.write(inputStr)
     process.stdin.end()
 
     // Handle error on launch
@@ -170,6 +141,54 @@ export class QuintRustWrapper {
       throw new Error(`Rust evaluator exited with code ${exitCode}`)
     }
 
+    return output
+  }
+
+  /**
+   * Simulate the parsed Quint model using the Rust evaluator
+   *
+   * @param {ParsedQuint} parsed - The parsed Quint model.
+   * @param {string} source - The source code of the Quint model.
+   * @param {QuintEx[]} witnesses - The witnesses for the simulation.
+   * @param {number} nruns - The number of runs for the simulation.
+   * @param {number} nsteps - The number of steps per run.
+   * @param {number} ntraces - The number of traces to store.
+   * @param {number} nthreads - The number of threads to use.
+   * @param {bigint} [seed] - Optional seed for reproducibility.
+   * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
+   *
+   * @returns {Outcome} The outcome of the simulation.
+   * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
+   */
+  async simulate(
+    parsed: ParsedQuint,
+    source: string,
+    witnesses: QuintEx[],
+    nruns: number,
+    nsteps: number,
+    ntraces: number,
+    nthreads: number,
+    seed?: bigint,
+    onTrace?: TraceHook
+  ): Promise<Outcome> {
+    const input = {
+      parsed: parsed,
+      source: source,
+      witnesses: witnesses,
+      nruns: nruns,
+      nsteps: nsteps,
+      ntraces: ntraces,
+      nthreads: nthreads,
+      seed: seed,
+    }
+
+    const output = await this.runRustEvaluator(
+      'simulate-from-stdin',
+      input,
+      'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
+      nruns
+    )
+
     try {
       const parsed = JSONbig.parse(output)
       if (parsed.error) {
@@ -199,6 +218,60 @@ export class QuintRustWrapper {
       return parsed
     } catch (error) {
       throw new Error(`Failed to parse data from Rust evaluator: ${JSONbig.stringify(error)}`)
+    }
+  }
+
+  /**
+   * Execute a single test using the Rust evaluator
+   *
+   * @param {QuintEx} test - The test expression to execute
+   * @param {LookupTable} table - The lookup table for name resolution
+   * @param {bigint} seed - The random seed for reproducibility
+   * @param {number} maxSamples - The maximum number of samples to run
+   * @param {string} testName - The name of the test (for progress display)
+   *
+   * @returns {TestResult} The result of the test execution
+   * @throws Will throw an error if the Rust evaluator fails to launch or returns an error
+   */
+  async test(
+    test: QuintEx,
+    table: LookupTable,
+    seed: bigint,
+    maxSamples: number,
+    testName: string
+  ): Promise<TestResult> {
+    const input = {
+      test: test,
+      table: table,
+      seed: seed,
+      max_samples: maxSamples,
+    }
+
+    const output = await this.runRustEvaluator(
+      'test-from-stdin',
+      input,
+      `     ${testName} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s`,
+      maxSamples
+    )
+
+    try {
+      const parsed = JSONbig.parse(output)
+      if (parsed.error) {
+        throw new Error(parsed.error)
+      }
+
+      // Convert errors to proper format
+      parsed.errors = parsed.errors.map((err: any): QuintError => ({
+        ...err,
+        reference: err.reference ? BigInt(err.reference) : undefined,
+      }))
+
+      // Convert seed to bigint
+      parsed.seed = BigInt(parsed.seed)
+
+      return parsed as TestResult
+    } catch (error) {
+      throw new Error(`Failed to parse test result from Rust evaluator: ${JSONbig.stringify(error)}`)
     }
   }
 }
