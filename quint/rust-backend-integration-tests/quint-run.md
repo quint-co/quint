@@ -41,7 +41,7 @@ An example execution:
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
-Use --seed=0x308623f2a4957 --backend=rust to reproduce.
+Use --seed=0x308623f2a4983 --backend=rust to reproduce.
 error: Invariant violated
 ```
 
@@ -173,7 +173,7 @@ An example execution:
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
-Use --seed=0x11 --backend=rust to reproduce.
+Use --seed=0x1d4c5 --backend=rust to reproduce.
 ```
 
 ### Run finds an overflow in Coin
@@ -540,7 +540,7 @@ exit $exit_code
 Witnesses:
 won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
 stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
-Use --seed=0x2b442ab439177 --backend=rust to reproduce.
+Use --seed=0x2b442ab43ab1e --backend=rust to reproduce.
 ```
 
 ### Run produces normal output on `--out-itf` with default verbosity
