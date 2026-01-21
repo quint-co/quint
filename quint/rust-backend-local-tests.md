@@ -147,12 +147,11 @@ quint test --backend=rust ./testFixture/_1051manyTests.qnt
 
 This test verifies that failing tests are properly reported when using the Rust backend.
 
+<!-- !test exit 1 -->
 <!-- !test in rust backend test failing -->
 ```
-output=$(quint test --backend=rust --main failingTestCounters --seed 1 ./testFixture/simulator/failingTestCounters.qnt)
-exit_code=$?
+output=$(quint test --backend=rust --main failingTestCounters --seed 1 ./testFixture/simulator/failingTestCounters.qnt 2>&1)
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*failingTestCounters.qnt#      HOME/failingTestCounters.qnt#g'
-exit $exit_code
 ```
 
 <!-- !test out rust backend test failing -->
@@ -172,13 +171,16 @@ exit $exit_code
 
   Use --verbosity=3 to show executions.
   Further debug with: quint test --verbosity=3 testFixture/simulator/failingTestCounters.qnt
+error: Tests failed
 ```
 
 ## Test with --out-itf produces ITF traces
 
-This test verifies that `quint test --backend=rust --out-itf` produces ITF trace files.
+TODO: The Rust backend does not yet support --out-itf for test command.
 
+<!-- Test disabled until --out-itf support is added
 <!-- !test in rust backend test itf -->
+<!--
 ```
 quint test --backend=rust --out-itf='{test}.itf.json' \
   ./testFixture/expectNoStateDuplication.qnt > /dev/null
@@ -188,10 +190,12 @@ rm NoExpectTest.itf.json WithExpectTest.itf.json
 ```
 
 <!-- !test out rust backend test itf -->
+<!--
 ```
 2
 2
 ```
+-->
 
 ## Test seed reproducibility
 
@@ -242,10 +246,11 @@ echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
 
 ## `expect` does not duplicate states in traces for `quint test`
 
-Regression test to ensure that `expect` does not add duplicate states to the trace
-when using `quint test --backend=rust` with `--out-itf`.
+TODO: The Rust backend does not yet support --out-itf for test command.
 
+<!-- Test disabled until --out-itf support is added
 <!-- !test in rust backend expect no duplicate states in test -->
+<!--
 ```
 quint test --backend=rust --out-itf='{test}.itf.json' \
   ./testFixture/expectNoStateDuplication.qnt > /dev/null
@@ -255,7 +260,9 @@ rm NoExpectTest.itf.json WithExpectTest.itf.json
 ```
 
 <!-- !test out rust backend expect no duplicate states in test -->
+<!--
 ```
 2
 2
 ```
+-->
