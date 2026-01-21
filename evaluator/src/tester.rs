@@ -52,14 +52,14 @@ impl TestCase {
         let mut seen_rng_states = HashSet::new();
 
         for _ in 0..max_samples {
-            reporter.next_sample();
-            nsamples += 1;
-
             let rng_state = env.rand.get_state();
             if !seen_rng_states.insert(rng_state) {
                 // Deterministic test: RNG state repeated
                 break;
             }
+
+            reporter.next_sample();
+            nsamples += 1;
 
             match compiled_test.execute(&mut env) {
                 Ok(result) => {
