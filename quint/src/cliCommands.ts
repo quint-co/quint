@@ -318,7 +318,13 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
         throw new Error(`Expected test definition, got ${def.kind}: ${def.name}`)
       }
       const testName = nameWithNamespaces(def.name, List(def.namespaces))
-      const result = await quintRustWrapper.test(def.expr, prev.table, options.rng.getState(), options.maxSamples, testName)
+      const result = await quintRustWrapper.test(
+        def.expr,
+        prev.table,
+        options.rng.getState(),
+        options.maxSamples,
+        testName
+      )
       results.push(result)
     }
   } else {

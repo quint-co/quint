@@ -263,10 +263,12 @@ export class QuintRustWrapper {
       }
 
       // Convert errors to proper format
-      parsed.errors = parsed.errors.map((err: any): QuintError => ({
-        ...err,
-        reference: err.reference ? BigInt(err.reference) : undefined,
-      }))
+      parsed.errors = parsed.errors.map(
+        (err: any): QuintError => ({
+          ...err,
+          reference: err.reference ? BigInt(err.reference) : undefined,
+        })
+      )
 
       // Convert seed to bigint
       parsed.seed = BigInt(parsed.seed)
