@@ -239,7 +239,7 @@ impl<'a> Interpreter<'a> {
                 Rc::new(RefCell::new(Err(QuintError::new(
                     "QNT500",
                     format!(
-                        "Uninitialized const {name}. Use: import <moduleName>(${name}=<value>).*",
+                        "Uninitialized const {name}. Use: import <moduleName>({name}=<value>).*",
                     )
                     .as_str(),
                 ))))
