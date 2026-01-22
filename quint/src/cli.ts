@@ -376,8 +376,12 @@ const verifyCmd = {
       .option('backend', {
         desc: 'the backend to use for verification',
         type: 'string',
-        choices: ['apalache'],
+        choices: ['apalache', 'tlc'],
         default: 'apalache',
+      })
+      .option('tlc-config', {
+        desc: 'path to a TLC configuration file (in JSON)',
+        type: 'string',
       })
       .coerce('server-endpoint', (arg: string) => {
         const errorOrEndpoint = parseServerEndpoint(arg)

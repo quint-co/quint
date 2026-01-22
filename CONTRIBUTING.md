@@ -356,8 +356,8 @@ The files containing tests for `txm` are:
   STDERR output.
   - These are kept in a separate file because we don't run them on Windows (on
     our CI), as we had too many encoding issues there.
-- [apalache-tests.md](./apalache-tests.md) for tests that run the Apalache model
-  checker on Quint specs.
+- [verification-tests.md](./verification-tests.md) for tests that run model
+  checkers (Apalache and TLC) on Quint specs.
 - [apalache-dist-tests.md](./apalache-dist-tests.md) for special tests on
   downloading and starting Apalache from Quint.
   - These are kept in a separate file because they run in a CI environment where
