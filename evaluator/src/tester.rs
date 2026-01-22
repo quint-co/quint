@@ -49,7 +49,7 @@ impl TestCase {
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
-        let mut traces = Vec::new();
+        let mut trace = None;
 
         for _ in 0..max_samples {
             let prev_rng_state = env.rand.get_state();
@@ -59,7 +59,6 @@ impl TestCase {
 
             match compiled_test.execute(&mut env) {
                 Ok(result) => {
-                    // Shift the state and record it in the trace
                     env.shift();
 
                     if !result.as_bool() {
@@ -69,30 +68,27 @@ impl TestCase {
                         )
                         .with_reference(self.test.id());
                         let states = std::mem::take(&mut env.trace);
-                        let trace = Trace {
+                        trace = Some(Trace {
                             states,
                             violation: true,
                             seed,
-                        };
-                        traces.push(trace);
+                        });
                         return TestResult {
                             name: test_name.clone(),
                             status: TestStatus::Failed,
                             errors: vec![error],
                             seed,
                             nsamples,
-                            traces,
+                            traces: trace.into_iter().collect(),
                         };
                     }
 
-                    // Collect trace for this iteration
                     let states = std::mem::take(&mut env.trace);
-                    let trace = Trace {
+                    trace = Some(Trace {
                         states,
                         violation: false,
                         seed,
-                    };
-                    traces.push(trace);
+                    });
 
                     if env.rand.get_state() == prev_rng_state {
                         break;
@@ -117,7 +113,7 @@ impl TestCase {
             errors,
             seed,
             nsamples,
-            traces,
+            traces: trace.into_iter().collect(),
         }
     }
 }
