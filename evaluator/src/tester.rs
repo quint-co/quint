@@ -2,7 +2,6 @@ use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintError, QuintEx};
 use crate::progress::Reporter;
 use serde::Serialize;
-use std::collections::HashSet;
 
 /// A test case that can be executed
 pub struct TestCase {
@@ -49,14 +48,9 @@ impl TestCase {
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
-        let mut seen_rng_states = HashSet::new();
 
         for _ in 0..max_samples {
-            let rng_state = env.rand.get_state();
-            if !seen_rng_states.insert(rng_state) {
-                // Deterministic test: RNG state repeated
-                break;
-            }
+            let prev_rng_state = env.rand.get_state();
 
             reporter.next_sample();
             nsamples += 1;
@@ -76,6 +70,10 @@ impl TestCase {
                             seed,
                             nsamples,
                         };
+                    }
+
+                    if env.rand.get_state() == prev_rng_state {
+                        break;
                     }
                 }
                 Err(e) => {
