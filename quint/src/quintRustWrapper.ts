@@ -245,6 +245,7 @@ export class QuintRustWrapper {
       table: table,
       seed: seed,
       max_samples: maxSamples,
+      name: testName,
     }
 
     const output = await this.runRustEvaluator(
@@ -268,6 +269,14 @@ export class QuintRustWrapper {
 
       // Convert seed to bigint
       parsed.seed = BigInt(parsed.seed)
+
+      // Convert traces from ITF format
+      if (parsed.traces && parsed.traces.length > 0) {
+        parsed.traces = parsed.traces.map((trace: any) => ({
+          ...trace,
+          states: ofItf(trace.states),
+        }))
+      }
 
       return parsed as TestResult
     } catch (error) {

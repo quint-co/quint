@@ -354,18 +354,21 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
 
       if (verbosity.hasActionTracking(verbosityLevel)) {
         out('')
-        testResult.frames.forEach((f, index) => {
-          out(`[${chalk.bold('Frame ' + index)}]`)
-          const console = {
-            width: columns,
-            out: (s: string) => process.stdout.write(s),
-          }
-          printExecutionFrameRec(console, f, [])
-          out('')
-        })
+        // Skip frame display for Rust backend
+        if (!testResult.traces) {
+          testResult.frames.forEach((f, index) => {
+            out(`[${chalk.bold('Frame ' + index)}]`)
+            const console = {
+              width: columns,
+              out: (s: string) => process.stdout.write(s),
+            }
+            printExecutionFrameRec(console, f, [])
+            out('')
+          })
 
-        if (testResult.frames.length == 0) {
-          out('    [No execution]')
+          if (testResult.frames.length == 0) {
+            out('    [No execution]')
+          }
         }
       }
       // output the seed
