@@ -1,5 +1,6 @@
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintError, QuintEx};
+use crate::itf::Trace;
 use crate::progress::Reporter;
 use serde::Serialize;
 
@@ -20,13 +21,13 @@ pub enum TestStatus {
 }
 
 /// Result of executing a single test
-#[derive(Debug, Serialize)]
 pub struct TestResult {
     pub name: String,
     pub status: TestStatus,
     pub errors: Vec<QuintError>,
     pub seed: u64,
     pub nsamples: usize,
+    pub traces: Vec<Trace>,
 }
 
 impl TestCase {
@@ -48,6 +49,7 @@ impl TestCase {
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
+        let mut traces = Vec::new();
 
         for _ in 0..max_samples {
             let prev_rng_state = env.rand.get_state();
@@ -57,20 +59,40 @@ impl TestCase {
 
             match compiled_test.execute(&mut env) {
                 Ok(result) => {
+                    // Shift the state and record it in the trace
+                    env.shift();
+
                     if !result.as_bool() {
                         let error = QuintError::new(
                             "QNT511",
                             &format!("Test {} returned false", test_name),
                         )
                         .with_reference(self.test.id());
+                        let states = std::mem::take(&mut env.trace);
+                        let trace = Trace {
+                            states,
+                            violation: true,
+                            seed,
+                        };
+                        traces.push(trace);
                         return TestResult {
                             name: test_name.clone(),
                             status: TestStatus::Failed,
                             errors: vec![error],
                             seed,
                             nsamples,
+                            traces,
                         };
                     }
+
+                    // Collect trace for this iteration
+                    let states = std::mem::take(&mut env.trace);
+                    let trace = Trace {
+                        states,
+                        violation: false,
+                        seed,
+                    };
+                    traces.push(trace);
 
                     if env.rand.get_state() == prev_rng_state {
                         break;
@@ -95,6 +117,7 @@ impl TestCase {
             errors,
             seed,
             nsamples,
+            traces,
         }
     }
 }

@@ -15,7 +15,7 @@ use eyre::bail;
 use quint_evaluator::ir::{LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
-use quint_evaluator::tester::TestCase;
+use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -113,7 +113,7 @@ enum SimulationStatus {
 /// Data to be written to STDOUT after simulation
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Outcome {
+struct SimOutput {
     status: SimulationStatus,
     errors: Vec<QuintError>,
     best_traces: Vec<SimulationTrace>,
@@ -138,6 +138,26 @@ struct TestInput {
     table: LookupTable,
     seed: u64,
     max_samples: usize,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestTrace {
+    seed: usize,
+    states: itf::Trace<itf::Value>,
+    result: bool,
+}
+
+/// Data to be written to STDOUT after test execution
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestOutput {
+    name: String,
+    status: TestStatus,
+    errors: Vec<QuintError>,
+    seed: u64,
+    nsamples: usize,
+    traces: Vec<TestTrace>,
 }
 
 /// The CLI has two main commands: 1. `run`: Runs the simulation on a file with
@@ -234,7 +254,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     } else {
         let reporter = progress::json_std_err_report(nruns);
         let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed);
-        to_outcome(source, result)
+        to_sim_output(source, result)
     };
 
     // Serialize the outcome to JSON and print it to STDOUT
@@ -265,8 +285,9 @@ fn test_from_stdin() -> eyre::Result<()> {
     let reporter = progress::json_std_err_report(max_samples);
     let result = test_case.execute(seed, max_samples, reporter);
 
-    // Serialize the result to JSON and print it to STDOUT
-    println!("{}", serde_json::to_string(&result)?);
+    let output = to_test_output(result);
+
+    println!("{}", serde_json::to_string(&output)?);
 
     Ok(())
 }
@@ -281,7 +302,7 @@ fn simulate_in_parallel(
     nruns: usize,
     ntraces: usize,
     mut nthreads: usize,
-) -> Outcome {
+) -> SimOutput {
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
@@ -312,7 +333,7 @@ fn simulate_in_parallel(
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
                 let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None);
-                let outcome = to_outcome(source, result);
+                let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
             .expect("failed to spawn simulator thread");
@@ -339,12 +360,36 @@ fn simulate_in_parallel(
     }
 }
 
-/// Converts the result of a simulation into an `Outcome` struct.
+/// Converts the result of a test execution into a `TestOutput` struct.
+///
+/// The traces are converted to the ITF.
+fn to_test_output(result: TestResult) -> TestOutput {
+    let traces = result
+        .traces
+        .iter()
+        .map(|t| TestTrace {
+            seed: t.seed as usize,
+            states: t.clone().to_itf(result.name.clone()),
+            result: !t.violation,
+        })
+        .collect();
+
+    TestOutput {
+        name: result.name,
+        status: result.status,
+        errors: result.errors,
+        seed: result.seed,
+        nsamples: result.nsamples,
+        traces,
+    }
+}
+
+/// Converts the result of a simulation into a `SimOutput` struct.
 ///
 /// The status is determined based on whether the simulation result indicates success, violation, or error.
 /// Errors are collected into a vector if any are present.
 /// Best traces are converted to the intermediate trace format (ITF).
-fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> Outcome {
+fn to_sim_output(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> SimOutput {
     let status = match &result {
         Ok(r) if r.result => SimulationStatus::Success,
         Ok(_) => SimulationStatus::Violation,
@@ -367,7 +412,7 @@ fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>)
             .collect()
     });
 
-    Outcome {
+    SimOutput {
         status,
         errors,
         best_traces,
