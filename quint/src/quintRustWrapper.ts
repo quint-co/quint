@@ -229,6 +229,7 @@ export class QuintRustWrapper {
    * @param {bigint} seed - The random seed for reproducibility
    * @param {number} maxSamples - The maximum number of samples to run
    * @param {string} testName - The name of the test (for progress display)
+   * @param {TraceHook} onTrace - A callback function to be called with trace information for ITF output
    *
    * @returns {TestResult} The result of the test execution
    * @throws Will throw an error if the Rust evaluator fails to launch or returns an error
@@ -238,7 +239,8 @@ export class QuintRustWrapper {
     table: LookupTable,
     seed: bigint,
     maxSamples: number,
-    testName: string
+    testName: string,
+    onTrace?: TraceHook
   ): Promise<TestResult> {
     const input = {
       name: testName,
@@ -246,7 +248,6 @@ export class QuintRustWrapper {
       table: table,
       seed: seed,
       max_samples: maxSamples,
-      name: testName,
     }
 
     const output = await this.runRustEvaluator(
@@ -279,6 +280,20 @@ export class QuintRustWrapper {
           ...trace,
           states: ofItf(trace.states),
         }))
+
+        // Call onTrace callback for each trace
+        if (onTrace) {
+          const firstState = parsed.traces[0].states[0] as QuintApp
+          const vars: string[] = []
+          for (let i = 0; i < firstState.args.length; i += 2) {
+            vars.push((firstState.args[i] as QuintStr).value)
+          }
+
+          parsed.traces.forEach((trace: any, index: number) => {
+            const status = trace.result ? 'ok' : 'violation'
+            onTrace(index, status, vars, trace.states, testName)
+          })
+        }
       }
 
       return parsed as TestResult

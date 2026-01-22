@@ -323,7 +323,8 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
         prev.table,
         options.rng.getState(),
         options.maxSamples,
-        testName
+        testName,
+        options.onTrace
       )
       results.push(result)
     }
