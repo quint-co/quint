@@ -6,6 +6,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { isMainThread } from 'worker_threads'
 
 /**
  * Defines available log levels.
@@ -31,13 +32,14 @@ const logLevels: Record<LogLevel, number> = {
 }
 
 /**
- * Path to the log file. Defaults to user's home directory or `/tmp`.
+ * Path to the log file. Defaults to user's home directory or `/tmp`. Uses
+ * separate files for main thread and worker to avoid concurrent write issues.
  */
 const logFile = path.join(
   process.env.HOME ?? // Unix-like systems
     process.env.USERPROFILE ?? // Windows
     os.tmpdir(), // Fallback to system temp directory
-  'quint-lsp.log'
+  isMainThread ? 'quint-lsp.log' : 'quint-lsp-worker.log'
 )
 
 /**

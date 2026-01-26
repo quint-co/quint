@@ -38,33 +38,29 @@ import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import { logger, overrideConsole } from './logger'
 
-overrideConsole()
-
 import {
   AnalysisOutput,
   DocumentationEntry,
   ParserPhase4,
   QuintErrorData,
-  analyzeModules,
   builtinDocs,
   findDefinitionWithId,
   newIdGenerator,
-  produceDocsById,
 } from '@informalsystems/quint'
 
 import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType } from './complete'
 import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
-import { parseDocument } from './parsing'
 import { getDeclRegExp } from './rename'
 import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
+import { AnalysisResult, CompilationPipeline, CompilationResult } from './workerPipeline'
+
+// Redirect logs to file logger to prevent corrupting the JSON-RPC stream.
+overrideConsole()
 
 export class QuintLanguageServer {
-  // Create one generator of unique identifiers
-  private idGenerator = newIdGenerator()
-
   // Store auxiliary information by document
   private parsedDataByDocument: Map<DocumentUri, ParserPhase4> = new Map()
   private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
@@ -72,16 +68,23 @@ export class QuintLanguageServer {
   // Documentation entries by id, by document
   private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
 
-  // A timeout to store scheduled analysis
-  private analysisTimeout: NodeJS.Timeout = setTimeout(() => {}, 0)
+  // Worker pipeline for compilation and analysis
+  private pipeline: CompilationPipeline
 
   constructor(private readonly connection: Connection, private readonly documents: TextDocuments<TextDocument>) {
-    const loadedBuiltInDocs = builtinDocs(this.idGenerator)
+    const idGenerator = newIdGenerator()
+    const loadedBuiltInDocs = builtinDocs(idGenerator)
+
+    this.pipeline = new CompilationPipeline(idGenerator.nextId() - 1n, {
+      onParsingResult: result => this.handleParsingResult(result),
+      onAnalysisResult: result => this.handleAnalysisResult(result),
+      onError: message => this.connection.console.error(message),
+    })
 
     connection.onInitialize((_params: InitializeParams) => {
       const result: InitializeResult = {
         capabilities: {
-          textDocumentSync: TextDocumentSyncKind.Full,
+          textDocumentSync: TextDocumentSyncKind.Incremental,
           definitionProvider: true,
           documentSymbolProvider: true,
           codeActionProvider: true,
@@ -98,30 +101,15 @@ export class QuintLanguageServer {
       return result
     })
 
+    connection.onShutdown(() => this.pipeline.terminate())
+
     // Only keep information for open documents
     documents.onDidClose(e => this.deleteData(e.document.uri))
 
     // The content of a text document has changed. This event is emitted
     // when the text document first opened or when its content has changed.
-    documents.onDidChangeContent(async change => {
-      parseDocument(this.idGenerator, change.document)
-        .then(result => {
-          this.parsedDataByDocument.set(change.document.uri, result)
-
-          const diagnosticsByFile = diagnosticsFromErrors(result.errors, result.sourceMap)
-
-          const sourceFile = URI.parse(change.document.uri).path
-          const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
-          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-
-          if (diagnosticsByFile.size === 0) {
-            // For now, only run analysis if there are no parsing errors
-            this.scheduleAnalysis(change.document)
-          }
-        })
-        .catch(err => {
-          this.connection.console.error(`Error during parsing: ${err}`)
-        })
+    documents.onDidChangeContent(change => {
+      this.pipeline.scheduleCompilation(change.document.uri, change.document.getText())
     })
 
     connection.onHover((params: HoverParams): Hover | undefined => {
@@ -301,7 +289,7 @@ export class QuintLanguageServer {
       const dotAccessMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)\.$/)
       const sourceFile = URI.parse(params.textDocument.uri).path
 
-      this.triggerAnalysis(document)
+      // Use available (possibly stale) analysis data
       const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
       if (!analysisOutput) {
         logger.debug(`No analysis output available for completion.`)
@@ -473,52 +461,34 @@ export class QuintLanguageServer {
     connection.listen()
   }
 
-  private deleteData(uri: string) {
+  private deleteData(uri: string): void {
     this.parsedDataByDocument.delete(uri)
     this.docsByDocument.delete(uri)
     this.analysisOutputByDocument.delete(uri)
+    this.pipeline.deleteDocument(uri)
   }
 
-  private triggerAnalysis(document: TextDocument) {
-    clearTimeout(this.analysisTimeout)
-    this.connection.console.info(`Triggering analysis`)
-    this.analyze(document)
+  private handleParsingResult(result: CompilationResult): void {
+    const { uri, parsedData, errors } = result
+    this.parsedDataByDocument.set(uri, parsedData)
+
+    const diagnosticsByFile = diagnosticsFromErrors(errors, parsedData.sourceMap)
+    const sourceFile = URI.parse(uri).path
+    const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+    this.connection.sendDiagnostics({ uri, diagnostics })
   }
 
-  private scheduleAnalysis(document: TextDocument) {
-    clearTimeout(this.analysisTimeout)
-    const timeoutMillis = 1000
-    this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
-    this.analysisTimeout = setTimeout(() => {
-      this.analyze(document)
-    }, timeoutMillis)
-  }
+  private handleAnalysisResult(result: AnalysisResult): void {
+    const { uri, analysisOutput, docs, errors } = result
+    this.analysisOutputByDocument.set(uri, analysisOutput)
+    this.docsByDocument.set(uri, docs)
 
-  private analyze(document: TextDocument) {
-    try {
-      logger.debug(`Starting analysis for document: ${document.uri}`)
-      const parsedData = this.parsedDataByDocument.get(document.uri)
-      if (!parsedData) {
-        logger.debug(`No parsed data found for document: ${document.uri}`)
-        return
-      }
-
-      const { modules, sourceMap, table } = parsedData
-
-      this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
-
-      const [errors, analysisOutput] = analyzeModules(table, modules)
-
-      this.analysisOutputByDocument.set(document.uri, analysisOutput)
-
-      const sourceFile = URI.parse(document.uri).path
-      const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
-      const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
-      this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
-      logger.debug(`Analysis completed for document: ${document.uri}, errors found: ${diagnostics.length}`)
-    } catch (e) {
-      this.connection.console.error(`Error during analysis: ${e}`)
-    }
+    const parsedData = this.parsedDataByDocument.get(uri)!
+    const diagnosticsByFile = diagnosticsFromErrors(errors, parsedData.sourceMap)
+    const sourceFile = URI.parse(uri).path
+    const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+    this.connection.sendDiagnostics({ uri, diagnostics })
+    logger.debug(`Analysis completed for: ${uri}, errors found: ${diagnostics.length}`)
   }
 }
 
