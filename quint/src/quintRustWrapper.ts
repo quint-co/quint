@@ -125,10 +125,10 @@ export class QuintRustWrapper {
         if (progress.type === 'progress') {
           const elapsedSeconds = (Date.now() - startTime) / 1000
           const speed = Math.round(progress.current / elapsedSeconds)
-          progressBar.update(progress.current, { speed })
+          if (progressBar.isActive) progressBar.update(progress.current, { speed })
         }
       } catch (_) {
-        // Ignore non-JSON lines
+        if (progressBar.isActive) progressBar.stop()
       }
     })
 
@@ -137,7 +137,7 @@ export class QuintRustWrapper {
       process.on('close', resolve)
     })
 
-    progressBar.stop()
+    if (progressBar.isActive) progressBar.stop()
 
     if (exitCode !== 0) {
       throw new Error(`Rust evaluator exited with code ${exitCode}`)
@@ -197,14 +197,21 @@ export class QuintRustWrapper {
         throw new Error(parsed.error)
       }
 
-      // Convert traces to ITF
-      parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({ ...trace, states: ofItf(trace.states) }))
+      // Convert traces to ITF and ensure seed is bigint
+      // Note: When a SimulationError occurs in Rust, the error trace is included in bestTraces with result=false
+      parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({
+        ...trace,
+        seed: BigInt(trace.seed),
+        states: ofItf(trace.states),
+      }))
 
-      // Convert errors
-      parsed.errors = parsed.errors.map((err: any): QuintError => ({ ...err, reference: BigInt(err.reference) }))
+      // Convert errors - these include errors from SimulationError
+      parsed.errors = parsed.errors.map(
+        (err: any): QuintError => ({ ...err, reference: err.reference ? BigInt(err.reference) : undefined })
+      )
 
       // Call onTrace callback for each trace
-      if (onTrace && parsed.bestTraces.length > 0) {
+      if (onTrace && parsed.bestTraces.length > 0 && parsed.bestTraces[0].states.length > 0) {
         const firstState = parsed.bestTraces[0].states[0] as QuintApp
         const vars: string[] = []
         for (let i = 0; i < firstState.args.length; i += 2) {
@@ -219,7 +226,7 @@ export class QuintRustWrapper {
 
       return parsed
     } catch (error) {
-      throw new Error(`Failed to parse data from Rust evaluator: ${JSONbig.stringify(error)}`)
+      throw new Error(`Failed to parse data from Rust evaluator: ${error} ${JSONbig.stringify(error)}`)
     }
   }
 

@@ -41,7 +41,7 @@ impl Trace {
                 panic!("Expected a record, got {}", self.states[0]);
             }
         } else {
-            panic!("No states found");
+            vec![]
         };
 
         let mut other = BTreeMap::new();

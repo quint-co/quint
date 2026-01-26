@@ -7,6 +7,8 @@ use crate::{
     progress::Reporter,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 /// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize, Clone)]
@@ -25,6 +27,20 @@ pub struct SimulationResult {
     pub samples: usize,
     // TODO
     // witnessing_traces
+}
+
+/// Simulation error that includes context about when the error occurred.
+#[derive(Debug)]
+pub struct SimulationError {
+    pub seed: u64,
+    pub trace: Trace,
+    pub error: QuintError,
+}
+
+impl fmt::Display for SimulationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.error)
+    }
 }
 
 /// Statistics about the length of traces collected during simulation.
@@ -61,7 +77,7 @@ impl ParsedQuint {
         n_traces: usize,
         mut reporter: R,
         seed: Option<u64>,
-    ) -> Result<SimulationResult, QuintError> {
+    ) -> Result<SimulationResult, SimulationError> {
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = match seed {
             Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
@@ -80,50 +96,105 @@ impl ParsedQuint {
             reporter.next_sample();
             let seed = env.rand.get_state();
 
-            if !init.execute(&mut env)?.as_bool() {
-                trace_lengths.push(0);
-                return Ok(SimulationResult {
-                    result: false,
-                    best_traces,
-                    trace_statistics: get_trace_statistics(&trace_lengths),
-                    samples: sample_number,
-                });
-            }
-
-            for step_number in 1..=(steps + 1) {
-                // Shift the state and record it in the trace
-                env.shift();
-
-                if !invariant.execute(&mut env)?.as_bool() {
-                    trace_lengths.push(env.trace.len());
-                    let trace = std::mem::take(&mut env.trace);
-                    // Found a counterexample
-                    collect_trace(
-                        &mut best_traces,
-                        n_traces,
-                        Trace {
-                            states: trace,
-                            violation: true,
-                            seed,
-                        },
-                    );
-                    return Ok(SimulationResult {
-                        result: false,
-                        best_traces,
-                        trace_statistics: get_trace_statistics(&trace_lengths),
-                        samples: sample_number,
-                    });
+            // Wrap execute calls to catch panics and print seed
+            let result = catch_unwind(AssertUnwindSafe(|| -> Result<bool, QuintError> {
+                if !init.execute(&mut env)?.as_bool() {
+                    return Ok(false);
                 }
 
-                if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
-                    // The run cannot be extended. In some cases, this may indicate a deadlock.
-                    // Since we are doing random simulation, it is very likely
-                    // that we have not generated good values for extending
-                    // the run. Hence, do not report an error here, but simply
-                    // drop the run. Otherwise, we would have a lot of false
-                    // positives, which look like deadlocks but they are not.
-                    trace_lengths.push(env.trace.len());
-                    break;
+                for step_number in 1..=(steps + 1) {
+                    // Shift the state and record it in the trace
+                    env.shift();
+
+                    if !invariant.execute(&mut env)?.as_bool() {
+                        trace_lengths.push(env.trace.len());
+                        return Ok(false);
+                    }
+
+                    if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
+                        // The run cannot be extended. In some cases, this may indicate a deadlock.
+                        // Since we are doing random simulation, it is very likely
+                        // that we have not generated good values for extending
+                        // the run. Hence, do not report an error here, but simply
+                        // drop the run. Otherwise, we would have a lot of false
+                        // positives, which look like deadlocks but they are not.
+                        trace_lengths.push(env.trace.len());
+                        return Ok(true);
+                    }
+                }
+                Ok(true)
+            }));
+
+            match result {
+                Ok(Ok(true)) => {
+                    // Successful run, continue
+                }
+                Ok(Ok(false)) => {
+                    // Init failed or invariant violated
+                    if env.trace.is_empty() {
+                        // Init failed
+                        trace_lengths.push(0);
+                        return Ok(SimulationResult {
+                            result: false,
+                            best_traces,
+                            trace_statistics: get_trace_statistics(&trace_lengths),
+                            samples: sample_number,
+                        });
+                    } else {
+                        // Invariant violated
+                        let trace = std::mem::take(&mut env.trace);
+                        collect_trace(
+                            &mut best_traces,
+                            n_traces,
+                            Trace {
+                                states: trace,
+                                violation: true,
+                                seed,
+                            },
+                        );
+                        return Ok(SimulationResult {
+                            result: false,
+                            best_traces,
+                            trace_statistics: get_trace_statistics(&trace_lengths),
+                            samples: sample_number,
+                        });
+                    }
+                }
+                Ok(Err(e)) => {
+                    // QuintError occurred
+                    let trace = std::mem::take(&mut env.trace);
+                    return Err(SimulationError {
+                        seed,
+                        trace: Trace {
+                            states: trace,
+                            violation: false,
+                            seed,
+                        },
+                        error: e,
+                    });
+                }
+                Err(panic_info) => {
+                    // Panic occurred
+                    let msg = panic_info
+                        .downcast_ref::<&str>()
+                        .copied()
+                        .or_else(|| panic_info.downcast_ref::<String>().map(|s| s.as_str()))
+                        .unwrap_or("Unknown panic in thread");
+
+                    let trace = std::mem::take(&mut env.trace);
+                    return Err(SimulationError {
+                        seed,
+                        trace: Trace {
+                            states: trace,
+                            violation: false,
+                            seed,
+                        },
+                        error: QuintError {
+                            code: "QNT500".to_string(),
+                            message: msg.to_string(),
+                            reference: None,
+                        },
+                    });
                 }
             }
             trace_lengths.push(env.trace.len());
