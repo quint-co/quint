@@ -224,7 +224,7 @@ export class QuintRustWrapper {
   /**
    * Execute a single test using the Rust evaluator
    *
-   * @param {QuintEx} test - The test expression to execute
+   * @param {bigint} testDefId - The ID of the test definition to execute
    * @param {LookupTable} table - The lookup table for name resolution
    * @param {bigint} seed - The random seed for reproducibility
    * @param {number} maxSamples - The maximum number of samples to run
@@ -235,7 +235,7 @@ export class QuintRustWrapper {
    * @throws Will throw an error if the Rust evaluator fails to launch or returns an error
    */
   async test(
-    test: QuintEx,
+    testDefId: bigint,
     table: LookupTable,
     seed: bigint,
     maxSamples: number,
@@ -244,7 +244,7 @@ export class QuintRustWrapper {
   ): Promise<TestResult> {
     const input = {
       name: testName,
-      test: test,
+      test_def_id: testDefId,
       table: table,
       seed: seed,
       max_samples: maxSamples,

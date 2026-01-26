@@ -12,7 +12,7 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{LookupTable, QuintError, QuintEx};
+use quint_evaluator::ir::{LookupTable, QuintError, QuintEx, QuintId};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
@@ -134,7 +134,7 @@ struct SimulationTrace {
 #[derive(Deserialize)]
 struct TestInput {
     name: String,
-    test: QuintEx,
+    test_def_id: QuintId,
     table: LookupTable,
     seed: u64,
     max_samples: usize,
@@ -274,14 +274,18 @@ fn test_from_stdin() -> eyre::Result<()> {
 
     let TestInput {
         name,
-        test,
+        test_def_id,
         table,
         seed,
         max_samples,
     } = serde_json::from_str(&input)?;
 
     // Create test case and execute with progress reporting
-    let test_case = TestCase { test, table, name };
+    let test_case = TestCase {
+        test_def_id,
+        table,
+        name,
+    };
     let reporter = progress::json_std_err_report(max_samples);
     let result = test_case.execute(seed, max_samples, reporter);
 

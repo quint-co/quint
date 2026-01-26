@@ -1,5 +1,5 @@
 use crate::evaluator::{Env, Interpreter};
-use crate::ir::{LookupTable, QuintError, QuintEx};
+use crate::ir::{LookupTable, QuintError, QuintId};
 use crate::itf::Trace;
 use crate::progress::Reporter;
 use serde::Serialize;
@@ -7,7 +7,7 @@ use serde::Serialize;
 /// A test case that can be executed
 pub struct TestCase {
     pub name: String,
-    pub test: QuintEx,
+    pub test_def_id: QuintId,
     pub table: LookupTable,
 }
 
@@ -45,7 +45,27 @@ impl TestCase {
 
         let mut interpreter = Interpreter::new(&self.table);
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
-        let compiled_test = interpreter.compile(&self.test);
+
+        // Look up the test definition and compile it (not just the expression)
+        // This ensures instance overrides are applied via compile_under_context
+        let test_def = match self.table.get(&self.test_def_id) {
+            Some(def) => def,
+            None => {
+                let error = QuintError::new(
+                    "QNT404",
+                    &format!("Test definition with id {} not found", self.test_def_id),
+                );
+                return TestResult {
+                    name: test_name.clone(),
+                    status: TestStatus::Failed,
+                    errors: vec![error],
+                    seed,
+                    nsamples: 0,
+                    traces: Vec::new(),
+                };
+            }
+        };
+        let compiled_test = interpreter.compile_def(test_def);
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
@@ -66,7 +86,7 @@ impl TestCase {
                             "QNT511",
                             &format!("Test {} returned false", test_name),
                         )
-                        .with_reference(self.test.id());
+                        .with_reference(self.test_def_id);
                         let states = std::mem::take(&mut env.trace);
                         trace = Some(Trace {
                             states,
