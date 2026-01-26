@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
+
 ### Security
 
 ## v0.30.0 -- 2026-01-19
