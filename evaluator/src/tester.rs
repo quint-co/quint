@@ -53,7 +53,7 @@ impl TestCase {
             None => {
                 let error = QuintError::new(
                     "QNT404",
-                    &format!("Test definition with id {} not found", self.test_def_id),
+                    &format!("Test definition for {} not found", self.name),
                 );
                 return TestResult {
                     name: test_name.clone(),
