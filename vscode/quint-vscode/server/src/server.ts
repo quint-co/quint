@@ -36,7 +36,7 @@ import {
 } from 'vscode-languageserver/node'
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
-import { logger, overrideConsole } from './logger'
+import { isEnabled, logger, overrideConsole } from './logger'
 
 import {
   AnalysisOutput,
@@ -266,10 +266,16 @@ export class QuintLanguageServer {
     })
 
     connection.onCompletion((params: CompletionParams): CompletionItem[] => {
-      logger.debug(`Completion requested at position ${JSON.stringify(params.position)} in ${params.textDocument.uri}`)
+      if (isEnabled('DEBUG')) {
+        logger.debug(
+          'Completion requested at position %s in %s',
+          JSON.stringify(params.position),
+          params.textDocument.uri
+        )
+      }
 
       if (params.context?.triggerKind !== CompletionTriggerKind.Invoked) {
-        logger.debug(`Completion triggered by non-invoked action, ignoring.`)
+        logger.debug('Completion triggered by non-invoked action, ignoring.')
         return []
       }
 
@@ -277,7 +283,7 @@ export class QuintLanguageServer {
       const document = this.documents.get(params.textDocument.uri)
 
       if (!parsedData || !document) {
-        logger.debug(`No parsed data or document found for completion.`)
+        logger.debug('No parsed data or document found for completion.')
         return []
       }
 
@@ -292,32 +298,34 @@ export class QuintLanguageServer {
       // Use available (possibly stale) analysis data
       const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
       if (!analysisOutput) {
-        logger.debug(`No analysis output available for completion.`)
+        logger.debug('No analysis output available for completion.')
         return []
       }
 
       if (dotAccessMatch) {
         const baseIdentifier = dotAccessMatch[1]
-        logger.debug(`Detected dot-access on identifier: ${baseIdentifier}`)
+        logger.debug('Detected dot-access on identifier: %s', baseIdentifier)
 
         const ref = [...parsedData.table.entries()].find(([_, v]) => v.name === baseIdentifier)
         if (!ref) {
-          logger.debug(`Could not resolve identifier: ${baseIdentifier}`)
+          logger.debug('Could not resolve identifier: %s', baseIdentifier)
           return []
         }
 
         const [declId, _binding] = ref
         const type = analysisOutput.types.get(declId)?.type
         if (!type) {
-          logger.debug(`No type found for identifier: ${baseIdentifier}`)
+          logger.debug('No type found for identifier: %s', baseIdentifier)
           return []
         }
 
-        logger.debug(
-          `Resolved type for '${baseIdentifier}': ${JSON.stringify(type, (_, v) =>
-            typeof v === 'bigint' ? v.toString() : v
-          )}`
-        )
+        if (isEnabled('DEBUG')) {
+          logger.debug(
+            "Resolved type for '%s': %s",
+            baseIdentifier,
+            JSON.stringify(type, (_, v) => (typeof v === 'bigint' ? v.toString() : v))
+          )
+        }
 
         const builtinCompletions: CompletionItem[] = getSuggestedBuiltinsForType(type).map(op => {
           const docs = loadedBuiltInDocs.get(op.name)
@@ -336,7 +344,7 @@ export class QuintLanguageServer {
       // Fallback: regular identifier completion
       const identifierMatch = triggeringLine?.trim().match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
       if (!identifierMatch) {
-        logger.debug(`No matching identifier found in line: ${triggeringLine}`)
+        logger.debug('No matching identifier found in line: %s', triggeringLine)
         return []
       }
 
@@ -488,7 +496,7 @@ export class QuintLanguageServer {
     const sourceFile = URI.parse(uri).path
     const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
     this.connection.sendDiagnostics({ uri, diagnostics })
-    logger.debug(`Analysis completed for: ${uri}, errors found: ${diagnostics.length}`)
+    logger.debug('Analysis completed for: %s, errors found: %d', uri, diagnostics.length)
   }
 }
 
