@@ -324,7 +324,6 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       }
       const testName = nameWithNamespaces(def.name, List(def.namespaces))
 
-
       const result = await quintRustWrapper.test(
         def.id,
         prev.table,
