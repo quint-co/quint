@@ -77,13 +77,10 @@ export const logger = {
 }
 
 /**
- * Overrides global `console.log` and `console.error` methods
- * with the logger's `info` and `error` methods, respectively,
- * unless logging is completely disabled (`LOG_LEVEL='NONE'`).
+ * Overrides global `console.log` and `console.error` methods with the logger's
+ * `info` and `error` methods, respectively.
  */
 export function overrideConsole() {
-  if (LOG_LEVEL !== 'NONE') {
-    console.log = logger.info
-    console.error = logger.error
-  }
+  console.log = logger.info
+  console.error = logger.error
 }
