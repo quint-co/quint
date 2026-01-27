@@ -263,7 +263,7 @@ impl<'a> Interpreter<'a> {
         def: &LookupDefinition,
         mut compilation: impl FnMut(&mut Interpreter) -> CompiledExpr,
     ) -> CompiledExpr {
-        if let Some(ImportedFrom::Instance { id, overrides }) = def.imported_from(){
+        if let Some(ImportedFrom::Instance { id, overrides }) = def.imported_from() {
             // This originates from an instance, so we need to handle overrides
 
             // Save how the builder was before so we can restore it after
