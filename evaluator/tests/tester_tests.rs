@@ -8,12 +8,12 @@ fn parse_test_from_path(file_path: &Path, test_name: &str) -> Result<TestCase, B
     // Use helpers to compile the file
     let output = helpers::parse(&std::fs::read_to_string(file_path)?, "init", "step", None)?;
 
-    // Find the test definition (no q:: prefix for regular definitions)
-    let test_def = output.find_definition_by_name(test_name)?.expr.clone();
+    // Find the test definition
+    let test_def = output.find_definition_by_name(test_name)?;
 
     Ok(TestCase {
         name: test_name.to_string(),
-        test: test_def,
+        test_def_id: test_def.id,
         table: output.table,
     })
 }
@@ -44,7 +44,7 @@ fn failing_test_returns_qnt511() {
     assert!(result.errors[0].message.contains("returned false"));
     // Error reference should point to the test definition
     assert!(result.errors[0].reference.is_some());
-    assert_eq!(result.errors[0].reference.unwrap(), test_case.test.id());
+    assert_eq!(result.errors[0].reference.unwrap(), test_case.test_def_id);
     assert_eq!(result.seed, 0);
 }
 
