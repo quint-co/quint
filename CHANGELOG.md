@@ -12,9 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
 
 ### Changed
+
+- Moved LSP-server compilation and analysis to its own worker thread (1876)
+- Improved memory allocation profile of LSP-server log messages (#1877)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
+- Fixed LSP-server crashing upon console.{log, error} messages (#1875)
+
 ### Security
 
 ## v0.30.0 -- 2026-01-19
