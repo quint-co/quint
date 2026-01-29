@@ -6,6 +6,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import * as util from 'util'
+import { isMainThread } from 'worker_threads'
 
 /**
  * Defines available log levels.
@@ -31,13 +33,14 @@ const logLevels: Record<LogLevel, number> = {
 }
 
 /**
- * Path to the log file. Defaults to user's home directory or `/tmp`.
+ * Path to the log file. Defaults to user's home directory or `/tmp`. Uses
+ * separate files for main thread and worker to avoid concurrent write issues.
  */
 const logFile = path.join(
   process.env.HOME ?? // Unix-like systems
     process.env.USERPROFILE ?? // Windows
     os.tmpdir(), // Fallback to system temp directory
-  'quint-lsp.log'
+  isMainThread ? 'quint-lsp.log' : 'quint-lsp-worker.log'
 )
 
 /**
@@ -53,14 +56,21 @@ const logStream = fs.createWriteStream(logFile, { flags: 'a' })
 const getTimestamp = (): string => new Date().toISOString().replace('T', ' ').replace('Z', '')
 
 /**
+ * Check if the given log level is enabled.
+ */
+export function isEnabled(level: LogLevel) {
+  return logLevels[LOG_LEVEL] >= logLevels[level]
+}
+
+/**
  * Writes a formatted log message if the current log level permits.
  *
  * @param level - Severity of the log message.
  * @param args - Message arguments to log.
  */
 function writeLog(level: LogLevel, ...args: any[]) {
-  if (logLevels[LOG_LEVEL] >= logLevels[level]) {
-    const message = `[${getTimestamp()}] [${level}] ${args.map(String).join(' ')}`
+  if (isEnabled(level)) {
+    const message = `[${getTimestamp()}] [${level}] ${util.format(...args)}`
     logStream.write(message + '\n')
   }
 }
@@ -77,10 +87,13 @@ export const logger = {
 }
 
 /**
- * Overrides global `console.log` and `console.error` methods with the logger's
- * `info` and `error` methods, respectively.
+ * Overrides global console log methods, with the logger's methods.
  */
 export function overrideConsole() {
+  console.trace = logger.trace
+  console.debug = logger.debug
+  console.info = logger.info
   console.log = logger.info
+  console.warn = logger.warn
   console.error = logger.error
 }
