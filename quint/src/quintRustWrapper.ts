@@ -16,7 +16,7 @@ import { Outcome } from './simulation'
 import { TraceHook } from './cliReporting'
 import { debugLog } from './verbosity'
 import JSONbig from 'json-bigint'
-import { LookupTable } from './names/base'
+import { LookupDefinition, LookupTable } from './names/base'
 import { replacer } from './jsonHelper'
 import { ofItf } from './itf'
 import { Presets, SingleBar } from 'cli-progress'
@@ -28,6 +28,8 @@ import { spawn } from 'child_process'
 import { rustEvaluatorDir } from './config'
 import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
+import { List } from 'immutable'
+import { nameWithNamespaces } from './runtime/impl/builder'
 
 const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
@@ -224,27 +226,28 @@ export class QuintRustWrapper {
   /**
    * Execute a single test using the Rust evaluator
    *
-   * @param {bigint} testDefId - The ID of the test definition to execute
+   * @param {LookupDefinition} testDef - The test definition to execute
    * @param {LookupTable} table - The lookup table for name resolution
-   * @param {bigint} seed - The random seed for reproducibility
+   * @param {bigint} [seed] - Optional random seed for reproducibility.
    * @param {number} maxSamples - The maximum number of samples to run
-   * @param {string} testName - The name of the test (for progress display)
+   * @param {number} index - The index of the test in the run order
    * @param {TraceHook} onTrace - A callback function to be called with trace information for ITF output
    *
    * @returns {TestResult} The result of the test execution
    * @throws Will throw an error if the Rust evaluator fails to launch or returns an error
    */
   async test(
-    testDefId: bigint,
+    testDef: LookupDefinition,
     table: LookupTable,
-    seed: bigint,
+    seed: bigint | undefined,
     maxSamples: number,
-    testName: string,
+    index: number,
     onTrace?: TraceHook
   ): Promise<TestResult> {
+    const testName = nameWithNamespaces(testDef.name, List(testDef.namespaces ?? []))
     const input = {
       name: testName,
-      test_def_id: testDefId,
+      test_def: testDef,
       table: table,
       seed: seed,
       max_samples: maxSamples,
@@ -289,7 +292,7 @@ export class QuintRustWrapper {
             vars.push((firstState.args[i] as QuintStr).value)
           }
 
-          parsed.traces.forEach((trace: any, index: number) => {
+          parsed.traces.forEach((trace: any) => {
             const status = trace.result ? 'ok' : 'violation'
             onTrace(index, status, vars, trace.states, testName)
           })

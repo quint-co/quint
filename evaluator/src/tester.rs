@@ -1,5 +1,5 @@
 use crate::evaluator::{Env, Interpreter};
-use crate::ir::{LookupTable, QuintError, QuintId};
+use crate::ir::{LookupDefinition, LookupTable, QuintError};
 use crate::itf::Trace;
 use crate::progress::Reporter;
 use serde::Serialize;
@@ -7,7 +7,7 @@ use serde::Serialize;
 /// A test case that can be executed
 pub struct TestCase {
     pub name: String,
-    pub test_def_id: QuintId,
+    pub test_def: LookupDefinition,
     pub table: LookupTable,
 }
 
@@ -33,39 +33,31 @@ pub struct TestResult {
 impl TestCase {
     /// Execute this test case with the given seed and maximum samples
     ///
+    /// If `seed` is provided, it will be used to initialize the random number generator
+    /// for reproducibility. Otherwise, a random seed will be generated.
+    ///
     /// Tests are run repeatedly up to `max_samples` times. If the RNG state
     /// repeats (indicating a deterministic test), execution stops early.
     pub fn execute<R: Reporter>(
         &self,
-        seed: u64,
+        seed: Option<u64>,
         max_samples: usize,
         mut reporter: R,
     ) -> TestResult {
         let test_name = &self.name;
 
         let mut interpreter = Interpreter::new(&self.table);
-        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
-
-        // Look up the test definition and compile it (not just the expression)
-        // This ensures instance overrides are applied via compile_under_context
-        let test_def = match self.table.get(&self.test_def_id) {
-            Some(def) => def,
-            None => {
-                let error = QuintError::new(
-                    "QNT404",
-                    &format!("Test definition for {} not found", self.name),
-                );
-                return TestResult {
-                    name: test_name.clone(),
-                    status: TestStatus::Failed,
-                    errors: vec![error],
-                    seed,
-                    nsamples: 0,
-                    traces: Vec::new(),
-                };
-            }
+        let mut env = match seed {
+            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
+            None => Env::new(interpreter.var_storage.clone()),
         };
-        let compiled_test = interpreter.compile_def(test_def);
+
+        let seed = env.rand.get_state();
+
+        // Compile the test definition (not just the expression)
+        // This ensures instance overrides are applied via compile_under_context
+        let compiled_test = interpreter.compile_def(&self.test_def);
+        let test_def_id = self.test_def.id();
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
@@ -86,7 +78,7 @@ impl TestCase {
                             "QNT511",
                             &format!("Test {} returned false", test_name),
                         )
-                        .with_reference(self.test_def_id);
+                        .with_reference(test_def_id);
                         let states = std::mem::take(&mut env.trace);
                         trace = Some(Trace {
                             states,

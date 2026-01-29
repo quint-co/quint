@@ -64,8 +64,6 @@ import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErro
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions, TestResult } from './runtime/testing'
-import { List } from 'immutable'
-import { nameWithNamespaces } from './runtime/impl/builder'
 
 export type stage =
   | 'loading'
@@ -310,26 +308,17 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   let results: TestResult[]
+
   if (prev.args.backend === 'rust') {
     const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
-    // Add test definitions from definitionsByModule to the lookup table
-    // This ensures instance metadata (importedFrom, namespaces) is preserved
-    testDefs.forEach(def => {
-      prev.table.set(def.id, def)
-    })
     results = []
-    for (const def of testDefs) {
-      if (def.kind !== 'def') {
-        throw new Error(`Expected test definition, got ${def.kind}: ${def.name}`)
-      }
-      const testName = nameWithNamespaces(def.name, List(def.namespaces))
-
+    for (const [index, def] of testDefs.entries()) {
       const result = await quintRustWrapper.test(
-        def.id,
+        def,
         prev.table,
-        options.rng.getState(),
+        prev.args.seed,
         options.maxSamples,
-        testName,
+        index,
         options.onTrace
       )
       results.push(result)
