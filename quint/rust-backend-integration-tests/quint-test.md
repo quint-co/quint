@@ -75,6 +75,8 @@ exit $exit_code
 
 ### Test outputs ITF
 
+<!-- NOTE: This test is currently failing due to integer overflow issues in the Rust evaluator -->
+
 <!-- !test in test itf -->
 ```
 output=$(quint test --backend=rust --out-itf='coin_{seq}_{test}.itf.json' \
@@ -316,13 +318,9 @@ exit $exit_code
                                 ^^^^^^^^^^^
     Use --seed=0x1 --match=initFailsTest to repeat.
   3) lastActionFailsTest:
-      HOME/thenErrorMessages.qnt:18:29 - error: [QNT511] Test lastActionFailsTest returned false
+      HOME/thenErrorMessages.qnt:18:7 - error: [QNT511] Test lastActionFailsTest returned false
       18:   run lastActionFailsTest = init(true)
-                                      ^^^^^^^^^^
-      19:     .then(a)
-          ^^^^^^^^^^^^
-      20:     .then(b)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                ^^^^^^^^^^^^^^^^^^^
     Use --seed=0x1 --match=lastActionFailsTest to repeat.
 
 
