@@ -239,7 +239,7 @@ impl<'a> Interpreter<'a> {
                 Rc::new(RefCell::new(Err(QuintError::new(
                     "QNT500",
                     format!(
-                        "Uninitialized const {name}. Use: import <moduleName>(${name}=<value>).*",
+                        "Uninitialized const {name}. Use: import <moduleName>({name}=<value>).*",
                     )
                     .as_str(),
                 ))))
@@ -334,7 +334,7 @@ impl<'a> Interpreter<'a> {
         compilation(self)
     }
 
-    fn compile_def(&mut self, def: &LookupDefinition) -> CompiledExpr {
+    pub fn compile_def(&mut self, def: &LookupDefinition) -> CompiledExpr {
         self.compile_under_context(def, |interpreter| interpreter.compile_def_core(def))
     }
 

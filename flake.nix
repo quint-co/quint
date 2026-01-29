@@ -14,6 +14,9 @@
             pkgs.nodePackages.yalc
             pkgs.vsce
             pkgs.parallel
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+            pkgs.libiconv
+            pkgs.darwin.apple_sdk.frameworks.CoreFoundation
           ];
 
           shellHook = "npm config set prefix ~/.npm";

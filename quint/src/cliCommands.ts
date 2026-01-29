@@ -63,7 +63,7 @@ import {
 import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
-import { TestOptions } from './runtime/testing'
+import { TestOptions, TestResult } from './runtime/testing'
 
 export type stage =
   | 'loading'
@@ -307,8 +307,26 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .flat()
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
-  const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
-  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  let results: TestResult[]
+
+  if (prev.args.backend === 'rust') {
+    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    results = []
+    for (const [index, def] of testDefs.entries()) {
+      const result = await quintRustWrapper.test(
+        def,
+        prev.table,
+        prev.args.seed,
+        options.maxSamples,
+        index,
+        options.onTrace
+      )
+      results.push(result)
+    }
+  } else {
+    const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
+    results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  }
 
   const elapsedMs = Date.now() - startMs
   outputTestResults(results, verbosityLevel, elapsedMs)

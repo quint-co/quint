@@ -218,6 +218,12 @@ const testCmd = {
       .option('match', {
         desc: 'a string or regex that selects names to use as tests',
         type: 'string',
+      })
+      .option('backend', {
+        desc: 'the backend to use for tests',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   handler: (args: any) => {
     if (args.output != null) {
