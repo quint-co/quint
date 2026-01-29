@@ -32,7 +32,7 @@ export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap
   errors.forEach(error => {
     const loc = sourceMap.get(error.reference!)!
     if (!loc) {
-      logger.debug(`Loc for ${error} not found in source map`)
+      logger.debug('Loc for %o not found in source map', error)
     } else {
       const diagnostic = assembleDiagnostic(error, loc)
       const previous = diagnostics.get(loc.source) ?? []

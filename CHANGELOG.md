@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Moved LSP-server compilation and analysis to its own worker thread (1876)
+- Improved memory allocation profile of LSP-server log messages (#1877)
 
 ### Deprecated
 ### Removed

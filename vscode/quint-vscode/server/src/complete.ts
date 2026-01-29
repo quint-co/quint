@@ -26,7 +26,7 @@ import {
   walkExpression,
 } from '@informalsystems/quint'
 import { findMatchingResults } from './reporting'
-import { logger, overrideConsole } from './logger'
+import { isEnabled, logger, overrideConsole } from './logger'
 import JSONbig from 'json-bigint'
 
 overrideConsole()
@@ -51,15 +51,18 @@ export function completeIdentifier(
       const refId = table.get(declBigInt)?.id ?? declBigInt
       const type = analysisOutput.types.get(refId)?.type
 
-      logger.info(
-        `DeclId: ${declId} (BigInt: ${declBigInt.toString()}), RefId: ${refId.toString()}, Type: ${JSON.stringify(
-          type,
-          (_, val) => (typeof val === 'bigint' ? val.toString() : val)
-        )}`
-      )
+      if (isEnabled('INFO')) {
+        logger.info(
+          'DeclId: %s (BigInt: %s), RefId: %s, Type: %s',
+          declId,
+          declBigInt.toString(),
+          refId.toString(),
+          JSON.stringify(type, (_, val) => (typeof val === 'bigint' ? val.toString() : val))
+        )
+      }
       return type
     } catch (error) {
-      logger.error(`Error processing declId ${declId}: ${error}`)
+      logger.error('Error processing declId %s: %s', declId, error)
       return undefined
     }
   })
@@ -69,10 +72,14 @@ export function completeIdentifier(
       if (type?.kind === 'const') {
         const alias = type.id ? table.get(type.id) : undefined
         if (alias?.kind !== 'typedef' || !alias.type) {
-          logger.debug(`Skipping const type alias: ${JSON.stringify(alias)}`)
+          if (isEnabled('DEBUG')) {
+            logger.debug('Skipping const type alias: %s', JSON.stringify(alias))
+          }
           return undefined
         }
-        logger.debug(`Resolved const alias: ${JSON.stringify(alias.type)}`)
+        if (isEnabled('DEBUG')) {
+          logger.debug('Resolved const alias: %s', JSON.stringify(alias.type))
+        }
         return alias.type
         // TODO(#693): Workaround for #693, filter overly general types
       } else if (type?.kind === 'var') {
@@ -92,16 +99,24 @@ export function completeIdentifier(
 
   logger.debug('Fetching built-in completions...')
   const builtinCompletions = builtinCompletionsWithDocs(getSuggestedBuiltinsForType(type), builtinDocs)
-  logger.debug(`Builtin completions: ${JSON.stringify(builtinCompletions)}`)
+  if (isEnabled('DEBUG')) {
+    logger.debug('Builtin completions: %s', JSON.stringify(builtinCompletions))
+  }
 
   const fieldCompletions = getFieldCompletions(type)
-  logger.debug(`Field completions: ${JSON.stringify(fieldCompletions)}`)
+  if (isEnabled('DEBUG')) {
+    logger.debug('Field completions: %s', JSON.stringify(fieldCompletions))
+  }
 
   let responseObject = builtinCompletions.concat(fieldCompletions)
-  logger.debug(`Raw response object before conversion: ${JSONbig.stringify(responseObject)}`)
+  if (isEnabled('DEBUG')) {
+    logger.debug('Raw response object before conversion: %s', JSONbig.stringify(responseObject))
+  }
 
   // Explicitly remove any lingering BigInt values
-  logger.info(`Returning safe completion response: ${JSON.stringify(responseObject)}`)
+  if (isEnabled('INFO')) {
+    logger.info('Returning safe completion response: %s', JSON.stringify(responseObject))
+  }
 
   return responseObject
 }
@@ -224,7 +239,7 @@ function builtinCompletionsWithDocs(
 }
 
 export function getSuggestedBuiltinsForType(type: QuintType): { name: string }[] {
-  logger.info(`🔍 Checking builtins for type: ${type.kind}`)
+  logger.info('🔍 Checking builtins for type: %s', type.kind)
 
   switch (type.kind) {
     case 'bool':
@@ -264,7 +279,7 @@ export function getSuggestedBuiltinsForType(type: QuintType): { name: string }[]
       return []
 
     default:
-      logger.warn(`⚠️ Unknown type encountered:`)
+      logger.warn('⚠️ Unknown type encountered:')
       return []
   }
 }
