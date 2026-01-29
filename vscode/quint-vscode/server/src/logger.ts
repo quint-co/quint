@@ -62,7 +62,6 @@ function writeLog(level: LogLevel, ...args: any[]) {
   if (logLevels[LOG_LEVEL] >= logLevels[level]) {
     const message = `[${getTimestamp()}] [${level}] ${args.map(String).join(' ')}`
     logStream.write(message + '\n')
-    process.stdout.write(message + '\n')
   }
 }
 
