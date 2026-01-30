@@ -1020,31 +1020,24 @@ exit $exit_code
 ### Test does not skip assignments (#1133)
 
 See: https://github.com/informalsystems/quint/issues/1133
-
-FIXME: fix the traces found by the simulator once #1133 is resolved.
+Fixed in: https://github.com/informalsystems/quint/pull/1846
+This is now a regression test
 
 <!-- !test in test1133 -->
 ```
-output=$(quint test --match='(t1|t2)' --out-itf='out_{seq}_{test}.itf.json' \
-  ./testFixture/simulator/lastActionInRun.qnt)
-exit_code=$?
-echo "BEGIN"
-# This test should have 3 states (FIXME: it does not!)
-cat out_0_t1.itf.json | jq '.states' | grep "s" | wc -l | grep 3
+quint test --match='(t1|t2)' --out-itf='out_{seq}_{test}.itf.json' \
+  ./testFixture/simulator/lastActionInRun.qnt > /dev/null
+cat out_0_t1.itf.json | jq '.states | length'
 rm out_0_t1.itf.json
-# This test should have 4 states (FIXME: it does not!)
-cat out_1_t2.itf.json | jq '.states' | grep "s" | wc -l | grep 4
+cat out_1_t2.itf.json | jq '.states | length'
 rm out_1_t2.itf.json
-echo "END"
-exit $exit_code
 ```
 
 <!-- !test out test1133 -->
 ```
-BEGIN
-END
+3
+4
 ```
-FIX THE TEST ABOVE: it should have 3 and 4
 
 ### OK REPL tutorial
 
@@ -1449,8 +1442,8 @@ rm firstTest.itf.json secondTest.itf.json
 
 <!-- !test out multiple jsons -->
 ```
-[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}}]
-[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}}]
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}},{"#meta":{"index":2},"x":{"#bigint":"1"}}]
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}},{"#meta":{"index":2},"x":{"#bigint":"2"}}]
 ```
 
 ### Variants are supported in ITF
@@ -1466,7 +1459,7 @@ rm xTest.itf.json
 
 <!-- !test out variants in itf -->
 ```
-[{"#meta":{"index":0},"x":{"tag":"None","value":{"#tup":[]}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
+[{"#meta":{"index":0},"x":{"tag":"None","value":{"#tup":[]}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}},{"#meta":{"index":3},"x":{"tag":"Some","value":{"#bigint":"3"}}}]
 ```
 
 ### FAIL on parsing filenames with different casing
@@ -1691,4 +1684,143 @@ exit $exit_code
 
   Use --verbosity=3 to show executions.
       HOME/thenErrorMessages.qnt
+```
+
+### `expect` does not duplicate states in traces for `quint run`
+
+Regression test to ensure that `expect` does not add duplicate states to the trace
+when using `quint run` with `--out-itf`.
+
+<!-- !test in expect no duplicate states in run -->
+```
+quint run --out-itf=expect-run.itf.json --max-steps=20 --seed=42 --verbosity=0 \
+  ./testFixture/expectNoStateDuplication.qnt
+cat expect-run.itf.json | jq '.states | length'
+rm expect-run.itf.json
+```
+
+<!-- !test out expect no duplicate states in run -->
+```
+42
+```
+
+### `expect` does not duplicate states in traces for `quint test`
+
+Regression test to ensure that `expect` does not add duplicate states to the trace
+when using `quint test` with `--out-itf`. Both tests should produce the same number
+of states, as the final `expect` in `WithExpectTest` should not add an extra state.
+
+<!-- !test in expect no duplicate states in test -->
+```
+quint test --out-itf='{test}.itf.json' \
+  ./testFixture/expectNoStateDuplication.qnt > /dev/null
+cat NoExpectTest.itf.json | jq '.states | length'
+cat WithExpectTest.itf.json | jq '.states | length'
+rm NoExpectTest.itf.json WithExpectTest.itf.json
+```
+
+<!-- !test out expect no duplicate states in test -->
+```
+6
+6
+```
+
+## Seed produces reproducible results
+
+This test verifies that running with the same seed produces identical traces.
+
+<!-- !test in seed reproducibility -->
+```
+# First run: capture seed and trace output
+OUTPUT1=$(quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  --verbosity=3 \
+  ./testFixture/simulator/gettingStarted.qnt 2>&1)
+
+# Extract the seed from first run
+SEED=$(echo "$OUTPUT1" | grep -o "\-\-seed=0x[0-9a-f]*")
+
+# Filter out timing info and save trace from first run
+echo "$OUTPUT1" | grep -v "duration\|samples/s\|ETA\|speed\|traces/second\|No violation found" > run1.txt
+
+# Second run with the captured seed
+quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  --verbosity=3 \
+  $SEED \
+  ./testFixture/simulator/gettingStarted.qnt 2>&1 | grep -v "duration\|samples/s\|ETA\|speed\|traces/second\|No violation found" > run2.txt
+
+diff run1.txt run2.txt && echo "Traces are identical"
+
+# Cleanup
+rm -f run1.txt run2.txt
+```
+
+<!-- !test out seed reproducibility -->
+```
+Traces are identical
+```
+
+## Produces ITF trace with --out-itf
+
+<!-- !test in rust backend itf output -->
+```
+quint run \
+  --out-itf=rust-out.itf.json \
+  --max-steps=5 \
+  ./testFixture/simulator/gettingStarted.qnt > /dev/null
+cat rust-out.itf.json | jq '.vars'
+rm rust-out.itf.json
+```
+
+<!-- !test out rust backend itf output -->
+```
+[
+  "balances"
+]
+```
+
+## Nested parameterized calls with let
+
+<!-- !test check nested parameterized calls -->
+```
+quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  ./testFixture/nestedParameterizedCallsWithLet.qnt
+```
+
+## Debug output in init action
+
+This test verifies that q::debug output is printed.
+
+<!-- !test in debug -->
+```
+cat > /tmp/debug_test.qnt << 'EOF'
+module debugTest {
+  var x: int
+
+  action init = {
+    x' = q::debug("this tests debug", 42)
+  }
+
+  action step = {
+    x' = x + 1
+  }
+}
+EOF
+
+quint run \
+  --max-samples=1 \
+  --main=debugTest \
+  /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
+
+rm /tmp/debug_test.qnt
+```
+
+<!-- !test out debug -->
+```
+> this tests debug 42
 ```

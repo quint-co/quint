@@ -16,4 +16,5 @@ pub mod progress;
 pub mod rand;
 pub mod simulator;
 pub mod storage;
+pub mod tester;
 pub mod value;

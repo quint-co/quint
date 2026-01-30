@@ -218,6 +218,12 @@ const testCmd = {
       .option('match', {
         desc: 'a string or regex that selects names to use as tests',
         type: 'string',
+      })
+      .option('backend', {
+        desc: 'the backend to use for tests',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   handler: (args: any) => {
     if (args.output != null) {
@@ -372,6 +378,16 @@ const verifyCmd = {
         desc: 'Apalache server endpoint hostname:port',
         type: 'string',
         default: 'localhost:8822',
+      })
+      .option('backend', {
+        desc: 'the backend to use for verification',
+        type: 'string',
+        choices: ['apalache', 'tlc'],
+        default: 'apalache',
+      })
+      .option('tlc-config', {
+        desc: 'path to a TLC configuration file (in JSON)',
+        type: 'string',
       })
       .coerce('server-endpoint', (arg: string) => {
         const errorOrEndpoint = parseServerEndpoint(arg)

@@ -142,15 +142,15 @@ module vote {
         (optionsDecr, cs.ballots.set(_key, { option: vote }))
       }
 
-      val updated_options = updated._1
-      val updated_ballots = updated._2
+      val (updated_options, updated_ballots) = updated
 
       if (length(updated_options.select(opt => opt._1 == vote)) == 0) {
         { cs: cs, error: "Unauthorized" }
       } else {
         val optionsIncr = updated_options.foldl([], (res, opt) => {
+          val (name, count) = opt
           // FIXME: in the original, this only adjusts the _first_ option in the list
-          if (opt._1 == vote) res.append((opt._1, opt._2 + 1)) else res.append(opt)
+          if (name == vote) res.append((name, count + 1)) else res.append((name, count))
         })
         { cs: { ...cs, ballots: updated_ballots, polls: cs.polls.set(poll_id, { ...poll, options: optionsIncr }) }, error: ""}
       }

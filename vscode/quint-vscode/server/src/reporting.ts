@@ -15,6 +15,7 @@
 import { Loc, QuintError, QuintModule, SourceMap, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver'
 import { compact } from 'lodash'
+import { logger } from './logger'
 
 /**
  * Assembles a list of diagnostics from pairs of expression ids and their errors
@@ -31,7 +32,7 @@ export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap
   errors.forEach(error => {
     const loc = sourceMap.get(error.reference!)!
     if (!loc) {
-      console.log(`loc for ${error} not found in source map`)
+      logger.debug('Loc for %o not found in source map', error)
     } else {
       const diagnostic = assembleDiagnostic(error, loc)
       const previous = diagnostics.get(loc.source) ?? []

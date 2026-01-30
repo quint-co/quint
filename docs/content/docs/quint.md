@@ -17,7 +17,8 @@ The main commands of `quint` are as follows:
  - [x] `run` executes a Quint specification via random simulation
         similar to stateful property-based testing
  - [x] `test` runs unit tests against a Quint specification
- - [x] `verify` verifies a Quint specification with Apalache
+ - [x] `verify` verifies a Quint specification with symbolic model checking
+        (via Apalache) or explicit-state model checking (via TLC)
  - [x] `docs` produces documentation
  - [ ] `lint` checks a Quint specification for known deficiencies
  - [ ] `indent` indents a Quint specification
@@ -311,6 +312,7 @@ Options:
   --seed       random seed to use for non-deterministic choice          [string]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
   --match      a string or regex that selects names to use as tests     [string]
+  --backend    backend to run tests [choices: "typescript", "rust"] [default: "typescript"]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
@@ -345,7 +347,7 @@ Options:
 $  quint verify --help
 quint verify <input>
 
-Verify a Quint specification via Apalache
+Verify a Quint specification via a model checker (Apalache or TLC)
 
 Options:
   --help                 Show help                                      [boolean]
@@ -355,9 +357,11 @@ Options:
                          filename)                                       [string]
   --init                 name of the initializer action[string] [default: "init"]
   --step                 name of the step action       [string] [default: "step"]
+  --backend              the backend to use for verification
+                                        [string] [choices: "apalache", "tlc"] [default: "apalache"]
   --invariant            the invariants to check, separated by commas    [string]
-  --inductive-invariant  inductive invariant to check. Can be used together with
-                         ordinary invariants.                            [string]
+  --inductive-invariant  inductive invariant to check (Apalache only). Can be
+                         used together with ordinary invariants.         [string]
   --temporal             the temporal properties to check, separated by commas
                                                                          [string]
   --invariants           space separated list of invariants to check (definition
@@ -365,21 +369,24 @@ Options:
                          AND and checked together, with detailed reporting of
                          which ones were violated           [array] [default: []]
   --out-itf              output the trace in the Informal Trace Format to file
-                         (suppresses all console output)                 [string]
-  --max-steps            the maximum number of steps in every trace
-                                                           [number] [default: 10]
-  --random-transitions   choose transitions at random (= use symbolic simulation)
-                                                       [boolean] [default: false]
+                         (Apalache only, suppresses all console output)  [string]
+  --max-steps            the maximum number of steps in every trace (Apalache
+                         only)                            [number] [default: 10]
+  --random-transitions   choose transitions at random, i.e., use symbolic
+                         simulation (Apalache only)   [boolean] [default: false]
   --apalache-config      path to an additional Apalache configuration file (in
                          JSON)                                           [string]
+  --tlc-config           path to a TLC configuration file (in JSON)      [string]
   --verbosity            control how much output is produced (0 to 5)
                                                             [number] [default: 2]
 ```
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
-By default, this command will automatically obtain and run Apalache. The only
-prerequisite is a [compatible installation of OpenJDK](https://quint-lang.org/docs/getting-started).
+Both backends require a [compatible installation of OpenJDK](https://quint-lang.org/docs/getting-started).
 
+### Using Apalache (default)
+
+By default, this command will automatically obtain and run [Apalache][].
 You may also manually obtain and run a distribution of Apalache, following these
 steps:
 
@@ -391,16 +398,11 @@ Apalache uses bounded model checking. This technique checks *all runs* up to
 configuration](https://apalache-mc.org/docs/apalache/config.html#apalache-configuration)
 for guidance.
 
-- If there are no critical errors (e.g., in parsing, typechecking, etc.), this
-command sends the Quint specification to the [Apalache][] model checker, which
-will try to find an invariant violation. If it finds one, it prints the trace on
-the standard output. When the parameter `--out` is supplied, the trace is
-written as a JSON representation of Quint IR in the output file. When the
-parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
-Format][]. This output can be conveniently displayed with the [ITF Trace
-Viewer][], or just with [jq][].
+When using Apalache and the parameter `--out-itf` is supplied, the trace is
+written in the [Informal Trace Format][]. This output can be conveniently
+displayed with the [ITF Trace Viewer][], or just with [jq][].
 
-- When a `--inductive-invariant` is supplied, Quint will call Apalache multiple times:
+When `--inductive-invariant` is supplied, Quint will call Apalache multiple times:
   - 2 times if there is no ordinary invariant (`--invariant`)
     - First, checking that the inductive invariant holds in all initial states
       - `init=init`, `invariant=inductive-invariant`, `max-steps=0`
@@ -411,7 +413,35 @@ Viewer][], or just with [jq][].
     inductive invariant implies the ordinary invariant:
       - `init=inductive-invariant`, `invariant=ordinary-invariant`, `max-steps=0`
 
-- If the specification cannot be run (e.g., due to a parsing error), the file
+### Using TLC
+
+[TLC][] is an explicit-state model checker that can be used as an alternative to Apalache:
+
+```sh
+quint verify --backend tlc myspec.qnt
+```
+
+TLC performs exhaustive state enumeration and works well for finite-state specifications.
+Note that TLC cannot handle specifications with infinite domains.
+
+TLC runtime can be configured via `--tlc-config` with a JSON file:
+
+```json
+{
+  "maxHeap": "-Xmx8G",
+  "stackSize": "-Xss515m",
+  "workers": "auto"
+}
+```
+
+### Output
+
+If there are no critical errors (e.g., in parsing, typechecking, etc.), this
+command sends the Quint specification to the selected model checker, which
+will try to find an invariant violation. If it finds one, it prints the trace
+on the standard output.
+
+If the specification cannot be run (e.g., due to a parsing error), the file
 contains an error message in JSON:
 
    ```json
@@ -492,3 +522,4 @@ exact format is to be specified in the future.
 [jq]: https://stedolan.github.io/jq/
 [z3]: https://github.com/z3prover/z3
 [Apalache]: https://apalache-mc.org/
+[TLC]: https://lamport.azurewebsites.net/tla/tools.html

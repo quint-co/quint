@@ -523,4 +523,72 @@ Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
 `
     assert.equal(msgs[0], expectedMessage)
   })
+
+  it('infers types for tuple destructuring', () => {
+    const defs = [
+      'val (x, y, z) = (1, 2, 3)',
+      'val sum = x + y + z',
+      'val (a, _, b) = (10, 20, 30)',
+      'val diff = a - b',
+      'pure def foo(pair) = { pure val (p, q) = pair p + q }',
+      'val result = foo((5, 7))',
+    ]
+
+    const [errors, types] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    // Check that destructured variables have correct types
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // All destructured values and computations should be int
+    const intTypes = stringTypes.filter(([_, type]) => type === 'int')
+    assert.isAtLeast(intTypes.length, 10, 'Should have multiple int-typed values from destructuring')
+  })
+
+  it('infers types for record destructuring', () => {
+    const defs = [
+      'val { x, y } = { x: 1, y: 2, z: 3 }',
+      'val sum = x + y',
+      'val person = { name: "Alice", age: 30 }',
+      'val { name, age } = person',
+      'pure def greet(p) = { pure val { name, age } = p name }',
+      'val greeting = greet({ name: "Bob", age: 25 })',
+    ]
+
+    const [errors, types] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    // Check that we have both int and str types from destructuring
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    const intTypes = stringTypes.filter(([_, type]) => type === 'int')
+    const strTypes = stringTypes.filter(([_, type]) => type === 'str')
+    assert.isAtLeast(intTypes.length, 3, 'Should have int values from destructuring')
+    assert.isAtLeast(strTypes.length, 1, 'Should have str values from destructuring')
+  })
+
+  it('infers types for nested destructuring', () => {
+    const defs = [
+      'val nested = ((1, 2), (3, 4))',
+      'val (first, second) = nested',
+      'val (a, b) = first',
+      'val (c, d) = second',
+      'val total = a + b + c + d',
+    ]
+
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+  })
+
+  it('reports errors for mismatched tuple destructuring', () => {
+    const defs = ['val (x, y) = 42'] // Can't destructure non-tuple
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty(errors, 'Should find type errors')
+  })
+
+  it('reports errors for mismatched record destructuring', () => {
+    const defs = ['val { x, y } = 42'] // Can't destructure non-record
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isNotEmpty(errors, 'Should find type errors')
+  })
 })

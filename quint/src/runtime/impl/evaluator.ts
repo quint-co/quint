@@ -341,6 +341,7 @@ export class Evaluator {
       this.reset()
       // run the test
       const result = testEval(this.ctx)
+      this.ctx.shift()
 
       // extract the trace
       const trace = this.trace.get()

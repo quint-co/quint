@@ -24,6 +24,7 @@ import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
 import { ApalacheResult } from './apalache'
+import { TlcError } from './tlc'
 import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
@@ -105,6 +106,37 @@ export function printViolatedInvariants(state: QuintEx, invariants: string[], pr
 }
 
 /**
+ * Process verification result from TLC.
+ */
+export function processTlcResult(
+  res: Either<TlcError, void>,
+  startMs: number,
+  verbosityLevel: number,
+  stage: TracingStage
+): CLIProcedure<TracingStage> {
+  const elapsedMs = Date.now() - startMs
+
+  return res
+    .map((): TracingStage => {
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log('\n' + chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+      }
+      return { ...stage, status: 'ok', errors: [] }
+    })
+    .mapLeft(err => {
+      const status = err.isViolation ? 'violation' : 'failure'
+      const summary = err.isViolation ? 'Found an issue' : 'TLC encountered an error'
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log('\n' + chalk.red(`[${status}]`) + ' ' + summary + ' ' + chalk.gray(`(${elapsedMs}ms).`))
+      }
+      return {
+        msg: err.explanation,
+        stage: { ...stage, status, errors: err.errors },
+      }
+    })
+}
+
+/**
  * Process the result of a verification call.
  *
  * @param res The result of the verification.
@@ -115,7 +147,7 @@ export function printViolatedInvariants(state: QuintEx, invariants: string[], pr
  * @param prev The previous stage context.
  * @returns The processed result.
  */
-export function processVerifyResult(
+export function processApalacheResult(
   res: ApalacheResult<void>,
   startMs: number,
   verbosityLevel: number,
@@ -322,18 +354,21 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
 
       if (verbosity.hasActionTracking(verbosityLevel)) {
         out('')
-        testResult.frames.forEach((f, index) => {
-          out(`[${chalk.bold('Frame ' + index)}]`)
-          const console = {
-            width: columns,
-            out: (s: string) => process.stdout.write(s),
-          }
-          printExecutionFrameRec(console, f, [])
-          out('')
-        })
+        // Skip frame display for Rust backend
+        if (!testResult.traces) {
+          testResult.frames.forEach((f, index) => {
+            out(`[${chalk.bold('Frame ' + index)}]`)
+            const console = {
+              width: columns,
+              out: (s: string) => process.stdout.write(s),
+            }
+            printExecutionFrameRec(console, f, [])
+            out('')
+          })
 
-        if (testResult.frames.length == 0) {
-          out('    [No execution]')
+          if (testResult.frames.length == 0) {
+            out('    [No execution]')
+          }
         }
       }
       // output the seed

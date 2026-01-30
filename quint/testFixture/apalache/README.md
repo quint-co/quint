@@ -1,3 +1,3 @@
-Specs used only to test the Apalache integration.
+Specs used to test the model checker integrations (Apalache and TLC).
 
-See [../../apalache-tests.md](../../apalache-tests.md) for the test cases.
+See [../../verification-tests.md](../../verification-tests.md) for the test cases.

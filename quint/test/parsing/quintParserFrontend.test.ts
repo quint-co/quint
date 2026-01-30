@@ -125,6 +125,18 @@ describe('parsing', () => {
   it('parses match expressions', () => {
     parseAndCompare('_1044matchExpression')
   })
+
+  it('parses tuple destructuring', () => {
+    const gen = newIdGenerator()
+    const result = parsePhase1fromText(gen, readQuint('_1080tupleDestructuring'), defaultSourceName)
+    assert.isEmpty(result.errors, 'expected no parse errors')
+  })
+
+  it('parses record destructuring', () => {
+    const gen = newIdGenerator()
+    const result = parsePhase1fromText(gen, readQuint('_1090recordDestructuring'), defaultSourceName)
+    assert.isEmpty(result.errors, 'expected no parse errors')
+  })
 })
 
 // instead of testing how errors are produced in json,
@@ -136,7 +148,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -147,7 +159,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -221,7 +233,7 @@ describe('syntax errors', () => {
     assert.isAtLeast(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })

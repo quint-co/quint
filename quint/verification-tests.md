@@ -533,3 +533,32 @@ exit $exit_code
 You may increase --max-steps.
 Use --verbosity to produce more (or less) output.
 ```
+
+## TLC Backend
+
+### TLC verifies a simple counter spec successfully
+
+Test that TLC can verify a basic spec with state variables and invariants.
+
+<!-- !test check TLC success -->
+```
+quint verify --backend tlc --invariant inv ./testFixture/apalache/tlcCounter.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC reports error message on violation
+
+Test that TLC properly detects and reports invariant violations.
+
+<!-- !test check TLC violation -->
+```
+quint verify --backend tlc --invariant inv --max-steps=10 ./testFixture/apalache/violateOnFive.qnt 2>&1 | grep '\[violation\]'
+```
+
+### TLC reports configuration errors properly
+
+Test that TLC reports errors when given invalid configuration.
+
+<!-- !test check TLC config error -->
+```
+quint verify --backend tlc --init=nonExistentInit ./testFixture/apalache/tlcConfigError.qnt 2>&1 | grep 'error:'
+```

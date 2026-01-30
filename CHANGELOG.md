@@ -9,7 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
+
+### Changed
+
+- Moved LSP-server compilation and analysis to its own worker thread (1876)
+- Improved memory allocation profile of LSP-server log messages (#1877)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
+- Fixed LSP-server crashing upon console.{log, error} messages (#1875)
+
+### Security
+
+## v0.30.0 -- 2026-01-19
+
+### Added
+
 - Added support for passing `--seed` to the Rust backend for reproducible simulations (#1827)
+- Added simple destructuring of records and tuples, i.e. `val (foo, bar) = my_value` (#1837)
 
 ### Changed
 
@@ -23,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ITF trace output when using the Rust backend with `--out-itf` (#1823)
 - Fixed a crash in the Rust backend when `--nthreads` exceeds `--max-samples` (#1825)
 - Fixed a problem where the REPL error reporting showed an incorrect location (#1835)
+- Fixed a problem where `expect` would add a stuttering state to the trace (#1846)
+- Fixed a problem where tests without and `expect` at the end would be missing
+  the last state in the ITF trace (#1846)
+- Fixed an edge case with nested operators that had operators as arguments could cause a runtime issue (#1843)
+- Fixed a problem in the rust backend where `then` would not record a state to the trace (#1847)
 
 ### Security
 
