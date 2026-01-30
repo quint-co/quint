@@ -125,10 +125,10 @@ export class QuintRustWrapper {
         if (progress.type === 'progress') {
           const elapsedSeconds = (Date.now() - startTime) / 1000
           const speed = Math.round(progress.current / elapsedSeconds)
-          if (progressBar.isActive) progressBar.update(progress.current, { speed })
+          progressBar.update(progress.current, { speed })
         }
       } catch (_) {
-        if (progressBar.isActive) progressBar.stop()
+        progressBar.stop()
       }
     })
 
@@ -137,7 +137,7 @@ export class QuintRustWrapper {
       process.on('close', resolve)
     })
 
-    if (progressBar.isActive) progressBar.stop()
+    progressBar.stop()
 
     if (exitCode !== 0) {
       throw new Error(`Rust evaluator exited with code ${exitCode}`)
