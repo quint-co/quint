@@ -21,6 +21,7 @@ use crate::ir::QuintName;
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
+use num_bigint::BigUint;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -401,10 +402,16 @@ impl Value {
 
             ValueInner::PowerSet(value) => {
                 let base = value.as_set();
-                let size = 1 << base.len(); // 2^n subsets for a set of size n
+                if base.len() >= 64 {
+                    panic!(
+                        "Cannot enumerate powerset of set with {} elements (max 63)",
+                        base.len()
+                    );
+                }
+                let size: usize = 1 << base.len(); // 2^n subsets for a set of size n
                 Cow::Owned(
                     (0..size)
-                        .map(|i| powerset_at_index(base.as_ref(), i))
+                        .map(|i| powerset_at_index(base.as_ref(), &BigUint::from(i)))
                         .collect(),
                 )
             }
@@ -523,11 +530,14 @@ impl Value {
 ///
 /// In practice, the index comes from a stateful random number generator, and we
 /// want the same seed to produce the same results.
-pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
+///
+/// Uses BigUint to support sets of arbitrary size (not limited to 63 elements
+/// due to bit shift overflow with usize).
+pub fn powerset_at_index(base: &ImmutableSet<Value>, i: &BigUint) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
-        // membership condition, numerical over the indexes i and j
-        if (i & (1 << j)) != 0 {
+        // Check if the j-th bit is set in the index
+        if i.bit(j as u64) {
             elems.insert(elem.clone());
         }
     }

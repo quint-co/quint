@@ -1,6 +1,7 @@
 //! Picking values out of sets without enumerating the elements.
 
 use crate::value::{powerset_at_index, ImmutableMap, Value, ValueInner};
+use num_bigint::BigUint;
 use std::convert::TryInto;
 
 impl Value {
@@ -32,7 +33,7 @@ impl Value {
                 let index = indexes
                     .next()
                     .expect("Internal error: too few positions. Report a bug");
-                powerset_at_index(&base_set.as_set(), index)
+                powerset_at_index(&base_set.as_set(), &BigUint::from(index))
             }
             ValueInner::MapSet(domain, range) => {
                 let domain_size = domain.cardinality();

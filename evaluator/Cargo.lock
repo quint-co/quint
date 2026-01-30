@@ -835,6 +835,7 @@ dependencies = [
  "insta",
  "itertools 0.14.0",
  "itf",
+ "num-bigint",
  "rand",
  "serde",
  "serde_json",
