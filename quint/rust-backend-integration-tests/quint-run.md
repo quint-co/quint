@@ -501,6 +501,7 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
+[error] Runtime error (duration).
 HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 5:   action init = { x' = N }
                           ^
@@ -521,6 +522,39 @@ quint run --backend=rust --main=invalid ./testFixture/_1050diffName.qnt
 ```
 error: [QNT405] Main module invalid not found
 error: Argument error
+```
+
+### Runtime error prints trace and seed
+
+This test verifies that when a runtime error occurs, the trace up to the error point
+and the seed are printed, allowing the user to reproduce and debug the error.
+
+<!-- !test in runtime error prints trace -->
+```
+output=$(quint run --backend=rust testFixture/simulator/runtimeError.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' \
+  -e 's#^.*runtimeError.qnt#HOME/runtimeError.qnt#g' \
+  -e 's/--seed=0x[0-9a-f]*/--seed=SEED/g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out runtime error prints trace -->
+```
+An example execution:
+
+[State 0] { x: 1 }
+
+[State 1] { x: 2 }
+
+[error] Runtime error (duration).
+HOME/runtimeError.qnt:9:22 - error: [QNT510] Out of bounds, nth(2)
+9:   action step = x' = vec[x]
+                        ^^^^^^
+
+Use --seed=SEED --backend=rust to reproduce.
+error: Runtime error
 ```
 
 ### Prints witnesses counts

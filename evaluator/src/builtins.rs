@@ -267,7 +267,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
     // To be used at `item` and `nth` which share the same behavior
     fn at_index(list: &ImmutableVec<Value>, index: i64) -> Result<Value, QuintError> {
         if index < 0 || index >= list.len().try_into().unwrap() {
-            return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
+            return Err(QuintError::new(
+                "QNT510",
+                format!("Out of bounds, nth({index})").as_str(),
+            ));
         }
 
         Ok(list[index as usize].clone())

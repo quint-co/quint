@@ -456,7 +456,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const states = outcome.bestTraces[0]?.states
   const frames = recorder.bestTraces[0]?.frame?.subframes
 
-  if (states) {
+  if (states && states.length > 0) {
     maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
   }
 
