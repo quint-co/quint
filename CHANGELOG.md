@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Moved LSP-server compilation and analysis to its own worker thread (1876)
 - Improved memory allocation profile of LSP-server log messages (#1877)
+- Stream JSON in and out or rust evaluator to reduce memory allocations (#1882)
 
 ### Deprecated
 ### Removed
