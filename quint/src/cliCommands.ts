@@ -456,17 +456,28 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const states = outcome.bestTraces[0]?.states
   const frames = recorder.bestTraces[0]?.frame?.subframes
 
+  if (states && states.length > 0) {
+    maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
+  }
+
   switch (outcome.status) {
     case 'error':
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log(
+          chalk.red(`[error]`) +
+            ' Runtime error ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+        )
+      }
       return cliErr('Runtime error', {
         ...simulator,
         status: outcome.status,
-        seed: prev.args.seed,
+        seed: simulator.seed,
+        trace: states,
         errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
     case 'ok':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
@@ -488,7 +499,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'violation':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +

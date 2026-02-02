@@ -14,7 +14,7 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
@@ -386,7 +386,10 @@ fn to_test_output(result: TestResult) -> TestOutput {
 /// The status is determined based on whether the simulation result indicates success, violation, or error.
 /// Errors are collected into a vector if any are present.
 /// Best traces are converted to the intermediate trace format (ITF).
-fn to_sim_output(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> SimOutput {
+fn to_sim_output(
+    source: Arc<String>,
+    result: Result<SimulationResult, SimulationError>,
+) -> SimOutput {
     let status = match &result {
         Ok(r) if r.result => SimulationStatus::Success,
         Ok(_) => SimulationStatus::Violation,
@@ -396,18 +399,28 @@ fn to_sim_output(source: Arc<String>, result: Result<SimulationResult, QuintErro
     let errors = result
         .as_ref()
         .err()
-        .map_or_else(Vec::new, |e| vec![e.clone()]);
+        .map_or_else(Vec::new, |e| vec![e.error.clone()]);
 
-    let best_traces = result.as_ref().ok().map_or_else(Vec::new, |r| {
-        r.best_traces
-            .iter()
-            .map(|t| SimulationTrace {
-                seed: t.seed as usize,
-                states: t.clone().to_itf((*source).clone()),
-                result: !t.violation,
-            })
-            .collect()
-    });
+    let best_traces = result.as_ref().map_or_else(
+        |e| {
+            // Include the error trace in best_traces so it gets reported to the user
+            vec![SimulationTrace {
+                seed: e.seed as usize,
+                states: e.trace.clone().to_itf((*source).clone()),
+                result: false,
+            }]
+        },
+        |r| {
+            r.best_traces
+                .iter()
+                .map(|t| SimulationTrace {
+                    seed: t.seed as usize,
+                    states: t.clone().to_itf((*source).clone()),
+                    result: !t.violation,
+                })
+                .collect()
+        },
+    );
 
     SimOutput {
         status,
