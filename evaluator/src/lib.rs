@@ -14,6 +14,7 @@ pub mod normalizer;
 pub mod picker;
 pub mod progress;
 pub mod rand;
+pub mod repl;
 pub mod simulator;
 pub mod storage;
 pub mod tester;
