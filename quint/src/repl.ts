@@ -499,39 +499,19 @@ export function quintRepl(
   let processingReplInput = false
   // Flag to track if we should exit after processing replInput
   let shouldExitAfterReplInput = false
-  // Semaphore to serialize line processing (prevent concurrent execution)
-  let isProcessingLine = false
-  const pendingLines: string[] = []
+  // Promise chain to serialize line processing (Rust evaluator can only handle one request at a time)
+  let lineProcessingChain = Promise.resolve()
 
-  // Process lines from the pending queue sequentially
-  async function processNextLine() {
-    if (isProcessingLine || pendingLines.length === 0) {
-      return
+  // Helper to shutdown the evaluator and exit cleanly
+  async function shutdownAndExit() {
+    // Wait for any pending line processing to complete
+    await lineProcessingChain
+    // Shutdown the evaluator if it's a Rust wrapper
+    if (state.evaluator instanceof ReplServerWrapper) {
+      await state.evaluator.shutdown()
     }
-    isProcessingLine = true
-    const line = pendingLines.shift()!
-    await consumeLine(line)
-
-    // Always show prompt after processing a line
-    rl.prompt()
-
-    isProcessingLine = false
-
-    // Check if we should exit after processing all lines
-    if (pendingLines.length === 0 && shouldExitAfterReplInput) {
-      // Shutdown the evaluator if it's a Rust wrapper
-      if (state.evaluator instanceof ReplServerWrapper) {
-        await state.evaluator.shutdown()
-      }
-      out('\n')
-      exit()
-      return
-    }
-    // Process next line if any
-    if (pendingLines.length > 0) {
-      // Use setImmediate to avoid deep recursion
-      setImmediate(() => processNextLine())
-    }
+    out('\n')
+    exit()
   }
 
   // the read-eval-print loop
@@ -541,29 +521,26 @@ export function quintRepl(
       lineQueue.push(line)
       return
     }
-    // Queue the line and start processing if not already processing
-    pendingLines.push(line)
-    processNextLine()
+    // Chain this line's processing to the previous one to serialize execution
+    lineProcessingChain = lineProcessingChain
+      .then(async () => {
+        await consumeLine(line)
+        rl.prompt()
+      })
+      .catch(err => {
+        // Handle errors in line processing
+        out(chalk.red(`Error processing line: ${err}\n`))
+      })
   }).on('close', async () => {
     // If we're processing replInput commands, or initialization hasn't completed,
     // or we have queued lines, defer the exit. This prevents a race condition
     // where piped stdin triggers 'close' before the async initialization completes.
-    if (processingReplInput || !initializationComplete || lineQueue.length > 0 || pendingLines.length > 0) {
+    if (processingReplInput || !initializationComplete || lineQueue.length > 0) {
       shouldExitAfterReplInput = true
       return
     }
 
-    // Wait for any pending line processing to complete
-    while (isProcessingLine || pendingLines.length > 0) {
-      await new Promise(resolve => setImmediate(resolve))
-    }
-
-    // Shutdown the evaluator if it's a Rust wrapper
-    if (state.evaluator instanceof ReplServerWrapper) {
-      await state.evaluator.shutdown()
-    }
-    out('\n')
-    exit()
+    await shutdownAndExit()
   })
 
   // Everything is registered. Optionally, load a module.
@@ -595,15 +572,7 @@ export function quintRepl(
       // If stdin closed while we were processing (e.g., piped stdin),
       // and we should exit, do it now
       if (shouldExitAfterReplInput) {
-        // Wait for any pending line processing to complete
-        while (isProcessingLine || pendingLines.length > 0) {
-          await new Promise(resolve => setImmediate(resolve))
-        }
-        if (state.evaluator instanceof ReplServerWrapper) {
-          await state.evaluator.shutdown()
-        }
-        out('\n')
-        exit()
+        await shutdownAndExit()
         return
       }
     }
@@ -623,15 +592,7 @@ export function quintRepl(
     // If stdin closed while we were initializing (e.g., piped stdin),
     // and we should exit, do it now
     if (shouldExitAfterReplInput) {
-      // Wait for any pending line processing to complete
-      while (isProcessingLine || pendingLines.length > 0) {
-        await new Promise(resolve => setImmediate(resolve))
-      }
-      if (state.evaluator instanceof ReplServerWrapper) {
-        await state.evaluator.shutdown()
-      }
-      out('\n')
-      exit()
+      await shutdownAndExit()
       return
     }
 
