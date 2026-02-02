@@ -88,25 +88,37 @@ export class Evaluator {
    * Shift the context to the next state. That is, updated variables in the next state are moved to the current state,
    * and the trace is extended.
    *
-   * @returns a boolean indicating if there were any next variables that got
-   * shifted, and names of the variables that don't have values in the new
-   * state (empty list if no shifting happened).
+   * @returns a tuple [shifted, missing_vars, old_state, new_state] where:
+   *  - shifted: boolean indicating if there were any next variables that got shifted
+   *  - missing_vars: names of the variables that don't have values in the new state (empty list if no shifting happened)
+   *  - old_state: the state before shifting (as RuntimeValue)
+   *  - new_state: the state after shifting (as RuntimeValue)
    */
-  shiftAndCheck(): [boolean, string[]] {
+  replShift(): [boolean, string[], RuntimeValue, RuntimeValue] {
     const missing = this.ctx.varStorage.nextVars.filter(reg => reg.value.isLeft())
 
-    if (missing.size === this.ctx.varStorage.vars.size) {
-      // Nothing was changed, don't shift
-      return [false, []]
+    if (missing.size === this.ctx.varStorage.nextVars.size) {
+      // All next vars are missing, nothing was changed, don't shift
+      const currentState = this.ctx.varStorage.asRecord()
+      return [false, [], currentState, currentState]
     }
 
+    // Save old state before shifting
+    const oldState = this.ctx.varStorage.asRecord()
+
     this.shift()
+
+    // Get new state after shifting
+    const newState = this.ctx.varStorage.asRecord()
+
     return [
       true,
       missing
         .valueSeq()
         .map(reg => reg.name)
         .toArray(),
+      oldState,
+      newState,
     ]
   }
 

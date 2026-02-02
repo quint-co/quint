@@ -34,13 +34,18 @@ const withIO = async (inputText: string): Promise<string> => {
   const output = new ToStringWritable()
   // an input mock designed for testing
   const input = new PassThrough()
-  // whatever is written on the input goes to the output
-  input.pipe(output)
+  // Pipe input to output to simulate terminal echo behavior
+  // (readline doesn't echo input from non-TTY streams)
+  // Use { end: false } to prevent ending output when input ends
+  input.pipe(output, { end: false })
 
   const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
 
-  // Emit the input line-by-line, as nodejs is printing prompts.
-  // TODO: is it a potential source of race conditions in unit tests?
+  // Send input line-by-line to the REPL with small delays.
+  // We emit 'data' events for each line, with a delay between each one
+  // to give the REPL's async processing time to handle each line before
+  // the next one arrives. This prevents race conditions where lines are
+  // queued faster than the REPL can process them.
   const lines = inputText.split('\n')
   let linesLeft = lines.length
   for (const line of lines) {
@@ -48,14 +53,19 @@ const withIO = async (inputText: string): Promise<string> => {
     linesLeft--
     if (linesLeft > 0) {
       input.emit('data', '\n')
+      // Wait a tick to allow the REPL to process this line
+      await new Promise(resolve => setImmediate(resolve))
     }
   }
   input.end()
-  input.unpipe(output)
-  input.destroy()
 
   // readline is asynchronous, wait till it terminates
   await once(rl, 'close')
+
+  // Clean up after the REPL has closed
+  input.unpipe(output)
+  input.destroy()
+
   chalk.level = savedChalkLevel
   return output.buffer
 }
