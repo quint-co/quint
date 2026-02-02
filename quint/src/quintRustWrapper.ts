@@ -30,6 +30,7 @@ import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
 import { List } from 'immutable'
 import { nameWithNamespaces } from './runtime/impl/builder'
+import { Either, left, right } from '@sweet-monads/either'
 
 const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
@@ -61,7 +62,7 @@ export class QuintRustWrapper {
     input: any,
     progressFormat: string,
     iterations: number
-  ): Promise<string> {
+  ): Promise<Either<QuintError, string>> {
     const exe = await getRustEvaluatorPath()
     const args = [command]
     const inputStr = JSONbig.stringify(input, replacer)
@@ -133,17 +134,35 @@ export class QuintRustWrapper {
     })
 
     // Wait for process completion
-    const exitCode = await new Promise<number>(resolve => {
-      process.on('close', resolve)
+    const [exitCode, signal] = await new Promise<[number | null, string | null]>(resolve => {
+      process.on('close', (code, signal) => resolve([code, signal]))
     })
 
     progressBar.stop()
 
-    if (exitCode !== 0) {
-      throw new Error(`Rust evaluator exited with code ${exitCode}`)
+    if (signal === 'SIGKILL') {
+      return left({
+        code: 'QNT517',
+        message:
+          `Rust evaluator was killed by SIGKILL. This is often caused by:\n` +
+          `  - Out of memory (OOM killer)\n` +
+          `  - Container/cgroup memory limits\n` +
+          `  - Manual kill -9\n` +
+          `Check 'dmesg | grep -i kill' for OOM messages.`,
+      })
+    } else if (signal) {
+      return left({
+        code: 'QNT517',
+        message: `Rust evaluator was killed by signal: ${signal}`,
+      })
+    } else if (exitCode !== 0) {
+      return left({
+        code: 'QNT516',
+        message: `Rust evaluator exited with code ${exitCode}`,
+      })
     }
 
-    return output
+    return right(output)
   }
 
   /**
@@ -184,12 +203,27 @@ export class QuintRustWrapper {
       seed: seed,
     }
 
-    const output = await this.runRustEvaluator(
+    const result = await this.runRustEvaluator(
       'simulate-from-stdin',
       input,
       'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
       nruns
     )
+
+    // Handle errors from rust processes failing, where we don't manage to get output from rust
+    if (result.isLeft()) {
+      const error = result.value
+      return {
+        status: 'error',
+        errors: [error],
+        bestTraces: [],
+        witnessingTraces: [],
+        samples: 0,
+        traceStatistics: { averageTraceLength: 0, minTraceLength: 0, maxTraceLength: 0 },
+      }
+    }
+
+    const output = result.value
 
     try {
       const parsed = JSONbig.parse(output)
@@ -260,12 +294,27 @@ export class QuintRustWrapper {
       max_samples: maxSamples,
     }
 
-    const output = await this.runRustEvaluator(
+    const result = await this.runRustEvaluator(
       'test-from-stdin',
       input,
       `     ${testName} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s`,
       maxSamples
     )
+
+    // Handle process errors
+    if (result.isLeft()) {
+      const error = result.value
+      return {
+        name: testName,
+        status: 'failed',
+        seed: seed ?? 0n,
+        errors: [error],
+        frames: [],
+        nsamples: 0,
+      }
+    }
+
+    const output = result.value
 
     try {
       const parsed = JSONbig.parse(output)
