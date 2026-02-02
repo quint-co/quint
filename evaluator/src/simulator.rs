@@ -126,11 +126,7 @@ impl ParsedQuint {
             }));
 
             match result {
-                Ok(Ok(true)) => {
-                    // Successful run, continue
-                }
-                Ok(Ok(false)) => {
-                    // Init failed or invariant violated
+                Ok(Ok(success)) => {
                     if env.trace.is_empty() {
                         // Init failed
                         trace_lengths.push(0);
@@ -140,18 +136,22 @@ impl ParsedQuint {
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
                         });
-                    } else {
-                        // Invariant violated
-                        let trace = std::mem::take(&mut env.trace);
-                        collect_trace(
-                            &mut best_traces,
-                            n_traces,
-                            Trace {
-                                states: trace,
-                                violation: true,
-                                seed,
-                            },
-                        );
+                    }
+
+                    trace_lengths.push(env.trace.len());
+
+                    collect_trace(
+                        &mut best_traces,
+                        n_traces,
+                        Trace {
+                            states: std::mem::take(&mut env.trace),
+                            violation: !success,
+                            seed,
+                        },
+                    );
+
+                    if !success {
+                        // Found a violation, stop simulation and return results
                         return Ok(SimulationResult {
                             result: false,
                             best_traces,
@@ -197,18 +197,8 @@ impl ParsedQuint {
                     });
                 }
             }
-            trace_lengths.push(env.trace.len());
-            let trace = std::mem::take(&mut env.trace);
-            collect_trace(
-                &mut best_traces,
-                n_traces,
-                Trace {
-                    states: trace,
-                    violation: false,
-                    seed,
-                },
-            );
         }
+
         Ok(SimulationResult {
             result: true,
             best_traces,
