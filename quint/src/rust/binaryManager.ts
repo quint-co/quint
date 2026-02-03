@@ -18,7 +18,7 @@ import os from 'os'
 import chalk from 'chalk'
 import { rustEvaluatorDir } from '../config'
 
-export const RUST_EVALUATOR_VERSION = 'v0.4.0'
+export const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
 interface GitHubRelease {
   tag_name: string
@@ -36,7 +36,7 @@ interface GitHubAsset {
  * @returns {string} The path to the Quint evaluator executable.
  * @throws Will throw an error if the evaluator is not found or cannot be downloaded.
  */
-export async function getRustEvaluatorPath(version: string = RUST_EVALUATOR_VERSION): Promise<string> {
+export async function getRustEvaluatorPath(version: string = QUINT_EVALUATOR_VERSION): Promise<string> {
   // Determine platform and architecture
   const platform = os.platform()
   const arch = os.arch()
