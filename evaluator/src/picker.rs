@@ -1,7 +1,8 @@
 //! Picking values out of sets without enumerating the elements.
 
 use crate::ir::QuintError;
-use crate::value::{powerset_at_index, ImmutableMap, Value, ValueInner};
+use crate::value::{powerset_at_index, powerset_at_index_large, ImmutableMap, Value, ValueInner};
+use num_bigint::BigUint;
 use std::convert::TryInto;
 
 impl Value {
@@ -32,11 +33,20 @@ impl Value {
                 Value::tuple(elements?.into_iter().collect())
             }
             ValueInner::PowerSet(base_set) => {
-                let index = indexes
-                    .next()
-                    .expect("Internal error: too few positions. Report a bug");
-                let base = base_set.as_set()?;
-                powerset_at_index(base.as_ref(), index)
+                if self.is_large_powerset() {
+                    // Large powerset: reassemble u32 digits into BigUint
+                    let digits: Vec<u32> = indexes.map(|i| i as u32).collect();
+                    let big_index = BigUint::new(digits);
+                    let base = base_set.as_set()?;
+                    powerset_at_index_large(base.as_ref(), &big_index)
+                } else {
+                    // Small powerset: single index
+                    let index = indexes
+                        .next()
+                        .expect("Internal error: too few positions. Report a bug");
+                    let base = base_set.as_set()?;
+                    powerset_at_index(base.as_ref(), index)
+                }
             }
             ValueInner::MapSet(domain, range) => {
                 let domain_size = domain.cardinality()?;
@@ -83,8 +93,21 @@ impl Value {
                 .iter()
                 .map(|set| set.cardinality())
                 .collect::<Result<Vec<_>, _>>()?,
-            ValueInner::PowerSet(_) => {
-                vec![self.cardinality()?]
+            ValueInner::PowerSet(base_set) => {
+                if self.is_large_powerset() {
+                    // Large powerset: return vectorized representation as u32 digits
+                    // The caller will reassemble these into BigUint for random generation
+                    let n = base_set.cardinality()?;
+                    let cardinality = BigUint::from(1u64) << n;
+                    // Return the u32 digits as individual usize bounds
+                    cardinality
+                        .to_u32_digits()
+                        .iter()
+                        .map(|&d| d as usize)
+                        .collect()
+                } else {
+                    vec![self.cardinality()?]
+                }
             }
             ValueInner::MapSet(domain, range) => {
                 // Cardinality of range repeated domain times
