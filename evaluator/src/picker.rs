@@ -1,8 +1,7 @@
 //! Picking values out of sets without enumerating the elements.
 
 use crate::ir::QuintError;
-use crate::value::{powerset_at_index, powerset_at_index_large, ImmutableMap, Value, ValueInner};
-use num_bigint::BigUint;
+use crate::value::{powerset_at_index, ImmutableMap, Value, ValueInner};
 use std::convert::TryInto;
 
 impl Value {
@@ -33,20 +32,11 @@ impl Value {
                 Value::tuple(elements?.into_iter().collect())
             }
             ValueInner::PowerSet(base_set) => {
-                if self.is_large_powerset() {
-                    // Large powerset: reassemble u32 digits into BigUint
-                    let digits: Vec<u32> = indexes.map(|i| i as u32).collect();
-                    let big_index = BigUint::new(digits);
-                    let base = base_set.as_set()?;
-                    powerset_at_index_large(base.as_ref(), &big_index)
-                } else {
-                    // Small powerset: single index
-                    let index = indexes
-                        .next()
-                        .expect("Internal error: too few positions. Report a bug");
-                    let base = base_set.as_set()?;
-                    powerset_at_index(base.as_ref(), index)
-                }
+                let index = indexes
+                    .next()
+                    .expect("Internal error: too few positions. Report a bug");
+                let base = base_set.as_set()?;
+                powerset_at_index(base.as_ref(), index)
             }
             ValueInner::MapSet(domain, range) => {
                 let domain_size = domain.cardinality()?;
@@ -85,9 +75,6 @@ impl Value {
     // For example, a cross product will require one random number per set, and return a tuple like
     // (set1.pick(r1), set2.pick(r2), ..., setn.pick(rn)). The `bounds` function will return the list of
     // ranges (bounds) from which each of those numbers should be picked from.
-    //
-    // For large powersets, bounds returns a vectorized representation of the cardinality.
-    // The caller must detect this case and reassemble into BigUint for random generation.
     pub fn bounds(&self) -> Result<Vec<usize>, QuintError> {
         Ok(match self.0.as_ref() {
             ValueInner::Set(set) => vec![set.len()],
@@ -96,20 +83,8 @@ impl Value {
                 .iter()
                 .map(|set| set.cardinality())
                 .collect::<Result<Vec<_>, _>>()?,
-            ValueInner::PowerSet(base_set) => {
-                if self.is_large_powerset() {
-                    // Large powerset: return u32 digits of 2^n
-                    let n = base_set.cardinality()?;
-                    let cardinality = BigUint::from(1u64) << n;
-                    cardinality
-                        .to_u32_digits()
-                        .iter()
-                        .map(|&d| d as usize)
-                        .collect()
-                } else {
-                    // Small powerset: return 2^n as single bound
-                    vec![self.cardinality()?]
-                }
+            ValueInner::PowerSet(_) => {
+                vec![self.cardinality()?]
             }
             ValueInner::MapSet(domain, range) => {
                 // Cardinality of range repeated domain times

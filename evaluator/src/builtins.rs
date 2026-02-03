@@ -157,32 +157,8 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             }
         },
         "oneOf" => |env, args| {
-            use crate::value::ValueInner;
-            use num_bigint::BigUint;
-
             // Randomly selects one element of the set.
             let set = args[0].execute(env)?;
-
-            // Special handling for large PowerSet (base >= 64 elements)
-            if set.is_large_powerset() {
-                if let ValueInner::PowerSet(base_set) = set.0.as_ref() {
-                    // Large powerset: bounds are u32 digits, reassemble to BigUint
-                    let n = base_set.cardinality()?;
-                    let cardinality = BigUint::from(1u64) << n;
-                    let random_index = env.rand.next_biguint(&cardinality);
-
-                    // Disassemble back to u32 digits for pick()
-                    let positions: Vec<usize> = random_index
-                        .to_u32_digits()
-                        .iter()
-                        .map(|&d| d as usize)
-                        .collect();
-
-                    return set.pick(&mut positions.into_iter());
-                }
-            }
-
-            // Standard path for other sets and small powersets
             let bounds = set.bounds()?;
             let mut positions = Vec::with_capacity(bounds.len());
 

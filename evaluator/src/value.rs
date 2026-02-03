@@ -21,7 +21,6 @@ use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
-use num_bigint::BigUint;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -454,15 +453,6 @@ impl Value {
         )
     }
 
-    /// Returns true if this value is a PowerSet with base >= 64 elements.
-    /// Large powersets require special handling with BigUint indexing.
-    pub fn is_large_powerset(&self) -> bool {
-        match self.0.as_ref() {
-            ValueInner::PowerSet(base_set) => base_set.cardinality().unwrap_or(usize::MAX) >= 64,
-            _ => false,
-        }
-    }
-
     /// Enumerate the value as a set. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     ///
@@ -501,16 +491,7 @@ impl Value {
 
             ValueInner::PowerSet(value) => {
                 let base = value.as_set()?;
-                if self.is_large_powerset() {
-                    return Err(QuintError::new(
-                        "QNT504",
-                        &format!(
-                            "Cannot enumerate large powerset with base size {}",
-                            base.len()
-                        ),
-                    ));
-                }
-                let size: usize = 1 << base.len(); // 2^n subsets for a set of size n
+                let size: usize = self.cardinality()?;
                 Cow::Owned(
                     (0..size)
                         .map(|i| powerset_at_index(base.as_ref(), i))
@@ -639,20 +620,6 @@ impl Value {
 ///
 /// In practice, the index comes from a stateful random number generator, and we
 /// want the same seed to produce the same results.
-///
-/// Uses BigUint to support sets of arbitrary size (not limited to 63 elements
-/// due to bit shift overflow with usize).
-pub fn powerset_at_index_large(base: &ImmutableSet<Value>, i: &BigUint) -> Value {
-    let mut elems = ImmutableSet::default();
-    for (j, elem) in base.iter().enumerate() {
-        // Check if the j-th bit is set in the index
-        if i.bit(j as u64) {
-            elems.insert(elem.clone());
-        }
-    }
-    Value::set(elems)
-}
-
 pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
