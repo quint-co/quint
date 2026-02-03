@@ -16,7 +16,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 fxhash = "0.2.1"
 indexmap = { version = "2.7", features = ["serde"] }
-rand = "0.9.0"
+rand = "0.8.5"
 squares-rnd = "3.1.0"
 itertools = "0.14.0"
 tempfile = "3.16.0"
@@ -29,7 +29,8 @@ imbl = "5.0.0"
 itf = "0.3.0"
 chrono = "0.4.40"
 hipstr = { version = "0.8.0", features = ["serde"] }
-num-bigint = "0.4"
+num-bigint = { version = "0.4", features = ["rand"] }
+num-traits = "0.2.19"
 
 [dev-dependencies]
 insta = {version = "1.22.0", features = ["yaml"]}
