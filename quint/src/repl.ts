@@ -150,10 +150,7 @@ class ReplState {
   }
 
   async clear() {
-    // Shutdown the previous evaluator if it's a Rust wrapper
-    if (this.evaluator instanceof ReplServerWrapper) {
-      await this.evaluator.shutdown()
-    }
+    await this.shutdown()
 
     const rng = newRng(this.rng.getState())
     const recorder = newTraceRecorder(this.verbosity, rng)
@@ -193,6 +190,12 @@ class ReplState {
 
   set seed(newSeed: bigint) {
     this.rng.setState(newSeed)
+  }
+
+  async shutdown() {
+    if (this.evaluator instanceof ReplServerWrapper) {
+      await this.evaluator.shutdown()
+    }
   }
 }
 
@@ -405,10 +408,7 @@ export function quintRepl(
             break
 
           case 'exit':
-            // Shutdown the evaluator if it's a Rust wrapper
-            if (state.evaluator instanceof ReplServerWrapper) {
-              await state.evaluator.shutdown()
-            }
+            await state.shutdown()
             exit()
             break
 
@@ -506,10 +506,7 @@ export function quintRepl(
   async function shutdownAndExit() {
     // Wait for any pending line processing to complete
     await lineProcessingChain
-    // Shutdown the evaluator if it's a Rust wrapper
-    if (state.evaluator instanceof ReplServerWrapper) {
-      await state.evaluator.shutdown()
-    }
+    await state.shutdown()
     out('\n')
     exit()
   }
@@ -546,7 +543,6 @@ export function quintRepl(
   // Everything is registered. Optionally, load a module.
   // Use an async IIFE to handle initialization before starting the interactive loop
   ;(async () => {
-    // Wait for Rust evaluator initialization if using rust backend
     if (state.evaluator instanceof ReplServerWrapper) {
       await state.evaluator.waitForInitialization()
     }
@@ -673,12 +669,7 @@ async function tryEvalModule(out: writer, state: ReplState, mainName: string): P
   resolver.switchToModule(mainName)
   state.nameResolver = resolver
 
-  // For Rust evaluator, we need to await the table update
-  if (state.evaluator instanceof ReplServerWrapper) {
-    await state.evaluator.updateTableAsync(table)
-  } else {
-    state.evaluator.updateTable(table)
-  }
+  await state.evaluator.updateTable(table)
 
   return true
 }
@@ -729,12 +720,7 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
       return false
     }
 
-    // For Rust evaluator, we need to await the table update
-    if (state.evaluator instanceof ReplServerWrapper) {
-      await state.evaluator.updateTableAsync(state.nameResolver.table)
-    } else {
-      state.evaluator.updateTable(state.nameResolver.table)
-    }
+    await state.evaluator.updateTable(state.nameResolver.table)
 
     const [analysisErrors, _analysisOutput] = analyzeInc(
       state.compilationState.analysisOutput,
@@ -756,10 +742,7 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
     }
 
     state.exprHist.push(newInput.trim())
-    const evalResult =
-      state.evaluator instanceof ReplServerWrapper
-        ? await state.evaluator.evaluateAsync(parseResult.expr)
-        : state.evaluator.evaluate(parseResult.expr)
+    const evalResult = await state.evaluator.evaluate(parseResult.expr)
 
     if (evalResult.isRight()) {
       const ex = evalResult.value
@@ -769,31 +752,13 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
       if (ex.kind === 'bool' && ex.value) {
         // A Boolean expression may be an action or a run.
         // Save the state, if there were any updates to variables.
-        const [shifted, missing, oldState, newState] =
-          state.evaluator instanceof ReplServerWrapper
-            ? await state.evaluator.replShiftAsync()
-            : state.evaluator.replShift()
-        if (shifted && verbosity.hasDiffs(state.verbosity)) {
-          // Convert ITF values to RuntimeValue for the wrapper, or use directly for evaluator
-          let oldRv, newRv
-          if (state.evaluator instanceof ReplServerWrapper) {
-            if (oldState && newState) {
-              // Convert ITF values to QuintEx then to RuntimeValue
-              const oldQuintEx = ofItf({ vars: [], states: [oldState] })[0]
-              const newQuintEx = ofItf({ vars: [], states: [newState] })[0]
-              oldRv = rv.fromQuintEx(oldQuintEx)
-              newRv = rv.fromQuintEx(newQuintEx)
-            }
-          } else {
-            oldRv = oldState
-            newRv = newState
-          }
+        const [shifted, missing, oldState, newState] = await state.evaluator.replShift()
 
-          if (oldRv && newRv) {
-            const diffDoc = diffRuntimeValueDoc(oldRv, newRv, { collapseThreshold: 2 })
-            console.log(format(terminalWidth(), 0, diffDoc))
-          }
+        if (shifted && verbosity.hasDiffs(state.verbosity)) {
+          const diffDoc = diffRuntimeValueDoc(oldState, newState, { collapseThreshold: 2 })
+          console.log(format(terminalWidth(), 0, diffDoc))
         }
+
         if (missing.length > 0) {
           out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
         }
@@ -859,12 +824,7 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
     state.compilationState.analysisOutput = analysisOutput
     state.moduleHist = state.moduleHist.slice(0, state.moduleHist.length - 1) + newInput + '\n}' // update the history
 
-    // Update the evaluator with the new definitions
-    if (state.evaluator instanceof ReplServerWrapper) {
-      await state.evaluator.updateTableAsync(state.nameResolver.table)
-    } else {
-      state.evaluator.updateTable(state.nameResolver.table)
-    }
+    await state.evaluator.updateTable(state.nameResolver.table)
 
     out('\n')
   }
