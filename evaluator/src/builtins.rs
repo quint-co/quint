@@ -322,25 +322,31 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "iadd" => |_env, args| {
             let a = args[0].as_int();
             let b = args[1].as_int();
-            a.checked_add(b).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} + {}", a, b))
-            }).map(Value::int)
+            a.checked_add(b)
+                .ok_or_else(|| {
+                    QuintError::new("QNT504", &format!("Integer overflow: {} + {}", a, b))
+                })
+                .map(Value::int)
         },
         // Integer subtraction
         "isub" => |_env, args| {
             let a = args[0].as_int();
             let b = args[1].as_int();
-            a.checked_sub(b).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} - {}", a, b))
-            }).map(Value::int)
+            a.checked_sub(b)
+                .ok_or_else(|| {
+                    QuintError::new("QNT504", &format!("Integer overflow: {} - {}", a, b))
+                })
+                .map(Value::int)
         },
         // Integer multiplication
         "imul" => |_env, args| {
             let a = args[0].as_int();
             let b = args[1].as_int();
-            a.checked_mul(b).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} * {}", a, b))
-            }).map(Value::int)
+            a.checked_mul(b)
+                .ok_or_else(|| {
+                    QuintError::new("QNT504", &format!("Integer overflow: {} * {}", a, b))
+                })
+                .map(Value::int)
         },
         // Integer division
         "idiv" => |_env, args| {
@@ -350,17 +356,29 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 return Err(QuintError::new("QNT503", "Division by zero"));
             }
 
-            dividend.checked_div(divisor).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} / {}", dividend, divisor))
-            }).map(Value::int)
+            dividend
+                .checked_div(divisor)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!("Integer overflow: {} / {}", dividend, divisor),
+                    )
+                })
+                .map(Value::int)
         },
         // Integer modulus
         "imod" => |_env, args| {
             let dividend = args[0].as_int();
             let divisor = args[1].as_int();
-            dividend.checked_rem(divisor).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} % {}", dividend, divisor))
-            }).map(Value::int)
+            dividend
+                .checked_rem(divisor)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!("Integer overflow: {} % {}", dividend, divisor),
+                    )
+                })
+                .map(Value::int)
         },
         // Integer exponentiation
         "ipow" => |_env, args| {
@@ -373,16 +391,18 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 return Err(QuintError::new("QNT503", "i^j is undefined for j < 0"));
             }
 
-            base.checked_pow(exp as u32).ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: {} ^ {}", base, exp))
-            }).map(Value::int)
+            base.checked_pow(exp as u32)
+                .ok_or_else(|| {
+                    QuintError::new("QNT504", &format!("Integer overflow: {} ^ {}", base, exp))
+                })
+                .map(Value::int)
         },
         // Integer unary minus
         "iuminus" => |_env, args| {
             let a = args[0].as_int();
-            a.checked_neg().ok_or_else(|| {
-                QuintError::new("QNT504", &format!("Integer overflow: -{}", a))
-            }).map(Value::int)
+            a.checked_neg()
+                .ok_or_else(|| QuintError::new("QNT504", &format!("Integer overflow: -{}", a)))
+                .map(Value::int)
         },
         // Integer less than
         "ilt" => |_env, args| Ok(Value::bool(args[0].as_int() < args[1].as_int())),
@@ -467,7 +487,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "length" => |_env, args| {
             let card = args[0].cardinality()?;
             let len = i64::try_from(card).map_err(|_| {
-                QuintError::new("QNT504", &format!("Integer overflow: length {} exceeds i64::MAX", card))
+                QuintError::new(
+                    "QNT504",
+                    &format!("Integer overflow: length {} exceeds i64::MAX", card),
+                )
             })?;
             Ok(Value::int(len))
         },
@@ -487,7 +510,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "indices" => |_env, args| {
             let card = args[0].cardinality()?;
             let size: i64 = i64::try_from(card).map_err(|_| {
-                QuintError::new("QNT504", &format!("Integer overflow: indices size {} exceeds i64::MAX", card))
+                QuintError::new(
+                    "QNT504",
+                    &format!("Integer overflow: indices size {} exceeds i64::MAX", card),
+                )
             })?;
             Ok(Value::interval(0, size - 1))
         },
@@ -559,7 +585,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "size" => |_env, args| {
             let card = args[0].cardinality()?;
             let size = i64::try_from(card).map_err(|_| {
-                QuintError::new("QNT504", &format!("Integer overflow: size {} exceeds i64::MAX", card))
+                QuintError::new(
+                    "QNT504",
+                    &format!("Integer overflow: size {} exceeds i64::MAX", card),
+                )
             })?;
             Ok(Value::int(size))
         },
@@ -584,11 +613,9 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "fold" => |env, args| {
             let reducer = args[2].as_closure();
             let set = args[0].as_set()?;
-            fold_left(
-                set.iter().cloned(),
-                args[1].clone(),
-                |acc, arg| reducer(env, vec![acc, arg]),
-            )
+            fold_left(set.iter().cloned(), args[1].clone(), |acc, arg| {
+                reducer(env, vec![acc, arg])
+            })
         },
 
         // Fold a list from left to right.
@@ -711,8 +738,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let c = args[1].as_closure();
             let set = args[0].as_set()?;
             Ok(Value::set(
-                set
-                    .iter()
+                set.iter()
                     .map(|v| c(env, vec![v.clone()]))
                     .collect::<Result<_, _>>()?,
             ))

@@ -17,7 +17,7 @@
 //! should have the same hash).
 
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::{QuintName, QuintError};
+use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
@@ -174,8 +174,12 @@ impl PartialEq for ValueInner {
                 let self_value = Value(Rc::new(self.clone()));
                 let other_value = Value(Rc::new(other.clone()));
                 if self_value.is_set() && other_value.is_set() {
-                    let self_set = self_value.as_set().expect("failure in equality check: left set could not be enumerated");
-                    let other_set = other_value.as_set().expect("failure in equality check: right set could not be enumerated");
+                    let self_set = self_value
+                        .as_set()
+                        .expect("failure in equality check: left set could not be enumerated");
+                    let other_set = other_value
+                        .as_set()
+                        .expect("failure in equality check: right set could not be enumerated");
                     self_set == other_set
                 } else {
                     false
@@ -256,7 +260,6 @@ impl Value {
     /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
     pub fn cardinality(&self) -> Result<usize, crate::ir::QuintError> {
-
         match self.0.as_ref() {
             ValueInner::Set(set) => Ok(set.len()),
             ValueInner::Tuple(elems) => Ok(elems.len()),
@@ -268,31 +271,69 @@ impl Value {
                 end.checked_sub(*start)
                     .and_then(|diff| diff.checked_add(1))
                     .and_then(|size| size.try_into().ok())
-                    .ok_or_else(|| QuintError::new("QNT504", &format!("Integer overflow: interval cardinality {}..{} exceeds maximum", start, end)))
+                    .ok_or_else(|| {
+                        QuintError::new(
+                            "QNT504",
+                            &format!(
+                                "Integer overflow: interval cardinality {}..{} exceeds maximum",
+                                start, end
+                            ),
+                        )
+                    })
             }
-            ValueInner::CrossProduct(sets) => {
-                sets.iter().try_fold(1_usize, |acc, set| {
-                    let set_card = set.cardinality()?;
-                    acc.checked_mul(set_card)
-                        .ok_or_else(|| QuintError::new("QNT504", "Integer overflow: cross product cardinality exceeds maximum"))
+            ValueInner::CrossProduct(sets) => sets.iter().try_fold(1_usize, |acc, set| {
+                let set_card = set.cardinality()?;
+                acc.checked_mul(set_card).ok_or_else(|| {
+                    QuintError::new(
+                        "QNT504",
+                        "Integer overflow: cross product cardinality exceeds maximum",
+                    )
                 })
-            }
+            }),
             ValueInner::PowerSet(value) => {
                 // 2^(cardinality of value)
                 let base_size = value.cardinality()?;
-                let exp = base_size.try_into()
-                    .map_err(|_| QuintError::new("QNT504", &format!("Integer overflow: base set size {} is too large for powerset", base_size)))?;
-                2_usize.checked_pow(exp)
-                    .ok_or_else(|| QuintError::new("QNT504", &format!("Integer overflow: powerset cardinality 2^{} exceeds maximum", base_size)))
+                let exp = base_size.try_into().map_err(|_| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!(
+                            "Integer overflow: base set size {} is too large for powerset",
+                            base_size
+                        ),
+                    )
+                })?;
+                2_usize.checked_pow(exp).ok_or_else(|| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!(
+                            "Integer overflow: powerset cardinality 2^{} exceeds maximum",
+                            base_size
+                        ),
+                    )
+                })
             }
             ValueInner::MapSet(domain, range) => {
                 // (cardinality of range)^(cardinality of domain)
                 let range_size = range.cardinality()?;
                 let domain_size = domain.cardinality()?;
-                let exp = domain_size.try_into()
-                    .map_err(|_| QuintError::new("QNT504", &format!("Integer overflow: domain size {} is too large for map set", domain_size)))?;
-                range_size.checked_pow(exp)
-                    .ok_or_else(|| QuintError::new("QNT504", &format!("Integer overflow: map set cardinality {}^{} exceeds maximum", range_size, domain_size)))
+                let exp = domain_size.try_into().map_err(|_| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!(
+                            "Integer overflow: domain size {} is too large for map set",
+                            domain_size
+                        ),
+                    )
+                })?;
+                range_size.checked_pow(exp).ok_or_else(|| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!(
+                            "Integer overflow: map set cardinality {}^{} exceeds maximum",
+                            range_size, domain_size
+                        ),
+                    )
+                })
             }
             _ => panic!("Cardinality not implemented for {self:?}"),
         }
@@ -308,9 +349,9 @@ impl Value {
                 if sets.len() != elems.len() {
                     false
                 } else {
-                    sets.iter().zip(elems).try_fold(true, |acc, (set, elem)| {
-                        Ok(acc && set.contains(elem)?)
-                    })?
+                    sets.iter()
+                        .zip(elems)
+                        .try_fold(true, |acc, (set, elem)| Ok(acc && set.contains(elem)?))?
                 }
             }
             (ValueInner::PowerSet(base), ValueInner::Set(elems)) => {
@@ -318,9 +359,9 @@ impl Value {
                 if elems.len() > base_elems.len() {
                     false
                 } else {
-                    elems.iter().try_fold(true, |acc, elem| {
-                        Ok(acc && base_elems.contains(elem))
-                    })?
+                    elems
+                        .iter()
+                        .try_fold(true, |acc, elem| Ok(acc && base_elems.contains(elem)))?
                 }
             }
             (ValueInner::MapSet(domain, range), ValueInner::Map(map)) => {
@@ -329,9 +370,8 @@ impl Value {
                 if map_domain != *domain {
                     false
                 } else {
-                    map.values().try_fold(true, |acc, v| {
-                        Ok(acc && range.contains(v)?)
-                    })?
+                    map.values()
+                        .try_fold(true, |acc, v| Ok(acc && range.contains(v)?))?
                 }
             }
             _ => panic!("contains not implemented for {self:?}"),
@@ -446,7 +486,10 @@ impl Value {
                 #[allow(clippy::unnecessary_to_owned)] // False positive
                 let product_sets = sets
                     .iter()
-                    .map(|set| set.as_set().map(|s| s.into_owned().into_iter().collect::<Vec<_>>()))
+                    .map(|set| {
+                        set.as_set()
+                            .map(|s| s.into_owned().into_iter().collect::<Vec<_>>())
+                    })
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
                     .multi_cartesian_product()
@@ -458,16 +501,19 @@ impl Value {
 
             ValueInner::PowerSet(value) => {
                 let base = value.as_set()?;
-                if self.is_large_powerset(){
+                if self.is_large_powerset() {
                     return Err(QuintError::new(
                         "QNT504",
-                        &format!("Cannot enumerate large powerset with base size {}", base.len())
+                        &format!(
+                            "Cannot enumerate large powerset with base size {}",
+                            base.len()
+                        ),
                     ));
                 }
                 let size: usize = 1 << base.len(); // 2^n subsets for a set of size n
                 Cow::Owned(
                     (0..size)
-                        .map(|i| powerset_at_index(base.as_ref(), i ))
+                        .map(|i| powerset_at_index(base.as_ref(), i))
                         .collect(),
                 )
             }
@@ -490,8 +536,14 @@ impl Value {
                 let nindices = domain_vec.len();
                 let nvalues = range_vec.len();
 
-                let nmaps = nvalues.checked_pow(nindices.try_into().unwrap())
-                    .ok_or_else(|| QuintError::new("QNT504", "Integer overflow: map set enumeration exceeds maximum"))?;
+                let nmaps = nvalues
+                    .checked_pow(nindices.try_into().unwrap())
+                    .ok_or_else(|| {
+                        QuintError::new(
+                            "QNT504",
+                            "Integer overflow: map set enumeration exceeds maximum",
+                        )
+                    })?;
 
                 let mut result_set = ImmutableSet::new();
 
@@ -601,7 +653,6 @@ pub fn powerset_at_index_large(base: &ImmutableSet<Value>, i: &BigUint) -> Value
     Value::set(elems)
 }
 
-
 pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
@@ -626,7 +677,9 @@ impl fmt::Display for Value {
             | ValueInner::PowerSet(_)
             | ValueInner::MapSet(_, _) => {
                 write!(f, "Set(")?;
-                let set = self.as_set().expect("failure in display: set could not be enumerated");
+                let set = self
+                    .as_set()
+                    .expect("failure in display: set could not be enumerated");
                 for (i, elem) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;

@@ -73,7 +73,12 @@ pub fn eval_nondet_one_of(
         // These are too large to retry through, so just pick once
         if set.is_large_powerset() {
             if let ValueInner::PowerSet(base_set) = set.0.as_ref() {
-                let n = base_set.cardinality().map_err(|e| QuintError::new("QNT504", &format!("Failed to compute powerset base cardinality: {}", e.message)))?;
+                let n = base_set.cardinality().map_err(|e| {
+                    QuintError::new(
+                        "QNT504",
+                        &format!("Failed to compute powerset base cardinality: {}", e.message),
+                    )
+                })?;
                 let cardinality = BigUint::from(1u64) << n;
                 let random_index = env.rand.next_biguint(&cardinality);
                 let positions: Vec<usize> = random_index

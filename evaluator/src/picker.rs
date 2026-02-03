@@ -1,7 +1,7 @@
 //! Picking values out of sets without enumerating the elements.
 
-use crate::value::{ImmutableMap, Value, ValueInner, powerset_at_index, powerset_at_index_large};
 use crate::ir::QuintError;
+use crate::value::{powerset_at_index, powerset_at_index_large, ImmutableMap, Value, ValueInner};
 use num_bigint::BigUint;
 use std::convert::TryInto;
 
@@ -12,7 +12,6 @@ impl Value {
     /// The given indexes should have the same length as the length [`bounds`]
     /// for this value, and each value should be within its respective bound.
     pub fn pick<T: Iterator<Item = usize>>(&self, indexes: &mut T) -> Result<Value, QuintError> {
-        
         Ok(match self.0.as_ref() {
             ValueInner::Set(set) => {
                 let index = indexes
@@ -29,7 +28,8 @@ impl Value {
                 Value::int(start + idx)
             }
             ValueInner::CrossProduct(sets) => {
-                let elements: Result<Vec<_>, _> = sets.iter().map(|value| value.pick(indexes)).collect();
+                let elements: Result<Vec<_>, _> =
+                    sets.iter().map(|value| value.pick(indexes)).collect();
                 Value::tuple(elements?.into_iter().collect())
             }
             ValueInner::PowerSet(base_set) => {
@@ -47,7 +47,7 @@ impl Value {
                     let base = base_set.as_set()?;
                     powerset_at_index(base.as_ref(), index)
                 }
-            } 
+            }
             ValueInner::MapSet(domain, range) => {
                 let domain_size = domain.cardinality()?;
                 let range_size = range.cardinality()?;
@@ -67,10 +67,13 @@ impl Value {
                 };
 
                 let keys = domain.as_set()?;
-                let key_values: Result<Vec<_>, _> = keys.iter().map(|key| {
-                    let value = range_to_pick.pick(indexes)?;
-                    Ok((key.clone(), value))
-                }).collect();
+                let key_values: Result<Vec<_>, _> = keys
+                    .iter()
+                    .map(|key| {
+                        let value = range_to_pick.pick(indexes)?;
+                        Ok((key.clone(), value))
+                    })
+                    .collect();
 
                 Value::map(ImmutableMap::from_iter(key_values?))
             }
@@ -86,13 +89,13 @@ impl Value {
     // For large powersets, bounds returns a vectorized representation of the cardinality.
     // The caller must detect this case and reassemble into BigUint for random generation.
     pub fn bounds(&self) -> Result<Vec<usize>, QuintError> {
-        
         Ok(match self.0.as_ref() {
             ValueInner::Set(set) => vec![set.len()],
             ValueInner::Interval(_, _) => vec![self.cardinality()?],
-            ValueInner::CrossProduct(sets) => {
-                sets.iter().map(|set| set.cardinality()).collect::<Result<Vec<_>, _>>()?
-            }
+            ValueInner::CrossProduct(sets) => sets
+                .iter()
+                .map(|set| set.cardinality())
+                .collect::<Result<Vec<_>, _>>()?,
             ValueInner::PowerSet(base_set) => {
                 if self.is_large_powerset() {
                     // Large powerset: return u32 digits of 2^n

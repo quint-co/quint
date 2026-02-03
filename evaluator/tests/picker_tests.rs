@@ -159,7 +159,10 @@ fn powerset_samples_large_subsets() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("Maximum subset size seen across 10,000 samples: {}", max_size_seen);
+    println!(
+        "Maximum subset size seen across 10,000 samples: {}",
+        max_size_seen
+    );
 
     // With the bug, max_size_seen will be <= ~7 (popcount of indices 0-69)
     // With proper implementation, should eventually see large subsets (size > 30)

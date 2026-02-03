@@ -88,7 +88,9 @@ impl Value {
             | ValueInner::CrossProduct(_)
             | ValueInner::PowerSet(_)
             | ValueInner::MapSet(_, _) => {
-                let set = self.as_set().expect("failure in ITF conversion: set could not be enumerated");
+                let set = self
+                    .as_set()
+                    .expect("failure in ITF conversion: set could not be enumerated");
                 itf::Value::Set(set.iter().map(|v| v.to_itf()).collect())
             }
             ValueInner::Tuple(elems) => {
