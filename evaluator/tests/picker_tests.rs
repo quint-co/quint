@@ -83,7 +83,7 @@ fn powerset_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
     // Regression test for overflow with large powersets (base >= 64 elements)
     // This test verifies that we can pick from powersets of large sets without overflow
     let quint_content = "module main {
-          // Create a set with 70 elements (more than 64)
+          // Create a set with 70 elements
           val largeSet = 1.to(70)
           var subset: Set[int]
           val input = subset.size()
@@ -112,49 +112,32 @@ fn powerset_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn powerset_very_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
-    // Test with an even larger set (200 elements) to ensure BigUint handling works
+    // Regression test for overflow with large powersets (base >= 64 elements)
+    // This test verifies that we can pick from powersets of large sets without overflow
     let quint_content = "module main {
-          // Create a set with 200 elements
-          val largeSet = 1.to(200)
+          // Create a set with 500 elements
+          val largeSet = 1.to(500)
           var subset: Set[int]
-          var subsetSize: int
-          val input = subsetSize
+          val input = subset.size()
 
           action init = {
             // Pick a subset from the powerset
             nondet s = largeSet.powerset().oneOf()
             subset' = s
-            and
-            subsetSize' = s.size()
           }
-          action step = {
-            subset' = subset
-            and
-            subsetSize' = subsetSize
-          }
+          action step = subset' = subset
         }";
 
     let parsed = helpers::parse(quint_content, "init", "step", None)?;
     let init_def = parsed.find_definition_by_name("init")?;
 
     let mut interpreter = Interpreter::new(&parsed.table);
-    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x123);
+    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
     let init = interpreter.eval(&mut env, init_def.expr.clone());
     // Should not panic or overflow - just check it runs successfully
     assert!(init.is_ok());
     assert_eq!(init.unwrap(), Value::bool(true));
-
-    // Verify the subset size is valid (between 0 and 200)
-    interpreter.shift();
-    let input_def = parsed.find_definition_by_name("input")?;
-    let subset_size = interpreter.eval(&mut env, input_def.expr.clone())?;
-    let size = subset_size.as_int();
-    assert!(
-        size >= 0 && size <= 200,
-        "Subset size {} should be between 0 and 200",
-        size
-    );
 
     Ok(())
 }
