@@ -72,7 +72,7 @@ export class ReplServerWrapper {
   private processExited: boolean = false
   public recorder: TraceRecorder
   private verbosityLevel: number
-  private statesCache: any[] = [] // ITF values from Rust
+  private traceCache?: Trace
 
   private initializationPromise: Promise<void>
 
@@ -214,12 +214,10 @@ export class ReplServerWrapper {
     const response = await this.sendCommand({ cmd: 'ReplShift' })
 
     if (response.response === 'ReplShiftResult') {
-      // Update our cached states (keep as ITF values)
+      // Invalidate the cache when a shift happens
+      // Traces will be fetched lazily when getTrace() is called
       if (response.shifted) {
-        const statesResponse = await this.sendCommand({ cmd: 'GetTraceStates' })
-        if (statesResponse.response === 'TraceStates') {
-          this.statesCache = statesResponse.states
-        }
+        this.traceCache = undefined
       }
 
       return [response.shifted, response.missing_vars, response.old_state, response.new_state]
@@ -229,17 +227,29 @@ export class ReplServerWrapper {
   }
 
   /**
-   * Get the trace for rendering
+   * Get the trace for rendering.
+   * Returns cached trace states or fetches it from the Rust server.
    */
-  get trace(): Trace {
-    const states = this.statesCache.map(itfValue => {
-      const ex = ofItfValue(itfValue, zerog.nextId)
-      return rv.fromQuintEx(ex)
-    })
+  async getTrace(): Promise<Trace> {
+    if (this.traceCache !== undefined) {
+      return this.traceCache
+    }
 
-    const t = new Trace()
-    t.reset(states)
-    return t
+    await this.initializationPromise
+    const statesResponse = await this.sendCommand({ cmd: 'GetTraceStates' })
+
+    if (statesResponse.response === 'TraceStates') {
+      const states = statesResponse.states.map(itfValue => {
+        const ex = ofItfValue(itfValue, zerog.nextId)
+        return rv.fromQuintEx(ex)
+      })
+
+      this.traceCache = new Trace()
+      this.traceCache.reset(states)
+      return this.traceCache
+    }
+
+    throw new Error('Failed to get trace states from evaluator')
   }
 
   /**
