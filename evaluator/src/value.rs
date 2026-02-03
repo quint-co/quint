@@ -641,7 +641,7 @@ pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
 }
 
 /// Pick a specific subset from a large powerset using BigUint index.
-/// This is used for powersets with >= 64 elements where usize would overflow.
+/// This is used for powersets with base set cardinality >= 64 elements where usize would overflow.
 ///
 /// Uses BigUint to support sets of arbitrary size (not limited to 63 elements
 /// due to bit shift overflow with usize).
