@@ -29,7 +29,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
 
     let parsed_expected = helpers::parse(&quint_content(expected), "init", "step", None)?;
     let expected_def = parsed_expected.find_definition_by_name("expr")?;
-    let expected_value = run(&parsed_expected.table, &expected_def.expr);
+    let expected_value = run(&parsed_expected.table, &expected_def.expr).map(|v| v.normalize());
 
     let value = value.map(|v| v.normalize());
 
@@ -39,6 +39,21 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     );
 
     Ok(())
+}
+
+fn eval_expr(input: &str) -> EvalResult {
+    let quint_content = format!(
+        "module main {{
+          type T = Some(int) | None
+          val expr = {input}
+          val init = true
+          val step = true
+        }}"
+    );
+
+    let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
+    let input_def = parsed.find_definition_by_name("expr").unwrap();
+    run(&parsed.table, &input_def.expr)
 }
 fn eval_run(callee: &str, input: &str) -> EvalResult {
     let quint_content = {
@@ -98,7 +113,7 @@ fn assert_var_after_run(
 
     let parsed_expected = helpers::parse(&quint_content, "init", "step", None)?;
     let expected_def = parsed_expected.find_definition_by_name("expected")?;
-    let expected_value = run(&parsed_expected.table, &expected_def.expr)?;
+    let expected_value = run(&parsed_expected.table, &expected_def.expr)?.normalize();
 
     assert_eq!(
         var_value, expected_value,
@@ -1213,4 +1228,28 @@ fn run_q_debug_single_arg() -> Result<(), Box<dyn std::error::Error>> {
         "var n: int\n
          run run1 = (n' = 1).then(n' = q::debug(n + 1))",
     )
+}
+
+#[test]
+fn arithmetic_overflow() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("9223372036854775807 + 1");
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "[QNT601] Integer overflow in arithmetic operations: 9223372036854775807 + 1"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn cardinality_overflow() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("1.to(80).powerset().size()");
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "[QNT601] Integer overflow in cardinality computation: powerset 2^80 exceeds usize::MAX"
+    );
+
+    Ok(())
 }

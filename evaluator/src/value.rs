@@ -272,11 +272,8 @@ impl Value {
                     .and_then(|size| size.try_into().ok())
                     .ok_or_else(|| {
                         QuintError::new(
-                            "QNT504",
-                            &format!(
-                                "Integer overflow: interval cardinality {}..{} exceeds maximum",
-                                start, end
-                            ),
+                            "QNT601",
+                            "Integer overflow in cardinality computation: interval cardinality exceeds usize::MAX",
                         )
                     })
             }
@@ -284,8 +281,8 @@ impl Value {
                 let set_card = set.cardinality()?;
                 acc.checked_mul(set_card).ok_or_else(|| {
                     QuintError::new(
-                        "QNT504",
-                        "Integer overflow: cross product cardinality exceeds maximum",
+                        "QNT601",
+                        "Integer overflow in cardinality computation: cross product exceeds usize::MAX",
                     )
                 })
             }),
@@ -294,18 +291,18 @@ impl Value {
                 let base_size = value.cardinality()?;
                 let exp = base_size.try_into().map_err(|_| {
                     QuintError::new(
-                        "QNT504",
+                        "QNT601",
                         &format!(
-                            "Integer overflow: base set size {} is too large for powerset",
+                            "Integer overflow in cardinality computation: base set size {} exceeds u32::MAX",
                             base_size
                         ),
                     )
                 })?;
                 2_usize.checked_pow(exp).ok_or_else(|| {
                     QuintError::new(
-                        "QNT504",
+                        "QNT601",
                         &format!(
-                            "Integer overflow: powerset cardinality 2^{} exceeds maximum",
+                            "Integer overflow in cardinality computation: powerset 2^{} exceeds usize::MAX",
                             base_size
                         ),
                     )
@@ -317,18 +314,18 @@ impl Value {
                 let domain_size = domain.cardinality()?;
                 let exp = domain_size.try_into().map_err(|_| {
                     QuintError::new(
-                        "QNT504",
+                        "QNT601",
                         &format!(
-                            "Integer overflow: domain size {} is too large for map set",
+                            "Integer overflow in cardinality computation: domain set size {} exceeds u32::MAX",
                             domain_size
                         ),
                     )
                 })?;
                 range_size.checked_pow(exp).ok_or_else(|| {
                     QuintError::new(
-                        "QNT504",
+                        "QNT601",
                         &format!(
-                            "Integer overflow: map set cardinality {}^{} exceeds maximum",
+                            "Integer overflow in cardinality computation: map set {}^{} exceeds usize::MAX",
                             range_size, domain_size
                         ),
                     )
@@ -521,8 +518,8 @@ impl Value {
                     .checked_pow(nindices.try_into().unwrap())
                     .ok_or_else(|| {
                         QuintError::new(
-                            "QNT504",
-                            "Integer overflow: map set enumeration exceeds maximum",
+                            "QNT601",
+                            "Integer overflow in set enumeration: map set exceeds usize::MAX",
                         )
                     })?;
 

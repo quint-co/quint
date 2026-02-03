@@ -300,7 +300,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let b = args[1].as_int();
             a.checked_add(b)
                 .ok_or_else(|| {
-                    QuintError::new("QNT504", &format!("Integer overflow: {} + {}", a, b))
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {} + {}", a, b),
+                    )
                 })
                 .map(Value::int)
         },
@@ -310,7 +313,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let b = args[1].as_int();
             a.checked_sub(b)
                 .ok_or_else(|| {
-                    QuintError::new("QNT504", &format!("Integer overflow: {} - {}", a, b))
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {} - {}", a, b),
+                    )
                 })
                 .map(Value::int)
         },
@@ -320,7 +326,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let b = args[1].as_int();
             a.checked_mul(b)
                 .ok_or_else(|| {
-                    QuintError::new("QNT504", &format!("Integer overflow: {} * {}", a, b))
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {} * {}", a, b),
+                    )
                 })
                 .map(Value::int)
         },
@@ -336,8 +345,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .checked_div(divisor)
                 .ok_or_else(|| {
                     QuintError::new(
-                        "QNT504",
-                        &format!("Integer overflow: {} / {}", dividend, divisor),
+                        "QNT601",
+                        &format!(
+                            "Integer overflow in arithmetic operations: {} / {}",
+                            dividend, divisor
+                        ),
                     )
                 })
                 .map(Value::int)
@@ -350,8 +362,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .checked_rem(divisor)
                 .ok_or_else(|| {
                     QuintError::new(
-                        "QNT504",
-                        &format!("Integer overflow: {} % {}", dividend, divisor),
+                        "QNT601",
+                        &format!(
+                            "Integer overflow in arithmetic operations: {} % {}",
+                            dividend, divisor
+                        ),
                     )
                 })
                 .map(Value::int)
@@ -369,7 +384,13 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
             base.checked_pow(exp as u32)
                 .ok_or_else(|| {
-                    QuintError::new("QNT504", &format!("Integer overflow: {} ^ {}", base, exp))
+                    QuintError::new(
+                        "QNT601",
+                        &format!(
+                            "Integer overflow in arithmetic operations: {} ^ {}",
+                            base, exp
+                        ),
+                    )
                 })
                 .map(Value::int)
         },
@@ -377,7 +398,12 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "iuminus" => |_env, args| {
             let a = args[0].as_int();
             a.checked_neg()
-                .ok_or_else(|| QuintError::new("QNT504", &format!("Integer overflow: -{}", a)))
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: -{}", a),
+                    )
+                })
                 .map(Value::int)
         },
         // Integer less than
@@ -464,8 +490,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let card = args[0].cardinality()?;
             let len = i64::try_from(card).map_err(|_| {
                 QuintError::new(
-                    "QNT504",
-                    &format!("Integer overflow: length {} exceeds i64::MAX", card),
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: length {} exceeds i64::MAX",
+                        card
+                    ),
                 )
             })?;
             Ok(Value::int(len))
@@ -487,8 +516,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let card = args[0].cardinality()?;
             let size: i64 = i64::try_from(card).map_err(|_| {
                 QuintError::new(
-                    "QNT504",
-                    &format!("Integer overflow: indices size {} exceeds i64::MAX", card),
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: indices size {} exceeds i64::MAX",
+                        card
+                    ),
                 )
             })?;
             Ok(Value::interval(0, size - 1))
@@ -562,8 +594,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             let card = args[0].cardinality()?;
             let size = i64::try_from(card).map_err(|_| {
                 QuintError::new(
-                    "QNT504",
-                    &format!("Integer overflow: size {} exceeds i64::MAX", card),
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: size {} exceeds i64::MAX",
+                        card
+                    ),
                 )
             })?;
             Ok(Value::int(size))
