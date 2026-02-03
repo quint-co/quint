@@ -74,11 +74,9 @@ impl TestCase {
                     env.shift();
 
                     if !result.as_bool() {
-                        let error = QuintError::new(
-                            "QNT511",
-                            &format!("Test {} returned false", test_name),
-                        )
-                        .with_reference(test_def_id);
+                        let error =
+                            QuintError::new("QNT511", &format!("Test {test_name} returned false"))
+                                .with_reference(test_def_id);
                         let states = std::mem::take(&mut env.trace);
                         trace = Some(Trace {
                             states,

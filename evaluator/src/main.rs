@@ -5,7 +5,7 @@
 //!     simulates based on that input, used in the integration with the `quint` typescript tool.
 
 use std::fs::{self, File};
-use std::io::{self, Read, Write};
+use std::io::{self, BufWriter};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
@@ -14,7 +14,7 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
@@ -213,10 +213,10 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
             log!("Result", "{}", result.result);
             for (i, trace) in result.best_traces.into_iter().enumerate() {
                 let itf_trace = trace.to_itf(args.file.display().to_string());
-                let json_data = serde_json::to_string(&itf_trace)?;
                 let filename = format!("out_{i}.itf.json");
-                let mut file = File::create(filename.clone())?;
-                file.write_all(json_data.as_bytes())?;
+                let file = File::create(filename.clone())?;
+                let writer = BufWriter::new(file);
+                serde_json::to_writer(writer, &itf_trace)?;
                 log!("Trace", "{filename}")
             }
         }
@@ -232,10 +232,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 fn simulate_from_stdin() -> eyre::Result<()> {
     log::set_json(true);
 
-    // Read all input from STDIN
-    let mut input = String::new();
-    io::stdin().read_to_string(&mut input)?;
-
+    // Read input from STDIN
     let SimulateInput {
         source,
         parsed,
@@ -245,7 +242,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         nthreads,
         seed,
         ..
-    } = serde_json::from_str(&input)?;
+    } = serde_json::from_reader(io::stdin())?;
 
     let source = Arc::new(source);
 
@@ -259,7 +256,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     };
 
     // Serialize the outcome to JSON and print it to STDOUT
-    println!("{}", serde_json::to_string(&outcome)?);
+    serde_json::to_writer(io::stdout(), &outcome)?;
 
     Ok(())
 }
@@ -270,16 +267,13 @@ fn test_from_stdin() -> eyre::Result<()> {
     log::set_json(true);
 
     // Read all input from STDIN
-    let mut input = String::new();
-    io::stdin().read_to_string(&mut input)?;
-
     let TestInput {
         name,
         test_def,
         table,
         seed,
         max_samples,
-    } = serde_json::from_str(&input)?;
+    } = serde_json::from_reader(io::stdin())?;
 
     // Create test case and execute with progress reporting
     let test_case = TestCase {
@@ -289,10 +283,8 @@ fn test_from_stdin() -> eyre::Result<()> {
     };
     let reporter = progress::json_std_err_report(max_samples);
     let result = test_case.execute(seed, max_samples, reporter);
-
     let output = to_test_output(result);
-
-    println!("{}", serde_json::to_string(&output)?);
+    serde_json::to_writer(io::stdout(), &output)?;
 
     Ok(())
 }
@@ -394,7 +386,10 @@ fn to_test_output(result: TestResult) -> TestOutput {
 /// The status is determined based on whether the simulation result indicates success, violation, or error.
 /// Errors are collected into a vector if any are present.
 /// Best traces are converted to the intermediate trace format (ITF).
-fn to_sim_output(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> SimOutput {
+fn to_sim_output(
+    source: Arc<String>,
+    result: Result<SimulationResult, SimulationError>,
+) -> SimOutput {
     let status = match &result {
         Ok(r) if r.result => SimulationStatus::Success,
         Ok(_) => SimulationStatus::Violation,
@@ -404,18 +399,28 @@ fn to_sim_output(source: Arc<String>, result: Result<SimulationResult, QuintErro
     let errors = result
         .as_ref()
         .err()
-        .map_or_else(Vec::new, |e| vec![e.clone()]);
+        .map_or_else(Vec::new, |e| vec![e.error.clone()]);
 
-    let best_traces = result.as_ref().ok().map_or_else(Vec::new, |r| {
-        r.best_traces
-            .iter()
-            .map(|t| SimulationTrace {
-                seed: t.seed as usize,
-                states: t.clone().to_itf((*source).clone()),
-                result: !t.violation,
-            })
-            .collect()
-    });
+    let best_traces = result.as_ref().map_or_else(
+        |e| {
+            // Include the error trace in best_traces so it gets reported to the user
+            vec![SimulationTrace {
+                seed: e.seed as usize,
+                states: e.trace.clone().to_itf((*source).clone()),
+                result: false,
+            }]
+        },
+        |r| {
+            r.best_traces
+                .iter()
+                .map(|t| SimulationTrace {
+                    seed: t.seed as usize,
+                    states: t.clone().to_itf((*source).clone()),
+                    result: !t.violation,
+                })
+                .collect()
+        },
+    );
 
     SimOutput {
         status,

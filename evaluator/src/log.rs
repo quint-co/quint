@@ -1,7 +1,7 @@
 //! Logging module for the simulation, used by the CLI.
 
-use std::fmt;
 use std::sync::atomic::AtomicBool;
+use std::{fmt, io};
 
 static _HEADERS: &[&str] = &["Parsing", "Simulation", "Result", "Elapsed"];
 
@@ -45,7 +45,7 @@ pub fn log(header: &str, message: &fmt::Arguments<'_>) {
             "header": header,
             "message": message,
         });
-        println!("{json}");
+        serde_json::to_writer(io::stdout(), &json).expect("failed to write log to stdout");
     } else {
         println!("{:>12} {}", header.yellow(), message);
     }
