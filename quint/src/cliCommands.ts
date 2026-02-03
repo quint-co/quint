@@ -268,6 +268,7 @@ export async function runRepl(argv: any) {
     importModule: moduleName,
     replInput: argv.commands,
     verbosity: argv.quiet ? 0 : argv.verbosity,
+    backend: argv.backend,
   }
   quintRepl(process.stdin, process.stdout, options)
 }

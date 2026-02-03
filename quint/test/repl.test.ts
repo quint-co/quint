@@ -39,7 +39,7 @@ const withIO = async (inputText: string): Promise<string> => {
   // Use { end: false } to prevent ending output when input ends
   input.pipe(output, { end: false })
 
-  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
+  const rl = quintRepl(input, output, { verbosity: 2, backend: 'rust' }, () => {})
 
   // Send input line-by-line to the REPL with small delays.
   // We emit 'data' events for each line, with a delay between each one
