@@ -175,10 +175,10 @@ impl PartialEq for ValueInner {
                 if self_value.is_set() && other_value.is_set() {
                     let self_set = self_value
                         .as_set()
-                        .expect("failure in equality check: left set could not be enumerated");
+                        .expect("can't enumerate left set for equality check");
                     let other_set = other_value
                         .as_set()
-                        .expect("failure in equality check: right set could not be enumerated");
+                        .expect("can't enumerate right set for equality check");
                     self_set == other_set
                 } else {
                     false
@@ -643,7 +643,7 @@ impl fmt::Display for Value {
                 write!(f, "Set(")?;
                 let set = self
                     .as_set()
-                    .expect("failure in display: set could not be enumerated");
+                    .expect("can't enumerate set for display");
                 for (i, elem) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
