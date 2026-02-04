@@ -32,7 +32,7 @@ module coin {
     // Values and functions that are state-independent
 
     // the maximal value a Solidity UInt can carry
-    pure val MAX_UINT = 2^256 - 1
+    pure val MAX_UINT = 9223372036854775808 // overflow
 
     // does a big integer represent a Solidity UInt?
     pure def isUInt(i: int): bool = (0 <= i and i <= MAX_UINT)
@@ -149,6 +149,9 @@ module coin {
     temporal NoSupplyOverflow: bool = always(totalSupplyDoesNotOverflowInv)
 
     // TESTS
+    run oneTest = 
+        init.
+        expect(true)
 
     // send should not work without minting
     run sendWithoutMintTest = {

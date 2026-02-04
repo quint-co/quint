@@ -14,35 +14,42 @@ impl Value {
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)
             | ValueInner::PowerSet(_)
-            | ValueInner::MapSet(_, _) => {
-                let set = self.as_set()?;
-                let normalized: Result<Vec<_>, _> =
-                    set.iter().map(|v| v.clone().normalize()).collect();
-                Value::set(normalized?.into_iter().collect())
-            }
+            | ValueInner::MapSet(_, _) => Value::set(
+                self.as_set()?
+                    .into_owned()
+                    .into_iter()
+                    .map(|v| v.normalize())
+                    .collect::<Result<_, _>>()?,
+            ),
             ValueInner::Tuple(elems) => {
-                let normalized: Result<Vec<_>, _> =
-                    elems.iter().cloned().map(|v| v.normalize()).collect();
-                Value::tuple(normalized?.into_iter().collect())
+                let normalized = elems
+                    .iter()
+                    .cloned()
+                    .map(|v| v.normalize())
+                    .collect::<Result<_, _>>()?;
+                Value::tuple(normalized)
             }
             ValueInner::Record(fields) => {
-                let normalized: Result<Vec<_>, _> = fields
+                let normalized = fields
                     .iter()
                     .map(|(k, v)| Ok((k.clone(), v.clone().normalize()?)))
-                    .collect();
-                Value::record(normalized?.into_iter().collect())
+                    .collect::<Result<_, _>>()?;
+                Value::record(normalized)
             }
             ValueInner::Map(map) => {
-                let normalized: Result<Vec<_>, _> = map
+                let normalized = map
                     .iter()
                     .map(|(k, v)| Ok((k.clone().normalize()?, v.clone().normalize()?)))
-                    .collect();
-                Value::map(normalized?.into_iter().collect())
+                    .collect::<Result<_, _>>()?;
+                Value::map(normalized)
             }
             ValueInner::List(elems) => {
-                let normalized: Result<Vec<_>, _> =
-                    elems.iter().cloned().map(|v| v.normalize()).collect();
-                Value::list(normalized?.into_iter().collect())
+                let normalized = elems
+                    .iter()
+                    .cloned()
+                    .map(|v| v.normalize())
+                    .collect::<Result<_, _>>()?;
+                Value::list(normalized)
             }
             ValueInner::Variant(label, value) => {
                 Value::variant(label.clone(), value.clone().normalize()?)
