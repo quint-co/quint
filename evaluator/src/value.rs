@@ -641,9 +641,7 @@ impl fmt::Display for Value {
             | ValueInner::PowerSet(_)
             | ValueInner::MapSet(_, _) => {
                 write!(f, "Set(")?;
-                let set = self
-                    .as_set()
-                    .expect("can't enumerate set for display");
+                let set = self.as_set().expect("can't enumerate set for display");
                 for (i, elem) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
