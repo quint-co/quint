@@ -65,7 +65,7 @@ impl Rand {
         // For large bounds, create a seeded RNG from current state
         // This maintains determinism while leveraging num-bigint's random generation
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.counter);
-        let result = rng.gen_biguint_range(&BigUint::from(0u64), bound);
+        let result = rng.gen_biguint_range(&BigUint::ZERO, bound);
 
         // Advance our counter to maintain state progression
         self.counter = self.counter.saturating_add(1);
