@@ -56,10 +56,10 @@ impl Rand {
     /// Maintains determinism by using the current counter state to seed the RNG.
     pub fn next_biguint(&mut self, bound: &BigUint) -> BigUint {
         // For small bounds that fit in usize, use existing deterministic path
-        if let Some(bound_u64) = bound.to_u64()
-            && bound_u64 <= usize::MAX as u64
-        {
-            return BigUint::from(self.next(bound_u64 as usize));
+        if let Some(bound_u64) = bound.to_u64() {
+            if bound_u64 <= usize::MAX as u64 {
+                return BigUint::from(self.next(bound_u64 as usize));
+            }
         }
 
         // For large bounds, create a seeded RNG from current state
