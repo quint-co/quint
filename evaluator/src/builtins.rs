@@ -159,13 +159,22 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         "oneOf" => |env, args| {
             // Randomly selects one element of the set.
             let set = args[0].execute(env)?;
+            // Some sets require multiple random numbers in order to pick an element efficiently.
+            // For example, a cross product will require one random number per set, and return a tuple like
+            // (set1.pick(r1), set2.pick(r2), ..., setn.pick(rn))
+
+            // The ranges in which to generate which random number
             let bounds = set.bounds()?;
+            // The generated random number for each bound
             let mut positions = Vec::with_capacity(bounds.len());
 
             for bound in bounds {
                 if bound == 0 {
                     return Err(QuintError::new("QNT509", "Applied oneOf on an empty set"));
                 }
+                // TODO: The old simulator generates a limited bound for infinite sets
+                // Not sure if we want to keep this behavior
+                // Related: https://github.com/informalsystems/quint/issues/279
 
                 positions.push(env.rand.next(bound))
             }
