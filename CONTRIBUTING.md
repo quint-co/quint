@@ -535,15 +535,15 @@ false
 false
 ```
 
-For this reason, we are using `isEqual` provided by the [lodash.isequal][]
-package:
+For this reason, we use `isDeepStrictEqual` from Node's built-in `node:util`
+module:
 
 ```js
 > import { none, just } from '@sweet-monads/maybe'
-> import isEqual from 'lodash.isequal'
-> isEqual(just(true), just(true))
+> import { isDeepStrictEqual } from 'node:util'
+> isDeepStrictEqual(just(true), just(true))
 true
-> isEqual(none(), none())
+> isDeepStrictEqual(none(), none())
 true
 ```
 
@@ -584,7 +584,6 @@ if (all_good(expr)) {
 [txm]: https://www.npmjs.com/package/txm
 [sweet-monads/maybe]: https://www.npmjs.com/package/@sweet-monads/maybe
 [sweet-monads/either]: https://www.npmjs.com/package/@sweet-monads/either
-[lodash.isequal]: https://www.npmjs.com/package/lodash.isequal
 [direnv]: https://direnv.net
 [Nextra]: https://nextra.site
 [lmt]: https://github.com/driusan/lmt
