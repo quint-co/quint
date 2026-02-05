@@ -62,6 +62,8 @@ enum ReplResponse {
     ResetComplete {},
     /// Error response
     Error { message: String },
+    /// Error response to be used for when the server cannot recover
+    FatalError { message: String },
 }
 
 /// Wrapper for evaluation results to match TypeScript Either type
@@ -100,7 +102,7 @@ impl ReplEvaluator {
         self.verbosity = verbosity;
 
         // Create the interpreter with the table
-        self.interpreter = Some(Interpreter::new(&table));
+        self.interpreter = Some(Interpreter::new(table));
 
         let storage = self.interpreter.as_ref().unwrap().var_storage.clone();
         self.env = Some(if let Some(seed) = seed {
@@ -290,8 +292,8 @@ pub fn run_repl_from_stdin() -> io::Result<()> {
                     .or_else(|| panic_info.downcast_ref::<String>().map(|s| s.as_str()))
                     .unwrap_or("Unknown panic in REPL");
 
-                ReplResponse::Error {
-                    message: format!("QNT500: {msg}"),
+                ReplResponse::FatalError {
+                    message: msg.to_string(),
                 }
             }
         };
@@ -300,6 +302,10 @@ pub fn run_repl_from_stdin() -> io::Result<()> {
         serde_json::to_writer(&mut stdout, &response)?;
         stdout.write_all(b"\n")?;
         stdout.flush()?;
+
+        if matches!(response, ReplResponse::FatalError { .. }) {
+            break;
+        }
     }
 
     Ok(())
