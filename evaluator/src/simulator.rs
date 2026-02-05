@@ -78,7 +78,7 @@ impl ParsedQuint {
         mut reporter: R,
         seed: Option<u64>,
     ) -> Result<SimulationResult, SimulationError> {
-        let mut interpreter = Interpreter::new(&self.table);
+        let mut interpreter = Interpreter::new(self.table.clone());
         let mut env = match seed {
             Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
             None => Env::new(interpreter.var_storage.clone()),

@@ -9,7 +9,7 @@ macro_rules! run_test {
         let parsed = helpers::parse($content, "init", "step", None)?;
         let init_def = parsed.find_definition_by_name("init")?;
 
-        let mut interpreter = Interpreter::new(&parsed.table);
+        let mut interpreter = Interpreter::new(parsed.table.clone());
         // Set a specific seed so different runs generate the same result
         let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
