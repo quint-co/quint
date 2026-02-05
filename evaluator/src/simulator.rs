@@ -16,6 +16,7 @@ pub struct ParsedQuint {
     pub init: QuintEx,
     pub step: QuintEx,
     pub invariant: QuintEx,
+    pub witnesses: Vec<QuintEx>,
     pub table: LookupTable,
 }
 
@@ -25,8 +26,7 @@ pub struct SimulationResult {
     pub best_traces: Vec<Trace>,
     pub trace_statistics: TraceStatistics,
     pub samples: usize,
-    // TODO
-    // witnessing_traces
+    pub witnessing_traces: Vec<usize>,
 }
 
 /// Simulation error that includes context about when the error occurred.
@@ -88,6 +88,13 @@ impl ParsedQuint {
         let step = interpreter.compile(&self.step);
         let invariant = interpreter.compile(&self.invariant);
 
+        // Compile witnesses and initialize tracking
+        let compiled_witnesses: Vec<_> = self.witnesses.iter()
+            .map(|w| interpreter.compile(w))
+            .collect();
+        let mut witnessing_traces = vec![0; self.witnesses.len()];
+        let mut trace_witnessed = vec![false; self.witnesses.len()];
+
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
@@ -95,6 +102,8 @@ impl ParsedQuint {
         for sample_number in 1..=samples {
             reporter.next_sample();
             let seed = env.rand.get_state();
+            trace_witnessed.fill(false);
+            let mut remaining = compiled_witnesses.len();
 
             // Wrap execute calls to catch panics and print seed
             let result = catch_unwind(AssertUnwindSafe(|| -> Result<bool, QuintError> {
@@ -105,6 +114,29 @@ impl ParsedQuint {
                 for step_number in 1..=(steps + 1) {
                     // Shift the state and record it in the trace
                     env.shift();
+                        
+                    // Evaluate witnesses after each step and skip if all satisfied
+                    if remaining > 0 {
+                        for (witnessed_flag, witness) in
+                            trace_witnessed.iter_mut().zip(compiled_witnesses.iter())
+                        {
+                            // Skip if this witness is already satisfied in a previous step
+                            if *witnessed_flag {
+                                continue;
+                            }
+
+                            if let Ok(result) = witness.execute(&mut env) {
+                                if result.as_bool() {
+                                    *witnessed_flag = true;
+                                    remaining -= 1;
+                                    // early break if all witnesses are satisfied.
+                                    if remaining == 0 {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     if !invariant.execute(&mut env)?.as_bool() {
                         trace_lengths.push(env.trace.len());
@@ -135,10 +167,18 @@ impl ParsedQuint {
                             best_traces,
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
+                            witnessing_traces,
                         });
                     }
 
                     trace_lengths.push(env.trace.len());
+
+                    // Finalize witness counts for this trace
+                    for (i, &witnessed) in trace_witnessed.iter().enumerate() {
+                        if witnessed {
+                            witnessing_traces[i] += 1;
+                        }
+                    }
 
                     collect_trace(
                         &mut best_traces,
@@ -157,6 +197,7 @@ impl ParsedQuint {
                             best_traces,
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
+                            witnessing_traces,
                         });
                     }
                 }
@@ -204,6 +245,7 @@ impl ParsedQuint {
             best_traces,
             trace_statistics: get_trace_statistics(&trace_lengths),
             samples,
+            witnessing_traces,
         })
     }
 }
