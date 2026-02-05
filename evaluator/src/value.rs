@@ -21,6 +21,7 @@ use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
+use num_bigint::BigUint;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -374,6 +375,17 @@ impl Value {
         })
     }
 
+    /// Check if this is a large powerset (base set >= 64 elements)
+    /// Large powersets require special handling to avoid overflow
+    pub fn is_large_powerset(&self) -> bool {
+        if let ValueInner::PowerSet(base_set) = self.0.as_ref() {
+            if let Ok(card) = base_set.cardinality() {
+                return card >= u64::BITS as usize;
+            }
+        }
+        false
+    }
+
     /// Check if a set is a subset of another set, avoiding enumeration when possible
     pub fn subseteq(&self, superset: &Value) -> Result<bool, QuintError> {
         Ok(match (self.0.as_ref(), superset.0.as_ref()) {
@@ -622,6 +634,22 @@ pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
     for (j, elem) in base.iter().enumerate() {
         // Check if the j-th bit is set in the index
         if (i & (1 << j)) != 0 {
+            elems.insert(elem.clone());
+        }
+    }
+    Value::set(elems)
+}
+
+/// Pick a specific subset from a large powerset using BigUint index.
+/// This is used for powersets with base set cardinality >= 64 elements where usize would overflow.
+///
+/// Uses BigUint to support sets of arbitrary size (not limited to 63 elements
+/// due to bit shift overflow with usize).
+pub fn powerset_at_index_large(base: &ImmutableSet<Value>, i: &BigUint) -> Value {
+    let mut elems = ImmutableSet::default();
+    for (j, elem) in base.iter().enumerate() {
+        // Check if the j-th bit is set in the BigUint index
+        if i.bit(j as u64) {
             elems.insert(elem.clone());
         }
     }
