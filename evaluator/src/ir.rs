@@ -48,20 +48,8 @@ pub struct QuintOutput {
 }
 
 /// LookupTable with custom deserialization to handle string keys from JSONbig
-#[derive(Debug, Clone)]
-pub struct LookupTable(pub IndexMap<QuintId, LookupDefinition, FxBuildHasher>);
-
-impl LookupTable {
-    pub fn new() -> Self {
-        LookupTable(IndexMap::with_hasher(FxBuildHasher::default()))
-    }
-}
-
-impl Default for LookupTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+#[derive(Default, Serialize, Debug, Clone)]
+pub struct LookupTable(IndexMap<QuintId, LookupDefinition, FxBuildHasher>);
 
 impl std::ops::Deref for LookupTable {
     type Target = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
@@ -74,15 +62,6 @@ impl std::ops::Deref for LookupTable {
 impl std::ops::DerefMut for LookupTable {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-impl Serialize for LookupTable {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.0.serialize(serializer)
     }
 }
 
