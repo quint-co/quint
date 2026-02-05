@@ -123,6 +123,12 @@ export type ErrorCode =
   | 'QNT514'
   /* QNT515: 'apalache::generate' is not supported by the simulator */
   | 'QNT515'
+  /* QNT516: Rust evaluator process failure */
+  | 'QNT516'
+  /* QNT517: Rust evaluator killed by signal */
+  | 'QNT517'
+  /* QNT601: Integer overflow in the rust evaluator */
+  | 'QNT601'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

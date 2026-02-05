@@ -1257,11 +1257,11 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
+[error] Runtime error (duration).
 HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 5:   action init = { x' = N }
                           ^
 
-Use --seed=0x1 --backend=typescript to reproduce.
 error: Runtime error
 ```
 

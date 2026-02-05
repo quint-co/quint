@@ -41,7 +41,7 @@ impl Trace {
                 panic!("Expected a record, got {}", self.states[0]);
             }
         } else {
-            panic!("No states found");
+            vec![]
         };
 
         let mut other = BTreeMap::new();
@@ -88,7 +88,10 @@ impl Value {
             | ValueInner::CrossProduct(_)
             | ValueInner::PowerSet(_)
             | ValueInner::MapSet(_, _) => {
-                itf::Value::Set(self.as_set().iter().map(|v| v.to_itf()).collect())
+                let set = self
+                    .as_set()
+                    .expect("can't convert value to set for ITF conversion");
+                itf::Value::Set(set.iter().map(|v| v.to_itf()).collect())
             }
             ValueInner::Tuple(elems) => {
                 itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect())
