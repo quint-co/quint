@@ -348,7 +348,10 @@ fn simulate_in_parallel(
         if aggregated_witnesses.is_empty() {
             aggregated_witnesses = outcome.witnessing_traces.clone();
         } else {
-            for (agg, count) in aggregated_witnesses.iter_mut().zip(&outcome.witnessing_traces) {
+            for (agg, count) in aggregated_witnesses
+                .iter_mut()
+                .zip(&outcome.witnessing_traces)
+            {
                 *agg += count;
             }
         }

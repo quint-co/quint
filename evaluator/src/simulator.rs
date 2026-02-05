@@ -89,7 +89,9 @@ impl ParsedQuint {
         let invariant = interpreter.compile(&self.invariant);
 
         // Compile witnesses and initialize tracking
-        let compiled_witnesses: Vec<_> = self.witnesses.iter()
+        let compiled_witnesses: Vec<_> = self
+            .witnesses
+            .iter()
             .map(|w| interpreter.compile(w))
             .collect();
         let mut witnessing_traces = vec![0; self.witnesses.len()];
@@ -114,7 +116,7 @@ impl ParsedQuint {
                 for step_number in 1..=(steps + 1) {
                     // Shift the state and record it in the trace
                     env.shift();
-                        
+
                     // Evaluate witnesses after each step and skip if all satisfied
                     if remaining > 0 {
                         for (witnessed_flag, witness) in
