@@ -8,6 +8,7 @@ use crate::{
     ir::QuintError,
     value::{Value, ValueInner},
 };
+use num_bigint::BigUint;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::OnceLock;
@@ -67,8 +68,34 @@ pub fn eval_nondet_one_of(
         // Evaluate the set from which to pick
         let set = set_expr.execute(env)?;
 
-        // Check if the set is empty - if so, return false instead of error
-        let bounds = set.bounds();
+        // Special handling for large PowerSet
+        // These are too large to retry through, so just pick once
+        if set.is_large_powerset() {
+            if let ValueInner::PowerSet(base_set) = set.0.as_ref() {
+                let n = base_set.cardinality().map_err(|e| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Failed to compute powerset base cardinality: {}", e.message),
+                    )
+                })?;
+                let cardinality = BigUint::from(1u64) << n;
+                let random_index = env.rand.next_biguint(&cardinality);
+                let positions: Vec<usize> = random_index
+                    .to_u32_digits()
+                    .iter()
+                    .map(|&d| d as usize)
+                    .collect();
+
+                let picked_value = set.pick(&mut positions.into_iter())?;
+                cached_value.replace(Some(Ok(picked_value)));
+                let result = body_expr.execute(env);
+                cached_value.replace(None);
+                return result;
+            }
+        }
+
+        // Standard path for other sets and small powersets
+        let bounds = set.bounds()?;
         for bound in &bounds {
             if *bound == 0 {
                 return Ok(Value::bool(false));
@@ -86,7 +113,7 @@ pub fn eval_nondet_one_of(
         let should_retry_set = should_retry_nondet(&bounds);
 
         loop {
-            let picked_value = set.pick(&mut new_positions.iter().copied());
+            let picked_value = set.pick(&mut new_positions.iter().copied())?;
 
             // Set the picked value to the corresponding cache and evaluate the body
             cached_value.replace(Some(Ok(picked_value)));

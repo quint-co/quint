@@ -19,7 +19,7 @@ import { ConcreteFixedRow, QuintType, Row } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'
 import { substitutionsToString } from './printing'
-import { isEqual } from 'lodash'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 
 /*
  * Substitutions can be applied to Quint types, type variables with another type
