@@ -25,7 +25,7 @@ import readline from 'readline'
 import JSONbig from 'json-bigint'
 import { replacer } from '../jsonHelper'
 import { ofItfValue } from '../itf'
-import { rv } from '../runtime/impl/runtimeValue'
+import { RuntimeValue, rv } from '../runtime/impl/runtimeValue'
 import { zerog } from '../idGenerator'
 import { getRustEvaluatorPath } from './binaryManager'
 
@@ -177,7 +177,7 @@ export class ReplServerWrapper {
   /**
    * Async version of evaluate (what we actually implement)
    */
-  async evaluateAsync(expr: QuintEx): Promise<Either<QuintError, QuintEx>> {
+  async evaluate(expr: QuintEx): Promise<Either<QuintError, QuintEx>> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'Evaluate', expr })
 
@@ -194,22 +194,12 @@ export class ReplServerWrapper {
     return left({ code: 'QNT000', message: 'Unexpected response from evaluator', reference: undefined })
   }
 
-  /**
-   * Update the lookup table with new definitions
-   */
-  updateTable(table: LookupTable): void {
-    // Fire and forget - async operation but sync interface
-    this.updateTableAsync(table).catch(err => {
-      console.error('Failed to update table:', err)
-    })
-  }
-
-  async updateTableAsync(table: LookupTable): Promise<void> {
+  async updateTable(table: LookupTable): Promise<void> {
     await this.initializationPromise
     await this.sendCommand({ cmd: 'UpdateTable', table })
   }
 
-  async replShiftAsync(): Promise<[boolean, string[], any, any]> {
+  async replShift(): Promise<[boolean, string[], RuntimeValue, RuntimeValue]> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'ReplShift' })
 
@@ -220,10 +210,13 @@ export class ReplServerWrapper {
         this.traceCache = undefined
       }
 
-      return [response.shifted, response.missing_vars, response.old_state, response.new_state]
+      const old_state = rv.fromQuintEx(ofItfValue(response.old_state, zerog.nextId))
+      const new_state = rv.fromQuintEx(ofItfValue(response.new_state, zerog.nextId))
+
+      return [response.shifted, response.missing_vars, old_state, new_state]
     }
 
-    return [false, [], undefined, undefined]
+    throw new Error('Failed to perform REPL shift')
   }
 
   /**
