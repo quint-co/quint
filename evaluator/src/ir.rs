@@ -65,6 +65,9 @@ impl std::ops::DerefMut for LookupTable {
     }
 }
 
+/// Custom deserializer for LookupTable to handle maps with integer keys.
+/// This is necessary to workaround a serve bug involving tagged enums.
+/// See: https://github.com/serde-rs/json/issues/1254
 impl<'de> Deserialize<'de> for LookupTable {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -371,8 +374,10 @@ mod tests {
     /// Without the custom deserializer, serde_json fails with:
     /// "invalid type: string \"4\", expected u64"
     ///
-    /// This does work with simpler datatypes, but the specific setting with
-    /// `TestCommand` and `LookupDefinition` makes it break.
+    /// This does work with simpler datatypes, but the specific setting inside
+    /// an enum (like `ReplCommand`) and makes it break.
+    ///
+    /// See: https://github.com/serde-rs/json/issues/1254
     ///
     /// This test reproduces the exact failure that occurs when TypeScript sends
     /// UpdateTable commands to the Rust REPL evaluator.
