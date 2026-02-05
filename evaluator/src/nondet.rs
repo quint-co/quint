@@ -66,9 +66,7 @@ pub fn eval_nondet_one_of(
     CompiledExpr::new(move |env: &mut Env| {
         // Evaluate the set from which to pick
         let set = set_expr.execute(env)?;
-
-        // Check if the set is empty - if so, return false instead of error
-        let bounds = set.bounds();
+        let bounds = set.bounds()?;
         for bound in &bounds {
             if *bound == 0 {
                 return Ok(Value::bool(false));
@@ -86,7 +84,7 @@ pub fn eval_nondet_one_of(
         let should_retry_set = should_retry_nondet(&bounds);
 
         loop {
-            let picked_value = set.pick(&mut new_positions.iter().copied());
+            let picked_value = set.pick(&mut new_positions.iter().copied())?;
 
             // Set the picked value to the corresponding cache and evaluate the body
             cached_value.replace(Some(Ok(picked_value)));

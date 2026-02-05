@@ -127,6 +127,8 @@ export type ErrorCode =
   | 'QNT516'
   /* QNT517: Rust evaluator killed by signal */
   | 'QNT517'
+  /* QNT601: Integer overflow in the rust evaluator */
+  | 'QNT601'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {
