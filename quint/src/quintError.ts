@@ -141,6 +141,16 @@ export type QuintErrorFix =
   /* Replace a string with another */
   { kind: 'replace'; original: string; replacement: string }
 
+/** Type predicate to check if an unknown error is a QuintError
+ *
+ * @param error the error to check
+ *
+ * @returns true if the error is a QuintError
+ */
+export function isQuintError(error: unknown): error is QuintError {
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error
+}
+
 /** Formats a Quint error as a string
  *
  * @param err the error to be formatted
