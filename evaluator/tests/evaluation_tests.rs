@@ -1248,7 +1248,7 @@ fn cardinality_overflow() -> Result<(), Box<dyn std::error::Error>> {
     let err = result.unwrap_err();
     assert_eq!(
         err.to_string(),
-        "[QNT601] Integer overflow in cardinality computation: powerset 2^80 exceeds usize::MAX"
+        "[QNT601] Integer overflow in cardinality computation: powerset size 2^80 exceeds the maximum supported size"
     );
 
     Ok(())

@@ -176,10 +176,10 @@ impl PartialEq for ValueInner {
                 if self_value.is_set() && other_value.is_set() {
                     let self_set = self_value
                         .as_set()
-                        .expect("failure in equality check: left set could not be enumerated");
+                        .expect("can't enumerate left set for equality check");
                     let other_set = other_value
                         .as_set()
-                        .expect("failure in equality check: right set could not be enumerated");
+                        .expect("can't enumerate right set for equality check");
                     self_set == other_set
                 } else {
                     false
@@ -274,7 +274,7 @@ impl Value {
                     .ok_or_else(|| {
                         QuintError::new(
                             "QNT601",
-                            "Integer overflow in cardinality computation: interval cardinality exceeds usize::MAX",
+                            "Integer overflow in cardinality computation: interval exceeds the maximum supported size",
                         )
                     })
             }
@@ -283,7 +283,7 @@ impl Value {
                 acc.checked_mul(set_card).ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        "Integer overflow in cardinality computation: cross product exceeds usize::MAX",
+                        "Integer overflow in cardinality computation: cross product exceeds the maximum supported size",
                     )
                 })
             }),
@@ -294,7 +294,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: base set size {} exceeds u32::MAX",
+                            "Integer overflow in cardinality computation: base set size {} exceeds the maximum supported exponent size",
                             base_size
                         ),
                     )
@@ -303,7 +303,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: powerset 2^{} exceeds usize::MAX",
+                            "Integer overflow in cardinality computation: powerset size 2^{} exceeds the maximum supported size",
                             base_size
                         ),
                     )
@@ -317,7 +317,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: domain set size {} exceeds u32::MAX",
+                            "Integer overflow in cardinality computation: domain set size {} exceeds the maximum supported exponent size",
                             domain_size
                         ),
                     )
@@ -326,7 +326,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: map set {}^{} exceeds usize::MAX",
+                            "Integer overflow in cardinality computation: map set size {}^{} exceeds the maximum supported size",
                             range_size, domain_size
                         ),
                     )
@@ -531,7 +531,7 @@ impl Value {
                     .ok_or_else(|| {
                         QuintError::new(
                             "QNT601",
-                            "Integer overflow in set enumeration: map set exceeds usize::MAX",
+                            "Integer overflow in set enumeration: map set exceeds the maximum supported size",
                         )
                     })?;
 
@@ -669,9 +669,7 @@ impl fmt::Display for Value {
             | ValueInner::PowerSet(_)
             | ValueInner::MapSet(_, _) => {
                 write!(f, "Set(")?;
-                let set = self
-                    .as_set()
-                    .expect("failure in display: set could not be enumerated");
+                let set = self.as_set().expect("can't enumerate set for display");
                 for (i, elem) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;

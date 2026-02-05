@@ -526,7 +526,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: length {} exceeds i64::MAX",
+                        "Integer overflow in type conversion: length {} exceeds the maximum supported integer",
                         card
                     ),
                 )
@@ -552,7 +552,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: indices size {} exceeds i64::MAX",
+                        "Integer overflow in type conversion: indices size {} exceeds the maximum supported integer",
                         card
                     ),
                 )
@@ -630,7 +630,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: size {} exceeds i64::MAX",
+                        "Integer overflow in type conversion: size {} exceeds the maximum supported integer",
                         card
                     ),
                 )

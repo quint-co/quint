@@ -90,7 +90,7 @@ impl Value {
             | ValueInner::MapSet(_, _) => {
                 let set = self
                     .as_set()
-                    .expect("failure in ITF conversion: set could not be enumerated");
+                    .expect("can't convert value to set for ITF conversion");
                 itf::Value::Set(set.iter().map(|v| v.to_itf()).collect())
             }
             ValueInner::Tuple(elems) => {

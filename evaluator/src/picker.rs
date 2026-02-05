@@ -17,7 +17,11 @@ impl Value {
                 let index = indexes
                     .next()
                     .expect("Internal error: too few positions. Report a bug");
-                set.iter().collect::<Vec<_>>()[index].clone()
+
+                set.iter()
+                    .nth(index)
+                    .cloned()
+                    .expect("Internal error: Index out of bounds. Report a bug")
             }
             ValueInner::Interval(start, end) => {
                 let index = indexes
@@ -28,9 +32,11 @@ impl Value {
                 Value::int(start + idx)
             }
             ValueInner::CrossProduct(sets) => {
-                let elements: Result<Vec<_>, _> =
-                    sets.iter().map(|value| value.pick(indexes)).collect();
-                Value::tuple(elements?.into_iter().collect())
+                let elements = sets
+                    .iter()
+                    .map(|value| value.pick(indexes))
+                    .collect::<Result<_, _>>()?;
+                Value::tuple(elements)
             }
             ValueInner::PowerSet(base_set) => {
                 if self.is_large_powerset() {
@@ -67,15 +73,15 @@ impl Value {
                 };
 
                 let keys = domain.as_set()?;
-                let key_values: Result<Vec<_>, _> = keys
+                let key_values = keys
                     .iter()
                     .map(|key| {
                         let value = range_to_pick.pick(indexes)?;
                         Ok((key.clone(), value))
                     })
-                    .collect();
+                    .collect::<Result<_, _>>()?;
 
-                Value::map(ImmutableMap::from_iter(key_values?))
+                Value::map(key_values)
             }
             _ => panic!("Not a set"),
         })
