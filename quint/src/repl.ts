@@ -594,7 +594,7 @@ export function quintRepl(
 
     rl.prompt()
   })().catch(err => {
-    out(chalk.red(`Error during REPL initialization: ${err}\n`))
+    out(chalk.red(`Error in Rust REPL server: ${err}\n`))
     exit()
   })
 

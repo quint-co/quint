@@ -57,6 +57,7 @@ type ReplResponse =
   | { response: 'TraceStates'; states: any[] }
   | { response: 'ResetComplete' }
   | { response: 'Error'; message: string }
+  | { response: 'FatalError'; message: string }
 
 /**
  * Wrapper for the long-lived Rust REPL evaluator server.
@@ -70,6 +71,7 @@ export class ReplServerWrapper {
   private stdout: readline.Interface | null = null
   private pendingResponse: ((response: ReplResponse) => void) | null = null
   private processExited: boolean = false
+  private fatalError: string | null = null
   public recorder: TraceRecorder
   private verbosityLevel: number
   private traceCache?: Trace
@@ -131,6 +133,22 @@ export class ReplServerWrapper {
       try {
         const response: ReplResponse = JSONbig.parse(line)
 
+        if (response.response === 'FatalError') {
+          // Store the fatal error and shut down
+          this.fatalError = response.message
+          console.error(`Fatal error from Rust evaluator: ${response.message}`)
+
+          // Resolve any pending response with the error
+          if (this.pendingResponse) {
+            this.pendingResponse(response)
+            this.pendingResponse = null
+          }
+
+          // Shut down the process
+          this.shutdown()
+          return
+        }
+
         if (this.pendingResponse) {
           this.pendingResponse(response)
           this.pendingResponse = null
@@ -148,6 +166,14 @@ export class ReplServerWrapper {
    * Send a command to the Rust evaluator and wait for response
    */
   private async sendCommand(command: ReplCommand): Promise<ReplResponse> {
+    // Check if we've encountered a fatal error
+    if (this.fatalError !== null) {
+      return {
+        response: 'FatalError',
+        message: this.fatalError,
+      }
+    }
+
     if (!this.process || !this.process.stdin || this.processExited) {
       throw new Error('Rust REPL evaluator process not initialized or has exited')
     }
@@ -181,7 +207,9 @@ export class ReplServerWrapper {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'Evaluate', expr })
 
-    if (response.response === 'EvaluationResult') {
+    if (response.response === 'FatalError') {
+      return left({ code: 'QNT000', message: response.message, reference: undefined })
+    } else if (response.response === 'EvaluationResult') {
       if (response.ok !== undefined) {
         return right(ofItfValue(response.ok, zerog.nextId))
       } else if (response.err !== undefined) {
@@ -202,6 +230,10 @@ export class ReplServerWrapper {
   async replShift(): Promise<[boolean, string[], RuntimeValue | undefined, RuntimeValue | undefined]> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'ReplShift' })
+
+    if (response.response === 'FatalError') {
+      throw new Error(`Fatal error: ${response.message}`)
+    }
 
     if (response.response === 'ReplShiftResult') {
       if (response.shifted) {
@@ -232,6 +264,10 @@ export class ReplServerWrapper {
 
     await this.initializationPromise
     const statesResponse = await this.sendCommand({ cmd: 'GetTraceStates' })
+
+    if (statesResponse.response === 'FatalError') {
+      throw new Error(`Fatal error: ${statesResponse.message}`)
+    }
 
     if (statesResponse.response === 'TraceStates') {
       const states = statesResponse.states.map(itfValue => {
