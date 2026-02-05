@@ -16,14 +16,14 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintEx } from '../ir/quintIr'
 import { LookupTable } from '../names/base'
-import { QuintError } from '../quintError'
+import { QuintError, isQuintError } from '../quintError'
 import { Rng } from '../rng'
 import { TraceRecorder } from '../runtime/trace'
 import { Trace } from '../runtime/impl/trace'
 import { ChildProcess, spawn } from 'child_process'
 import readline from 'readline'
 import JSONbig from 'json-bigint'
-import { replacer } from '../jsonHelper'
+import { replacer } from './helpers'
 import { ofItfValue } from '../itf'
 import { rv } from '../runtime/impl/runtimeValue'
 import { zerog } from '../idGenerator'
@@ -163,8 +163,22 @@ export class ReplServerWrapper {
       // Store the response handler
       this.pendingResponse = resolve
 
+      // Serialize command with BigInt validation
+      let commandJson: string
+      try {
+        commandJson = JSONbig.stringify(command, replacer)
+      } catch (error) {
+        this.pendingResponse = null
+        // If replacer throws a QuintError for out-of-bounds integers, reject with it
+        if (isQuintError(error)) {
+          reject(error)
+          return
+        }
+        reject(error)
+        return
+      }
+
       // Write command to stdin
-      const commandJson = JSONbig.stringify(command, replacer)
       this.process!.stdin!.write(commandJson + '\n', err => {
         if (err) {
           this.pendingResponse = null
