@@ -10,16 +10,33 @@ import { version } from '../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
+//
+// Note that the writable string is used to wait for the repl's output. The
+// reply is considered to be done processing the input if it emits a prompt
+// prefix (>>>, ...) or an internal "Error".
 class ToStringWritable extends Writable {
   buffer: string = ''
+  waiter: () => void = () => {}
 
-  _write(chunk: string, encoding: string, next: (_error?: Error | null) => void): void {
+  _write(chunk: Buffer, _encoding: string, next: (_error?: Error | null) => void): void {
     this.buffer += chunk
+    if (chunk.includes('>>> ') || chunk.includes('... ') || chunk.includes('Error')) {
+      this.waiter()
+    }
     next()
   }
 
   reset() {
     this.buffer = ''
+  }
+
+  async isReady() {
+    if (this.buffer.endsWith('>>> ') || this.buffer.endsWith('... ')) {
+      return
+    }
+    await new Promise((resolve, _reject) => {
+      this.waiter = () => resolve(null)
+    })
   }
 }
 
@@ -40,44 +57,35 @@ const withIO = async (inputText: string): Promise<string> => {
   input.pipe(output, { end: false })
 
   const rl = quintRepl(input, output, { verbosity: 2, backend: 'rust' }, () => {})
+  await output.isReady()
 
-  // Send input line-by-line to the REPL with small delays.
-  // We emit 'data' events for each line, with a delay between each one
-  // to give the REPL's async processing time to handle each line before
-  // the next one arrives. This prevents race conditions where lines are
-  // queued faster than the REPL can process them.
-  const lines = inputText.split('\n')
-  let linesLeft = lines.length
+  // Send input line-by-line to the REPL. We emit 'data' events for each line,
+  // with a wait between each one to give the REPL's async processing time to
+  // handle each line before the next one arrives. This prevents race conditions
+  // where lines are queued faster than the REPL can process them.
+  const lines = inputText.split(/(?<=\n)/)
   for (const line of lines) {
     input.emit('data', line)
-    linesLeft--
-    if (linesLeft > 0) {
-      input.emit('data', '\n')
-      // Wait a tick to allow the REPL to process this line
-      await new Promise(resolve => setImmediate(resolve))
-    }
+    await output.isReady()
   }
   input.end()
+  input.unpipe(output)
+  input.destroy()
 
   // readline is asynchronous, wait till it terminates
   await once(rl, 'close')
-
-  // Clean up after the REPL has closed
-  input.unpipe(output)
-  input.destroy()
 
   chalk.level = savedChalkLevel
   return output.buffer
 }
 
 // the standard banner, which gets repeated
-const banner = `Quint REPL ${version}
+const banner = `Quint REPL ${version} (using the Rust backend)
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {
   const expected = `${banner}
-${output}
-`
+${output}`
 
   const result = await withIO(input)
   assert(typeof result === 'string', 'expected result to be a string')
