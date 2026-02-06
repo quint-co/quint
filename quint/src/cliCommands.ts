@@ -461,10 +461,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   simulator.seed = outcome.bestTraces[0]?.seed
   const states = outcome.bestTraces[0]?.states
+  const diagnostics = outcome.bestTraces[0]?.diagnostics || []
   const frames = recorder.bestTraces[0]?.frame?.subframes
 
   if (states && states.length > 0) {
-    maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
+    maybePrintCounterExample(verbosityLevel, states, diagnostics, frames, prev.args.hide || [])
   }
 
   switch (outcome.status) {

@@ -13,6 +13,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
 import { QuintApp, QuintEx, QuintStr } from './ir/quintIr'
 import rv from './runtime/impl/runtimeValue'
+import { zerog } from './idGenerator'
 
 /** The type of IFT traces.
  * See https://github.com/apalache-mc/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -261,4 +262,26 @@ export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {
     // This should be impossible, but TypeScript can't tell we've handled all cases
     throw new Error(`internal error: unhandled ITF value ${value}`)
   }
+}
+
+/** An debug message embedded into trace's metadata */
+export interface DebugMessage {
+  label: string
+  value: QuintEx
+}
+
+/** Extracts diagnostics embedded into ITF's metadata. Returns a matrics of
+ * diagnostics per state in the ITF trace. */
+export function diagnosticsOfItf(itf: ItfTrace): DebugMessage[][] {
+  var diagnostics = []
+
+  for (const state of itf.states) {
+    if ('#meta' in state && 'diagnostics' in state['#meta']) {
+      const msgs: { label: string; value: any }[] = JSON.parse(state['#meta'].diagnostics)
+      msgs.forEach(msg => (msg.value = ofItfValue(msg.value, zerog.nextId)))
+      diagnostics.push(msgs)
+    }
+  }
+
+  return diagnostics
 }
