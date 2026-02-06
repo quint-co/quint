@@ -17,7 +17,7 @@ import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Substitutions, applySubstitution, applySubstitutionToEntity, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
-import isEqual from 'lodash.isequal'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 import { differenceWith, intersectionWith } from 'lodash'
 
 /* Kinds for concrete effect components */

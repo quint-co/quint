@@ -17,7 +17,7 @@ import { ErrorTree, buildErrorTree } from '../errorTree'
 import { Effect, Entity } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
-import { isEqual } from 'lodash'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 
 /*
  * Substitutions can be applied to both effects and entities, replacing
