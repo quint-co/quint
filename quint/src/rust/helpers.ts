@@ -19,19 +19,17 @@ const I64_MAX = 2n ** 63n - 1n
 function createError(value: bigint, context: string, id: bigint): QuintError {
   return {
     code: 'QNT600',
-    message:
-      `Integer literal ${value}${context} is outside i64 range and is not supported by the Rust evaluator.`,
+    message: `Integer literal ${value}${context} is outside i64 range and is not supported by the Rust evaluator.`,
     reference: id,
   }
 }
-
 
 export function replacer(_key: string, value: any): any {
   // Detect QuintInt expressions with out-of-bounds values
   if (typeof value.value === 'bigint') {
     const intValue = value.value
     if (intValue < I64_MIN || intValue > I64_MAX) {
-      const error = createError(intValue, "", value.id)
+      const error = createError(intValue, '', value.id)
       throw error
     }
   }

@@ -30,7 +30,6 @@ import { Either, left, right } from '@sweet-monads/either'
 import { getRustEvaluatorPath } from './binaryManager'
 import { replacer } from './helpers'
 
-
 export type ParsedQuint = {
   modules: QuintModule[]
   table: LookupTable
