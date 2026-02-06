@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------------
- * Copyright 2025 Informal Systems
+ * Copyright 2026 Informal Systems
  * Licensed under the Apache License, Version 2.0.
  * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
@@ -18,7 +18,7 @@ const I64_MAX = 2n ** 63n - 1n
 
 function createError(value: bigint, context: string, id: bigint): QuintError {
   return {
-    code: 'QNT500',
+    code: 'QNT600',
     message:
       `Integer literal ${value}${context} is outside i64 range and is not supported by the Rust evaluator.`,
     reference: id,
