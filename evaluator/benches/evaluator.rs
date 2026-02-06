@@ -10,7 +10,7 @@ fn simulate(
     steps: usize,
     samples: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
     let init = interpreter.compile(&parsed.init);
