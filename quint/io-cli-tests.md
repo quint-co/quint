@@ -1343,7 +1343,6 @@ static analysis error: error: [QNT101] Conflicting definitions found for name 'f
 def farenheit(celsius) = celsius * 9 / 5 + 32
     ^^^^^^^^^
 
-
 33
 
 ```
