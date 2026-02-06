@@ -199,21 +199,23 @@ export class ReplServerWrapper {
     await this.sendCommand({ cmd: 'UpdateTable', table })
   }
 
-  async replShift(): Promise<[boolean, string[], RuntimeValue, RuntimeValue]> {
+  async replShift(): Promise<[boolean, string[], RuntimeValue | undefined, RuntimeValue | undefined]> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'ReplShift' })
 
     if (response.response === 'ReplShiftResult') {
-      // Invalidate the cache when a shift happens
-      // Traces will be fetched lazily when getTrace() is called
       if (response.shifted) {
+        // Invalidate the cache when a shift happens
+        // Traces will be fetched lazily when getTrace() is called
         this.traceCache = undefined
+
+        const old_state = rv.fromQuintEx(ofItfValue(response.old_state, zerog.nextId))
+        const new_state = rv.fromQuintEx(ofItfValue(response.new_state, zerog.nextId))
+
+        return [response.shifted, response.missing_vars, old_state, new_state]
       }
 
-      const old_state = rv.fromQuintEx(ofItfValue(response.old_state, zerog.nextId))
-      const new_state = rv.fromQuintEx(ofItfValue(response.new_state, zerog.nextId))
-
-      return [response.shifted, response.missing_vars, old_state, new_state]
+      return [response.shifted, response.missing_vars, undefined, undefined]
     }
 
     throw new Error('Failed to perform REPL shift')

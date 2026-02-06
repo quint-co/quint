@@ -755,7 +755,7 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
         const [shifted, missing, oldState, newState] = await state.evaluator.replShift()
 
         if (shifted && verbosity.hasDiffs(state.verbosity)) {
-          const diffDoc = diffRuntimeValueDoc(oldState, newState, { collapseThreshold: 2 })
+          const diffDoc = diffRuntimeValueDoc(oldState!, newState!, { collapseThreshold: 2 })
           console.log(format(terminalWidth(), 0, diffDoc))
         }
 
