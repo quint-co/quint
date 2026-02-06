@@ -69,6 +69,9 @@ pub enum ValueInner {
     CrossProduct(Vec<Value>),
     PowerSet(Value),
     MapSet(Value, Value),
+    // Infinite sets
+    InfiniteInt,    // represents the set of all integers
+    InfiniteNat,    // represents the set of all natural numbers (>= 0)
 }
 
 impl Hash for Value {
@@ -137,6 +140,10 @@ impl Hash for ValueInner {
             ValueInner::MapSet(a, b) => {
                 a.hash(state);
                 b.hash(state);
+            }
+            ValueInner::InfiniteInt | ValueInner::InfiniteNat => {
+                // The discriminant is already hashed, which is sufficient
+                // for distinguishing between Int and Nat
             }
         }
     }
@@ -257,6 +264,15 @@ impl Value {
     pub fn map_set(a: Value, b: Value) -> Self {
         Value(Rc::new(ValueInner::MapSet(a, b)))
     }
+
+    pub fn infinite_int() -> Self {
+        Value(Rc::new(ValueInner::InfiniteInt))
+    }
+
+    pub fn infinite_nat() -> Self {
+        Value(Rc::new(ValueInner::InfiniteNat))
+    }
+
     /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
     pub fn cardinality(&self) -> Result<usize, crate::ir::QuintError> {
@@ -332,6 +348,18 @@ impl Value {
                     )
                 })
             }
+            ValueInner::InfiniteInt => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Int is non-enumerable",
+                ))
+            }
+            ValueInner::InfiniteNat => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Nat is non-enumerable",
+                ))
+            }
             _ => panic!("Cardinality not implemented for {self:?}"),
         }
     }
@@ -371,6 +399,10 @@ impl Value {
                         .try_fold(true, |acc, v| Ok(acc && range.contains(v)?))?
                 }
             }
+            (ValueInner::InfiniteInt, ValueInner::Int(_)) => true,
+            (ValueInner::InfiniteInt, _) => false,
+            (ValueInner::InfiniteNat, ValueInner::Int(n)) => *n >= 0,
+            (ValueInner::InfiniteNat, _) => false,
             _ => panic!("contains not implemented for {self:?}"),
         })
     }
@@ -678,6 +710,8 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
+            ValueInner::InfiniteInt => write!(f, "Int"),
+            ValueInner::InfiniteNat => write!(f, "Nat"),
             ValueInner::Tuple(elems) => {
                 write!(f, "(")?;
                 for (i, elem) in elems.iter().enumerate() {

@@ -56,7 +56,6 @@ impl Value {
             }
             ValueInner::MapSet(domain, range) => {
                 let domain_size = domain.cardinality()?;
-                let range_size = range.cardinality()?;
 
                 if domain_size == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map()),
@@ -64,8 +63,8 @@ impl Value {
                     return Ok(Value::map(ImmutableMap::default()));
                 }
 
-                assert!(range_size > 0, "Range can't be zero");
-
+                // For infinite sets (Int, Nat), we don't check cardinality
+                // They will handle picking themselves
                 let range_to_pick = if matches!(range.0.as_ref(), ValueInner::MapSet(_, _)) {
                     Value::set(range.as_set()?.into_owned())
                 } else {
@@ -82,6 +81,27 @@ impl Value {
                     .collect::<Result<_, _>>()?;
 
                 Value::map(key_values)
+            }
+            ValueInner::InfiniteInt => {
+                // Pick a random integer from the entire i64 range
+                let index = indexes
+                    .next()
+                    .expect("Internal error: too few positions. Report a bug");
+
+                // Map the index to the full i64 range
+                // We use wrapping conversion to get a uniform distribution across all i64 values
+                let value = index as i64;
+                Value::int(value)
+            }
+            ValueInner::InfiniteNat => {
+                // Pick a random natural number (>= 0)
+                // The bound is set to i64::MAX, so this is always non-negative
+                let index = indexes
+                    .next()
+                    .expect("Internal error: too few positions. Report a bug");
+
+                let value = index as i64;
+                Value::int(value)
             }
             _ => panic!("Not a set"),
         })
@@ -116,10 +136,22 @@ impl Value {
                 }
             }
             ValueInner::MapSet(domain, range) => {
-                // Cardinality of range repeated domain times
-                let range_card = range.cardinality()?;
+                // If the range is an infinite set, we handle it specially
+                let range_bounds = range.bounds()?;
                 let domain_card = domain.cardinality()?;
-                vec![range_card; domain_card]
+
+                // Repeat the range bounds for each element in the domain
+                range_bounds.repeat(domain_card)
+            }
+            ValueInner::InfiniteInt => {
+                // For Int, we use the maximum usize value as the bound
+                // This allows picking from the full i64 range via wrapping conversion
+                vec![usize::MAX]
+            }
+            ValueInner::InfiniteNat => {
+                // For Nat, we use i64::MAX as the bound to ensure only non-negative values
+                // when converted to i64
+                vec![i64::MAX as usize]
             }
             _ => panic!("Not a set"),
         })

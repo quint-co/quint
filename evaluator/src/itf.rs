@@ -87,7 +87,9 @@ impl Value {
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)
             | ValueInner::PowerSet(_)
-            | ValueInner::MapSet(_, _) => {
+            | ValueInner::MapSet(_, _)
+            | ValueInner::InfiniteInt
+            | ValueInner::InfiniteNat => {
                 let set = self
                     .as_set()
                     .expect("can't convert value to set for ITF conversion");

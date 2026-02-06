@@ -14,7 +14,9 @@ impl Value {
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)
             | ValueInner::PowerSet(_)
-            | ValueInner::MapSet(_, _) => Value::set(
+            | ValueInner::MapSet(_, _)
+            | ValueInner::InfiniteInt
+            | ValueInner::InfiniteNat => Value::set(
                 self.as_set()?
                     .into_owned()
                     .into_iter()
