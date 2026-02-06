@@ -33,6 +33,9 @@ Integer literals are written using the standard syntax:
 It is important to understand that Quint integers are big integers.
 There is neither a minimum integer, nor there is a maximum integer.
 
+**Note:** When using the Rust simulator, integer literals must fit within the 64-bit signed integer range (-2^63 to 2^63-1).
+If you use integers outside of this range, you will get an error.
+
 It's quite easy to express the standard 32-bit, 64-bit, 128-bit, and 512-bit
 integers with Quint integers. We will cover this in a follow up tutorial.
 
