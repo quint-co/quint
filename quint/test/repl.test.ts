@@ -76,7 +76,8 @@ const withIO = async (inputText: string): Promise<string> => {
   await once(rl, 'close')
 
   chalk.level = savedChalkLevel
-  return output.buffer
+  // Remove trailing newline that gets added when the REPL closes
+  return output.buffer.replace(/\n$/, '')
 }
 
 // the standard banner, which gets repeated
