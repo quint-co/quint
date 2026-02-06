@@ -4,10 +4,11 @@
 use fxhash::FxBuildHasher;
 use hipstr::HipStr;
 use indexmap::IndexMap;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use thiserror::Error;
 
 pub type QuintId = u64;
+
 // NOTE: be aware of a bug in HipStr where a LocalHipStr is allowed to cross
 // thread boundaries by implementing Send, however, it causes a double free on
 // large heap-allocated strings.
@@ -46,7 +47,63 @@ pub struct QuintOutput {
     pub main: QuintName,
 }
 
-pub type LookupTable = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
+/// LookupTable with custom deserialization to handle string keys from JSONbig
+#[derive(Default, Serialize, Debug, Clone)]
+pub struct LookupTable(IndexMap<QuintId, LookupDefinition, FxBuildHasher>);
+
+impl std::ops::Deref for LookupTable {
+    type Target = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for LookupTable {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+/// Custom deserializer for LookupTable to handle maps with integer keys.
+/// This is necessary to workaround a serve bug involving tagged enums.
+/// See: https://github.com/serde-rs/json/issues/1254
+impl<'de> Deserialize<'de> for LookupTable {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::{MapAccess, Visitor};
+        use std::fmt;
+
+        struct LookupTableVisitor;
+
+        impl<'de> Visitor<'de> for LookupTableVisitor {
+            type Value = LookupTable;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map with string keys representing u64 IDs")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<LookupTable, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut table = IndexMap::with_hasher(FxBuildHasher::default());
+
+                while let Some(key_str) = map.next_key::<String>()? {
+                    let id: u64 = key_str.parse().map_err(serde::de::Error::custom)?;
+                    let value: LookupDefinition = map.next_value()?;
+                    table.insert(id, value);
+                }
+
+                Ok(LookupTable(table))
+            }
+        }
+
+        deserializer.deserialize_map(LookupTableVisitor)
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -302,4 +359,52 @@ impl QuintEx {
 pub struct QuintLambdaParameter {
     pub id: QuintId,
     pub name: QuintName,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test that demonstrates why the custom deserializer is needed.
+    ///
+    /// **The Problem:**
+    /// TypeScript uses JSONbig.stringify() to serialize Map<bigint, LookupDefinition>,
+    /// which produces JSON with STRING keys (per JSON spec): `{"4": {...}, "6": {...}}`.
+    ///
+    /// Without the custom deserializer, serde_json fails with:
+    /// "invalid type: string \"4\", expected u64"
+    ///
+    /// This does work with simpler datatypes, but the specific setting inside
+    /// an enum (like `ReplCommand`) and makes it break.
+    ///
+    /// See: https://github.com/serde-rs/json/issues/1254
+    ///
+    /// This test reproduces the exact failure that occurs when TypeScript sends
+    /// UpdateTable commands to the Rust REPL evaluator.
+    #[test]
+    fn test_lookup_table_deserialization_with_string_keys() {
+        // This is the EXACT JSON format sent from TypeScript ReplEvaluatorWrapper
+        let json = r#"{"cmd":"UpdateTable","table":{"4":{"kind":"var","name":"n","typeAnnotation":{"id":1,"kind":"int"},"id":2,"depth":0},"6":{"id":6,"kind":"def","name":"init","qualifier":"action","expr":{"id":5,"kind":"app","opcode":"assign","args":[{"id":4,"kind":"name","name":"n"},{"id":3,"kind":"int","value":1}]},"depth":0}}}"#;
+
+        #[derive(serde::Deserialize, Debug)]
+        #[serde(tag = "cmd")]
+        enum TestCommand {
+            UpdateTable { table: LookupTable },
+        }
+
+        // Try to deserialize
+        let result: Result<TestCommand, _> = serde_json::from_str(json);
+
+        match result {
+            Ok(cmd) => {
+                let TestCommand::UpdateTable { table } = cmd;
+
+                assert!(table.get(&4).is_some(), "Should find entry with key 4");
+                assert!(table.get(&6).is_some(), "Should find entry with key 6");
+            }
+            Err(e) => {
+                panic!("Deserialization failed: {e}");
+            }
+        }
+    }
 }
