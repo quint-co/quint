@@ -46,7 +46,7 @@ import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { convertInit } from './ir/initToPredicate'
-import { QuintRustWrapper } from './quintRustWrapper'
+import { CommandWrapper } from './rust/commandWrapper'
 import {
   cliErr,
   findMainModule,
@@ -311,10 +311,10 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   let results: TestResult[]
 
   if (prev.args.backend === 'rust') {
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     results = []
     for (const [index, def] of testDefs.entries()) {
-      const result = await quintRustWrapper.test(
+      const result = await commandWrapper.test(
         def,
         prev.table,
         prev.args.seed,
@@ -423,9 +423,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
     }
 
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     const nThreads = Math.min(prev.args.maxSamples, prev.args.nThreads)
-    outcome = await quintRustWrapper.simulate(
+    outcome = await commandWrapper.simulate(
       { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant: invariantExpr.value },
       prev.path,
       witnesses,
