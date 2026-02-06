@@ -2,6 +2,7 @@ use quint_evaluator::{
     evaluator::{Env, Interpreter},
     helpers,
     value::Value,
+    Verbosity,
 };
 
 macro_rules! run_test {
@@ -11,7 +12,8 @@ macro_rules! run_test {
 
         let mut interpreter = Interpreter::new(parsed.table.clone());
         // Set a specific seed so different runs generate the same result
-        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
+        let mut env =
+            Env::with_rand_state(interpreter.var_storage.clone(), 0x42, Verbosity::default());
 
         let init = interpreter.eval(&mut env, init_def.expr.clone());
         assert_eq!(init.unwrap(), Value::bool(true));
@@ -100,7 +102,7 @@ fn powerset_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
     let init_def = parsed.find_definition_by_name("init")?;
 
     let mut interpreter = Interpreter::new(parsed.table.clone());
-    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
+    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42, Verbosity::default());
 
     let init = interpreter.eval(&mut env, init_def.expr.clone());
     // Should not panic or overflow - just check it runs successfully
@@ -132,7 +134,7 @@ fn powerset_very_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>>
     let init_def = parsed.find_definition_by_name("init")?;
 
     let mut interpreter = Interpreter::new(parsed.table.clone());
-    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
+    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42, Verbosity::default());
 
     let init = interpreter.eval(&mut env, init_def.expr.clone());
     // Should not panic or overflow - just check it runs successfully
