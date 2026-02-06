@@ -2,6 +2,7 @@ import { describe, it } from 'mocha'
 import { assert, expect } from 'chai'
 import { once } from 'events'
 import { PassThrough, Writable } from 'stream'
+import { Buffer } from 'buffer'
 import chalk from 'chalk'
 
 import { quintRepl } from '../src/repl'

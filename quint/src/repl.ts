@@ -36,8 +36,6 @@ import { walkDeclaration, walkExpression } from './ir/IRVisitor'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { NameResolver } from './names/resolver'
 import { diffRuntimeValueDoc } from './runtime/impl/runtimeValueDiff'
-import { rv } from './runtime/impl/runtimeValue'
-import { ofItf } from './itf'
 
 // tunable settings
 export const settings = {

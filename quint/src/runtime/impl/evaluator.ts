@@ -90,7 +90,8 @@ export class Evaluator {
    *
    * @returns a tuple [shifted, missing_vars, old_state, new_state] where:
    *  - shifted: boolean indicating if there were any next variables that got shifted
-   *  - missing_vars: names of the variables that don't have values in the new state (empty list if no shifting happened)
+   *  - missing_vars: names of the variables that don't have values in the new state
+   *    (empty list if no shifting happened)
    *  - old_state: the state before shifting (as RuntimeValue)
    *  - new_state: the state after shifting (as RuntimeValue)
    */
