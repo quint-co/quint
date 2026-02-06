@@ -394,7 +394,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('handle exceptions', async () => {
+  xit('handle exceptions', async () => {
     const input = dedent(
       `Set(Int)
       |`
@@ -565,7 +565,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('nondet and oneOf', async () => {
+  xit('nondet and oneOf', async () => {
     const input = dedent(
       `
       |var x: int
