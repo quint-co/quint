@@ -5,7 +5,7 @@
 
 use crate::{
     evaluator::{CompiledExpr, Env},
-    ir::QuintError,
+    ir::{QuintError, QuintName},
     value::{Value, ValueInner},
 };
 use num_bigint::BigUint;
@@ -59,10 +59,14 @@ fn increment_positions(positions: &mut [usize], bounds: &[usize]) {
 /// - If the body evaluates to false and the set is small enough, retries with next position
 /// - If the set is too large, doesn't retry (for performance)
 /// - Continues until a non-false result or all positions are exhausted
+///
+/// The `nondet_name` parameter is used to track the picked value in the storage
+/// for model-based testing when `store_metadata` is enabled.
 pub fn eval_nondet_one_of(
     set_expr: CompiledExpr,
     body_expr: CompiledExpr,
     cached_value: Rc<RefCell<Option<Result<Value, QuintError>>>>,
+    nondet_name: QuintName,
 ) -> CompiledExpr {
     CompiledExpr::new(move |env: &mut Env| {
         // Evaluate the set from which to pick
@@ -89,6 +93,16 @@ pub fn eval_nondet_one_of(
                 let picked_value = set.pick(&mut positions.into_iter())?;
                 cached_value.replace(Some(Ok(picked_value)));
                 let result = body_expr.execute(env);
+
+                // Record the nondet pick for MBT 
+                let mut storage = env.var_storage.borrow_mut();
+                if storage.store_metadata {
+                    if let Some(Ok(ref val)) = *cached_value.borrow() {
+                        storage.nondet_picks.insert(nondet_name.clone(), Some(val.clone()));
+                    }
+                }
+                
+
                 cached_value.replace(None);
                 return result;
             }
@@ -129,12 +143,30 @@ pub fn eval_nondet_one_of(
 
                 // If we're back to original positions, we've tried everything
                 if new_positions == original_positions {
-                    // Clear the cached value and return the last result
+                    // Record the final nondet pick for MBT
+                    {
+                        let mut storage = env.var_storage.borrow_mut();
+                        if storage.store_metadata {
+                            if let Some(Ok(ref val)) = *cached_value.borrow() {
+                                storage.nondet_picks.insert(nondet_name.clone(), Some(val.clone()));
+                            }
+                        }
+                    }
+
                     cached_value.replace(None);
                     return result;
                 }
             } else {
-                // Clear the cached value and return the result (success or error)
+                // Record the final nondet pick for MBT
+                {
+                    let mut storage = env.var_storage.borrow_mut();
+                    if storage.store_metadata {
+                        if let Some(Ok(ref val)) = *cached_value.borrow() {
+                            storage.nondet_picks.insert(nondet_name, Some(val.clone()));
+                        }
+                    }
+                }
+
                 cached_value.replace(None);
                 return result;
             }

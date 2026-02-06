@@ -584,8 +584,9 @@ impl<'a> Interpreter<'a> {
                                 Rc::clone(cached)
                             };
                             let body_expr = self.compile(expr);
+                            let nondet_name = opdef.name.clone();
 
-                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value);
+                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value, nondet_name);
                         }
                     }
                     // Fall through to regular nondet handling for other cases
