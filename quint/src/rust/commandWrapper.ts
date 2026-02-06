@@ -18,7 +18,7 @@ import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
-import { replacer } from '../jsonHelper'
+import { replacer, reviver } from '../jsonHelper'
 import { ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
@@ -111,7 +111,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed = JSONbig.parse(output)
+      const parsed = JSONbig.parse(output, reviver)
       if (parsed.error) {
         throw new Error(parsed.error)
       }
@@ -123,11 +123,6 @@ export class CommandWrapper {
         seed: BigInt(trace.seed),
         states: ofItf(trace.states),
       }))
-
-      // Convert errors - these include errors from SimulationError
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({ ...err, reference: err.reference ? BigInt(err.reference) : undefined })
-      )
 
       // Call onTrace callback for each trace
       if (onTrace && parsed.bestTraces.length > 0 && parsed.bestTraces[0].states.length > 0) {
@@ -202,18 +197,10 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed = JSONbig.parse(output)
+      const parsed = JSONbig.parse(output, reviver)
       if (parsed.error) {
         throw new Error(parsed.error)
       }
-
-      // Convert errors to proper format
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({
-          ...err,
-          reference: err.reference ? BigInt(err.reference) : undefined,
-        })
-      )
 
       // Convert seed to bigint
       parsed.seed = BigInt(parsed.seed)
