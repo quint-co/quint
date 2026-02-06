@@ -68,7 +68,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build Rust evaluator
-        run: cd ../evaluator && cargo build --release
+        run: cd ../evaluator && cargo build --release && cd ../quint
       - name: Install Rust evaluator locally
         run: |
           VERSION=$(grep "QUINT_EVALUATOR_VERSION = " src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
