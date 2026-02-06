@@ -99,6 +99,8 @@ struct SimulateInput {
     /// Optional seed for reproducibility. If provided, the simulation will use this seed.
     #[serde(default)]
     seed: Option<u64>,
+    #[serde(default)]
+    mbt: bool,
 }
 
 #[derive(Eq, PartialEq, Serialize)]
