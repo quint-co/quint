@@ -77,8 +77,16 @@ impl ParsedQuint {
         n_traces: usize,
         mut reporter: R,
         seed: Option<u64>,
+        store_metadata: bool,
     ) -> Result<SimulationResult, SimulationError> {
         let mut interpreter = Interpreter::new(&self.table);
+        // Setup the store metadata flag for MBT.
+        //This was deliberately not passed as an argument to the Interpreter constructor. 
+        interpreter
+            .var_storage
+            .borrow_mut()
+            .set_store_metadata(store_metadata);
+
         let mut env = match seed {
             Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
             None => Env::new(interpreter.var_storage.clone()),

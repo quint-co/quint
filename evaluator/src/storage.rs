@@ -5,6 +5,10 @@ use crate::ir::QuintName;
 use crate::value::{ImmutableMap, ImmutableVec, Value};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+/// MBT metadata field names for ITF traces
+const MBT_NONDET_PICKS: &str = "mbt::nondetPicks";
+const MBT_ACTION_TAKEN: &str = "mbt::actionTaken";
+
 /// Variable registers are like the regular registers (ref cells) except that
 /// they include a name. The name is used for displaying the variable name in
 /// the trace.
@@ -49,6 +53,12 @@ pub struct Storage {
     pub store_metadata: bool,
 }
 
+impl Default for Storage {
+    fn default() -> Self {
+        Self::new(false)
+    }
+}
+
 impl Storage {
     /// Create a new Storage instance
     pub fn new(store_metadata: bool) -> Self {
@@ -60,6 +70,11 @@ impl Storage {
             action_taken: None,
             store_metadata,
         }
+    }
+
+    /// Configure whether to store metadata for model-based testing
+    pub fn set_store_metadata(&mut self, store_metadata: bool) {
+        self.store_metadata = store_metadata;
     }
 
     /// Move the values in `next_vars` registries to `vars` registries, and
@@ -89,8 +104,8 @@ impl Storage {
             .vars
             .values()
             .filter_map(|register| {
-                let reg = register.borrow().clone();
-                reg.value.map(|v| (reg.name, v))
+                let reg = register.borrow();
+                reg.value.as_ref().map(|v| (reg.name.clone(), v.clone()))
             })
             .collect();
 
@@ -107,14 +122,14 @@ impl Storage {
                     (name.clone(), variant)
                 })
                 .collect();
-            map.insert("mbt::nondetPicks".into(), Value::record(nondet_picks_map));
+            map.insert(MBT_NONDET_PICKS.into(), Value::record(nondet_picks_map));
 
             let action_name = self
                 .action_taken
                 .as_ref()
                 .map(|s| s.as_ref())
                 .unwrap_or("");
-            map.insert("mbt::actionTaken".into(), Value::str(action_name.into()));
+            map.insert(MBT_ACTION_TAKEN.into(), Value::str(action_name.into()));
         }
 
         Value::record(map)

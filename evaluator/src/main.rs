@@ -73,6 +73,10 @@ struct RunArgs {
     /// random seed for reproducibility
     #[argh(option)]
     seed: Option<u64>,
+
+    /// whether to produce metadata to be used by model-based testing (default: false)
+    #[argh(switch)]
+    mbt: bool,
 }
 
 /// Run simulation with input from STDIN
@@ -206,6 +210,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
         args.n_traces,
         progress::no_report(),
         args.seed,
+        args.mbt, // mbt
     );
 
     let elapsed = start.elapsed();
@@ -243,6 +248,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         ntraces,
         nthreads,
         seed,
+        mbt,
         ..
     } = serde_json::from_reader(io::stdin())?;
 
@@ -250,10 +256,10 @@ fn simulate_from_stdin() -> eyre::Result<()> {
 
     // When a seed is provided, we use single-threaded execution for reproducibility
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads)
+        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads, mbt)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed);
+        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed, mbt);
         to_sim_output(source, result)
     };
 
@@ -301,6 +307,7 @@ fn simulate_in_parallel(
     nruns: usize,
     ntraces: usize,
     mut nthreads: usize,
+    mbt: bool,
 ) -> SimOutput {
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
@@ -331,7 +338,7 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None);
+                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None, mbt);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
