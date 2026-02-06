@@ -99,7 +99,7 @@ fn powerset_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse(quint_content, "init", "step", None)?;
     let init_def = parsed.find_definition_by_name("init")?;
 
-    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
     let init = interpreter.eval(&mut env, init_def.expr.clone());
@@ -131,7 +131,7 @@ fn powerset_very_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>>
     let parsed = helpers::parse(quint_content, "init", "step", None)?;
     let init_def = parsed.find_definition_by_name("init")?;
 
-    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
 
     let init = interpreter.eval(&mut env, init_def.expr.clone());
