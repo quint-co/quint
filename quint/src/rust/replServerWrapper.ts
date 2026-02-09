@@ -25,7 +25,7 @@ import readline from 'readline'
 import JSONbig from 'json-bigint'
 import { bigintCheckerReplacer } from './helpers'
 import { ofItfValue } from '../itf'
-import { rv } from '../runtime/impl/runtimeValue'
+import { RuntimeValue, rv } from '../runtime/impl/runtimeValue'
 import { zerog } from '../idGenerator'
 import { getRustEvaluatorPath } from './binaryManager'
 
@@ -57,6 +57,7 @@ type ReplResponse =
   | { response: 'TraceStates'; states: any[] }
   | { response: 'ResetComplete' }
   | { response: 'Error'; message: string }
+  | { response: 'FatalError'; message: string }
 
 /**
  * Wrapper for the long-lived Rust REPL evaluator server.
@@ -70,6 +71,7 @@ export class ReplServerWrapper {
   private stdout: readline.Interface | null = null
   private pendingResponse: ((response: ReplResponse) => void) | null = null
   private processExited: boolean = false
+  private fatalError: string | null = null
   public recorder: TraceRecorder
   private verbosityLevel: number
   private traceCache?: Trace
@@ -131,6 +133,22 @@ export class ReplServerWrapper {
       try {
         const response: ReplResponse = JSONbig.parse(line)
 
+        if (response.response === 'FatalError') {
+          // Store the fatal error and shut down
+          this.fatalError = response.message
+          console.error(`Fatal error from Rust evaluator: ${response.message}`)
+
+          // Resolve any pending response with the error
+          if (this.pendingResponse) {
+            this.pendingResponse(response)
+            this.pendingResponse = null
+          }
+
+          // Shut down the process
+          this.shutdown()
+          return
+        }
+
         if (this.pendingResponse) {
           this.pendingResponse(response)
           this.pendingResponse = null
@@ -148,6 +166,14 @@ export class ReplServerWrapper {
    * Send a command to the Rust evaluator and wait for response
    */
   private async sendCommand(command: ReplCommand): Promise<ReplResponse> {
+    // Check if we've encountered a fatal error
+    if (this.fatalError !== null) {
+      return {
+        response: 'FatalError',
+        message: this.fatalError,
+      }
+    }
+
     if (!this.process || !this.process.stdin || this.processExited) {
       throw new Error('Rust REPL evaluator process not initialized or has exited')
     }
@@ -186,11 +212,13 @@ export class ReplServerWrapper {
   /**
    * Async version of evaluate (what we actually implement)
    */
-  async evaluateAsync(expr: QuintEx): Promise<Either<QuintError, QuintEx>> {
+  async evaluate(expr: QuintEx): Promise<Either<QuintError, QuintEx>> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'Evaluate', expr })
 
-    if (response.response === 'EvaluationResult') {
+    if (response.response === 'FatalError') {
+      return left({ code: 'QNT000', message: response.message, reference: undefined })
+    } else if (response.response === 'EvaluationResult') {
       if (response.ok !== undefined) {
         return right(ofItfValue(response.ok, zerog.nextId))
       } else if (response.err !== undefined) {
@@ -203,36 +231,35 @@ export class ReplServerWrapper {
     return left({ code: 'QNT000', message: 'Unexpected response from evaluator', reference: undefined })
   }
 
-  /**
-   * Update the lookup table with new definitions
-   */
-  updateTable(table: LookupTable): void {
-    // Fire and forget - async operation but sync interface
-    this.updateTableAsync(table).catch(err => {
-      console.error('Failed to update table:', err)
-    })
-  }
-
-  async updateTableAsync(table: LookupTable): Promise<void> {
+  async updateTable(table: LookupTable): Promise<void> {
     await this.initializationPromise
     await this.sendCommand({ cmd: 'UpdateTable', table })
   }
 
-  async replShiftAsync(): Promise<[boolean, string[], any, any]> {
+  async replShift(): Promise<[boolean, string[], RuntimeValue | undefined, RuntimeValue | undefined]> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'ReplShift' })
 
-    if (response.response === 'ReplShiftResult') {
-      // Invalidate the cache when a shift happens
-      // Traces will be fetched lazily when getTrace() is called
-      if (response.shifted) {
-        this.traceCache = undefined
-      }
-
-      return [response.shifted, response.missing_vars, response.old_state, response.new_state]
+    if (response.response === 'FatalError') {
+      throw new Error(`Fatal error: ${response.message}`)
     }
 
-    return [false, [], undefined, undefined]
+    if (response.response === 'ReplShiftResult') {
+      if (response.shifted) {
+        // Invalidate the cache when a shift happens
+        // Traces will be fetched lazily when getTrace() is called
+        this.traceCache = undefined
+
+        const old_state = rv.fromQuintEx(ofItfValue(response.old_state, zerog.nextId))
+        const new_state = rv.fromQuintEx(ofItfValue(response.new_state, zerog.nextId))
+
+        return [response.shifted, response.missing_vars, old_state, new_state]
+      }
+
+      return [response.shifted, response.missing_vars, undefined, undefined]
+    }
+
+    throw new Error('Failed to perform REPL shift')
   }
 
   /**
@@ -246,6 +273,10 @@ export class ReplServerWrapper {
 
     await this.initializationPromise
     const statesResponse = await this.sendCommand({ cmd: 'GetTraceStates' })
+
+    if (statesResponse.response === 'FatalError') {
+      throw new Error(`Fatal error: ${statesResponse.message}`)
+    }
 
     if (statesResponse.response === 'TraceStates') {
       const states = statesResponse.states.map(itfValue => {

@@ -129,6 +129,8 @@ export type ErrorCode =
   | 'QNT517'
   /* QNT600: Integer literal is outside the supported range for the Rust evaluator */
   | 'QNT600'
+  /* QNT601: Integer overflow in the rust evaluator */
+  | 'QNT601'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

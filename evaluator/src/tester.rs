@@ -46,7 +46,7 @@ impl TestCase {
     ) -> TestResult {
         let test_name = &self.name;
 
-        let mut interpreter = Interpreter::new(&self.table);
+        let mut interpreter = Interpreter::new(self.table.clone());
         let mut env = match seed {
             Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
             None => Env::new(interpreter.var_storage.clone()),

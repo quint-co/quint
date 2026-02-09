@@ -48,20 +48,8 @@ pub struct QuintOutput {
 }
 
 /// LookupTable with custom deserialization to handle string keys from JSONbig
-#[derive(Debug, Clone)]
-pub struct LookupTable(pub IndexMap<QuintId, LookupDefinition, FxBuildHasher>);
-
-impl LookupTable {
-    pub fn new() -> Self {
-        LookupTable(IndexMap::with_hasher(FxBuildHasher::default()))
-    }
-}
-
-impl Default for LookupTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+#[derive(Default, Serialize, Debug, Clone)]
+pub struct LookupTable(IndexMap<QuintId, LookupDefinition, FxBuildHasher>);
 
 impl std::ops::Deref for LookupTable {
     type Target = IndexMap<QuintId, LookupDefinition, FxBuildHasher>;
@@ -77,15 +65,9 @@ impl std::ops::DerefMut for LookupTable {
     }
 }
 
-impl Serialize for LookupTable {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.0.serialize(serializer)
-    }
-}
-
+/// Custom deserializer for LookupTable to handle maps with integer keys.
+/// This is necessary to workaround a serve bug involving tagged enums.
+/// See: https://github.com/serde-rs/json/issues/1254
 impl<'de> Deserialize<'de> for LookupTable {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -392,8 +374,10 @@ mod tests {
     /// Without the custom deserializer, serde_json fails with:
     /// "invalid type: string \"4\", expected u64"
     ///
-    /// This does work with simpler datatypes, but the specific setting with
-    /// `TestCommand` and `LookupDefinition` makes it break.
+    /// This does work with simpler datatypes, but the specific setting inside
+    /// an enum (like `ReplCommand`) and makes it break.
+    ///
+    /// See: https://github.com/serde-rs/json/issues/1254
     ///
     /// This test reproduces the exact failure that occurs when TypeScript sends
     /// UpdateTable commands to the Rust REPL evaluator.

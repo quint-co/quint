@@ -62,6 +62,8 @@ enum ReplResponse {
     ResetComplete {},
     /// Error response
     Error { message: String },
+    /// Error response to be used for when the server cannot recover
+    FatalError { message: String },
 }
 
 /// Wrapper for evaluation results to match TypeScript Either type
@@ -73,6 +75,7 @@ enum ReplResult {
 }
 
 /// Stateful REPL evaluator
+#[derive(Default)]
 pub struct ReplEvaluator {
     interpreter: Option<Interpreter>,
     env: Option<Env>,
@@ -80,29 +83,19 @@ pub struct ReplEvaluator {
     verbosity: u8,
 }
 
-impl Default for ReplEvaluator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ReplEvaluator {
     pub fn new() -> Self {
-        Self {
-            interpreter: None,
-            env: None,
-            trace_states: Vec::new(),
-            verbosity: 0,
-        }
+        Self::default()
     }
 
     fn initialize(&mut self, table: LookupTable, seed: Option<u64>, verbosity: u8) -> ReplResponse {
         self.verbosity = verbosity;
 
         // Create the interpreter with the table
-        self.interpreter = Some(Interpreter::new(&table));
+        let interpreter = Interpreter::new(table);
+        let storage = interpreter.var_storage.clone();
 
-        let storage = self.interpreter.as_ref().unwrap().var_storage.clone();
+        self.interpreter = Some(interpreter);
         self.env = Some(if let Some(seed) = seed {
             Env::with_rand_state(storage, seed)
         } else {
@@ -190,12 +183,9 @@ impl ReplEvaluator {
         let total_next_vars = storage.next_vars.len();
         let any_changed = total_next_vars > 0 && missing_vars.len() < total_next_vars;
 
-        // Drop the borrow to avoid an old state getting referenced.
-        // This is needed because the var_storage is under a RefCell,
-        // avoiding borrow checker errors at compile time.
-        drop(storage);
-
         if !any_changed {
+            // Drop the borrow before returning
+            drop(storage);
             return ReplResponse::ReplShiftResult {
                 shifted: false,
                 missing_vars: vec![],
@@ -204,8 +194,11 @@ impl ReplEvaluator {
             };
         }
 
-        // Save current state before shifting
-        let old_state = env.var_storage.borrow().as_record();
+        // Save current state before shifting (reuse the existing borrow)
+        let old_state = storage.as_record();
+        // Drop the borrow before mutating to avoid RefCell panic
+        drop(storage);
+
         let old_state_itf = old_state.to_itf();
         self.trace_states.push(old_state);
 
@@ -231,8 +224,9 @@ impl ReplEvaluator {
 
     fn reset(&mut self) -> ReplResponse {
         if let Some(env) = &self.env {
-            env.var_storage.borrow_mut().vars.clear();
-            env.var_storage.borrow_mut().next_vars.clear();
+            let mut storage = env.var_storage.borrow_mut();
+            storage.vars.clear();
+            storage.next_vars.clear();
         }
         self.trace_states.clear();
         ReplResponse::ResetComplete {}
@@ -290,8 +284,8 @@ pub fn run_repl_from_stdin() -> io::Result<()> {
                     .or_else(|| panic_info.downcast_ref::<String>().map(|s| s.as_str()))
                     .unwrap_or("Unknown panic in REPL");
 
-                ReplResponse::Error {
-                    message: format!("QNT500: {msg}"),
+                ReplResponse::FatalError {
+                    message: msg.to_string(),
                 }
             }
         };
@@ -300,6 +294,10 @@ pub fn run_repl_from_stdin() -> io::Result<()> {
         serde_json::to_writer(&mut stdout, &response)?;
         stdout.write_all(b"\n")?;
         stdout.flush()?;
+
+        if matches!(response, ReplResponse::FatalError { .. }) {
+            break;
+        }
     }
 
     Ok(())

@@ -124,7 +124,7 @@ pub struct Interpreter {
     pub var_storage: Rc<RefCell<Storage>>,
 
     // The lookup table, read-only, used to resolve names
-    table: Rc<LookupTable>,
+    table: LookupTable,
 
     // Registries hold values for specific names, and are used on references of
     // those names. This way, we can re-use the memory space and avoid lookups
@@ -160,9 +160,9 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(table: &LookupTable) -> Self {
+    pub fn new(table: LookupTable) -> Self {
         Self {
-            table: Rc::new(table.clone()),
+            table,
             param_registry: FxHashMap::default(),
             const_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
@@ -177,7 +177,7 @@ impl Interpreter {
     /// Assumes the new table is an extension of the old one,
     /// and therefore all caches are still valid
     pub fn update_table(&mut self, table: LookupTable) {
-        self.table = Rc::new(table);
+        self.table = table;
     }
 
     /// Shift the state, moving `next_vars` to `vars`.
@@ -499,11 +499,11 @@ impl Interpreter {
             }
 
             QuintEx::QuintName { id, name } => {
-                let table = Rc::clone(&self.table);
-                table
-                    .get(id)
-                    .map(|def| self.compile_def(def))
-                    .unwrap_or_else(|| builtin_value(name.as_str()))
+                if let Some(def) = self.table.get(id).cloned() {
+                    self.compile_def(&def)
+                } else {
+                    builtin_value(name.as_str())
+                }
             }
 
             QuintEx::QuintLambda {
@@ -523,9 +523,8 @@ impl Interpreter {
                     // Assign is too special, so we handle it separately.
                     // We need to build things under the context of the variable being assigned,
                     // as it may come from an instance, and that changed everything
-                    let table = Rc::clone(&self.table);
-                    let var_def = table.get(&args[0].id()).unwrap();
-                    self.compile_under_context(var_def, |interpreter| {
+                    let var_def = self.table.get(&args[0].id()).unwrap().clone();
+                    self.compile_under_context(&var_def, |interpreter| {
                         interpreter.create_var(var_def.id(), var_def.name());
                         let register = interpreter.get_next_var(var_def.id());
                         let expr = interpreter.compile(&args[1]);
@@ -623,11 +622,10 @@ impl Interpreter {
     }
 
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
-        let table = Rc::clone(&self.table);
-        match table.get(id) {
+        match self.table.get(id).cloned() {
             Some(def) => {
                 // A user-defined operator
-                let op = self.compile_def(def);
+                let op = self.compile_def(&def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure();
@@ -708,7 +706,7 @@ fn can_cache(def: &LookupDefinition) -> Cache {
 
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
-    let mut interpreter = Interpreter::new(table);
+    let mut interpreter = Interpreter::new(table.clone());
     let mut env = Env::new(interpreter.var_storage.clone());
 
     interpreter.eval(&mut env, expr.clone())
