@@ -752,6 +752,39 @@ quint run \
   ./testFixture/nestedParameterizedCallsWithLet.qnt
 ```
 
+## Run fails with bigint outside i64 range
+
+This test verifies that the Rust backend rejects integers outside the i64 range.
+
+<!-- !test in run bigint outside i64 range -->
+```
+cat > /tmp/bigint_test.qnt << 'EOF'
+module bigintTest {
+  var x: int
+
+  action init = {
+    x' = 9223372036854775808  // 2^63, outside i64 range
+  }
+
+  action step = {
+    x' = x + 1
+  }
+}
+EOF
+
+output=$(quint run --backend=rust --main=bigintTest /tmp/bigint_test.qnt 2>&1)
+exit_code=$?
+echo "$output" | grep -o "QNT600.*i64 range"
+rm /tmp/bigint_test.qnt
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run bigint outside i64 range -->
+```
+QNT600] Integer literal 9223372036854775808 is outside i64 range
+```
+
 ## Debug output in init action
 
 This test verifies that q::debug output is printed when using the Rust backend.
