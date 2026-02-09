@@ -27,7 +27,7 @@ function createError(value: bigint, context: string, id: bigint): QuintError {
 
 export function bigintCheckerReplacer(_key: string, value: any): any {
   // Detect QuintInt expressions with out-of-bounds values
-  if (typeof value.value === 'bigint') {
+  if (value && typeof value.value === 'bigint') {
     const intValue = value.value
     if (intValue < I64_MIN || intValue > I64_MAX) {
       const error = createError(intValue, '', value.id)

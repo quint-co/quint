@@ -16,7 +16,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintEx } from '../ir/quintIr'
 import { LookupTable } from '../names/base'
-import { QuintError } from '../quintError'
+import { QuintError, isQuintError } from '../quintError'
 import { Rng } from '../rng'
 import { TraceRecorder } from '../runtime/trace'
 import { Trace } from '../runtime/impl/trace'
@@ -214,7 +214,17 @@ export class ReplServerWrapper {
    */
   async evaluate(expr: QuintEx): Promise<Either<QuintError, QuintEx>> {
     await this.initializationPromise
-    const response = await this.sendCommand({ cmd: 'Evaluate', expr })
+
+    let response: ReplResponse
+    try {
+      response = await this.sendCommand({ cmd: 'Evaluate', expr })
+    } catch (error) {
+      // Handle QuintError thrown by bigintCheckerReplacer
+      if (isQuintError(error)) {
+        return left(error)
+      }
+      throw error
+    }
 
     if (response.response === 'FatalError') {
       return left({ code: 'QNT000', message: response.message, reference: undefined })
