@@ -28,7 +28,7 @@ import { List } from 'immutable'
 import { nameWithNamespaces } from '../runtime/impl/builder'
 import { Either, left, right } from '@sweet-monads/either'
 import { getRustEvaluatorPath } from './binaryManager'
-import { replacer } from './helpers'
+import { bigintCheckerReplacer } from './helpers'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -262,7 +262,7 @@ export class CommandWrapper {
     // Serialize input with BigInt validation
     let inputStr: string
     try {
-      inputStr = JSONbig.stringify(input, replacer)
+      inputStr = JSONbig.stringify(input, bigintCheckerReplacer)
     } catch (error) {
       // If replacer throws a QuintError for out-of-bounds integers, return it
       if (isQuintError(error)) {

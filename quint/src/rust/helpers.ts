@@ -12,6 +12,7 @@
  */
 
 import { QuintError } from '../quintError'
+import { replacer } from '../jsonHelper'
 
 const I64_MIN = -(2n ** 63n)
 const I64_MAX = 2n ** 63n - 1n
@@ -24,7 +25,7 @@ function createError(value: bigint, context: string, id: bigint): QuintError {
   }
 }
 
-export function replacer(_key: string, value: any): any {
+export function bigintCheckerReplacer(_key: string, value: any): any {
   // Detect QuintInt expressions with out-of-bounds values
   if (typeof value.value === 'bigint') {
     const intValue = value.value
@@ -34,13 +35,6 @@ export function replacer(_key: string, value: any): any {
     }
   }
 
-  if (value instanceof Map) {
-    // Represent Maps as JSON objects
-    return Object.fromEntries(value)
-  } else if (value instanceof Set) {
-    // Represent Sets as JSON arrays
-    return Array.from(value)
-  } else {
-    return value
-  }
+  // Delegate to standard replacer for Map/Set handling
+  return replacer(_key, value)
 }
