@@ -562,7 +562,7 @@ error: Runtime error
 <!-- !test exit 0 -->
 <!-- !test in witnesses -->
 ```
-output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
+output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 --verbosity=1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
 exit $exit_code
@@ -572,9 +572,9 @@ exit $exit_code
 ```
 [ok] No violation found (duration).
 Witnesses:
-won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
-stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
-Use --seed=0x2b442ab43ab1e --backend=rust to reproduce.
+won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
+stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
+Use --seed=0x1995 --backend=rust to reproduce.
 ```
 
 ### Run produces normal output on `--out-itf` with default verbosity
