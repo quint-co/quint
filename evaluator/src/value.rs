@@ -176,6 +176,14 @@ impl PartialEq for ValueInner {
             (Self::CrossProduct(a), Self::CrossProduct(b)) => *a == *b,
             (Self::PowerSet(a), Self::PowerSet(b)) => *a == *b,
             (Self::MapSet(a1, b1), Self::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            (Self::InfiniteInt, Self::InfiniteInt) => true,
+            (Self::InfiniteNat, Self::InfiniteNat) => true,
+            (Self::InfiniteInt, Self::InfiniteNat) | (Self::InfiniteNat, Self::InfiniteInt) => {
+                false
+            }
+            // Infinite sets are not equal to any finite set
+            (Self::InfiniteInt, _) | (Self::InfiniteNat, _) => false,
+            (_, Self::InfiniteInt) | (_, Self::InfiniteNat) => false,
             // To compare two sets represented in different ways, we need to enumerate them both
             _ => {
                 let self_value = Value(Rc::new(self.clone()));
@@ -445,6 +453,22 @@ impl Value {
                 ValueInner::MapSet(subset_domain, subset_range),
                 ValueInner::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range)?,
+            // Infinite set relationships
+            (ValueInner::InfiniteNat, ValueInner::InfiniteNat) => true,
+            (ValueInner::InfiniteNat, ValueInner::InfiniteInt) => true,
+            (ValueInner::InfiniteInt, ValueInner::InfiniteInt) => true,
+            (ValueInner::InfiniteInt, ValueInner::InfiniteNat) => false,
+            // Any non-infinite set is a subset of Int
+            (_, ValueInner::InfiniteInt) if self.is_set() => true,
+            // For Nat superset, we need to check if all elements are non-negative
+            (_, ValueInner::InfiniteNat) if self.is_set() => {
+                let self_set = self.as_set()?;
+                self_set.iter().try_fold(true, |acc, v| {
+                    Ok(acc && superset.contains(v)?)
+                })?
+            }
+            // Infinite sets can't be subsets of finite sets
+            (ValueInner::InfiniteInt, _) | (ValueInner::InfiniteNat, _) => false,
             // Fall back to the native implementation (`is_subset`) if no optimization is possible
             (_, _) => {
                 let self_set = self.as_set()?;
@@ -491,6 +515,8 @@ impl Value {
                 | ValueInner::CrossProduct(_)
                 | ValueInner::PowerSet(_)
                 | ValueInner::MapSet(_, _)
+                | ValueInner::InfiniteInt
+                | ValueInner::InfiniteNat
         )
     }
 
@@ -580,6 +606,18 @@ impl Value {
                 }
 
                 Cow::Owned(result_set)
+            }
+            ValueInner::InfiniteInt => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Int is non-enumerable",
+                ))?
+            }
+            ValueInner::InfiniteNat => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Nat is non-enumerable",
+                ))?
             }
             _ => panic!("Expected set"),
         })

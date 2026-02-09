@@ -63,8 +63,16 @@ impl Value {
                     return Ok(Value::map(ImmutableMap::default()));
                 }
 
-                // For infinite sets (Int, Nat), we don't check cardinality
-                // They will handle picking themselves
+                // Check that range is non-empty for non-infinite sets
+                // Infinite sets (Int, Nat) will fail the cardinality check, which is fine
+                if !matches!(
+                    range.0.as_ref(),
+                    ValueInner::InfiniteInt | ValueInner::InfiniteNat
+                ) {
+                    let range_size = range.cardinality()?;
+                    assert!(range_size > 0, "Range can't be zero");
+                }
+
                 let range_to_pick = if matches!(range.0.as_ref(), ValueInner::MapSet(_, _)) {
                     Value::set(range.as_set()?.into_owned())
                 } else {
@@ -88,9 +96,16 @@ impl Value {
                     .next()
                     .expect("Internal error: too few positions. Report a bug");
 
-                // Map the index to the full i64 range
-                // We use wrapping conversion to get a uniform distribution across all i64 values
-                let value = index as i64;
+                // Map [0, usize::MAX) uniformly to [i64::MIN, i64::MAX]
+                // On 64-bit systems: reinterpret usize as i64, wrapping values > i64::MAX to negative
+                // Values 0..=i64::MAX stay positive, values (i64::MAX+1)..usize::MAX become negative
+                // On 32-bit systems: usize fits in i64, so we offset to get negative values too
+                #[cfg(target_pointer_width = "64")]
+                let value = (index as u64) as i64;
+
+                #[cfg(not(target_pointer_width = "64"))]
+                let value = (index as i64).wrapping_add(i64::MIN);
+
                 Value::int(value)
             }
             ValueInner::InfiniteNat => {
