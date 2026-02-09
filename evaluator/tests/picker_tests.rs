@@ -185,8 +185,14 @@ fn int_pick_can_be_negative() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    assert!(found_negative, "Int.oneOf() should be able to return negative numbers");
-    assert!(found_positive, "Int.oneOf() should be able to return positive numbers");
+    assert!(
+        found_negative,
+        "Int.oneOf() should be able to return negative numbers"
+    );
+    assert!(
+        found_positive,
+        "Int.oneOf() should be able to return positive numbers"
+    );
 
     Ok(())
 }

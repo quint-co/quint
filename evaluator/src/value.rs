@@ -70,8 +70,8 @@ pub enum ValueInner {
     PowerSet(Value),
     MapSet(Value, Value),
     // Infinite sets
-    InfiniteInt,    // represents the set of all integers
-    InfiniteNat,    // represents the set of all natural numbers (>= 0)
+    InfiniteInt, // represents the set of all integers
+    InfiniteNat, // represents the set of all natural numbers (>= 0)
 }
 
 impl Hash for Value {
@@ -463,9 +463,9 @@ impl Value {
             // For Nat superset, we need to check if all elements are non-negative
             (_, ValueInner::InfiniteNat) if self.is_set() => {
                 let self_set = self.as_set()?;
-                self_set.iter().try_fold(true, |acc, v| {
-                    Ok(acc && superset.contains(v)?)
-                })?
+                self_set
+                    .iter()
+                    .try_fold(true, |acc, v| Ok(acc && superset.contains(v)?))?
             }
             // Infinite sets can't be subsets of finite sets
             (ValueInner::InfiniteInt, _) | (ValueInner::InfiniteNat, _) => false,
@@ -607,18 +607,14 @@ impl Value {
 
                 Cow::Owned(result_set)
             }
-            ValueInner::InfiniteInt => {
-                Err(QuintError::new(
-                    "QNT501",
-                    "Infinite set Int is non-enumerable",
-                ))?
-            }
-            ValueInner::InfiniteNat => {
-                Err(QuintError::new(
-                    "QNT501",
-                    "Infinite set Nat is non-enumerable",
-                ))?
-            }
+            ValueInner::InfiniteInt => Err(QuintError::new(
+                "QNT501",
+                "Infinite set Int is non-enumerable",
+            ))?,
+            ValueInner::InfiniteNat => Err(QuintError::new(
+                "QNT501",
+                "Infinite set Nat is non-enumerable",
+            ))?,
             _ => panic!("Expected set"),
         })
     }
