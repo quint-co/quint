@@ -106,6 +106,7 @@ pub fn parse_from_path(
             .unwrap()
             .expr
             .clone(),
+        witnesses: vec![],
         table: output.table,
     })
 }

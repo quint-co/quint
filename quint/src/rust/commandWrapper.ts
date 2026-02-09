@@ -37,6 +37,7 @@ export type ParsedQuint = {
   init: QuintEx
   step: QuintEx
   invariant: QuintEx
+  witnesses: QuintEx[]
 }
 
 export class CommandWrapper {
@@ -69,7 +70,6 @@ export class CommandWrapper {
   async simulate(
     parsed: ParsedQuint,
     source: string,
-    witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
     ntraces: number,
@@ -80,7 +80,6 @@ export class CommandWrapper {
     const input = {
       parsed: parsed,
       source: source,
-      witnesses: witnesses,
       nruns: nruns,
       nsteps: nsteps,
       ntraces: ntraces,
