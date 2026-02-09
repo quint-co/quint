@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
 - Add error handling for rust process termination via signal (#1880)
 - The rust backend will now print the seed and trace even on runtime errors and panics (#1879)
+- Added support for `quint repl --backend=rust` to use the REPL with the Rust backend (#1891)
 - Added support for the `--witnesses` flag in the Rust backend (#1889)
 
 ### Changed

@@ -189,65 +189,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     return id
   }
 
-  const ofItfValue = (value: ItfValue): QuintEx => {
-    const id = getId()
-    if (typeof value === 'boolean') {
-      return { id, kind: 'bool', value }
-    } else if (typeof value === 'string') {
-      return { id, kind: 'str', value }
-    } else if (isBigint(value)) {
-      // this is the standard way of encoding an integer in ITF.
-      return { id, kind: 'int', value: BigInt(value['#bigint']) }
-    } else if (typeof value === 'number') {
-      // We never encode an integer as a JS number,
-      // but we consume it for backwards compatibility with older ITF traces.
-      // See: https://apalache-mc.org/docs/adr/015adr-trace.html
-      return { id, kind: 'int', value: BigInt(value) }
-    } else if (Array.isArray(value)) {
-      return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
-    } else if (isTup(value)) {
-      return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
-    } else if (isSet(value)) {
-      return { id, kind: 'app', opcode: 'Set', args: value['#set'].map(ofItfValue) }
-    } else if (isUnserializable(value)) {
-      return { id, kind: 'name', name: value['#unserializable'] }
-    } else if (isMap(value)) {
-      const args = value['#map'].map(([key, value]) => {
-        const k = ofItfValue(key)
-        const v = ofItfValue(value)
-        return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
-      })
-      return {
-        id,
-        kind: 'app',
-        opcode: 'Map',
-        args,
-      }
-    } else if (isVariant(value)) {
-      const l = ofItfValue(value.tag)
-      if (l.kind === 'str' && l.value === 'UNIT') {
-        // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
-        // We need to convert it back to Quint's unit value, the empty tuple.
-        return { id, kind: 'app', opcode: 'Tup', args: [] }
-      }
-      const v = ofItfValue(value.value)
-      return { id, kind: 'app', opcode: 'variant', args: [l, v] }
-    } else if (typeof value === 'object') {
-      // Any other object must represent a record
-      // For each key/value pair in the object, form the quint expressions representing
-      // the record field and value
-      const args = Object.keys(value)
-        .filter(key => key !== '#meta' && !key.startsWith('__')) // Must be removed from top-level objects representing states
-        .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
-        .flat() // flatten the converted pairs of fields into a single array
-      return { id, kind: 'app', opcode: 'Rec', args }
-    } else {
-      // This should be impossible, but TypeScript can't tell we've handled all cases
-      throw new Error(`internal error: unhandled ITF value ${value}`)
-    }
-  }
-
-  return itf.states.map(ofItfValue)
+  return itf.states.map(s => ofItfValue(s, getId))
 }
 
 /**
@@ -261,4 +203,62 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
  */
 export function ofItfNormalized(itf: ItfTrace): QuintEx[] {
   return ofItf(itf).map(rv.fromQuintEx).map(rv.toQuintEx)
+}
+
+export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {
+  const id = getId()
+  if (typeof value === 'boolean') {
+    return { id, kind: 'bool', value }
+  } else if (typeof value === 'string') {
+    return { id, kind: 'str', value }
+  } else if (isBigint(value)) {
+    // this is the standard way of encoding an integer in ITF.
+    return { id, kind: 'int', value: BigInt(value['#bigint']) }
+  } else if (typeof value === 'number') {
+    // We never encode an integer as a JS number,
+    // but we consume it for backwards compatibility with older ITF traces.
+    // See: https://apalache-mc.org/docs/adr/015adr-trace.html
+    return { id, kind: 'int', value: BigInt(value) }
+  } else if (Array.isArray(value)) {
+    return { id, kind: 'app', opcode: 'List', args: value.map(s => ofItfValue(s, getId)) }
+  } else if (isTup(value)) {
+    return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(s => ofItfValue(s, getId)) }
+  } else if (isSet(value)) {
+    return { id, kind: 'app', opcode: 'Set', args: value['#set'].map(s => ofItfValue(s, getId)) }
+  } else if (isUnserializable(value)) {
+    return { id, kind: 'name', name: value['#unserializable'] }
+  } else if (isMap(value)) {
+    const args = value['#map'].map(([key, value]) => {
+      const k = ofItfValue(key, getId)
+      const v = ofItfValue(value, getId)
+      return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
+    })
+    return {
+      id,
+      kind: 'app',
+      opcode: 'Map',
+      args,
+    }
+  } else if (isVariant(value)) {
+    const l = ofItfValue(value.tag, getId)
+    if (l.kind === 'str' && l.value === 'UNIT') {
+      // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
+      // We need to convert it back to Quint's unit value, the empty tuple.
+      return { id, kind: 'app', opcode: 'Tup', args: [] }
+    }
+    const v = ofItfValue(value.value, getId)
+    return { id, kind: 'app', opcode: 'variant', args: [l, v] }
+  } else if (typeof value === 'object') {
+    // Any other object must represent a record
+    // For each key/value pair in the object, form the quint expressions representing
+    // the record field and value
+    const args = Object.keys(value)
+      .filter(key => key !== '#meta' && !key.startsWith('__')) // Must be removed from top-level objects representing states
+      .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f], getId)] as [QuintStr, QuintEx])
+      .flat() // flatten the converted pairs of fields into a single array
+    return { id, kind: 'app', opcode: 'Rec', args }
+  } else {
+    // This should be impossible, but TypeScript can't tell we've handled all cases
+    throw new Error(`internal error: unhandled ITF value ${value}`)
+  }
 }

@@ -118,13 +118,13 @@ impl Env {
 
 /// A stateful interpreter, with memoization, caching, state variable storage
 /// and tracking of modules.
-pub struct Interpreter<'a> {
+pub struct Interpreter {
     // The storage for state variables, holding their values on the current and
     // next state.
     pub var_storage: Rc<RefCell<Storage>>,
 
     // The lookup table, read-only, used to resolve names
-    table: &'a LookupTable,
+    table: LookupTable,
 
     // Registries hold values for specific names, and are used on references of
     // those names. This way, we can re-use the memory space and avoid lookups
@@ -159,8 +159,8 @@ pub struct Interpreter<'a> {
     // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
 }
 
-impl<'a> Interpreter<'a> {
-    pub fn new(table: &'a LookupTable) -> Self {
+impl Interpreter {
+    pub fn new(table: LookupTable) -> Self {
         Self {
             table,
             param_registry: FxHashMap::default(),
@@ -171,6 +171,13 @@ impl<'a> Interpreter<'a> {
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
         }
+    }
+
+    /// Update the lookup table.
+    /// Assumes the new table is an extension of the old one,
+    /// and therefore all caches are still valid
+    pub fn update_table(&mut self, table: LookupTable) {
+        self.table = table;
     }
 
     /// Shift the state, moving `next_vars` to `vars`.
@@ -491,11 +498,13 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| Ok(Value::str(value.clone())))
             }
 
-            QuintEx::QuintName { id, name } => self
-                .table
-                .get(id)
-                .map(|def| self.compile_def(def))
-                .unwrap_or_else(|| builtin_value(name.as_str())),
+            QuintEx::QuintName { id, name } => {
+                if let Some(def) = self.table.get(id).cloned() {
+                    self.compile_def(&def)
+                } else {
+                    builtin_value(name.as_str())
+                }
+            }
 
             QuintEx::QuintLambda {
                 id: _,
@@ -514,8 +523,8 @@ impl<'a> Interpreter<'a> {
                     // Assign is too special, so we handle it separately.
                     // We need to build things under the context of the variable being assigned,
                     // as it may come from an instance, and that changed everything
-                    let var_def = self.table.get(&args[0].id()).unwrap();
-                    self.compile_under_context(var_def, |interpreter| {
+                    let var_def = self.table.get(&args[0].id()).unwrap().clone();
+                    self.compile_under_context(&var_def, |interpreter| {
                         interpreter.create_var(var_def.id(), var_def.name());
                         let register = interpreter.get_next_var(var_def.id());
                         let expr = interpreter.compile(&args[1]);
@@ -613,10 +622,10 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
-        match self.table.get(id) {
+        match self.table.get(id).cloned() {
             Some(def) => {
                 // A user-defined operator
-                let op = self.compile_def(def);
+                let op = self.compile_def(&def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure();
@@ -697,7 +706,7 @@ fn can_cache(def: &LookupDefinition) -> Cache {
 
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
-    let mut interpreter = Interpreter::new(table);
+    let mut interpreter = Interpreter::new(table.clone());
     let mut env = Env::new(interpreter.var_storage.clone());
 
     interpreter.eval(&mut env, expr.clone())
