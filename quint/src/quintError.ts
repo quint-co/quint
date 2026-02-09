@@ -127,6 +127,8 @@ export type ErrorCode =
   | 'QNT516'
   /* QNT517: Rust evaluator killed by signal */
   | 'QNT517'
+  /* QNT600: Integer literal is outside the supported range for the Rust evaluator */
+  | 'QNT600'
   /* QNT601: Integer overflow in the rust evaluator */
   | 'QNT601'
 
@@ -142,6 +144,16 @@ export interface QuintErrorData {
 export type QuintErrorFix =
   /* Replace a string with another */
   { kind: 'replace'; original: string; replacement: string }
+
+/** Type predicate to check if an unknown error is a QuintError
+ *
+ * @param error the error to check
+ *
+ * @returns true if the error is a QuintError
+ */
+export function isQuintError(error: unknown): error is QuintError {
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error
+}
 
 /** Formats a Quint error as a string
  *
