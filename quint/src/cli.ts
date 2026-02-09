@@ -170,6 +170,12 @@ const replCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('backend', {
+        desc: 'the backend to use for evaluation',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   handler: runRepl,
 }
