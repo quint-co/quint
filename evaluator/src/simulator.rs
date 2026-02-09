@@ -119,17 +119,16 @@ impl ParsedQuint {
 
                     // Evaluate witnesses after each step and skip if all satisfied
                     if remaining > 0 {
-                        for (witnessed_flag, witness) in
-                            trace_witnessed.iter_mut().zip(compiled_witnesses.iter())
-                        {
+                        for i in 0..trace_witnessed.len() {
                             // Skip if this witness is already satisfied in a previous step
-                            if *witnessed_flag {
+                            if trace_witnessed[i] {
                                 continue;
                             }
 
-                            if let Ok(result) = witness.execute(&mut env) {
+                            if let Ok(result) = compiled_witnesses[i].execute(&mut env) {
                                 if result.as_bool() {
-                                    *witnessed_flag = true;
+                                    trace_witnessed[i] = true;
+                                    witnessing_traces[i] += 1;
                                     remaining -= 1;
                                     // early break if all witnesses are satisfied.
                                     if remaining == 0 {
@@ -174,13 +173,6 @@ impl ParsedQuint {
                     }
 
                     trace_lengths.push(env.trace.len());
-
-                    // Finalize witness counts for this trace
-                    for (i, &witnessed) in trace_witnessed.iter().enumerate() {
-                        if witnessed {
-                            witnessing_traces[i] += 1;
-                        }
-                    }
 
                     collect_trace(
                         &mut best_traces,

@@ -346,7 +346,7 @@ fn simulate_in_parallel(
 
         // Accumulate witness counts from all threads
         if aggregated_witnesses.is_empty() {
-            aggregated_witnesses = outcome.witnessing_traces.clone();
+            aggregated_witnesses = std::mem::take(&mut outcome.witnessing_traces);
         } else {
             for (agg, count) in aggregated_witnesses
                 .iter_mut()
