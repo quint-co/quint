@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add error handling for rust process termination via signal (#1880)
 - The rust backend will now print the seed and trace even on runtime errors and panics (#1879)
 - Added support for `quint repl --backend=rust` to use the REPL with the Rust backend (#1891)
+- Added support for `Nat` and `Int` to rust backend (#1894)
 
 ### Changed
 
