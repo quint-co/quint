@@ -4,7 +4,7 @@
   "steps": [
     {
       "title": "Introduction",
-      "description": "\nIn this lesson, you will learn how to use Booleans. It should take you real quick to learn this lesson.\n\n**Do not skip this lesson.** It introduces a few important language concepts, not just the Booleans.\n\nIf you would like to see the complete code before diving into\nthe details, check [booleans.qnt](./booleans.qnt).\n\n        ",
+      "description": "\nIn this lesson, you will learn how to use Booleans. It should take you real quick to learn this lesson.\n\n**Do not skip this lesson.** It introduces a few important language concepts, not just the Booleans.\n\nIf you would like to see the complete code before diving into\nthe details, check [booleans.qnt](https://github.com/informalsystems/quint/blob/main/examples/tutorials/booleans.qnt).\n\n        ",
       "line": 5,
       "file": "lesson1-booleans/booleans.qnt"
     },
