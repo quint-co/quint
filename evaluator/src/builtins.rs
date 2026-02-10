@@ -91,7 +91,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
             // Try actions in shuffled order until we find one that's enabled
             for i in indices {
-                env.var_storage.borrow_mut().reset_action_for_any();
+                env.var_storage.borrow_mut().clear_metadata();
 
                 let result = args[i].execute(env)?;
 

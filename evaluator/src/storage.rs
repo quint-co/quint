@@ -102,13 +102,6 @@ impl Storage {
         }
     }
 
-    /// Reset action tracking when trying different alternatives in an `any` block.
-    pub fn reset_action_for_any(&mut self) {
-        if self.store_metadata {
-            self.action_taken = None;
-        }
-    }
-
     /// Record a nondeterministic choice for MBT tracking.
     /// Stores the picked value associated with the nondet variable name.
     pub fn track_nondet(&mut self, name: QuintName, value: Value) {
@@ -140,14 +133,14 @@ impl Storage {
 
         // Add metadata if enabled
         if self.store_metadata {
-            let none_variant = Value::variant(VARIANT_NONE.into(), Value::tuple(ImmutableVec::new()));
+            let none_variant = Value::variant(LABEL_NONE.into(), Value::tuple(ImmutableVec::new()));
 
             let nondet_picks_map: ImmutableMap<QuintName, Value> = self
                 .nondet_picks
                 .iter()
                 .map(|(name, value)| {
                     let variant = match value {
-                        Some(v) => Value::variant(VARIANT_SOME.into(), v.clone()),
+                        Some(v) => Value::variant(LABEL_SOME.into(), v.clone()),
                         None => none_variant.clone(),
                     };
                     (name.clone(), variant)
