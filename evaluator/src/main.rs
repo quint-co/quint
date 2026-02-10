@@ -354,7 +354,8 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, per_thread_ntraces, reporter, None, mbt);
+                let result =
+                    parsed.simulate(nsteps, nruns, per_thread_ntraces, reporter, None, mbt);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
@@ -366,7 +367,7 @@ fn simulate_in_parallel(
     let mut samples = 0;
     let mut aggregated_witnesses = vec![];
     let mut merged_best_traces: Vec<SimulationTrace> = Vec::new();
-    let mut last_trace_statistics = TraceStatistics::default();
+    let mut last_trace_statistics;
     let mut final_status = SimulationStatus::Success;
     let mut final_errors: Vec<QuintError> = Vec::new();
 
