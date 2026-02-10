@@ -723,7 +723,8 @@ impl Interpreter {
                 None => 1,
             };
 
-            match parsed.simulate(nsteps, nruns, ntraces, no_report(), None, false) {
+            let seed = Some(env.rand.get_state());
+            match parsed.simulate(nsteps, nruns, ntraces, no_report(), seed, false) {
                 Ok(result) => {
                     env.trace = result
                         .best_traces
