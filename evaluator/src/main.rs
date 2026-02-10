@@ -14,7 +14,9 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{
+    compare_trace_quality, ParsedQuint, SimulationError, SimulationResult, TraceStatistics,
+};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
@@ -324,6 +326,7 @@ fn simulate_in_parallel(
 ) -> SimOutput {
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
+    let per_thread_ntraces = ntraces.div_ceil(nthreads);
     let mut threads = Vec::with_capacity(nthreads);
     let (out_tx, out_rx) = std::sync::mpsc::channel();
     let reporter_thread = progress::spawn_reporter_thread(nruns);
@@ -351,7 +354,7 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None, mbt);
+                let result = parsed.simulate(nsteps, nruns, per_thread_ntraces, reporter, None, mbt);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
@@ -362,14 +365,19 @@ fn simulate_in_parallel(
 
     let mut samples = 0;
     let mut aggregated_witnesses = vec![];
+    let mut merged_best_traces: Vec<SimulationTrace> = Vec::new();
+    let mut last_trace_statistics = TraceStatistics::default();
+    let mut final_status = SimulationStatus::Success;
+    let mut final_errors: Vec<QuintError> = Vec::new();
 
     loop {
-        let mut outcome = out_rx.recv().expect("closed channel");
+        let outcome = out_rx.recv().expect("closed channel");
         samples += outcome.samples;
+        last_trace_statistics = outcome.trace_statistics;
 
         // Accumulate witness counts from all threads
         if aggregated_witnesses.is_empty() {
-            aggregated_witnesses = std::mem::take(&mut outcome.witnessing_traces);
+            aggregated_witnesses = outcome.witnessing_traces;
         } else {
             for (agg, count) in aggregated_witnesses
                 .iter_mut()
@@ -379,19 +387,47 @@ fn simulate_in_parallel(
             }
         }
 
-        nthreads -= 1;
-        if nthreads == 0 || outcome.status != SimulationStatus::Success {
-            // Report back the total number of samples executed by all threads
-            // instead of just this one. Note that trace statistics are
-            // preserved, meaning that the final report will correspond to the
-            // trace statistics of a single thread. Presuming the workload is
-            // homogeneous (no thread is performing work that is significantly
-            // different from the other threads), the report should still be
-            // statistically correct when all threads succeed.
-            outcome.samples = samples;
-            outcome.witnessing_traces = aggregated_witnesses;
-            return outcome;
+        // Escalate status: Error > Violation > Success
+        match outcome.status {
+            SimulationStatus::Error => {
+                final_status = SimulationStatus::Error;
+                final_errors = outcome.errors;
+            }
+            SimulationStatus::Violation if final_status != SimulationStatus::Error => {
+                final_status = SimulationStatus::Violation;
+            }
+            _ => {}
         }
+
+        // Merge best_traces using shared quality comparison from simulator
+        for trace in outcome.best_traces {
+            let pos = merged_best_traces.binary_search_by(|t| {
+                compare_trace_quality(
+                    !t.result,
+                    t.states.states.len(),
+                    !trace.result,
+                    trace.states.states.len(),
+                )
+            });
+            merged_best_traces.insert(pos.unwrap_or_else(|i| i), trace);
+            if merged_best_traces.len() > ntraces {
+                merged_best_traces.pop();
+            }
+        }
+
+        nthreads -= 1;
+        if nthreads == 0 || final_status == SimulationStatus::Error {
+            break;
+        }
+    }
+
+    SimOutput {
+        status: final_status,
+        errors: final_errors,
+        best_traces: merged_best_traces,
+        trace_statistics: last_trace_statistics,
+        witnessing_traces: aggregated_witnesses,
+        samples,
     }
 }
 

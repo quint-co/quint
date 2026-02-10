@@ -64,7 +64,10 @@ impl ParsedQuint {
     ///
     /// Repeat this `samples` times, and return the best `n_traces` traces
     ///
-    /// If `init` or `invariant` return false at any given point, simulation stops.
+    /// If `init` returns false, simulation stops immediately.
+    /// If `invariant` returns false, the violation is recorded and simulation
+    /// continues until `n_traces` violations have been found (or `n_traces.max(1)`
+    /// when `n_traces == 0` for backward compatibility).
     /// If `step` returns false, we continue, as that just means we failed to progress
     /// in a specific setting.
     ///
@@ -111,6 +114,7 @@ impl ParsedQuint {
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
+        let mut errors_found: usize = 0;
 
         for sample_number in 1..=samples {
             reporter.next_sample();
@@ -196,14 +200,16 @@ impl ParsedQuint {
                     );
 
                     if !success {
-                        // Found a violation, stop simulation and return results
-                        return Ok(SimulationResult {
-                            result: false,
-                            best_traces,
-                            trace_statistics: get_trace_statistics(&trace_lengths),
-                            samples: sample_number,
-                            witnessing_traces,
-                        });
+                        errors_found += 1;
+                        if errors_found >= n_traces.max(1) {
+                            return Ok(SimulationResult {
+                                result: false,
+                                best_traces,
+                                trace_statistics: get_trace_statistics(&trace_lengths),
+                                samples: sample_number,
+                                witnessing_traces,
+                            });
+                        }
                     }
                 }
                 Ok(Err(e)) => {
@@ -246,7 +252,7 @@ impl ParsedQuint {
         }
 
         Ok(SimulationResult {
-            result: true,
+            result: errors_found == 0,
             best_traces,
             trace_statistics: get_trace_statistics(&trace_lengths),
             samples,
@@ -282,19 +288,28 @@ fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
     }
 }
 
-/// Compare two traces by quality.
+/// Compare two traces by quality using their violation status and length.
 ///
 /// Prefer short traces for error, and longer traces for non error.
 /// Therefore, trace a is better than trace b iff
 ///  - when a has an error: a is shorter or b has no error;
 ///  - when a has no error: a is longer and b has no error.
-fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
-    match (a.violation, b.violation) {
-        (true, true) => a.states.len().cmp(&b.states.len()),
+pub fn compare_trace_quality(
+    a_violation: bool,
+    a_len: usize,
+    b_violation: bool,
+    b_len: usize,
+) -> std::cmp::Ordering {
+    match (a_violation, b_violation) {
+        (true, true) => a_len.cmp(&b_len),
         (true, false) => std::cmp::Ordering::Less,
         (false, true) => std::cmp::Ordering::Greater,
-        (false, false) => b.states.len().cmp(&a.states.len()),
+        (false, false) => b_len.cmp(&a_len),
     }
+}
+
+fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
+    compare_trace_quality(a.violation, a.states.len(), b.violation, b.states.len())
 }
 
 /// Insert a trace into a sorted vector of traces, maintaining the order by quality.
