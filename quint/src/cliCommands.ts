@@ -407,11 +407,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt || prev.args.witnesses.length > 0) {
-      console.warn(
-        chalk.yellow('Warning: --mbt and --witnesses are ignored when using the Rust backend (at this time).')
-      )
-      console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
+    if (prev.args.witnesses.length > 0) {
+      console.warn(chalk.yellow('Warning: --witnesses are ignored when using the Rust backend (at this time).'))
+      console.warn(chalk.yellow('Use the typescript backend if you need witness functionality.'))
     }
 
     // Parse the combined invariant for the Rust backend
@@ -434,6 +432,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.nTraces ?? 1,
       nThreads,
       prev.args.seed,
+      prev.args.mbt,
       options.onTrace
     )
   } else {
