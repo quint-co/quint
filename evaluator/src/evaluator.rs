@@ -763,9 +763,9 @@ fn builtin_value(name: &str) -> CompiledExpr {
                 Value::bool(false),
             ])))
         }),
-        "q::lastTrace" => CompiledExpr::new(|env| {
-            Ok(Value::list(env.trace.iter().cloned().collect()))
-        }),
+        "q::lastTrace" => {
+            CompiledExpr::new(|env| Ok(Value::list(env.trace.iter().cloned().collect())))
+        }
         _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }
