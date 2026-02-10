@@ -354,7 +354,8 @@ impl Interpreter {
 
         let compiled_def = match def {
             LookupDefinition::Definition(QuintDeclaration::QuintOpDef(op)) => {
-                let base_expr = if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
+                let base_expr = if matches!(op.expr, QuintEx::QuintLambda { .. })
+                    || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
@@ -383,7 +384,9 @@ impl Interpreter {
                 if matches!(op.qualifier, OpQualifier::Action) {
                     let action_name = op.name.clone();
                     CompiledExpr::new(move |env| {
-                        env.var_storage.borrow_mut().track_action(action_name.clone());
+                        env.var_storage
+                            .borrow_mut()
+                            .track_action(action_name.clone());
                         base_expr.execute(env)
                     })
                 } else {
@@ -608,7 +611,12 @@ impl Interpreter {
                             let body_expr = self.compile(expr);
                             let nondet_name = opdef.name.clone();
 
-                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value, nondet_name);
+                            return nondet::eval_nondet_one_of(
+                                set_expr,
+                                body_expr,
+                                cached_value,
+                                nondet_name,
+                            );
                         }
                     }
                     // Fall through to regular nondet handling for other cases

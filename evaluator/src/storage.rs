@@ -148,11 +148,7 @@ impl Storage {
                 .collect();
             map.insert(MBT_NONDET_PICKS.into(), Value::record(nondet_picks_map));
 
-            let action_name = self
-                .action_taken
-                .as_ref()
-                .map(|s| s.as_ref())
-                .unwrap_or("");
+            let action_name = self.action_taken.as_ref().map(|s| s.as_ref()).unwrap_or("");
             map.insert(MBT_ACTION_TAKEN.into(), Value::str(action_name.into()));
         }
 

@@ -96,7 +96,9 @@ pub fn eval_nondet_one_of(
 
                 // Record the nondet pick for MBT
                 if let Some(Ok(ref val)) = *cached_value.borrow() {
-                    env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
+                    env.var_storage
+                        .borrow_mut()
+                        .track_nondet(nondet_name.clone(), val.clone());
                 }
 
                 cached_value.replace(None);
@@ -141,7 +143,9 @@ pub fn eval_nondet_one_of(
                 if new_positions == original_positions {
                     // Record the final nondet pick for MBT
                     if let Some(Ok(ref val)) = *cached_value.borrow() {
-                        env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
+                        env.var_storage
+                            .borrow_mut()
+                            .track_nondet(nondet_name.clone(), val.clone());
                     }
 
                     cached_value.replace(None);
@@ -150,7 +154,9 @@ pub fn eval_nondet_one_of(
             } else {
                 // Record the final nondet pick for MBT
                 if let Some(Ok(ref val)) = *cached_value.borrow() {
-                    env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
+                    env.var_storage
+                        .borrow_mut()
+                        .track_nondet(nondet_name.clone(), val.clone());
                 }
 
                 cached_value.replace(None);
