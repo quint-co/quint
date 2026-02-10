@@ -9,6 +9,10 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 const MBT_NONDET_PICKS: &str = "mbt::nondetPicks";
 const MBT_ACTION_TAKEN: &str = "mbt::actionTaken";
 
+/// Non det Labels for ITF traces
+const LABEL_SOME: &str = "Some";
+const LABEL_NONE: &str = "None";
+
 /// Variable registers are like the regular registers (ref cells) except that
 /// they include a name. The name is used for displaying the variable name in
 /// the trace.
@@ -88,8 +92,33 @@ impl Storage {
             }
         }
         self.clear_caches();
+    }
 
-        // Clear metadata for the next step
+    /// Record the name of an action being executed.
+    /// Only sets the action name if tracking is enabled and no action has been recorded yet.
+    pub fn track_action(&mut self, name: QuintName) {
+        if self.store_metadata && self.action_taken.is_none() {
+            self.action_taken = Some(name);
+        }
+    }
+
+    /// Reset action tracking when trying different alternatives in an `any` block.
+    pub fn reset_action_for_any(&mut self) {
+        if self.store_metadata {
+            self.action_taken = None;
+        }
+    }
+
+    /// Record a nondeterministic choice for MBT tracking.
+    /// Stores the picked value associated with the nondet variable name.
+    pub fn track_nondet(&mut self, name: QuintName, value: Value) {
+        if self.store_metadata {
+            self.nondet_picks.insert(name, Some(value));
+        }
+    }
+
+    /// Clear all MBT metadata after recording a state.
+    pub fn clear_metadata(&mut self) {
         if self.store_metadata {
             self.action_taken = None;
             for value in self.nondet_picks.values_mut() {
@@ -111,13 +140,15 @@ impl Storage {
 
         // Add metadata if enabled
         if self.store_metadata {
+            let none_variant = Value::variant(VARIANT_NONE.into(), Value::tuple(ImmutableVec::new()));
+
             let nondet_picks_map: ImmutableMap<QuintName, Value> = self
                 .nondet_picks
                 .iter()
                 .map(|(name, value)| {
                     let variant = match value {
-                        Some(v) => Value::variant("Some".into(), v.clone()),
-                        None => Value::variant("None".into(), Value::tuple(ImmutableVec::new())),
+                        Some(v) => Value::variant(VARIANT_SOME.into(), v.clone()),
+                        None => none_variant.clone(),
                     };
                     (name.clone(), variant)
                 })

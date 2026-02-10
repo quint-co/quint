@@ -91,11 +91,12 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
             // Try actions in shuffled order until we find one that's enabled
             for i in indices {
+                env.var_storage.borrow_mut().reset_action_for_any();
+
                 let result = args[i].execute(env)?;
 
                 if result.as_bool() {
-                    // Found an enabled action - record it and return true
-                    // TODO: Record in the trace recorder
+                    // Found an enabled action - return true
                     return Ok(Value::bool(true));
                 }
 

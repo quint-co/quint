@@ -94,14 +94,10 @@ pub fn eval_nondet_one_of(
                 cached_value.replace(Some(Ok(picked_value)));
                 let result = body_expr.execute(env);
 
-                // Record the nondet pick for MBT 
-                let mut storage = env.var_storage.borrow_mut();
-                if storage.store_metadata {
-                    if let Some(Ok(ref val)) = *cached_value.borrow() {
-                        storage.nondet_picks.insert(nondet_name.clone(), Some(val.clone()));
-                    }
+                // Record the nondet pick for MBT
+                if let Some(Ok(ref val)) = *cached_value.borrow() {
+                    env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
                 }
-                
 
                 cached_value.replace(None);
                 return result;
@@ -144,13 +140,8 @@ pub fn eval_nondet_one_of(
                 // If we're back to original positions, we've tried everything
                 if new_positions == original_positions {
                     // Record the final nondet pick for MBT
-                    {
-                        let mut storage = env.var_storage.borrow_mut();
-                        if storage.store_metadata {
-                            if let Some(Ok(ref val)) = *cached_value.borrow() {
-                                storage.nondet_picks.insert(nondet_name.clone(), Some(val.clone()));
-                            }
-                        }
+                    if let Some(Ok(ref val)) = *cached_value.borrow() {
+                        env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
                     }
 
                     cached_value.replace(None);
@@ -158,13 +149,8 @@ pub fn eval_nondet_one_of(
                 }
             } else {
                 // Record the final nondet pick for MBT
-                {
-                    let mut storage = env.var_storage.borrow_mut();
-                    if storage.store_metadata {
-                        if let Some(Ok(ref val)) = *cached_value.borrow() {
-                            storage.nondet_picks.insert(nondet_name, Some(val.clone()));
-                        }
-                    }
+                if let Some(Ok(ref val)) = *cached_value.borrow() {
+                    env.var_storage.borrow_mut().track_nondet(nondet_name.clone(), val.clone());
                 }
 
                 cached_value.replace(None);

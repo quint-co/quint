@@ -113,6 +113,8 @@ impl Env {
         // After shifting, the current state is in `vars`, so we record it
         let state = self.var_storage.borrow().as_record();
         self.trace.push(state);
+        // Clear metadata after recording so it doesn't carry over to the next state
+        self.var_storage.borrow_mut().clear_metadata();
     }
 }
 
@@ -345,7 +347,7 @@ impl<'a> Interpreter<'a> {
 
         let compiled_def = match def {
             LookupDefinition::Definition(QuintDeclaration::QuintOpDef(op)) => {
-                if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
+                let base_expr = if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
@@ -368,6 +370,17 @@ impl<'a> Interpreter<'a> {
                             result
                         }
                     })
+                };
+
+                // Wrap action definitions to track which action is executed (for MBT)
+                if matches!(op.qualifier, OpQualifier::Action) {
+                    let action_name = op.name.clone();
+                    CompiledExpr::new(move |env| {
+                        env.var_storage.borrow_mut().track_action(action_name.clone());
+                        base_expr.execute(env)
+                    })
+                } else {
+                    base_expr
                 }
             }
             LookupDefinition::Definition(QuintDeclaration::QuintVar(QuintVar {
