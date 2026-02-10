@@ -562,7 +562,7 @@ error: Runtime error
 <!-- !test exit 0 -->
 <!-- !test in witnesses -->
 ```
-output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
+output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 --verbosity=1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
 exit $exit_code
@@ -572,9 +572,9 @@ exit $exit_code
 ```
 [ok] No violation found (duration).
 Witnesses:
-won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
-stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
-Use --seed=0x2b442ab43ab1e --backend=rust to reproduce.
+won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
+stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
+Use --seed=0x1995 --backend=rust to reproduce.
 ```
 
 ### Run produces normal output on `--out-itf` with default verbosity
@@ -750,6 +750,39 @@ quint run \
   --max-steps=5 \
   --max-samples=1 \
   ./testFixture/nestedParameterizedCallsWithLet.qnt
+```
+
+## Run fails with bigint outside i64 range
+
+This test verifies that the Rust backend rejects integers outside the i64 range.
+
+<!-- !test in run bigint outside i64 range -->
+```
+cat > /tmp/bigint_test.qnt << 'EOF'
+module bigintTest {
+  var x: int
+
+  action init = {
+    x' = 9223372036854775808  // 2^63, outside i64 range
+  }
+
+  action step = {
+    x' = x + 1
+  }
+}
+EOF
+
+output=$(quint run --backend=rust --main=bigintTest /tmp/bigint_test.qnt 2>&1)
+exit_code=$?
+echo "$output" | grep -o "QNT600.*i64 range"
+rm /tmp/bigint_test.qnt
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run bigint outside i64 range -->
+```
+QNT600] Integer literal 9223372036854775808 is outside i64 range
 ```
 
 ## Debug output in init action

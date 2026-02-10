@@ -69,7 +69,7 @@ fn eval_run(callee: &str, input: &str) -> EvalResult {
 
     let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
     let run_def = parsed.find_definition_by_name(callee).unwrap();
-    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::new(Rc::clone(&interpreter.var_storage));
 
     interpreter.eval(&mut env, run_def.expr.clone())
@@ -95,7 +95,7 @@ fn assert_var_after_run(
 
     let parsed = helpers::parse(&quint_content, "init", "step", None)?;
     let run_def = parsed.find_definition_by_name(callee)?;
-    let mut interpreter = Interpreter::new(&parsed.table);
+    let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::new(Rc::clone(&interpreter.var_storage));
 
     let run_result = interpreter.eval(&mut env, run_def.expr.clone());

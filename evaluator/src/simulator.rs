@@ -16,6 +16,7 @@ pub struct ParsedQuint {
     pub init: QuintEx,
     pub step: QuintEx,
     pub invariant: QuintEx,
+    pub witnesses: Vec<QuintEx>,
     pub table: LookupTable,
 }
 
@@ -25,8 +26,7 @@ pub struct SimulationResult {
     pub best_traces: Vec<Trace>,
     pub trace_statistics: TraceStatistics,
     pub samples: usize,
-    // TODO
-    // witnessing_traces
+    pub witnessing_traces: Vec<usize>,
 }
 
 /// Simulation error that includes context about when the error occurred.
@@ -79,14 +79,13 @@ impl ParsedQuint {
         seed: Option<u64>,
         store_metadata: bool,
     ) -> Result<SimulationResult, SimulationError> {
-        let mut interpreter = Interpreter::new(&self.table);
+        let mut interpreter = Interpreter::new(self.table.clone());
         // Setup the store metadata flag for MBT.
-        //This was deliberately not passed as an argument to the Interpreter constructor. 
+        // This was deliberately not passed as an argument to the Interpreter constructor.
         interpreter
             .var_storage
             .borrow_mut()
             .set_store_metadata(store_metadata);
-
         let mut env = match seed {
             Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
             None => Env::new(interpreter.var_storage.clone()),
@@ -96,6 +95,15 @@ impl ParsedQuint {
         let step = interpreter.compile(&self.step);
         let invariant = interpreter.compile(&self.invariant);
 
+        // Compile witnesses and initialize tracking
+        let compiled_witnesses: Vec<_> = self
+            .witnesses
+            .iter()
+            .map(|w| interpreter.compile(w))
+            .collect();
+        let mut witnessing_traces = vec![0; self.witnesses.len()];
+        let mut trace_witnessed = vec![false; self.witnesses.len()];
+
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
@@ -103,6 +111,8 @@ impl ParsedQuint {
         for sample_number in 1..=samples {
             reporter.next_sample();
             let seed = env.rand.get_state();
+            trace_witnessed.fill(false);
+            let mut remaining = compiled_witnesses.len();
 
             // Wrap execute calls to catch panics and print seed
             let result = catch_unwind(AssertUnwindSafe(|| -> Result<bool, QuintError> {
@@ -113,6 +123,28 @@ impl ParsedQuint {
                 for step_number in 1..=(steps + 1) {
                     // Shift the state and record it in the trace
                     env.shift();
+
+                    // Evaluate witnesses after each step and skip if all satisfied
+                    if remaining > 0 {
+                        for i in 0..trace_witnessed.len() {
+                            // Skip if this witness is already satisfied in a previous step
+                            if trace_witnessed[i] {
+                                continue;
+                            }
+
+                            if let Ok(result) = compiled_witnesses[i].execute(&mut env) {
+                                if result.as_bool() {
+                                    trace_witnessed[i] = true;
+                                    witnessing_traces[i] += 1;
+                                    remaining -= 1;
+                                    // early break if all witnesses are satisfied.
+                                    if remaining == 0 {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     if !invariant.execute(&mut env)?.as_bool() {
                         trace_lengths.push(env.trace.len());
@@ -143,6 +175,7 @@ impl ParsedQuint {
                             best_traces,
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
+                            witnessing_traces,
                         });
                     }
 
@@ -165,6 +198,7 @@ impl ParsedQuint {
                             best_traces,
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
+                            witnessing_traces,
                         });
                     }
                 }
@@ -212,6 +246,7 @@ impl ParsedQuint {
             best_traces,
             trace_statistics: get_trace_statistics(&trace_lengths),
             samples,
+            witnessing_traces,
         })
     }
 }

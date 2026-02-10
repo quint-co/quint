@@ -6,7 +6,10 @@ running against a locally-built evaluator (not the released version).
 These tests run in PR CI after building the Rust evaluator from source.
 
 <!-- !test program
-bash -
+TMPFILE=$(mktemp ./tmp.XXXXXX.sh)
+cat > "$TMPFILE"
+bash "$TMPFILE"
+rm "$TMPFILE"
 -->
 
 ## quint repl tests
@@ -362,5 +365,19 @@ true
 >>> n4_f1::round
 Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
 >>> .exit
+```
+
+### REPL fails with bigint outside i64 range
+
+This test verifies that the Rust backend REPL rejects integers outside the i64 range.
+
+<!-- !test in repl bigint outside i64 range -->
+```
+echo '9223372036854775808' | quint --backend=rust -q 2>&1 | grep -o "QNT600.*i64 range"
+```
+
+<!-- !test out repl bigint outside i64 range -->
+```
+QNT600] Integer literal 9223372036854775808 is outside i64 range
 ```
 

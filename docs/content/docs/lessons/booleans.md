@@ -9,6 +9,8 @@ In this lesson, you will learn how to use Booleans. It should take you real quic
 
 If you would like to see the complete code before diving into
 the details, check [booleans.qnt](https://github.com/informalsystems/quint/blob/main/examples/tutorials/booleans.qnt).
+
+        
 ## 2. Boolean literals
 
 *Progress:*  6%

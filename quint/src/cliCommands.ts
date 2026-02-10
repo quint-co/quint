@@ -46,7 +46,7 @@ import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { convertInit } from './ir/initToPredicate'
-import { QuintRustWrapper } from './quintRustWrapper'
+import { CommandWrapper } from './rust/commandWrapper'
 import {
   cliErr,
   findMainModule,
@@ -268,6 +268,7 @@ export async function runRepl(argv: any) {
     importModule: moduleName,
     replInput: argv.commands,
     verbosity: argv.quiet ? 0 : argv.verbosity,
+    backend: argv.backend,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
@@ -311,10 +312,10 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   let results: TestResult[]
 
   if (prev.args.backend === 'rust') {
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     results = []
     for (const [index, def] of testDefs.entries()) {
-      const result = await quintRustWrapper.test(
+      const result = await commandWrapper.test(
         def,
         prev.table,
         prev.args.seed,
@@ -407,11 +408,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.witnesses.length > 0) {
-      console.warn(chalk.yellow('Warning: --witnesses are ignored when using the Rust backend (at this time).'))
-      console.warn(chalk.yellow('Use the typescript backend if you need witness functionality.'))
-    }
-
     // Parse the combined invariant for the Rust backend
     const invariantExpr = toExpr(prev, invariantString)
     if (invariantExpr.isLeft()) {
@@ -421,12 +417,19 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
     }
 
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     const nThreads = Math.min(prev.args.maxSamples, prev.args.nThreads)
-    outcome = await quintRustWrapper.simulate(
-      { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant: invariantExpr.value },
+    outcome = await commandWrapper.simulate(
+      {
+        modules: [],
+        table: prev.resolver.table,
+        main: mainName,
+        init,
+        step,
+        invariant: invariantExpr.value,
+        witnesses: witnesses,
+      },
       prev.path,
-      witnesses,
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,

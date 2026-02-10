@@ -165,7 +165,7 @@ jobs:
         run: cd ./evaluator && cargo build --release
       - name: Install Rust evaluator locally
         run: |
-          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/quintRustWrapper.ts | sed "s/.*'\(.*\)'/\1/")
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
           mkdir -p ~/.quint/rust-evaluator-$VERSION
           cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
       - run: cd ./quint && npm ci

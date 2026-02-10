@@ -12,7 +12,7 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
+use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
@@ -32,6 +32,7 @@ enum Command {
     Run(RunArgs),
     SimulateFromStdin(SimulateQuintArgs),
     TestFromStdin(TestQuintArgs),
+    ReplFromStdin(ReplFromStdinArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -89,12 +90,16 @@ struct SimulateQuintArgs {}
 #[argh(subcommand, name = "test-from-stdin")]
 struct TestQuintArgs {}
 
+/// Run REPL evaluator with input from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "repl-from-stdin")]
+struct ReplFromStdinArgs {}
+
 /// Data expected on STDIN for simulation
 #[derive(Serialize, Deserialize)]
 struct SimulateInput {
     parsed: ParsedQuint,
     source: String,
-    witnesses: Vec<QuintEx>,
     nruns: usize,
     nsteps: usize,
     ntraces: usize,
@@ -178,7 +183,15 @@ fn main() -> eyre::Result<()> {
         Command::Run(args) => run_simulation(args),
         Command::SimulateFromStdin(_) => simulate_from_stdin(),
         Command::TestFromStdin(_) => test_from_stdin(),
+        Command::ReplFromStdin(_) => repl_from_stdin(),
     }
+}
+
+/// Runs the REPL evaluator, reading commands from stdin and writing responses to stdout
+fn repl_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+    quint_evaluator::repl::run_repl_from_stdin()?;
+    Ok(())
 }
 
 /// Utility to run the simulation with command-line arguments. Not meant to be
@@ -348,9 +361,24 @@ fn simulate_in_parallel(
     }
 
     let mut samples = 0;
+    let mut aggregated_witnesses = vec![];
+
     loop {
         let mut outcome = out_rx.recv().expect("closed channel");
         samples += outcome.samples;
+
+        // Accumulate witness counts from all threads
+        if aggregated_witnesses.is_empty() {
+            aggregated_witnesses = std::mem::take(&mut outcome.witnessing_traces);
+        } else {
+            for (agg, count) in aggregated_witnesses
+                .iter_mut()
+                .zip(&outcome.witnessing_traces)
+            {
+                *agg += count;
+            }
+        }
+
         nthreads -= 1;
         if nthreads == 0 || outcome.status != SimulationStatus::Success {
             // Report back the total number of samples executed by all threads
@@ -361,6 +389,7 @@ fn simulate_in_parallel(
             // different from the other threads), the report should still be
             // statistically correct when all threads succeed.
             outcome.samples = samples;
+            outcome.witnessing_traces = aggregated_witnesses;
             return outcome;
         }
     }
@@ -440,7 +469,9 @@ fn to_sim_output(
             .ok()
             .map_or_else(TraceStatistics::default, |r| r.trace_statistics.clone()),
         samples: result.as_ref().map_or(0, |r| r.samples),
-        // TODO: This simulator is not tracking witnesses yet
-        witnessing_traces: vec![],
+        witnessing_traces: result
+            .as_ref()
+            .ok()
+            .map_or_else(Vec::new, |r| r.witnessing_traces.clone()),
     }
 }
