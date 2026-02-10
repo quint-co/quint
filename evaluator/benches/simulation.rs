@@ -6,11 +6,19 @@ use std::time::Duration;
 use criterion::{criterion_group, criterion_main, Criterion};
 use quint_evaluator::helpers;
 use quint_evaluator::progress;
+use quint_evaluator::Verbosity;
 
 fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None)?;
 
-    let result = parsed.simulate(10, 1_000, 0, progress::no_report(), None);
+    let result = parsed.simulate(
+        10,
+        1_000,
+        0,
+        progress::no_report(),
+        None,
+        Verbosity::default(),
+    );
 
     match result {
         Ok(r) => assert!(r.result),

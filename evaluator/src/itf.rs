@@ -5,44 +5,73 @@
 //! This format can be parsed by Quint's typescript tool and by the ITF trace
 //! viewer extension on VSCode.
 
-use crate::value::{Value, ValueInner};
-use chrono::{self};
+use crate::value::{Str, Value, ValueInner};
+use chrono;
 use itf;
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct Trace {
-    pub states: Vec<Value>,
+    pub states: Vec<State>,
     pub violation: bool,
     pub seed: u64,
 }
 
-impl Trace {
-    pub fn to_itf(self, source: String) -> itf::Trace<itf::Value> {
-        let states = self
-            .states
-            .iter()
-            .enumerate()
-            .map(|(i, v)| itf::State {
-                meta: itf::state::Meta {
-                    index: Some(i as u64),
-                    other: BTreeMap::default(),
-                },
-                value: v.to_itf(),
-            })
-            .collect::<Vec<itf::State<itf::Value>>>();
+#[derive(Debug)]
+pub struct State {
+    pub value: Value,
+    pub diagnostics: Vec<DebugMessage>,
+}
 
-        // Find the variable names by taking the fields from the first state
-        // (which should be a record)
-        let vars = if let Some(first_state) = self.states.first() {
-            if let ValueInner::Record(map) = first_state.0.as_ref() {
-                map.keys().map(|v| v.to_string()).collect::<Vec<_>>()
-            } else {
-                panic!("Expected a record, got {}", self.states[0]);
-            }
-        } else {
-            vec![]
-        };
+#[derive(Debug)]
+pub struct DebugMessage {
+    pub label: Str,
+    pub value: Value,
+}
+
+impl Trace {
+    pub fn has_diagnostics(&self) -> bool {
+        self.states.iter().any(|s| !s.diagnostics.is_empty())
+    }
+
+    pub fn to_itf(self, source: String) -> itf::Trace<itf::Value> {
+        let mut vars = Vec::new();
+        if let Some(state) = self.states.first() {
+            // Find the variable names by taking the fields from the first
+            // state (which should be a record).
+            let ValueInner::Record(rec) = &*state.value else {
+                panic!("Expected a record, got {}", state.value);
+            };
+            vars.extend(rec.keys().map(|key| key.to_string()));
+        }
+
+        let mut states = Vec::new();
+        for (state, i) in self.states.into_iter().zip(0u64..) {
+            let diagnostics: Vec<_> = state
+                .diagnostics
+                .into_iter()
+                .map(|diag| {
+                    serde_json::json!({
+                        "label": diag.label,
+                        "value": diag.value.to_itf()
+                    })
+                })
+                .collect();
+
+            let mut other = BTreeMap::new();
+            other.insert(
+                "diagnostics".to_string(),
+                serde_json::to_string(&diagnostics).expect("failed to serialize diagnostics"),
+            );
+
+            states.push(itf::State {
+                meta: itf::state::Meta {
+                    index: Some(i),
+                    other,
+                },
+                value: state.value.to_itf(),
+            });
+        }
 
         let mut other = BTreeMap::new();
         other.insert(
