@@ -86,8 +86,7 @@ quint run \
 
 This test verifies that q::debug output is printed when using the Rust backend.
 
-**FIXME: the next PR should reintroduce logging**
-<!-- !test check rust backend debug -->
+<!-- !test in rust backend debug -->
 ```
 cat > /tmp/debug_test.qnt << 'EOF'
 module debugTest {
@@ -111,6 +110,11 @@ quint run \
   /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
 
 rm /tmp/debug_test.qnt
+```
+
+<!-- !test out rust backend debug -->
+```
+[DEBUG] this tests debug 42
 ```
 
 ## `expect` does not duplicate states in traces for `quint run`
