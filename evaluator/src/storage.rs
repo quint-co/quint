@@ -3,6 +3,7 @@
 
 use crate::ir::QuintName;
 use crate::value::{ImmutableMap, ImmutableVec, Value};
+use fxhash::FxHashSet;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 /// MBT metadata field names for ITF traces
@@ -79,6 +80,15 @@ impl Storage {
     /// Configure whether to store metadata for model-based testing
     pub fn set_store_metadata(&mut self, store_metadata: bool) {
         self.store_metadata = store_metadata;
+    }
+
+    /// Initialize the nondet_picks map with the given keys, all set to None.
+    /// This ensures that at step 0, all nondet variable names appear in the map,
+    /// matching the TypeScript implementation.
+    pub fn initialize_nondet_picks(&mut self, names: &FxHashSet<QuintName>) {
+        for name in names {
+            self.nondet_picks.insert(name.clone(), None);
+        }
     }
 
     /// Move the values in `next_vars` registries to `vars` registries, and

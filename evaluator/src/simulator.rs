@@ -95,6 +95,10 @@ impl ParsedQuint {
         let step = interpreter.compile(&self.step);
         let invariant = interpreter.compile(&self.invariant);
 
+        if store_metadata {
+            interpreter.create_nondet_picks();
+        }
+
         // Compile witnesses and initialize tracking
         let compiled_witnesses: Vec<_> = self
             .witnesses

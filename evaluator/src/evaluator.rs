@@ -7,7 +7,7 @@ use crate::nondet;
 use crate::rand::Rand;
 use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -157,8 +157,10 @@ pub struct Interpreter {
     // import/instantiation history. Here, we track that history to know which
     // variable from the storage to use during evaluation.
     namespaces: Vec<QuintName>,
-    // TODO: Other params from Typescript implementation, for future reference:
-    // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
+
+    // Initial nondet picks to be registered in the storage. This ensures that
+    // at step 0, all nondet variable names are present in the map (with None values).
+    initial_nondet_picks: FxHashSet<QuintName>,
 }
 
 impl Interpreter {
@@ -172,6 +174,7 @@ impl Interpreter {
             memo: Rc::new(RefCell::new(FxHashMap::default())),
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
+            initial_nondet_picks: FxHashSet::default(),
         }
     }
 
@@ -185,6 +188,14 @@ impl Interpreter {
     /// Shift the state, moving `next_vars` to `vars`.
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
+    }
+
+    /// Initialize the storage's nondet picks map with names discovered during compilation.
+    /// This ensures all nondet variables appear in the initial state with None values.
+    pub fn create_nondet_picks(&self) {
+        self.var_storage
+            .borrow_mut()
+            .initialize_nondet_picks(&self.initial_nondet_picks);
     }
 
     fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult>> {
@@ -610,6 +621,9 @@ impl Interpreter {
                             };
                             let body_expr = self.compile(expr);
                             let nondet_name = opdef.name.clone();
+
+                            // Register the nondet pick name so it appears in the initial state
+                            self.initial_nondet_picks.insert(nondet_name.clone());
 
                             return nondet::eval_nondet_one_of(
                                 set_expr,
