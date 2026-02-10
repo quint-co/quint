@@ -4,7 +4,9 @@
 //! memoization, caching, state variable storage, etc.
 
 use crate::nondet;
+use crate::progress::no_report;
 use crate::rand::Rand;
+use crate::simulator::ParsedQuint;
 use crate::storage::{Storage, VariableRegister};
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::{FxHashMap, FxHashSet};
@@ -562,6 +564,8 @@ impl Interpreter {
                             Ok(Value::bool(true))
                         })
                     })
+                } else if opcode == "q::test" || opcode == "q::testOnce" {
+                    self.compile_simulation(opcode, args)
                 } else if LAZY_OPS.contains(&opcode.as_str()) {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
@@ -673,6 +677,75 @@ impl Interpreter {
         }
     }
 
+    /// Compile a `q::test` or `q::testOnce` call into a simulation expression.
+    fn compile_simulation(&mut self, opcode: &str, args: &[QuintEx]) -> CompiledExpr {
+        let is_test_once = opcode == "q::testOnce";
+
+        let (nruns_expr, nsteps_expr, ntraces_expr, init_ex, step_ex, inv_ex) = if is_test_once {
+            // q::testOnce(nsteps, ntraces, init, step, inv)
+            (
+                None,
+                &args[0],
+                &args[1],
+                args[2].clone(),
+                args[3].clone(),
+                args[4].clone(),
+            )
+        } else {
+            // q::test(nruns, nsteps, ntraces, init, step, inv)
+            (
+                Some(&args[0]),
+                &args[1],
+                &args[2],
+                args[3].clone(),
+                args[4].clone(),
+                args[5].clone(),
+            )
+        };
+
+        let compiled_nruns = nruns_expr.map(|a| self.compile(a));
+        let compiled_nsteps = self.compile(nsteps_expr);
+        let compiled_ntraces = self.compile(ntraces_expr);
+
+        let parsed = ParsedQuint {
+            init: init_ex,
+            step: step_ex,
+            invariant: inv_ex,
+            witnesses: vec![],
+            table: self.table.clone(),
+        };
+
+        CompiledExpr::new(move |env| {
+            let nsteps = compiled_nsteps.execute(env)?.as_int() as usize;
+            let ntraces = compiled_ntraces.execute(env)?.as_int() as usize;
+            let nruns = match &compiled_nruns {
+                Some(c) => c.execute(env)?.as_int() as usize,
+                None => 1,
+            };
+
+            match parsed.simulate(nsteps, nruns, ntraces, no_report(), None, false) {
+                Ok(result) => {
+                    env.trace = result
+                        .best_traces
+                        .into_iter()
+                        .next()
+                        .map(|t| t.states)
+                        .unwrap_or_default();
+
+                    if result.result {
+                        Ok(Value::str("ok".into()))
+                    } else {
+                        Ok(Value::str("violation".into()))
+                    }
+                }
+                Err(sim_error) => {
+                    env.trace = sim_error.trace.states;
+                    Err(sim_error.error)
+                }
+            }
+        })
+    }
+
     /// Utility to compile and evaluate an expression
     pub fn eval(&mut self, env: &mut Env, expr: QuintEx) -> EvalResult {
         self.compile(&expr).execute(env)
@@ -688,6 +761,9 @@ fn builtin_value(name: &str) -> CompiledExpr {
                 Value::bool(true),
                 Value::bool(false),
             ])))
+        }),
+        "q::lastTrace" => CompiledExpr::new(|env| {
+            Ok(Value::list(env.trace.iter().cloned().collect()))
         }),
         _ => unimplemented!("Unknown builtin name: {}", name),
     }
