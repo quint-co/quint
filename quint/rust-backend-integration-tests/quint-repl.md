@@ -367,3 +367,17 @@ Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
 >>> .exit
 ```
 
+### REPL fails with bigint outside i64 range
+
+This test verifies that the Rust backend REPL rejects integers outside the i64 range.
+
+<!-- !test in repl bigint outside i64 range -->
+```
+echo '9223372036854775808' | quint --backend=rust -q 2>&1 | grep -o "QNT600.*i64 range"
+```
+
+<!-- !test out repl bigint outside i64 range -->
+```
+QNT600] Integer literal 9223372036854775808 is outside i64 range
+```
+

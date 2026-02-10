@@ -18,17 +18,18 @@ import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
-import { replacer, reviver } from '../jsonHelper'
+import { reviver } from '../jsonHelper'
 import { ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
-import { QuintError } from '../quintError'
+import { QuintError, isQuintError } from '../quintError'
 import { TestResult } from '../runtime/testing'
 import { List } from 'immutable'
 import { nameWithNamespaces } from '../runtime/impl/builder'
 import { Either, left, right } from '@sweet-monads/either'
 import { getRustEvaluatorPath } from './binaryManager'
+import { bigintCheckerReplacer } from './helpers'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -37,6 +38,7 @@ export type ParsedQuint = {
   init: QuintEx
   step: QuintEx
   invariant: QuintEx
+  witnesses: QuintEx[]
 }
 
 export class CommandWrapper {
@@ -69,7 +71,6 @@ export class CommandWrapper {
   async simulate(
     parsed: ParsedQuint,
     source: string,
-    witnesses: QuintEx[],
     nruns: number,
     nsteps: number,
     ntraces: number,
@@ -80,7 +81,6 @@ export class CommandWrapper {
     const input = {
       parsed: parsed,
       source: source,
-      witnesses: witnesses,
       nruns: nruns,
       nsteps: nsteps,
       ntraces: ntraces,
@@ -245,7 +245,18 @@ export class CommandWrapper {
   ): Promise<Either<QuintError, string>> {
     const exe = await getRustEvaluatorPath()
     const args = [command]
-    const inputStr = JSONbig.stringify(input, replacer)
+
+    // Serialize input with BigInt validation
+    let inputStr: string
+    try {
+      inputStr = JSONbig.stringify(input, bigintCheckerReplacer)
+    } catch (error) {
+      // If replacer throws a QuintError for out-of-bounds integers, return it
+      if (isQuintError(error)) {
+        return left(error)
+      }
+      throw error
+    }
 
     debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
 
