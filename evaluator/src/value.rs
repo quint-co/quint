@@ -178,10 +178,7 @@ impl PartialEq for ValueInner {
             (Self::MapSet(a1, b1), Self::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
             (Self::InfiniteInt, Self::InfiniteInt) => true,
             (Self::InfiniteNat, Self::InfiniteNat) => true,
-            (Self::InfiniteInt, Self::InfiniteNat) | (Self::InfiniteNat, Self::InfiniteInt) => {
-                false
-            }
-            // Infinite sets are not equal to any finite set
+            // Infinite sets are not equal to any other set (including each other)
             (Self::InfiniteInt, _) | (Self::InfiniteNat, _) => false,
             (_, Self::InfiniteInt) | (_, Self::InfiniteNat) => false,
             // To compare two sets represented in different ways, we need to enumerate them both
