@@ -276,20 +276,18 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     let source = Arc::new(source);
 
     // When a seed is provided, we use single-threaded execution for reproducibility
+    let config = SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed,
+        store_metadata: mbt,
+        verbosity,
+    };
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(
-            source, parsed, nsteps, nruns, ntraces, nthreads, mbt, verbosity,
-        )
+        simulate_in_parallel(source, parsed, config, nthreads)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let config = SimulationConfig {
-            steps: nsteps,
-            samples: nruns,
-            n_traces: ntraces,
-            seed,
-            store_metadata: mbt,
-            verbosity,
-        };
         let result = parsed.simulate(config, reporter);
         to_sim_output(source, result)
     };
@@ -335,13 +333,17 @@ fn test_from_stdin() -> eyre::Result<()> {
 fn simulate_in_parallel(
     source: Arc<String>,
     parsed: ParsedQuint,
-    nsteps: usize,
-    nruns: usize,
-    ntraces: usize,
+    config: SimulationConfig,
     mut nthreads: usize,
-    mbt: bool,
-    verbosity: Verbosity,
 ) -> SimOutput {
+    let SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed: _,
+        store_metadata: mbt,
+        verbosity,
+    } = config;
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
