@@ -349,3 +349,39 @@ rm NoExpectTest.itf.json WithExpectTest.itf.json
 6
 6
 ```
+
+### Debug while testing
+
+This test verifies that q::debug output is printed when using the Rust backend.
+
+<!-- !test in rust backend test debug -->
+```
+cat > /tmp/debug_test.qnt << 'EOF'
+module debugTest {
+  var x: int
+
+  action init = {
+    x' = q::debug("this tests debug", 42)
+  }
+
+  action step = {
+    x' = x + 1
+  }
+
+  run simpleTest =
+    init.then(step)
+}
+EOF
+
+quint test \
+  --backend=rust \
+  --verbosity=3 \
+  /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
+
+rm /tmp/debug_test.qnt
+```
+
+<!-- !test out rust backend test debug -->
+```
+       [DEBUG] this tests debug 42
+```

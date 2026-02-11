@@ -22,6 +22,7 @@ import {
   nest,
   parens,
   richtext,
+  space,
   text,
   textify,
 } from './prettierimp'
@@ -34,6 +35,7 @@ import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'
 import { simplifyRow } from './types/simplification'
+import { DebugMessage } from './itf'
 
 /**
  * An abstraction of a Console of bounded text width.
@@ -302,6 +304,7 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
 export function printTrace(
   console: ConsoleBox,
   states: QuintEx[],
+  diagnostics: DebugMessage[][],
   frames: ExecutionFrame[],
   hideVars: string[] = []
 ): void {
@@ -332,6 +335,15 @@ export function printTrace(
         }
       }
       filteredState = { ...state, args: filteredArgs }
+    }
+
+    if (index < diagnostics.length) {
+      for (const msg of diagnostics[index]) {
+        const doc: Doc = group([brackets(text('DEBUG')), space, text(msg.label), line(), prettyQuintEx(msg.value)])
+        console.out(format(console.width, 0, doc))
+        console.out('\n')
+      }
+      console.out('\n')
     }
 
     const stateDoc: Doc = [group([brackets(richtext(b, `State ${index}`)), line()]), prettyQuintEx(filteredState)]
