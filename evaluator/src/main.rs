@@ -326,7 +326,6 @@ fn simulate_in_parallel(
 ) -> SimOutput {
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
-    let per_thread_ntraces = ntraces.div_ceil(nthreads);
     let mut threads = Vec::with_capacity(nthreads);
     let (out_tx, out_rx) = std::sync::mpsc::channel();
     let reporter_thread = progress::spawn_reporter_thread(nruns);
@@ -339,12 +338,17 @@ fn simulate_in_parallel(
         let parsed = parsed.clone();
 
         // In the case of a non-exact split, the first thread executes the
-        // remain runs because it'll probably have the most CPU time available
+        // remainder because it'll probably have the most CPU time available
         // since it starts before the other threads.
         let nruns = if i == 0 {
             (nruns / nthreads) + (nruns % nthreads)
         } else {
             nruns / nthreads
+        };
+        let per_thread_ntraces = if i == 0 {
+            (ntraces / nthreads) + (ntraces % nthreads)
+        } else {
+            ntraces / nthreads
         };
 
         let reporter = Arc::clone(&reporter_thread.reporter);
