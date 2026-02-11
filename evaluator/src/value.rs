@@ -455,10 +455,8 @@ impl Value {
             (ValueInner::InfiniteNat, ValueInner::InfiniteInt) => true,
             (ValueInner::InfiniteInt, ValueInner::InfiniteInt) => true,
             (ValueInner::InfiniteInt, ValueInner::InfiniteNat) => false,
-            // Any non-infinite set is a subset of Int
-            (_, ValueInner::InfiniteInt) if self.is_set() => true,
-            // For Nat superset, we need to check if all elements are non-negative
-            (_, ValueInner::InfiniteNat) if self.is_set() => {
+            // Use the `contains` definition for infinite sets
+            (_, ValueInner::InfiniteNat | ValueInner::InfiniteInt) if self.is_set() => {
                 let self_set = self.as_set()?;
                 self_set
                     .iter()
