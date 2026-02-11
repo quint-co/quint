@@ -359,7 +359,8 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None, mbt, verbosity);
+                let result =
+                    parsed.simulate(nsteps, nruns, ntraces, reporter, None, mbt, verbosity);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
