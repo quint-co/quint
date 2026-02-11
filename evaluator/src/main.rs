@@ -14,7 +14,9 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{
+    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
+};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
@@ -75,6 +77,10 @@ struct RunArgs {
     /// random seed for reproducibility
     #[argh(option)]
     seed: Option<u64>,
+
+    /// whether to produce metadata to be used by model-based testing (default: false)
+    #[argh(switch)]
+    mbt: bool,
 }
 
 /// Run simulation with input from STDIN
@@ -106,6 +112,7 @@ struct SimulateInput {
     #[serde(default)]
     seed: Option<u64>,
     #[serde(default)]
+    mbt: bool,
     verbosity: Verbosity,
 }
 
@@ -216,14 +223,15 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(
-        args.max_steps,
-        args.max_samples,
-        args.n_traces,
-        progress::no_report(),
-        args.seed,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: args.max_steps,
+        samples: args.max_samples,
+        n_traces: args.n_traces,
+        seed: args.seed,
+        store_metadata: args.mbt,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
 
     let elapsed = start.elapsed();
 
@@ -260,6 +268,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         ntraces,
         nthreads,
         seed,
+        mbt,
         verbosity,
         ..
     } = serde_json::from_reader(io::stdin())?;
@@ -267,11 +276,19 @@ fn simulate_from_stdin() -> eyre::Result<()> {
     let source = Arc::new(source);
 
     // When a seed is provided, we use single-threaded execution for reproducibility
+    let config = SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed,
+        store_metadata: mbt,
+        verbosity,
+    };
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads, verbosity)
+        simulate_in_parallel(source, parsed, config, nthreads)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed, verbosity);
+        let result = parsed.simulate(config, reporter);
         to_sim_output(source, result)
     };
 
@@ -316,12 +333,17 @@ fn test_from_stdin() -> eyre::Result<()> {
 fn simulate_in_parallel(
     source: Arc<String>,
     parsed: ParsedQuint,
-    nsteps: usize,
-    nruns: usize,
-    ntraces: usize,
+    config: SimulationConfig,
     mut nthreads: usize,
-    verbosity: Verbosity,
 ) -> SimOutput {
+    let SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed: _,
+        store_metadata: mbt,
+        verbosity,
+    } = config;
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
@@ -351,7 +373,15 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None, verbosity);
+                let config = SimulationConfig {
+                    steps: nsteps,
+                    samples: nruns,
+                    n_traces: ntraces,
+                    seed: None,
+                    store_metadata: mbt,
+                    verbosity,
+                };
+                let result = parsed.simulate(config, reporter);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })

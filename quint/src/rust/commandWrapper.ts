@@ -62,6 +62,7 @@ export class CommandWrapper {
    * @param {number} ntraces - The number of traces to store.
    * @param {number} nthreads - The number of threads to use.
    * @param {bigint} [seed] - Optional seed for reproducibility.
+   * @param {boolean} [mbt] - Whether to produce metadata for model-based testing.
    * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
    *
    * @returns {Outcome} The outcome of the simulation.
@@ -75,6 +76,7 @@ export class CommandWrapper {
     ntraces: number,
     nthreads: number,
     seed?: bigint,
+    mbt?: boolean,
     onTrace?: TraceHook
   ): Promise<Outcome> {
     const input = {
@@ -85,6 +87,7 @@ export class CommandWrapper {
       ntraces: ntraces,
       nthreads: nthreads,
       seed: seed,
+      mbt: mbt ?? false,
       verbosity: this.verbosityLevel,
     }
 

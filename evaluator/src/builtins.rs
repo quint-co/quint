@@ -92,11 +92,12 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
 
             // Try actions in shuffled order until we find one that's enabled
             for i in indices {
+                env.var_storage.borrow_mut().clear_metadata();
+
                 let result = args[i].execute(env)?;
 
                 if result.as_bool() {
-                    // Found an enabled action - record it and return true
-                    // TODO: Record in the trace recorder
+                    // Found an enabled action - return true
                     return Ok(Value::bool(true));
                 }
 
@@ -341,7 +342,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {} + {}", a, b),
+                        &format!("Integer overflow in arithmetic operations: {a} + {b}"),
                     )
                 })
                 .map(Value::int)
@@ -354,7 +355,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {} - {}", a, b),
+                        &format!("Integer overflow in arithmetic operations: {a} - {b}"),
                     )
                 })
                 .map(Value::int)
@@ -367,7 +368,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {} * {}", a, b),
+                        &format!("Integer overflow in arithmetic operations: {a} * {b}"),
                     )
                 })
                 .map(Value::int)
@@ -386,8 +387,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in arithmetic operations: {} / {}",
-                            dividend, divisor
+                            "Integer overflow in arithmetic operations: {dividend} / {divisor}"
                         ),
                     )
                 })
@@ -403,8 +403,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in arithmetic operations: {} % {}",
-                            dividend, divisor
+                            "Integer overflow in arithmetic operations: {dividend} % {divisor}"
                         ),
                     )
                 })
@@ -425,10 +424,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!(
-                            "Integer overflow in arithmetic operations: {} ^ {}",
-                            base, exp
-                        ),
+                        &format!("Integer overflow in arithmetic operations: {base} ^ {exp}"),
                     )
                 })
                 .map(Value::int)
@@ -440,7 +436,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!("Integer overflow in arithmetic operations: -{}", a),
+                        &format!("Integer overflow in arithmetic operations: -{a}"),
                     )
                 })
                 .map(Value::int)
@@ -531,8 +527,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: length {} exceeds the maximum supported integer",
-                        card
+                        "Integer overflow in type conversion: length {card} exceeds the maximum supported integer"
                     ),
                 )
             })?;
@@ -557,8 +552,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: indices size {} exceeds the maximum supported integer",
-                        card
+                        "Integer overflow in type conversion: indices size {card} exceeds the maximum supported integer"
                     ),
                 )
             })?;
@@ -635,8 +629,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 QuintError::new(
                     "QNT601",
                     &format!(
-                        "Integer overflow in type conversion: size {} exceeds the maximum supported integer",
-                        card
+                        "Integer overflow in type conversion: size {card} exceeds the maximum supported integer"
                     ),
                 )
             })?;

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `quint repl --backend=rust` to use the REPL with the Rust backend (#1891)
 - Added out of bounds integer literal detection when serializing input to the Rust backend (#1890)
 - Added support for the `--witnesses` flag in the Rust backend (#1889)
+- Added support for the `--mbt` flag in the Rust backend (#1896)
 - The rust backend will now report per step diagnostics via `q::debug` (#1893)
 
 ### Changed
