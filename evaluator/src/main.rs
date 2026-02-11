@@ -275,7 +275,9 @@ fn simulate_from_stdin() -> eyre::Result<()> {
 
     // When a seed is provided, we use single-threaded execution for reproducibility
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads, mbt, verbosity)
+        simulate_in_parallel(
+            source, parsed, nsteps, nruns, ntraces, nthreads, mbt, verbosity,
+        )
     } else {
         let reporter = progress::json_std_err_report(nruns);
         let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed, mbt, verbosity);
