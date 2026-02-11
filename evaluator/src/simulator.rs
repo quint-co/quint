@@ -21,6 +21,22 @@ pub struct ParsedQuint {
     pub table: LookupTable,
 }
 
+/// Configuration for simulation runs.
+pub struct SimulationConfig {
+    /// Number of steps to simulate per sample
+    pub steps: usize,
+    /// Number of samples to run
+    pub samples: usize,
+    /// Maximum number of traces to collect
+    pub n_traces: usize,
+    /// Optional seed for reproducibility
+    pub seed: Option<u64>,
+    /// Whether to store metadata for model-based testing
+    pub store_metadata: bool,
+    /// Verbosity level for output
+    pub verbosity: Verbosity,
+}
+
 /// Simulation output.
 pub struct SimulationResult {
     pub result: bool,
@@ -73,14 +89,17 @@ impl ParsedQuint {
     /// for reproducibility. Otherwise, a random seed will be generated.
     pub fn simulate<R: Reporter>(
         &self,
-        steps: usize,
-        samples: usize,
-        n_traces: usize,
+        config: SimulationConfig,
         mut reporter: R,
-        seed: Option<u64>,
-        store_metadata: bool,
-        verbosity: Verbosity,
     ) -> Result<SimulationResult, SimulationError> {
+        let SimulationConfig {
+            steps,
+            samples,
+            n_traces,
+            seed,
+            store_metadata,
+            verbosity,
+        } = config;
         let mut interpreter = Interpreter::new(self.table.clone());
         // Setup the store metadata flag for MBT.
         // This was deliberately not passed as an argument to the Interpreter constructor.

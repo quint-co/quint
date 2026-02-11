@@ -14,7 +14,9 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{
+    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
+};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
@@ -221,15 +223,15 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(
-        args.max_steps,
-        args.max_samples,
-        args.n_traces,
-        progress::no_report(),
-        args.seed,
-        args.mbt, // mbt
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: args.max_steps,
+        samples: args.max_samples,
+        n_traces: args.n_traces,
+        seed: args.seed,
+        store_metadata: args.mbt,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
 
     let elapsed = start.elapsed();
 
@@ -280,7 +282,15 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         )
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed, mbt, verbosity);
+        let config = SimulationConfig {
+            steps: nsteps,
+            samples: nruns,
+            n_traces: ntraces,
+            seed,
+            store_metadata: mbt,
+            verbosity,
+        };
+        let result = parsed.simulate(config, reporter);
         to_sim_output(source, result)
     };
 
@@ -361,8 +371,15 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result =
-                    parsed.simulate(nsteps, nruns, ntraces, reporter, None, mbt, verbosity);
+                let config = SimulationConfig {
+                    steps: nsteps,
+                    samples: nruns,
+                    n_traces: ntraces,
+                    seed: None,
+                    store_metadata: mbt,
+                    verbosity,
+                };
+                let result = parsed.simulate(config, reporter);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })

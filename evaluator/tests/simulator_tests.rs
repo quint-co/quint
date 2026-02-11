@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use quint_evaluator::{helpers, progress, Verbosity};
+use quint_evaluator::{helpers, progress, simulator::SimulationConfig, Verbosity};
 
 #[test]
 fn tictactoe_ok() {
@@ -8,15 +8,15 @@ fn tictactoe_ok() {
 
     let parsed = helpers::parse_from_path(file_path, "init", "step", Some("inv"), None).unwrap();
     // Pass an invariant that should hold
-    let result = parsed.simulate(
-        10,
-        100,
-        0,
-        progress::no_report(),
-        None,
-        false,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 0,
+        seed: None,
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
     // Should not find violation
     assert!(result.unwrap().result);
@@ -29,15 +29,15 @@ fn tictactoe_violation() {
     let parsed =
         helpers::parse_from_path(file_path, "init", "step", Some("XHasNotWon"), None).unwrap();
     // Pass an invariant that should not hold
-    let result = parsed.simulate(
-        10,
-        100,
-        1,
-        progress::no_report(),
-        None,
-        false,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 1,
+        seed: None,
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
     // Should find violation
     assert!(!result.as_ref().unwrap().result);
@@ -61,15 +61,15 @@ fn instances_ok() {
         helpers::parse_from_path(file_path, "init", "step", Some("inv"), Some("instances"))
             .unwrap();
     // Pass an invariant that should hold
-    let result = parsed.simulate(
-        10,
-        100,
-        0,
-        progress::no_report(),
-        None,
-        false,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 0,
+        seed: None,
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
     // Should not find violation
     assert!(result.unwrap().result);
@@ -84,15 +84,15 @@ fn instance_overrides_ok() {
         helpers::parse_from_path(file_path, "init", "step", Some("inv2"), Some("instances"))
             .unwrap();
     // Pass an invariant that should hold
-    let result = parsed.simulate(
-        10,
-        100,
-        0,
-        progress::no_report(),
-        None,
-        false,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 0,
+        seed: None,
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
     // Should not find violation
     assert!(result.unwrap().result);
@@ -112,15 +112,15 @@ fn one_of_empty_set_ok() {
     )
     .unwrap();
 
-    let result = parsed.simulate(
-        10,
-        100,
-        0,
-        progress::no_report(),
-        None,
-        false,
-        Verbosity::default(),
-    );
+    let config = SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 0,
+        seed: None,
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
 
     // The simulation should succeed without runtime errors
     assert!(result.is_ok());
