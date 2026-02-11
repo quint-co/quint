@@ -424,9 +424,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 .ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
-                        &format!(
-                            "Integer overflow in arithmetic operations: {base} ^ {exp}"
-                        ),
+                        &format!("Integer overflow in arithmetic operations: {base} ^ {exp}"),
                     )
                 })
                 .map(Value::int)
