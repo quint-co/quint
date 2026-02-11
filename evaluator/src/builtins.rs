@@ -85,7 +85,9 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let mut indices: Vec<usize> = (0..args.len()).collect();
             // Fisher-Yates shuffle algorithm using our randomizer
             for i in (0..indices.len()).rev() {
-                let j: usize = env.rand.next(i + 1);
+                // Casting should be safe as we shouldn't have more than usize::MAX options
+                // in an any statement
+                let j = env.rand.next((i + 1) as u64) as usize;
                 indices.swap(i, j);
             }
 
@@ -170,10 +172,10 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     let random_index = env.rand.next_biguint(&cardinality);
 
                     // Disassemble back to u32 digits for pick()
-                    let positions: Vec<usize> = random_index
+                    let positions: Vec<u64> = random_index
                         .to_u32_digits()
                         .iter()
-                        .map(|&d| d as usize)
+                        .map(|&d| d as u64)
                         .collect();
 
                     return set.pick(&mut positions.into_iter());

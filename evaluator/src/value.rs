@@ -280,18 +280,18 @@ impl Value {
 
     /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
-    pub fn cardinality(&self) -> Result<usize, crate::ir::QuintError> {
+    pub fn cardinality(&self) -> Result<u64, crate::ir::QuintError> {
         match self.0.as_ref() {
-            ValueInner::Set(set) => Ok(set.len()),
-            ValueInner::Tuple(elems) => Ok(elems.len()),
-            ValueInner::Record(fields) => Ok(fields.len()),
-            ValueInner::Map(map) => Ok(map.len()),
-            ValueInner::List(elems) => Ok(elems.len()),
+            ValueInner::Set(set) => Ok(set.len() as u64),
+            ValueInner::Tuple(elems) => Ok(elems.len() as u64),
+            ValueInner::Record(fields) => Ok(fields.len() as u64),
+            ValueInner::Map(map) => Ok(map.len() as u64),
+            ValueInner::List(elems) => Ok(elems.len() as u64),
             ValueInner::Interval(start, end) => {
                 // Check for overflow when computing interval size
                 end.checked_sub(*start)
                     .and_then(|diff| diff.checked_add(1))
-                    .and_then(|size| size.try_into().ok())
+                    .and_then(|size| u64::try_from(size).ok())
                     .ok_or_else(|| {
                         QuintError::new(
                             "QNT601",
@@ -299,7 +299,7 @@ impl Value {
                         )
                     })
             }
-            ValueInner::CrossProduct(sets) => sets.iter().try_fold(1_usize, |acc, set| {
+            ValueInner::CrossProduct(sets) => sets.iter().try_fold(1_u64, |acc, set| {
                 let set_card = set.cardinality()?;
                 acc.checked_mul(set_card).ok_or_else(|| {
                     QuintError::new(
@@ -320,7 +320,7 @@ impl Value {
                         ),
                     )
                 })?;
-                2_usize.checked_pow(exp).ok_or_else(|| {
+                2_u64.checked_pow(exp).ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
                         &format!(
@@ -417,7 +417,7 @@ impl Value {
     pub fn is_large_powerset(&self) -> bool {
         if let ValueInner::PowerSet(base_set) = self.0.as_ref() {
             if let Ok(card) = base_set.cardinality() {
-                return card >= u64::BITS as usize;
+                return card >= u64::BITS as u64;
             }
         }
         false
@@ -555,7 +555,7 @@ impl Value {
 
             ValueInner::PowerSet(value) => {
                 let base = value.as_set()?;
-                let size: usize = self.cardinality()?;
+                let size: u64 = self.cardinality()?;
                 Cow::Owned(
                     (0..size)
                         .map(|i| powerset_at_index(base.as_ref(), i))
@@ -692,11 +692,11 @@ impl Value {
 ///
 /// In practice, the index comes from a stateful random number generator, and we
 /// want the same seed to produce the same results.
-pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
+pub fn powerset_at_index(base: &ImmutableSet<Value>, i: u64) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
         // Check if the j-th bit is set in the index
-        if (i & (1 << j)) != 0 {
+        if (i & (1u64 << j)) != 0 {
             elems.insert(elem.clone());
         }
     }
