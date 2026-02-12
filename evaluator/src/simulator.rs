@@ -5,11 +5,12 @@ use crate::{
     ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
     progress::Reporter,
+    trace_quality::insert_sorted_by_quality,
     verbosity::Verbosity,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::{cmp::Ordering, fmt};
 
 /// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize, Clone)]
@@ -81,7 +82,10 @@ impl ParsedQuint {
     ///
     /// Repeat this `samples` times, and return the best `n_traces` traces
     ///
-    /// If `init` or `invariant` return false at any given point, simulation stops.
+    /// If `init` returns false, simulation stops immediately.
+    /// If `invariant` returns false, the violation is recorded and simulation
+    /// continues until `n_traces` violations have been found (or `n_traces.max(1)`
+    /// when `n_traces == 0` for backward compatibility).
     /// If `step` returns false, we continue, as that just means we failed to progress
     /// in a specific setting.
     ///
@@ -132,6 +136,7 @@ impl ParsedQuint {
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
+        let mut errors_found: usize = 0;
 
         for sample_number in 1..=samples {
             reporter.next_sample();
@@ -205,27 +210,28 @@ impl ParsedQuint {
                     }
 
                     trace_lengths.push(env.trace.len());
-
-                    collect_trace(
+                    insert_sorted_by_quality(
                         &mut best_traces,
-                        n_traces,
                         Trace {
                             states: std::mem::take(&mut env.trace),
                             violation: !success,
                             seed,
                         },
+                        n_traces,
                         verbosity,
                     );
 
                     if !success {
-                        // Found a violation, stop simulation and return results
-                        return Ok(SimulationResult {
-                            result: false,
-                            best_traces,
-                            trace_statistics: get_trace_statistics(&trace_lengths),
-                            samples: sample_number,
-                            witnessing_traces,
-                        });
+                        errors_found += 1;
+                        if errors_found >= n_traces.max(1) {
+                            return Ok(SimulationResult {
+                                result: false,
+                                best_traces,
+                                trace_statistics: get_trace_statistics(&trace_lengths),
+                                samples: sample_number,
+                                witnessing_traces,
+                            });
+                        }
                     }
                 }
                 Ok(Err(e)) => {
@@ -268,7 +274,7 @@ impl ParsedQuint {
         }
 
         Ok(SimulationResult {
-            result: true,
+            result: errors_found == 0,
             best_traces,
             trace_statistics: get_trace_statistics(&trace_lengths),
             samples,
@@ -291,71 +297,5 @@ fn get_trace_statistics(trace_lengths: &[usize]) -> TraceStatistics {
             / trace_lengths.len() as f64,
         max_trace_length: *trace_lengths.iter().max().unwrap_or(&0),
         min_trace_length: *trace_lengths.iter().min().unwrap_or(&0),
-    }
-}
-
-/// Collect a trace of the simulation, up to a maximum of `n_traces`.
-///
-/// Assumes `best_traces` is sorted by quality.
-fn collect_trace(
-    best_traces: &mut Vec<Trace>,
-    n_traces: usize,
-    trace: Trace,
-    verbosity: Verbosity,
-) {
-    insert_trace_sorted_by_quality(best_traces, trace, verbosity);
-    if best_traces.len() > n_traces {
-        best_traces.pop();
-    }
-}
-
-/// Compare two traces by quality.
-///
-/// Prefer short traces for error, and longer traces for non error. Therefore,
-/// trace a is better than trace b iff:
-///
-///  - when a has an error: a is shorter or b has no error;
-///  - when a has no error: a is longer and b has no error.
-///
-/// For traces considered of equal value, both errors or both non-errors, we
-/// consider the one with diagnostics to be better.
-fn compare_traces_by_quality(a: &Trace, b: &Trace, verbosity: Verbosity) -> Ordering {
-    #[inline]
-    fn flag_cmp<F>(a: bool, b: bool, elze: F) -> Ordering
-    where
-        F: FnOnce(bool) -> Ordering,
-    {
-        match (a, b) {
-            (true, false) => Ordering::Less,
-            (false, true) => Ordering::Greater,
-            _ => elze(a), // a and b can only be equal here
-        }
-    }
-
-    flag_cmp(a.violation, b.violation, |both_violations| {
-        flag_cmp(
-            verbosity.has_diagnostics() && a.has_diagnostics(),
-            verbosity.has_diagnostics() && b.has_diagnostics(),
-            |_| {
-                if both_violations {
-                    a.states.len().cmp(&b.states.len())
-                } else {
-                    b.states.len().cmp(&a.states.len())
-                }
-            },
-        )
-    })
-}
-
-/// Insert a trace into a sorted vector of traces, maintaining the order by quality.
-fn insert_trace_sorted_by_quality(
-    best_traces: &mut Vec<Trace>,
-    trace: Trace,
-    verbosity: Verbosity,
-) {
-    let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace, verbosity));
-    match index {
-        Ok(index) => best_traces.insert(index, trace),
-        Err(index) => best_traces.insert(index, trace),
     }
 }
