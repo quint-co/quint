@@ -135,6 +135,7 @@ struct SimOutput {
     trace_statistics: TraceStatistics,
     witnessing_traces: Vec<usize>,
     samples: usize,
+    violated_invariants: Vec<usize>,
 }
 
 #[derive(Serialize)]
@@ -466,12 +467,14 @@ fn to_sim_output(
                 trace_statistics,
                 witnessing_traces,
                 samples,
+                violated_invariants,
             } = result;
 
             SimOutput {
                 samples,
                 trace_statistics,
                 witnessing_traces,
+                violated_invariants,
                 status: if result {
                     SimulationStatus::Success
                 } else {
@@ -502,6 +505,7 @@ fn to_sim_output(
                     result: false,
                 }],
                 witnessing_traces: vec![],
+                violated_invariants: vec![],
             }
         }
     }
