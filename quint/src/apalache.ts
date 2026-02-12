@@ -257,6 +257,8 @@ const grpcStubOptions = {
 }
 
 const GRPC_TIMEOUT_MS = 5000
+// Maximum number of retries when waiting for gRPC channel to become ready (1 retry = 1 second)
+const GRPC_MAX_CONNECT_RETRIES = 60
 
 async function loadProtoDefViaReflection(
   serverEndpoint: ServerEndpoint,
@@ -297,10 +299,16 @@ async function loadProtoDefViaReflection(
 
   // Wait for gRPC channel to come up, with 1sec pauses
   if (retry) {
-    for (;;) {
+    for (let attempt = 0; attempt < GRPC_MAX_CONNECT_RETRIES; attempt++) {
       const grpcChannelState = reflectionClient.getChannel().getConnectivityState(true)
       if (grpcChannelState == grpc.connectivityState.READY) {
         break
+      } else if (attempt === GRPC_MAX_CONNECT_RETRIES - 1) {
+        // Exceeded maximum retries
+        return err(
+          `Timed out waiting for Apalache server to become ready after ${GRPC_MAX_CONNECT_RETRIES} seconds. ` +
+            `Channel state: ${grpcChannelState}`
+        )
       } else {
         /* I suspect that there is a race with async gRPC code that actually
          * brings the connection up, so we need to yield control here. In
