@@ -112,6 +112,12 @@ impl Value {
             ValueInner::Int(i) => itf::Value::Number(*i),
             ValueInner::Bool(b) => itf::Value::Bool(*b),
             ValueInner::Str(s) => itf::Value::String(s.to_string()),
+            ValueInner::InfiniteInt => itf::Value::Unserializable(
+                serde_json::from_value(serde_json::json!({"#unserializable": "Int"})).unwrap(),
+            ),
+            ValueInner::InfiniteNat => itf::Value::Unserializable(
+                serde_json::from_value(serde_json::json!({"#unserializable": "Nat"})).unwrap(),
+            ),
             ValueInner::Set(_)
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)

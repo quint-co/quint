@@ -13,7 +13,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::OnceLock;
 
-static RETRY_THRESHOLD: OnceLock<usize> = OnceLock::new();
+static RETRY_THRESHOLD: OnceLock<u64> = OnceLock::new();
 
 /// The maximum size of set bounds for which we retry nondet expressions.
 /// If the set is too big, it is better to be greedy and let the execution fail
@@ -23,7 +23,7 @@ static RETRY_THRESHOLD: OnceLock<usize> = OnceLock::new();
 ///
 /// Using OnceLock to avoid reading and parsing the environment variable on
 /// every call.
-fn get_retry_threshold() -> usize {
+fn get_retry_threshold() -> u64 {
     *RETRY_THRESHOLD.get_or_init(|| {
         std::env::var("QUINT_RETRY_NONDET_SMALLER_THAN")
             .ok()
@@ -34,14 +34,14 @@ fn get_retry_threshold() -> usize {
 
 /// Check if we should retry nondet expressions based on set bounds.
 /// We only retry if all bounds are smaller than the threshold and finite.
-fn should_retry_nondet(bounds: &[usize]) -> bool {
+fn should_retry_nondet(bounds: &[u64]) -> bool {
     let threshold = get_retry_threshold();
     bounds.iter().all(|&bound| bound < threshold)
 }
 
 /// Increment positions to the next combination, similar to counting in mixed-radix.
 /// Returns true if we successfully incremented, false if we've wrapped around.
-fn increment_positions(positions: &mut [usize], bounds: &[usize]) {
+fn increment_positions(positions: &mut [u64], bounds: &[u64]) {
     for i in (0..positions.len()).rev() {
         if positions[i] < bounds[i] - 1 {
             positions[i] += 1;
@@ -84,10 +84,10 @@ pub fn eval_nondet_one_of(
                 })?;
                 let cardinality = BigUint::from(1u64) << n;
                 let random_index = env.rand.next_biguint(&cardinality);
-                let positions: Vec<usize> = random_index
+                let positions: Vec<u64> = random_index
                     .to_u32_digits()
                     .iter()
-                    .map(|&d| d as usize)
+                    .map(|&d| d as u64)
                     .collect();
 
                 let picked_value = set.pick(&mut positions.into_iter())?;

@@ -18,6 +18,7 @@ import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
+import { reviver } from '../jsonHelper'
 import { diagnosticsOfItf, ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
@@ -114,7 +115,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed: Outcome = JSONbig.parse(output)
+      const parsed: Outcome = JSONbig.parse(output, reviver)
 
       // Convert traces to ITF and ensure seed is bigint Note: When a
       // SimulationError occurs in Rust, the error trace is included in
@@ -125,11 +126,6 @@ export class CommandWrapper {
         states: ofItf(trace.states),
         diagnostics: diagnosticsOfItf(trace.states),
       }))
-
-      // Convert errors - these include errors from SimulationError
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({ ...err, reference: err.reference ? BigInt(err.reference) : undefined })
-      )
 
       // Call onTrace callback for each trace
       if (onTrace && parsed.bestTraces.length > 0 && parsed.bestTraces[0].states.length > 0) {
@@ -205,15 +201,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed: TestResult = JSONbig.parse(output)
-
-      // Convert errors to proper format
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({
-          ...err,
-          reference: err.reference ? BigInt(err.reference) : undefined,
-        })
-      )
+      const parsed: TestResult = JSONbig.parse(output, reviver)
 
       // Convert seed to bigint
       parsed.seed = BigInt(parsed.seed)

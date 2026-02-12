@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the `--witnesses` flag in the Rust backend (#1889)
 - Added support for the `--mbt` flag in the Rust backend (#1896)
 - The rust backend will now report per step diagnostics via `q::debug` (#1893)
+- Added support for `Nat` and `Int` to rust backend (#1894)
 
 ### Changed
 
