@@ -8,10 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
+- Add error handling for rust process termination via signal (#1880)
+- The rust backend will now print the seed and trace even on runtime errors and panics (#1879)
+- Added support for `quint repl --backend=rust` to use the REPL with the Rust backend (#1891)
+- Added out of bounds integer literal detection when serializing input to the Rust backend (#1890)
+- Added support for the `--witnesses` flag in the Rust backend (#1889)
+- Added support for the `--mbt` flag in the Rust backend (#1896)
+- The rust backend will now report per step diagnostics via `q::debug` (#1893)
+- Added support for `Nat` and `Int` to rust backend (#1894)
+- Added support for the `--n-traces` flag in the Rust backend (#1898)
+
 ### Changed
+
+- Moved LSP-server compilation and analysis to its own worker thread (1876)
+- Improved memory allocation profile of LSP-server log messages (#1877)
+- Stream JSON in and out or rust evaluator to reduce memory allocations (#1882)
+- Improved power set sampling coverage in the Rust backend (#1888)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
+- Fixed LSP-server crashing upon console.{log, error} messages (#1875)
+- Fixed integer overflow errors not being reported properly in the Rust backend (#1887)
+
 ### Security
 
 ## v0.30.0 -- 2026-01-19

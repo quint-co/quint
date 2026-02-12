@@ -2,6 +2,7 @@ import { describe, it } from 'mocha'
 import { assert, expect } from 'chai'
 import { once } from 'events'
 import { PassThrough, Writable } from 'stream'
+import { Buffer } from 'buffer'
 import chalk from 'chalk'
 
 import { quintRepl } from '../src/repl'
@@ -10,16 +11,33 @@ import { version } from '../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
+//
+// Note that the writable string is used to wait for the repl's output. The
+// reply is considered to be done processing the input if it emits a prompt
+// prefix (>>>, ...) or an internal "Error".
 class ToStringWritable extends Writable {
   buffer: string = ''
+  waiter: () => void = () => {}
 
-  _write(chunk: string, encoding: string, next: (_error?: Error | null) => void): void {
+  _write(chunk: Buffer, _encoding: string, next: (_error?: Error | null) => void): void {
     this.buffer += chunk
+    if (chunk.includes('>>> ') || chunk.includes('... ') || chunk.includes('Error')) {
+      this.waiter()
+    }
     next()
   }
 
   reset() {
     this.buffer = ''
+  }
+
+  async isReady() {
+    if (this.buffer.endsWith('>>> ') || this.buffer.endsWith('... ')) {
+      return
+    }
+    await new Promise((resolve, _reject) => {
+      this.waiter = () => resolve(null)
+    })
   }
 }
 
@@ -34,21 +52,22 @@ const withIO = async (inputText: string): Promise<string> => {
   const output = new ToStringWritable()
   // an input mock designed for testing
   const input = new PassThrough()
-  // whatever is written on the input goes to the output
-  input.pipe(output)
+  // Pipe input to output to simulate terminal echo behavior
+  // (readline doesn't echo input from non-TTY streams)
+  // Use { end: false } to prevent ending output when input ends
+  input.pipe(output, { end: false })
 
   const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
+  await output.isReady()
 
-  // Emit the input line-by-line, as nodejs is printing prompts.
-  // TODO: is it a potential source of race conditions in unit tests?
-  const lines = inputText.split('\n')
-  let linesLeft = lines.length
+  // Send input line-by-line to the REPL. We emit 'data' events for each line,
+  // with a wait between each one to give the REPL's async processing time to
+  // handle each line before the next one arrives. This prevents race conditions
+  // where lines are queued faster than the REPL can process them.
+  const lines = inputText.split(/(?<=\n)/)
   for (const line of lines) {
     input.emit('data', line)
-    linesLeft--
-    if (linesLeft > 0) {
-      input.emit('data', '\n')
-    }
+    await output.isReady()
   }
   input.end()
   input.unpipe(output)
@@ -56,8 +75,10 @@ const withIO = async (inputText: string): Promise<string> => {
 
   // readline is asynchronous, wait till it terminates
   await once(rl, 'close')
+
   chalk.level = savedChalkLevel
-  return output.buffer
+  // Remove trailing newline that gets added when the REPL closes
+  return output.buffer.replace(/\n$/, '')
 }
 
 // the standard banner, which gets repeated
@@ -66,8 +87,7 @@ Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {
   const expected = `${banner}
-${output}
-`
+${output}`
 
   const result = await withIO(input)
   assert(typeof result === 'string', 'expected result to be a string')

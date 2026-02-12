@@ -312,6 +312,7 @@ Options:
   --seed       random seed to use for non-deterministic choice          [string]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
   --match      a string or regex that selects names to use as tests     [string]
+  --backend    backend to run tests [choices: "typescript", "rust"] [default: "typescript"]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the

@@ -106,6 +106,7 @@ quint run \
   --backend=rust \
   --max-samples=1 \
   --main=debugTest \
+  --verbosity=3 \
   /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
 
 rm /tmp/debug_test.qnt
@@ -113,7 +114,7 @@ rm /tmp/debug_test.qnt
 
 <!-- !test out rust backend debug -->
 ```
-> this tests debug 42
+[DEBUG] this tests debug 42
 ```
 
 ## `expect` does not duplicate states in traces for `quint run`

@@ -5,16 +5,21 @@
 //!     simulates based on that input, used in the integration with the `quint` typescript tool.
 
 use std::fs::{self, File};
-use std::io::{self, Read, Write};
+use std::io::{self, BufWriter};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{QuintError, QuintEx};
+use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{
+    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
+};
+use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
+use quint_evaluator::trace_quality::{insert_sorted_by_quality, TraceQuality};
+use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +35,8 @@ struct TopLevel {
 enum Command {
     Run(RunArgs),
     SimulateFromStdin(SimulateQuintArgs),
+    TestFromStdin(TestQuintArgs),
+    ReplFromStdin(ReplFromStdinArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -71,6 +78,10 @@ struct RunArgs {
     /// random seed for reproducibility
     #[argh(option)]
     seed: Option<u64>,
+
+    /// whether to produce metadata to be used by model-based testing (default: false)
+    #[argh(switch)]
+    mbt: bool,
 }
 
 /// Run simulation with input from STDIN
@@ -78,12 +89,21 @@ struct RunArgs {
 #[argh(subcommand, name = "simulate-from-stdin")]
 struct SimulateQuintArgs {}
 
+/// Run test with input from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "test-from-stdin")]
+struct TestQuintArgs {}
+
+/// Run REPL evaluator with input from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "repl-from-stdin")]
+struct ReplFromStdinArgs {}
+
 /// Data expected on STDIN for simulation
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct SimulateInput {
     parsed: ParsedQuint,
     source: String,
-    witnesses: Vec<QuintEx>,
     nruns: usize,
     nsteps: usize,
     ntraces: usize,
@@ -92,6 +112,9 @@ struct SimulateInput {
     /// Optional seed for reproducibility. If provided, the simulation will use this seed.
     #[serde(default)]
     seed: Option<u64>,
+    #[serde(default)]
+    mbt: bool,
+    verbosity: Verbosity,
 }
 
 #[derive(Eq, PartialEq, Serialize)]
@@ -106,7 +129,7 @@ enum SimulationStatus {
 /// Data to be written to STDOUT after simulation
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Outcome {
+struct SimOutput {
     status: SimulationStatus,
     errors: Vec<QuintError>,
     best_traces: Vec<SimulationTrace>,
@@ -121,6 +144,55 @@ struct SimulationTrace {
     seed: usize,
     states: itf::Trace<itf::Value>,
     result: bool,
+    #[serde(skip)]
+    has_diagnostics: bool,
+}
+
+impl TraceQuality for SimulationTrace {
+    fn is_violation(&self) -> bool {
+        !self.result
+    }
+
+    fn has_diagnostics(&self) -> bool {
+        self.has_diagnostics
+    }
+
+    fn trace_length(&self) -> usize {
+        self.states.states.len()
+    }
+}
+
+/// Data expected on STDIN for test execution
+#[derive(Deserialize)]
+struct TestInput {
+    name: String,
+    test_def: LookupDefinition,
+    table: LookupTable,
+    #[serde(default)]
+    seed: Option<u64>,
+    max_samples: usize,
+    #[serde(default)]
+    verbosity: Verbosity,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestTrace {
+    seed: usize,
+    states: itf::Trace<itf::Value>,
+    result: bool,
+}
+
+/// Data to be written to STDOUT after test execution
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TestOutput {
+    name: String,
+    status: TestStatus,
+    errors: Vec<QuintError>,
+    seed: u64,
+    nsamples: usize,
+    traces: Vec<TestTrace>,
 }
 
 /// The CLI has two main commands: 1. `run`: Runs the simulation on a file with
@@ -133,7 +205,16 @@ fn main() -> eyre::Result<()> {
     match top_level.command {
         Command::Run(args) => run_simulation(args),
         Command::SimulateFromStdin(_) => simulate_from_stdin(),
+        Command::TestFromStdin(_) => test_from_stdin(),
+        Command::ReplFromStdin(_) => repl_from_stdin(),
     }
+}
+
+/// Runs the REPL evaluator, reading commands from stdin and writing responses to stdout
+fn repl_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+    quint_evaluator::repl::run_repl_from_stdin()?;
+    Ok(())
 }
 
 /// Utility to run the simulation with command-line arguments. Not meant to be
@@ -159,13 +240,15 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(
-        args.max_steps,
-        args.max_samples,
-        args.n_traces,
-        progress::no_report(),
-        args.seed,
-    );
+    let config = SimulationConfig {
+        steps: args.max_steps,
+        samples: args.max_samples,
+        n_traces: args.n_traces,
+        seed: args.seed,
+        store_metadata: args.mbt,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
 
     let elapsed = start.elapsed();
 
@@ -174,10 +257,10 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
             log!("Result", "{}", result.result);
             for (i, trace) in result.best_traces.into_iter().enumerate() {
                 let itf_trace = trace.to_itf(args.file.display().to_string());
-                let json_data = serde_json::to_string(&itf_trace)?;
                 let filename = format!("out_{i}.itf.json");
-                let mut file = File::create(filename.clone())?;
-                file.write_all(json_data.as_bytes())?;
+                let file = File::create(filename.clone())?;
+                let writer = BufWriter::new(file);
+                serde_json::to_writer(writer, &itf_trace)?;
                 log!("Trace", "{filename}")
             }
         }
@@ -193,10 +276,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 fn simulate_from_stdin() -> eyre::Result<()> {
     log::set_json(true);
 
-    // Read all input from STDIN
-    let mut input = String::new();
-    io::stdin().read_to_string(&mut input)?;
-
+    // Read input from STDIN
     let SimulateInput {
         source,
         parsed,
@@ -205,22 +285,61 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         ntraces,
         nthreads,
         seed,
+        mbt,
+        verbosity,
         ..
-    } = serde_json::from_str(&input)?;
+    } = serde_json::from_reader(io::stdin())?;
 
     let source = Arc::new(source);
 
     // When a seed is provided, we use single-threaded execution for reproducibility
+    let config = SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed,
+        store_metadata: mbt,
+        verbosity,
+    };
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads)
+        simulate_in_parallel(source, parsed, config, nthreads)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed);
-        to_outcome(source, result)
+        let result = parsed.simulate(config, reporter);
+        to_sim_output(source, result)
     };
 
     // Serialize the outcome to JSON and print it to STDOUT
-    println!("{}", serde_json::to_string(&outcome)?);
+    serde_json::to_writer(io::stdout(), &outcome)?;
+
+    Ok(())
+}
+
+/// Reads input from standard input (STDIN), parses it, and executes a test based on the parsed input.
+/// The result of the test is then printed in JSON format to standard output (STDOUT).
+fn test_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+
+    // Read all input from STDIN
+    let TestInput {
+        name,
+        test_def,
+        table,
+        seed,
+        max_samples,
+        verbosity,
+    } = serde_json::from_reader(io::stdin())?;
+
+    // Create test case and execute with progress reporting
+    let test_case = TestCase {
+        test_def,
+        table,
+        name,
+    };
+    let reporter = progress::json_std_err_report(max_samples);
+    let result = test_case.execute(seed, max_samples, reporter, verbosity);
+    let output = to_test_output(result);
+    serde_json::to_writer(io::stdout(), &output)?;
 
     Ok(())
 }
@@ -231,11 +350,17 @@ fn simulate_from_stdin() -> eyre::Result<()> {
 fn simulate_in_parallel(
     source: Arc<String>,
     parsed: ParsedQuint,
-    nsteps: usize,
-    nruns: usize,
-    ntraces: usize,
+    config: SimulationConfig,
     mut nthreads: usize,
-) -> Outcome {
+) -> SimOutput {
+    let SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed: _,
+        store_metadata: mbt,
+        verbosity,
+    } = config;
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
@@ -250,12 +375,17 @@ fn simulate_in_parallel(
         let parsed = parsed.clone();
 
         // In the case of a non-exact split, the first thread executes the
-        // remain runs because it'll probably have the most CPU time available
+        // remainder because it'll probably have the most CPU time available
         // since it starts before the other threads.
         let nruns = if i == 0 {
             (nruns / nthreads) + (nruns % nthreads)
         } else {
             nruns / nthreads
+        };
+        let per_thread_ntraces = if i == 0 {
+            (ntraces / nthreads) + (ntraces % nthreads)
+        } else {
+            ntraces / nthreads
         };
 
         let reporter = Arc::clone(&reporter_thread.reporter);
@@ -265,8 +395,16 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None);
-                let outcome = to_outcome(source, result);
+                let config = SimulationConfig {
+                    steps: nsteps,
+                    samples: nruns,
+                    n_traces: per_thread_ntraces,
+                    seed: None,
+                    store_metadata: mbt,
+                    verbosity,
+                };
+                let result = parsed.simulate(config, reporter);
+                let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
             .expect("failed to spawn simulator thread");
@@ -275,62 +413,142 @@ fn simulate_in_parallel(
     }
 
     let mut samples = 0;
+    let mut aggregated_witnesses = vec![];
+    let mut merged_best_traces: Vec<SimulationTrace> = Vec::new();
+    let mut last_trace_statistics;
+    let mut final_status = SimulationStatus::Success;
+    let mut final_errors: Vec<QuintError> = Vec::new();
+
     loop {
-        let mut outcome = out_rx.recv().expect("closed channel");
+        let outcome = out_rx.recv().expect("closed channel");
         samples += outcome.samples;
-        nthreads -= 1;
-        if nthreads == 0 || outcome.status != SimulationStatus::Success {
-            // Report back the total number of samples executed by all threads
-            // instead of just this one. Note that trace statistics are
-            // preserved, meaning that the final report will correspond to the
-            // trace statistics of a single thread. Presuming the workload is
-            // homogeneous (no thread is performing work that is significantly
-            // different from the other threads), the report should still be
-            // statistically correct when all threads succeed.
-            outcome.samples = samples;
-            return outcome;
+        last_trace_statistics = outcome.trace_statistics;
+
+        // Accumulate witness counts from all threads
+        if aggregated_witnesses.is_empty() {
+            aggregated_witnesses = outcome.witnessing_traces;
+        } else {
+            for (agg, count) in aggregated_witnesses
+                .iter_mut()
+                .zip(&outcome.witnessing_traces)
+            {
+                *agg += count;
+            }
         }
+
+        // Escalate status: Error > Violation > Success
+        match outcome.status {
+            SimulationStatus::Error => {
+                final_status = SimulationStatus::Error;
+                final_errors = outcome.errors;
+            }
+            SimulationStatus::Violation if final_status != SimulationStatus::Error => {
+                final_status = SimulationStatus::Violation;
+            }
+            _ => {}
+        }
+
+        // Merge best_traces using the same quality criteria as the threads
+        for trace in outcome.best_traces {
+            insert_sorted_by_quality(&mut merged_best_traces, trace, ntraces, verbosity);
+        }
+
+        nthreads -= 1;
+        if nthreads == 0 || final_status == SimulationStatus::Error {
+            break;
+        }
+    }
+
+    SimOutput {
+        status: final_status,
+        errors: final_errors,
+        best_traces: merged_best_traces,
+        trace_statistics: last_trace_statistics,
+        witnessing_traces: aggregated_witnesses,
+        samples,
     }
 }
 
-/// Converts the result of a simulation into an `Outcome` struct.
+/// Converts the result of a test execution into a `TestOutput` struct.
+///
+/// The traces are converted to the ITF.
+fn to_test_output(result: TestResult) -> TestOutput {
+    let traces = result
+        .traces
+        .into_iter()
+        .map(|t| TestTrace {
+            result: !t.violation,
+            seed: t.seed as usize,
+            states: t.to_itf(result.name.clone()),
+        })
+        .collect();
+
+    TestOutput {
+        name: result.name,
+        status: result.status,
+        errors: result.errors,
+        seed: result.seed,
+        nsamples: result.nsamples,
+        traces,
+    }
+}
+
+/// Converts the result of a simulation into a `SimOutput` struct.
 ///
 /// The status is determined based on whether the simulation result indicates success, violation, or error.
 /// Errors are collected into a vector if any are present.
 /// Best traces are converted to the intermediate trace format (ITF).
-fn to_outcome(source: Arc<String>, result: Result<SimulationResult, QuintError>) -> Outcome {
-    let status = match &result {
-        Ok(r) if r.result => SimulationStatus::Success,
-        Ok(_) => SimulationStatus::Violation,
-        Err(_) => SimulationStatus::Error,
-    };
+fn to_sim_output(
+    source: Arc<String>,
+    result: Result<SimulationResult, SimulationError>,
+) -> SimOutput {
+    match result {
+        Ok(result) => {
+            let SimulationResult {
+                result,
+                best_traces,
+                trace_statistics,
+                witnessing_traces,
+                samples,
+            } = result;
 
-    let errors = result
-        .as_ref()
-        .err()
-        .map_or_else(Vec::new, |e| vec![e.clone()]);
+            SimOutput {
+                samples,
+                trace_statistics,
+                witnessing_traces,
+                status: if result {
+                    SimulationStatus::Success
+                } else {
+                    SimulationStatus::Violation
+                },
+                best_traces: best_traces
+                    .into_iter()
+                    .map(|t| SimulationTrace {
+                        seed: t.seed as usize,
+                        has_diagnostics: t.has_diagnostics(),
+                        result: !t.violation,
+                        states: t.to_itf(source.to_string()),
+                    })
+                    .collect(),
+                errors: vec![],
+            }
+        }
+        Err(error) => {
+            let SimulationError { seed, trace, error } = error;
 
-    let best_traces = result.as_ref().ok().map_or_else(Vec::new, |r| {
-        r.best_traces
-            .iter()
-            .map(|t| SimulationTrace {
-                seed: t.seed as usize,
-                states: t.clone().to_itf((*source).clone()),
-                result: !t.violation,
-            })
-            .collect()
-    });
-
-    Outcome {
-        status,
-        errors,
-        best_traces,
-        trace_statistics: result
-            .as_ref()
-            .ok()
-            .map_or_else(TraceStatistics::default, |r| r.trace_statistics.clone()),
-        samples: result.as_ref().map_or(0, |r| r.samples),
-        // TODO: This simulator is not tracking witnesses yet
-        witnessing_traces: vec![],
+            SimOutput {
+                samples: 0,
+                status: SimulationStatus::Error,
+                trace_statistics: TraceStatistics::default(),
+                errors: vec![error],
+                best_traces: vec![SimulationTrace {
+                    seed: seed as usize,
+                    has_diagnostics: trace.has_diagnostics(),
+                    result: false,
+                    states: trace.to_itf(source.to_string()),
+                }],
+                witnessing_traces: vec![],
+            }
+        }
     }
 }

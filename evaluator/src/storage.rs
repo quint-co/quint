@@ -2,8 +2,17 @@
 //! state machines' state.
 
 use crate::ir::QuintName;
-use crate::value::{ImmutableMap, Value};
-use std::{cell::RefCell, rc::Rc};
+use crate::value::{ImmutableMap, ImmutableVec, Value};
+use fxhash::FxHashSet;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+/// MBT metadata field names for ITF traces
+const MBT_NONDET_PICKS: &str = "mbt::nondetPicks";
+const MBT_ACTION_TAKEN: &str = "mbt::actionTaken";
+
+/// Non det Labels for ITF traces
+const LABEL_SOME: &str = "Some";
+const LABEL_NONE: &str = "None";
 
 /// Variable registers are like the regular registers (ref cells) except that
 /// they include a name. The name is used for displaying the variable name in
@@ -29,12 +38,11 @@ pub struct VariableRegister {
 #[derive(Clone)]
 pub struct Snapshot {
     pub next_vars: ImmutableMap<QuintName, VariableRegister>,
-    // TODO:
-    // nondet_picks
-    // action_taken
+    pub nondet_picks: HashMap<QuintName, Option<Value>>,
+    pub action_taken: Option<QuintName>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct Storage {
     // Registers for the values in the current state, to be read during evaluation
     pub vars: ImmutableMap<QuintName, Rc<RefCell<VariableRegister>>>,
@@ -42,14 +50,43 @@ pub struct Storage {
     pub next_vars: ImmutableMap<QuintName, Rc<RefCell<VariableRegister>>>,
     // A list of caches to clear after every step, used to cache values during a single state only.
     pub caches_to_clear: Vec<Rc<RefCell<Option<Value>>>>,
-    // TODO:
-    // nondet_picks
-    // action_taken
+    // Nondeterministic picks and their values for the current step
+    pub nondet_picks: HashMap<QuintName, Option<Value>>,
+    // The action taken in the current step
+    pub action_taken: Option<QuintName>,
+    // Whether to store metadata for mbt
+    pub store_metadata: bool,
 }
 
 impl Storage {
+    /// Create a new Storage instance
+    pub fn new(store_metadata: bool) -> Self {
+        Storage {
+            vars: ImmutableMap::new(),
+            next_vars: ImmutableMap::new(),
+            caches_to_clear: Vec::new(),
+            nondet_picks: HashMap::new(),
+            action_taken: None,
+            store_metadata,
+        }
+    }
+
+    /// Configure whether to store metadata for model-based testing
+    pub fn set_store_metadata(&mut self, store_metadata: bool) {
+        self.store_metadata = store_metadata;
+    }
+
+    /// Initialize the nondet_picks map with the given keys, all set to None.
+    /// This ensures that at step 0, all nondet variable names appear in the map,
+    /// matching the TypeScript implementation.
+    pub fn initialize_nondet_picks(&mut self, names: &FxHashSet<QuintName>) {
+        for name in names {
+            self.nondet_picks.insert(name.clone(), None);
+        }
+    }
+
     /// Move the values in `next_vars` registries to `vars` registries, and
-    /// clear the caches.
+    /// clear the caches
     pub fn shift_vars(&mut self) {
         for (key, register_for_current) in self.vars.iter() {
             if let Some(register_for_next) = self.next_vars.get(key) {
@@ -61,15 +98,65 @@ impl Storage {
         self.clear_caches();
     }
 
+    /// Record the name of an action being executed.
+    /// Only sets the action name if tracking is enabled and no action has been recorded yet.
+    pub fn track_action(&mut self, name: QuintName) {
+        if self.store_metadata && self.action_taken.is_none() {
+            self.action_taken = Some(name);
+        }
+    }
+
+    /// Record a nondeterministic choice for MBT tracking.
+    /// Stores the picked value associated with the nondet variable name.
+    pub fn track_nondet(&mut self, name: QuintName, value: Value) {
+        if self.store_metadata {
+            self.nondet_picks.insert(name, Some(value));
+        }
+    }
+
+    /// Clear all MBT metadata after recording a state.
+    pub fn clear_metadata(&mut self) {
+        if self.store_metadata {
+            self.action_taken = None;
+            for value in self.nondet_picks.values_mut() {
+                *value = None;
+            }
+        }
+    }
+
     /// Build a record with the current state variables' values, to be used in traces.
     pub fn as_record(&self) -> Value {
-        let map = self.vars.values().filter_map(|register| {
-            let reg = register.borrow().clone();
-            reg.value.map(|v| (reg.name, v))
-        });
+        let mut map: ImmutableMap<QuintName, Value> = self
+            .vars
+            .values()
+            .filter_map(|register| {
+                let reg = register.borrow();
+                reg.value.as_ref().map(|v| (reg.name.clone(), v.clone()))
+            })
+            .collect();
 
-        // TODO: add nondet picks and action taken
-        Value::record(ImmutableMap::from_iter(map))
+        // Add metadata if enabled
+        if self.store_metadata {
+            let none_variant = Value::variant(LABEL_NONE.into(), Value::tuple(ImmutableVec::new()));
+
+            let nondet_picks_map: ImmutableMap<QuintName, Value> = self
+                .nondet_picks
+                .iter()
+                .map(|(name, value)| {
+                    let variant = match value {
+                        Some(v) => Value::variant(LABEL_SOME.into(), v.clone()),
+                        None => none_variant.clone(),
+                    };
+                    (name.clone(), variant)
+                })
+                .collect();
+            map.insert(MBT_NONDET_PICKS.into(), Value::record(nondet_picks_map));
+
+            let action_name = self.action_taken.as_ref().map(|s| s.as_ref()).unwrap_or("");
+            map.insert(MBT_ACTION_TAKEN.into(), Value::str(action_name.into()));
+        }
+
+        Value::record(map)
     }
 
     pub fn take_snapshot(&self) -> Snapshot {
@@ -79,6 +166,8 @@ impl Storage {
                 .iter()
                 .map(|(k, v)| (k.clone(), v.borrow().clone()))
                 .collect(),
+            nondet_picks: self.nondet_picks.clone(),
+            action_taken: self.action_taken.clone(),
         }
     }
 
@@ -88,6 +177,8 @@ impl Storage {
                 v.borrow_mut().value = next.value.clone();
             }
         });
+        self.nondet_picks = snapshot.nondet_picks.clone();
+        self.action_taken = snapshot.action_taken.clone();
     }
 
     fn clear_caches(&mut self) {

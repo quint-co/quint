@@ -21,9 +21,11 @@
 
 use crate::evaluator::{CompiledExprWithArgs, CompiledExprWithLazyArgs};
 use crate::ir::QuintError;
-use crate::value::{ImmutableMap, ImmutableSet, ImmutableVec, Value};
+use crate::itf::DebugMessage;
+use crate::value::{ImmutableMap, ImmutableSet, ImmutableVec, Value, ValueInner};
 use fxhash::FxHashSet;
 use itertools::Itertools;
+use num_bigint::BigUint;
 
 /// A list of operators that need to be compiled lazily (with `compile_lazy_op`).
 pub const LAZY_OPS: [&str; 13] = [
@@ -84,17 +86,20 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let mut indices: Vec<usize> = (0..args.len()).collect();
             // Fisher-Yates shuffle algorithm using our randomizer
             for i in (0..indices.len()).rev() {
-                let j: usize = env.rand.next(i + 1);
+                // Casting should be safe as we shouldn't have more than usize::MAX options
+                // in an any statement
+                let j = env.rand.next((i + 1) as u64) as usize;
                 indices.swap(i, j);
             }
 
             // Try actions in shuffled order until we find one that's enabled
             for i in indices {
+                env.var_storage.borrow_mut().clear_metadata();
+
                 let result = args[i].execute(env)?;
 
                 if result.as_bool() {
-                    // Found an enabled action - record it and return true
-                    // TODO: Record in the trace recorder
+                    // Found an enabled action - return true
                     return Ok(Value::bool(true));
                 }
 
@@ -159,12 +164,33 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         "oneOf" => |env, args| {
             // Randomly selects one element of the set.
             let set = args[0].execute(env)?;
+
+            // Special handling for large PowerSet (base >= 64 elements)
+            if set.is_large_powerset() {
+                if let ValueInner::PowerSet(base_set) = set.0.as_ref() {
+                    // Large powerset: bounds are u32 digits, reassemble to BigUint
+                    let n = base_set.cardinality()?;
+                    let cardinality = BigUint::from(1u64) << n;
+                    let random_index = env.rand.next_biguint(&cardinality);
+
+                    // Disassemble back to u32 digits for pick()
+                    let positions: Vec<u64> = random_index
+                        .to_u32_digits()
+                        .iter()
+                        .map(|&d| d as u64)
+                        .collect();
+
+                    return set.pick(&mut positions.into_iter());
+                }
+            }
+
+            // Standard path for other sets and small powersets
             // Some sets require multiple random numbers in order to pick an element efficiently.
             // For example, a cross product will require one random number per set, and return a tuple like
             // (set1.pick(r1), set2.pick(r2), ..., setn.pick(rn))
 
             // The ranges in which to generate which random number
-            let bounds = set.bounds();
+            let bounds = set.bounds()?;
             // The generated random number for each bound
             let mut positions = Vec::with_capacity(bounds.len());
 
@@ -172,7 +198,6 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 if bound == 0 {
                     return Err(QuintError::new("QNT509", "Applied oneOf on an empty set"));
                 }
-
                 // TODO: The old simulator generates a limited bound for infinite sets
                 // Not sure if we want to keep this behavior
                 // Related: https://github.com/informalsystems/quint/issues/279
@@ -180,7 +205,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 positions.push(env.rand.next(bound))
             }
 
-            Ok(set.pick(&mut positions.into_iter()))
+            set.pick(&mut positions.into_iter())
         },
         "then" => |env, args| {
             // Compose two actions, executing the second one only if the first one results in true.
@@ -241,8 +266,12 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                 let next_vars_snapshot = env.var_storage.borrow().take_snapshot();
                 env.shift();
                 // Drop the state from the trace, as we don't want to include it
-                // (expect is checking a condition and then rolling back)
-                env.trace.pop();
+                // (expect is checking a condition and then rolling back). Note
+                // that we move diagnostics back to the environment so they are
+                // not lost.
+                if let Some(trace) = env.trace.pop() {
+                    env.diagnostics.extend(trace.diagnostics);
+                }
                 let predicate_result = predicate.execute(env)?;
                 env.var_storage.borrow_mut().restore(&next_vars_snapshot);
 
@@ -267,7 +296,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
     // To be used at `item` and `nth` which share the same behavior
     fn at_index(list: &ImmutableVec<Value>, index: i64) -> Result<Value, QuintError> {
         if index < 0 || index >= list.len().try_into().unwrap() {
-            return Err(QuintError::new("QNT510", "Out of bounds, nth(${index})"));
+            return Err(QuintError::new(
+                "QNT510",
+                format!("Out of bounds, nth({index})").as_str(),
+            ));
         }
 
         Ok(list[index as usize].clone())
@@ -275,7 +307,28 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
     CompiledExprWithArgs::from_fn(match op {
         // Constructs a set from the given arguments.
-        "Set" => |_env, args| Ok(Value::set(args.into_iter().collect())),
+        "Set" => |_env, args| {
+            // Check if any argument is an infinite set (Int or Nat)
+            // These cannot be enumerated
+            for arg in &args {
+                match arg.0.as_ref() {
+                    ValueInner::InfiniteInt => {
+                        return Err(QuintError::new(
+                            "QNT501",
+                            "Infinite set Int is non-enumerable",
+                        ))
+                    }
+                    ValueInner::InfiniteNat => {
+                        return Err(QuintError::new(
+                            "QNT501",
+                            "Infinite set Nat is non-enumerable",
+                        ))
+                    }
+                    _ => {}
+                }
+            }
+            Ok(Value::set(args.into_iter().collect()))
+        },
         "Rec" => |_env, args| {
             // Constructs a record from the given arguments. Arguments are lists like [key1, value1, key2, value2, ...]
             Ok(Value::record(
@@ -305,22 +358,80 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Inequality
         "neq" => |_env, args| Ok(Value::bool(args[0] != args[1])),
         // Integer addition
-        "iadd" => |_env, args| Ok(Value::int(args[0].as_int() + args[1].as_int())),
+        "iadd" => |_env, args| {
+            let a = args[0].as_int();
+            let b = args[1].as_int();
+            a.checked_add(b)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {a} + {b}"),
+                    )
+                })
+                .map(Value::int)
+        },
         // Integer subtraction
-        "isub" => |_env, args| Ok(Value::int(args[0].as_int() - args[1].as_int())),
+        "isub" => |_env, args| {
+            let a = args[0].as_int();
+            let b = args[1].as_int();
+            a.checked_sub(b)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {a} - {b}"),
+                    )
+                })
+                .map(Value::int)
+        },
         // Integer multiplication
-        "imul" => |_env, args| Ok(Value::int(args[0].as_int() * args[1].as_int())),
+        "imul" => |_env, args| {
+            let a = args[0].as_int();
+            let b = args[1].as_int();
+            a.checked_mul(b)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {a} * {b}"),
+                    )
+                })
+                .map(Value::int)
+        },
         // Integer division
         "idiv" => |_env, args| {
+            let dividend = args[0].as_int();
             let divisor = args[1].as_int();
             if divisor == 0 {
                 return Err(QuintError::new("QNT503", "Division by zero"));
             }
 
-            Ok(Value::int(args[0].as_int() / divisor))
+            dividend
+                .checked_div(divisor)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!(
+                            "Integer overflow in arithmetic operations: {dividend} / {divisor}"
+                        ),
+                    )
+                })
+                .map(Value::int)
         },
         // Integer modulus
-        "imod" => |_env, args| Ok(Value::int(args[0].as_int() % args[1].as_int())),
+        "imod" => |_env, args| {
+            let dividend = args[0].as_int();
+            let divisor = args[1].as_int();
+            dividend
+                .checked_rem(divisor)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!(
+                            "Integer overflow in arithmetic operations: {dividend} % {divisor}"
+                        ),
+                    )
+                })
+                .map(Value::int)
+        },
         // Integer exponentiation
         "ipow" => |_env, args| {
             let base = args[0].as_int();
@@ -332,10 +443,27 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 return Err(QuintError::new("QNT503", "i^j is undefined for j < 0"));
             }
 
-            Ok(Value::int(base.pow(exp as u32)))
+            base.checked_pow(exp as u32)
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: {base} ^ {exp}"),
+                    )
+                })
+                .map(Value::int)
         },
         // Integer unary minus
-        "iuminus" => |_env, args| Ok(Value::int(-args[0].as_int())),
+        "iuminus" => |_env, args| {
+            let a = args[0].as_int();
+            a.checked_neg()
+                .ok_or_else(|| {
+                    QuintError::new(
+                        "QNT601",
+                        &format!("Integer overflow in arithmetic operations: -{a}"),
+                    )
+                })
+                .map(Value::int)
+        },
         // Integer less than
         "ilt" => |_env, args| Ok(Value::bool(args[0].as_int() < args[1].as_int())),
         // Integer less than or equal to
@@ -416,7 +544,18 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         // The length of a list.
-        "length" => |_env, args| Ok(Value::int(args[0].cardinality().try_into().unwrap())),
+        "length" => |_env, args| {
+            let card = args[0].cardinality()?;
+            let len = i64::try_from(card).map_err(|_| {
+                QuintError::new(
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: length {card} exceeds the maximum supported integer"
+                    ),
+                )
+            })?;
+            Ok(Value::int(len))
+        },
         // Append an element to a list.
         "append" => |_env, args| {
             let mut list = args[0].as_list().clone();
@@ -431,7 +570,15 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
         // A set with the indices of a list.
         "indices" => |_env, args| {
-            let size: i64 = args[0].cardinality().try_into().unwrap();
+            let card = args[0].cardinality()?;
+            let size: i64 = i64::try_from(card).map_err(|_| {
+                QuintError::new(
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: indices size {card} exceeds the maximum supported integer"
+                    ),
+                )
+            })?;
             Ok(Value::interval(0, size - 1))
         },
 
@@ -465,41 +612,52 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // The powerset of a set.
         "powerset" => |_env, args| Ok(Value::power_set(args[0].clone())),
         // Check if a set contains an element.
-        "contains" => |_env, args| Ok(Value::bool(args[0].contains(&args[1]))),
+        "contains" => |_env, args| Ok(Value::bool(args[0].contains(&args[1])?)),
         // Check if an element is in a set.
-        "in" => |_env, args| Ok(Value::bool(args[1].contains(&args[0]))),
+        "in" => |_env, args| Ok(Value::bool(args[1].contains(&args[0])?)),
         // Check if a set is a subset of another set.
-        "subseteq" => |_env, args| Ok(Value::bool(args[0].subseteq(&args[1]))),
+        "subseteq" => |_env, args| Ok(Value::bool(args[0].subseteq(&args[1])?)),
         // Set difference.
         "exclude" => |_env, args| {
             Ok(Value::set(
                 args[0]
-                    .as_set()
+                    .as_set()?
                     .into_owned()
-                    .relative_complement(args[1].as_set().into_owned()),
+                    .relative_complement(args[1].as_set()?.into_owned()),
             ))
         },
         // Set union.
         "union" => |_env, args| {
             Ok(Value::set(
                 args[0]
-                    .as_set()
+                    .as_set()?
                     .into_owned()
-                    .union(args[1].as_set().into_owned()),
+                    .union(args[1].as_set()?.into_owned()),
             ))
         },
         // Set intersection.
         "intersect" => |_env, args| {
             Ok(Value::set(
                 args[0]
-                    .as_set()
+                    .as_set()?
                     .into_owned()
-                    .intersection(args[1].as_set().into_owned()),
+                    .intersection(args[1].as_set()?.into_owned()),
             ))
         },
 
         // The size of a set.
-        "size" => |_env, args| Ok(Value::int(args[0].cardinality().try_into().unwrap())),
+        "size" => |_env, args| {
+            let card = args[0].cardinality()?;
+            let size = i64::try_from(card).map_err(|_| {
+                QuintError::new(
+                    "QNT601",
+                    &format!(
+                        "Integer overflow in type conversion: size {card} exceeds the maximum supported integer"
+                    ),
+                )
+            })?;
+            Ok(Value::int(size))
+        },
 
         // Whether a set is finite.
         "isFinite" => |_env, _args| {
@@ -520,11 +678,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Fold a set
         "fold" => |env, args| {
             let reducer = args[2].as_closure();
-            fold_left(
-                args[0].as_set().iter().cloned(),
-                args[1].clone(),
-                |acc, arg| reducer(env, vec![acc, arg]),
-            )
+            let set = args[0].as_set()?;
+            fold_left(set.iter().cloned(), args[1].clone(), |acc, arg| {
+                reducer(env, vec![acc, arg])
+            })
         },
 
         // Fold a list from left to right.
@@ -549,19 +706,18 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Flatten a set of sets.
         "flatten" => |_env, args| {
-            Ok(Value::set(
-                args[0]
-                    .as_set()
-                    .iter()
-                    .flat_map(|v| v.as_set().into_owned())
-                    .collect(),
-            ))
+            let outer_set = args[0].as_set()?;
+            let flattened = outer_set
+                .iter()
+                .flat_map(|v| v.as_set().map(|s| s.into_owned()).unwrap_or_default())
+                .collect();
+            Ok(Value::set(flattened))
         },
 
         // Get a value from a map.
         "get" => |_env, args| {
             let map = args[0].as_map();
-            let key = args[1].clone().normalize();
+            let key = args[1].clone().normalize()?;
             match map.get(&key) {
                 Some(value) => Ok(value.clone()),
                 None => Err(QuintError::new(
@@ -579,7 +735,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for an existing key in a map.
         "set" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize();
+            let key = args[1].clone().normalize()?;
 
             if !map.contains_key(&key) {
                 return Err(QuintError::new(
@@ -595,7 +751,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for any key in a map.
         "put" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize();
+            let key = args[1].clone().normalize()?;
             let value = args[2].clone();
             map.insert(key, value);
             Ok(Value::map(map))
@@ -604,7 +760,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for an existing key in a map using a lambda over the current value.
         "setBy" => |env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize();
+            let key = args[1].clone().normalize()?;
             match map.get(&key) {
                 Some(value) => {
                     let new_value = args[2].as_closure()(env, vec![value.clone()])?;
@@ -623,7 +779,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Check if a predicate holds for some element in a set.
         "exists" => |env, args| {
             let c = args[1].as_closure();
-            for v in args[0].as_set().iter() {
+            let set = args[0].as_set()?;
+            for v in set.iter() {
                 if c(env, vec![v.clone()])?.as_bool() {
                     return Ok(Value::bool(true));
                 }
@@ -633,7 +790,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         "forall" => |env, args| {
             let c = args[1].as_closure();
-            for v in args[0].as_set().iter() {
+            let set = args[0].as_set()?;
+            for v in set.iter() {
                 if !c(env, vec![v.clone()])?.as_bool() {
                     return Ok(Value::bool(false));
                 }
@@ -644,10 +802,9 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Map a lambda over a set.
         "map" => |env, args| {
             let c = args[1].as_closure();
+            let set = args[0].as_set()?;
             Ok(Value::set(
-                args[0]
-                    .as_set()
-                    .iter()
+                set.iter()
                     .map(|v| c(env, vec![v.clone()]))
                     .collect::<Result<_, _>>()?,
             ))
@@ -656,7 +813,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Filter a set using a lambda.
         "filter" => |env, args| {
             let c = args[1].as_closure();
-            Ok(Value::set(args[0].as_set().iter().try_fold(
+            let set = args[0].as_set()?;
+            Ok(Value::set(set.iter().try_fold(
                 ImmutableSet::default(),
                 |mut acc, v| {
                     if c(env, vec![v.clone()])?.as_bool() {
@@ -684,20 +842,20 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Construct a map by applying a lambda to the values of a set.
         "mapBy" => |env, args| {
             let closure = args[1].as_closure();
-            let keys = args[0].as_set();
+            let keys = args[0].as_set()?;
 
             Ok(Value::map(keys.iter().try_fold(
                 ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
-                    acc.insert(key.clone().normalize(), value);
+                    acc.insert(key.clone().normalize()?, value);
                     Ok(acc)
                 },
             )?))
         },
         // Convert a set of key-value tuples to a map.
         "setToMap" => |_env, args| {
-            let set = args[0].as_set();
+            let set = args[0].as_set()?;
             Ok(Value::map(set.iter().map(|v| v.as_tuple2()).collect()))
         },
         // A set of all possible maps with keys and values from the given sets.
@@ -713,7 +871,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
         // Generate all lists of length up to the given number, from a set
         "allListsUpTo" => |_env, args| {
-            let set = args[0].as_set();
+            let set = args[0].as_set()?;
             let length = args[1].as_int();
             let mut lists = FxHashSet::default();
             let mut last_lists = FxHashSet::<ImmutableVec<Value>>::default();
@@ -739,7 +897,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Get the only element of a set, or an error if the set is empty or has more than one element.
         "getOnlyElement" => |_env, args| {
-            let set = args[0].as_set();
+            let set = args[0].as_set()?;
             let size = set.len();
             if size != 1 {
                 return Err(QuintError::new(
@@ -755,9 +913,14 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             Ok(set.iter().next().cloned().unwrap())
         },
 
-        // Print a value to the console, and return it
-        "q::debug" => |_env, args| {
-            println!("> {} {}", args[0].as_str(), args[1]);
+        // Collect debug message when verbosity has debug output, and return the value
+        "q::debug" => |env, args| {
+            if env.verbosity.has_diagnostics() {
+                env.diagnostics.push(DebugMessage {
+                    label: args[0].as_str(),
+                    value: args[1].clone(),
+                });
+            }
             Ok(args[1].clone())
         },
 

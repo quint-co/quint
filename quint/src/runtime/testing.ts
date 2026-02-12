@@ -12,6 +12,8 @@ import { ExecutionFrame } from './trace'
 import { Rng } from '../rng'
 import { QuintError } from '../quintError'
 import { TraceHook } from '../cliReporting'
+import { QuintEx } from '../ir/quintIr'
+import { DebugMessage } from '../itf'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -22,6 +24,16 @@ export interface TestOptions {
   rng: Rng
   verbosity: number
   onTrace: TraceHook
+}
+
+/**
+ * A trace produced during test execution
+ */
+export interface TestTrace {
+  seed: number
+  states: QuintEx[]
+  diagnostics?: DebugMessage[][]
+  result: boolean
 }
 
 /**
@@ -48,7 +60,11 @@ export interface TestResult {
   /**
    * If the trace was recorded, frames contains the history.
    */
-  frames: ExecutionFrame[]
+  frames?: ExecutionFrame[]
+  /**
+   * Traces from the Rust evaluator (ITF format converted to QuintEx)
+   */
+  traces?: TestTrace[]
   /**
    * The number of tried samples.
    */

@@ -39,13 +39,14 @@ import { verifyWithApalacheBackend, verifyWithTlcBackend } from './verify'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { newTraceRecorder } from './runtime/trace'
-import { flow, isEqual, uniqWith } from 'lodash'
+import { flow, uniqWith } from 'lodash'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { convertInit } from './ir/initToPredicate'
-import { QuintRustWrapper } from './quintRustWrapper'
+import { CommandWrapper } from './rust/commandWrapper'
 import {
   cliErr,
   findMainModule,
@@ -63,7 +64,7 @@ import {
 import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
-import { TestOptions } from './runtime/testing'
+import { TestOptions, TestResult } from './runtime/testing'
 
 export type stage =
   | 'loading'
@@ -267,6 +268,7 @@ export async function runRepl(argv: any) {
     importModule: moduleName,
     replInput: argv.commands,
     verbosity: argv.quiet ? 0 : argv.verbosity,
+    backend: argv.backend,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
@@ -307,8 +309,26 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .flat()
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
-  const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
-  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  let results: TestResult[]
+
+  if (prev.args.backend === 'rust') {
+    const commandWrapper = new CommandWrapper(verbosityLevel)
+    results = []
+    for (const [index, def] of testDefs.entries()) {
+      const result = await commandWrapper.test(
+        def,
+        prev.table,
+        prev.args.seed,
+        options.maxSamples,
+        index,
+        options.onTrace
+      )
+      results.push(result)
+    }
+  } else {
+    const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
+    results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  }
 
   const elapsedMs = Date.now() - startMs
   outputTestResults(results, verbosityLevel, elapsedMs)
@@ -388,13 +408,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt || prev.args.witnesses.length > 0) {
-      console.warn(
-        chalk.yellow('Warning: --mbt and --witnesses are ignored when using the Rust backend (at this time).')
-      )
-      console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
-    }
-
     // Parse the combined invariant for the Rust backend
     const invariantExpr = toExpr(prev, invariantString)
     if (invariantExpr.isLeft()) {
@@ -404,17 +417,25 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
     }
 
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     const nThreads = Math.min(prev.args.maxSamples, prev.args.nThreads)
-    outcome = await quintRustWrapper.simulate(
-      { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant: invariantExpr.value },
+    outcome = await commandWrapper.simulate(
+      {
+        modules: [],
+        table: prev.resolver.table,
+        main: mainName,
+        init,
+        step,
+        invariant: invariantExpr.value,
+        witnesses: witnesses,
+      },
       prev.path,
-      witnesses,
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
       nThreads,
       prev.args.seed,
+      prev.args.mbt,
       options.onTrace
     )
   } else {
@@ -436,19 +457,31 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   simulator.seed = outcome.bestTraces[0]?.seed
   const states = outcome.bestTraces[0]?.states
+  const diagnostics = outcome.bestTraces[0]?.diagnostics || []
   const frames = recorder.bestTraces[0]?.frame?.subframes
+
+  if (states && states.length > 0) {
+    maybePrintCounterExample(verbosityLevel, states, diagnostics, frames, prev.args.hide || [])
+  }
 
   switch (outcome.status) {
     case 'error':
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log(
+          chalk.red(`[error]`) +
+            ' Runtime error ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+        )
+      }
       return cliErr('Runtime error', {
         ...simulator,
         status: outcome.status,
-        seed: prev.args.seed,
+        seed: simulator.seed,
+        trace: states,
         errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
     case 'ok':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
@@ -470,7 +503,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'violation':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +

@@ -5,203 +5,20 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * A wrapper around the Rust evaluator for Quint.
+ * Binary manager for the Rust evaluator.
+ * Handles version management, downloading, and path resolution.
  *
  * @author Gabriela Moreira
  *
  * @module
  */
-import { QuintApp, QuintEx, QuintModule, QuintStr } from './ir/quintIr'
-import { Outcome } from './simulation'
-import { TraceHook } from './cliReporting'
-import { debugLog } from './verbosity'
-import JSONbig from 'json-bigint'
-import { LookupTable } from './names/base'
-import { replacer } from './jsonHelper'
-import { ofItf } from './itf'
-import { Presets, SingleBar } from 'cli-progress'
+
 import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
-import readline from 'readline'
-import { spawn } from 'child_process'
-import { rustEvaluatorDir } from './config'
-import { QuintError } from './quintError'
+import { rustEvaluatorDir } from '../config'
 
-const QUINT_EVALUATOR_VERSION = 'v0.4.0'
-
-export type ParsedQuint = {
-  modules: QuintModule[]
-  table: LookupTable
-  main: string
-  init: QuintEx
-  step: QuintEx
-  invariant: QuintEx
-}
-
-export class QuintRustWrapper {
-  private verbosityLevel: number
-
-  /**
-   * Constructor for QuintRustWrapper.
-   * @param {number} verbosityLevel - The level of verbosity for logging.
-   */
-  constructor(verbosityLevel: number) {
-    this.verbosityLevel = verbosityLevel
-  }
-
-  /**
-   * Simulate the parsed Quint model using the Rust evaluator
-   *
-   * @param {ParsedQuint} parsed - The parsed Quint model.
-   * @param {string} source - The source code of the Quint model.
-   * @param {QuintEx[]} witnesses - The witnesses for the simulation.
-   * @param {number} nruns - The number of runs for the simulation.
-   * @param {number} nsteps - The number of steps per run.
-   * @param {number} ntraces - The number of traces to store.
-   * @param {number} nthreads - The number of threads to use.
-   * @param {bigint} [seed] - Optional seed for reproducibility.
-   * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
-   *
-   * @returns {Outcome} The outcome of the simulation.
-   * @throws Will throw an error if the Rust evaluator fails to launch or returns an error.
-   */
-  async simulate(
-    parsed: ParsedQuint,
-    source: string,
-    witnesses: QuintEx[],
-    nruns: number,
-    nsteps: number,
-    ntraces: number,
-    nthreads: number,
-    seed?: bigint,
-    onTrace?: TraceHook
-  ): Promise<Outcome> {
-    const exe = await getRustEvaluatorPath()
-    const args = ['simulate-from-stdin']
-    const input = JSONbig.stringify(
-      {
-        parsed: parsed,
-        source: source,
-        witnesses: witnesses,
-        nruns: nruns,
-        nsteps: nsteps,
-        ntraces: ntraces,
-        nthreads: nthreads,
-        seed: seed,
-      },
-      replacer
-    )
-
-    debugLog(this.verbosityLevel, 'Starting Rust evaluator synchronously')
-
-    // Create progress bar
-    const progressBar = new SingleBar(
-      {
-        clearOnComplete: true,
-        forceRedraw: true,
-        format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
-      },
-      Presets.rect
-    )
-    progressBar.start(nruns, 0, { speed: '0' })
-
-    const startTime = Date.now()
-
-    // Spawn the Rust evaluator in subprocess
-    const process = spawn(exe, args, {
-      shell: false,
-      stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr
-    })
-
-    // Write the input to stdin
-    process.stdin.write(input)
-    process.stdin.end()
-
-    // Handle error on launch
-    process.on('error', (err: Error) => {
-      throw new Error(`Failed to launch Rust evaluator: ${err.message}`)
-    })
-
-    // Collect output from stdout
-    const stdout = readline.createInterface({
-      input: process.stdout,
-      terminal: false,
-    })
-
-    let output = ''
-    stdout.on('line', (line: string) => {
-      if (line.trimStart()[0] !== '{') {
-        console.log(line)
-      } else {
-        output = line
-      }
-    })
-
-    // Convert stderr to a readable stream that emits its output line by line
-    const stderr = readline.createInterface({
-      input: process.stderr,
-      terminal: false,
-    })
-
-    // Handle progress updates from stderr
-    stderr.on('line', (line: string) => {
-      try {
-        const progress = JSON.parse(line)
-
-        if (progress.type === 'progress') {
-          const elapsedSeconds = (Date.now() - startTime) / 1000
-          const speed = Math.round(progress.current / elapsedSeconds)
-          progressBar.update(progress.current, { speed })
-        }
-      } catch (_) {
-        // Ignore non-JSON lines
-      }
-    })
-
-    // Wait for process completion
-    const exitCode = await new Promise<number>(resolve => {
-      process.on('close', resolve)
-    })
-
-    progressBar.stop()
-
-    if (exitCode !== 0) {
-      throw new Error(`Rust evaluator exited with code ${exitCode}`)
-    }
-
-    try {
-      const parsed = JSONbig.parse(output)
-      if (parsed.error) {
-        throw new Error(parsed.error)
-      }
-
-      // Convert traces to ITF
-      parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({ ...trace, states: ofItf(trace.states) }))
-
-      // Convert errors
-      parsed.errors = parsed.errors.map((err: any): QuintError => ({ ...err, reference: BigInt(err.reference) }))
-
-      // Call onTrace callback for each trace
-      if (onTrace && parsed.bestTraces.length > 0) {
-        const firstState = parsed.bestTraces[0].states[0] as QuintApp
-        const vars: string[] = []
-        for (let i = 0; i < firstState.args.length; i += 2) {
-          vars.push((firstState.args[i] as QuintStr).value)
-        }
-
-        parsed.bestTraces.forEach((trace: any, index: number) => {
-          const status = trace.result ? 'ok' : 'violation'
-          onTrace(index, status, vars, trace.states)
-        })
-      }
-
-      return parsed
-    } catch (error) {
-      throw new Error(`Failed to parse data from Rust evaluator: ${JSONbig.stringify(error)}`)
-    }
-  }
-}
+export const QUINT_EVALUATOR_VERSION = 'v0.4.0'
 
 interface GitHubRelease {
   tag_name: string
@@ -219,9 +36,7 @@ interface GitHubAsset {
  * @returns {string} The path to the Quint evaluator executable.
  * @throws Will throw an error if the evaluator is not found or cannot be downloaded.
  */
-async function getRustEvaluatorPath(version: string = QUINT_EVALUATOR_VERSION): Promise<string> {
-  const path = require('path')
-
+export async function getRustEvaluatorPath(version: string = QUINT_EVALUATOR_VERSION): Promise<string> {
   // Determine platform and architecture
   const platform = os.platform()
   const arch = os.arch()
@@ -249,7 +64,6 @@ async function getRustEvaluatorPath(version: string = QUINT_EVALUATOR_VERSION): 
  *  @throws Will throw an error if the download fails or the asset format is unsupported.
  */
 async function fetchEvaluator(version: string, assetName: string, executable: string): Promise<string> {
-  const path = require('path')
   const { unlink, mkdir } = require('fs/promises')
 
   console.log(chalk.gray(`Fetching Rust evaluator ${version}...`))
@@ -325,8 +139,6 @@ async function downloadGitHubAsset(
   assetName: string,
   evaluatorDir: string
 ): Promise<string> {
-  const path = require('path')
-
   const version = release.tag_name
   const asset = release.assets.find(asset => asset.name === assetName)
 

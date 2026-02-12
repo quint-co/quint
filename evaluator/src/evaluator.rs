@@ -3,11 +3,15 @@
 //! Includes the compilation types and stateful datastructures used for
 //! memoization, caching, state variable storage, etc.
 
+use crate::itf::{DebugMessage, State};
 use crate::nondet;
+use crate::progress::no_report;
 use crate::rand::Rand;
+use crate::simulator::{ParsedQuint, SimulationConfig};
 use crate::storage::{Storage, VariableRegister};
+use crate::verbosity::Verbosity;
 use crate::{builtins::*, ir::*, value::*};
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -85,25 +89,39 @@ pub struct Env {
 
     // The trace collector, used to track state transitions during evaluation.
     // This is collected whenever `then` advances the state by calling `shift()`.
-    pub trace: Vec<Value>,
-    // TODO: trace recorder (for --verbosity)
+    pub trace: Vec<State>,
+
+    // Diagnostic messages for the current step. These are moved into the Step
+    // when `shift()` is called.
+    pub diagnostics: Vec<DebugMessage>,
+
+    // Verbosity level controlling debug output collection.
+    pub verbosity: Verbosity,
 }
 
 impl Env {
-    pub fn new(var_storage: Rc<RefCell<Storage>>) -> Self {
+    pub fn new(var_storage: Rc<RefCell<Storage>>, verbosity: Verbosity) -> Self {
         Self {
             var_storage,
             rand: Rand::new(),
             trace: Vec::new(),
+            diagnostics: Vec::new(),
+            verbosity,
         }
     }
 
     /// Create a new environment with a specific random state.
-    pub fn with_rand_state(var_storage: Rc<RefCell<Storage>>, state: u64) -> Self {
+    pub fn with_rand_state(
+        var_storage: Rc<RefCell<Storage>>,
+        state: u64,
+        verbosity: Verbosity,
+    ) -> Self {
         Self {
             var_storage,
             rand: Rand::with_state(state),
             trace: Vec::new(),
+            diagnostics: Vec::new(),
+            verbosity,
         }
     }
 
@@ -111,20 +129,23 @@ impl Env {
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
         // After shifting, the current state is in `vars`, so we record it
-        let state = self.var_storage.borrow().as_record();
-        self.trace.push(state);
+        let value = self.var_storage.borrow().as_record();
+        let diagnostics = std::mem::take(&mut self.diagnostics);
+        self.trace.push(State { value, diagnostics });
+        // Clear metadata after recording so it doesn't carry over to the next state
+        self.var_storage.borrow_mut().clear_metadata();
     }
 }
 
 /// A stateful interpreter, with memoization, caching, state variable storage
 /// and tracking of modules.
-pub struct Interpreter<'a> {
+pub struct Interpreter {
     // The storage for state variables, holding their values on the current and
     // next state.
     pub var_storage: Rc<RefCell<Storage>>,
 
     // The lookup table, read-only, used to resolve names
-    table: &'a LookupTable,
+    table: LookupTable,
 
     // Registries hold values for specific names, and are used on references of
     // those names. This way, we can re-use the memory space and avoid lookups
@@ -155,12 +176,14 @@ pub struct Interpreter<'a> {
     // import/instantiation history. Here, we track that history to know which
     // variable from the storage to use during evaluation.
     namespaces: Vec<QuintName>,
-    // TODO: Other params from Typescript implementation, for future reference:
-    // initialNondetPicks: Map<string, RuntimeValue | undefined> = new Map()
+
+    // Initial nondet picks to be registered in the storage. This ensures that
+    // at step 0, all nondet variable names are present in the map (with None values).
+    initial_nondet_picks: FxHashSet<QuintName>,
 }
 
-impl<'a> Interpreter<'a> {
-    pub fn new(table: &'a LookupTable) -> Self {
+impl Interpreter {
+    pub fn new(table: LookupTable) -> Self {
         Self {
             table,
             param_registry: FxHashMap::default(),
@@ -170,12 +193,28 @@ impl<'a> Interpreter<'a> {
             memo: Rc::new(RefCell::new(FxHashMap::default())),
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
+            initial_nondet_picks: FxHashSet::default(),
         }
+    }
+
+    /// Update the lookup table.
+    /// Assumes the new table is an extension of the old one,
+    /// and therefore all caches are still valid
+    pub fn update_table(&mut self, table: LookupTable) {
+        self.table = table;
     }
 
     /// Shift the state, moving `next_vars` to `vars`.
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
+    }
+
+    /// Initialize the storage's nondet picks map with names discovered during compilation.
+    /// This ensures all nondet variables appear in the initial state with None values.
+    pub fn create_nondet_picks(&self) {
+        self.var_storage
+            .borrow_mut()
+            .initialize_nondet_picks(&self.initial_nondet_picks);
     }
 
     fn get_or_create_param(&mut self, param: &QuintLambdaParameter) -> Rc<RefCell<EvalResult>> {
@@ -239,7 +278,7 @@ impl<'a> Interpreter<'a> {
                 Rc::new(RefCell::new(Err(QuintError::new(
                     "QNT500",
                     format!(
-                        "Uninitialized const {name}. Use: import <moduleName>(${name}=<value>).*",
+                        "Uninitialized const {name}. Use: import <moduleName>({name}=<value>).*",
                     )
                     .as_str(),
                 ))))
@@ -334,7 +373,7 @@ impl<'a> Interpreter<'a> {
         compilation(self)
     }
 
-    fn compile_def(&mut self, def: &LookupDefinition) -> CompiledExpr {
+    pub fn compile_def(&mut self, def: &LookupDefinition) -> CompiledExpr {
         self.compile_under_context(def, |interpreter| interpreter.compile_def_core(def))
     }
 
@@ -345,7 +384,8 @@ impl<'a> Interpreter<'a> {
 
         let compiled_def = match def {
             LookupDefinition::Definition(QuintDeclaration::QuintOpDef(op)) => {
-                if matches!(op.expr, QuintEx::QuintLambda { .. }) || op.depth.is_none_or(|x| x == 0)
+                let base_expr = if matches!(op.expr, QuintEx::QuintLambda { .. })
+                    || op.depth.is_none_or(|x| x == 0)
                 {
                     // We need to avoid scoped caching in lambdas or top-level expressions
                     // We still have memoization. This caching is special for scoped defs (let-ins)
@@ -368,6 +408,19 @@ impl<'a> Interpreter<'a> {
                             result
                         }
                     })
+                };
+
+                // Wrap action definitions to track which action is executed (for MBT)
+                if matches!(op.qualifier, OpQualifier::Action) {
+                    let action_name = op.name.clone();
+                    CompiledExpr::new(move |env| {
+                        env.var_storage
+                            .borrow_mut()
+                            .track_action(action_name.clone());
+                        base_expr.execute(env)
+                    })
+                } else {
+                    base_expr
                 }
             }
             LookupDefinition::Definition(QuintDeclaration::QuintVar(QuintVar {
@@ -491,11 +544,13 @@ impl<'a> Interpreter<'a> {
                 CompiledExpr::new(move |_| Ok(Value::str(value.clone())))
             }
 
-            QuintEx::QuintName { id, name } => self
-                .table
-                .get(id)
-                .map(|def| self.compile_def(def))
-                .unwrap_or_else(|| builtin_value(name.as_str())),
+            QuintEx::QuintName { id, name } => {
+                if let Some(def) = self.table.get(id).cloned() {
+                    self.compile_def(&def)
+                } else {
+                    builtin_value(name.as_str())
+                }
+            }
 
             QuintEx::QuintLambda {
                 id: _,
@@ -514,8 +569,8 @@ impl<'a> Interpreter<'a> {
                     // Assign is too special, so we handle it separately.
                     // We need to build things under the context of the variable being assigned,
                     // as it may come from an instance, and that changed everything
-                    let var_def = self.table.get(&args[0].id()).unwrap();
-                    self.compile_under_context(var_def, |interpreter| {
+                    let var_def = self.table.get(&args[0].id()).unwrap().clone();
+                    self.compile_under_context(&var_def, |interpreter| {
                         interpreter.create_var(var_def.id(), var_def.name());
                         let register = interpreter.get_next_var(var_def.id());
                         let expr = interpreter.compile(&args[1]);
@@ -526,6 +581,8 @@ impl<'a> Interpreter<'a> {
                             Ok(Value::bool(true))
                         })
                     })
+                } else if opcode == "q::test" || opcode == "q::testOnce" {
+                    self.compile_simulation(opcode, args)
                 } else if LAZY_OPS.contains(&opcode.as_str()) {
                     // Lazy operator, compile the arguments and give their
                     // closures to the operator so it decides when to eval
@@ -584,8 +641,17 @@ impl<'a> Interpreter<'a> {
                                 Rc::clone(cached)
                             };
                             let body_expr = self.compile(expr);
+                            let nondet_name = opdef.name.clone();
 
-                            return nondet::eval_nondet_one_of(set_expr, body_expr, cached_value);
+                            // Register the nondet pick name so it appears in the initial state
+                            self.initial_nondet_picks.insert(nondet_name.clone());
+
+                            return nondet::eval_nondet_one_of(
+                                set_expr,
+                                body_expr,
+                                cached_value,
+                                nondet_name,
+                            );
                         }
                     }
                     // Fall through to regular nondet handling for other cases
@@ -613,10 +679,10 @@ impl<'a> Interpreter<'a> {
     }
 
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
-        match self.table.get(id) {
+        match self.table.get(id).cloned() {
             Some(def) => {
                 // A user-defined operator
-                let op = self.compile_def(def);
+                let op = self.compile_def(&def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure();
@@ -626,6 +692,87 @@ impl<'a> Interpreter<'a> {
             // A built-in. We already checked that this is not lazy before.
             None => compile_eager_op(op),
         }
+    }
+
+    /// Compile a `q::test` or `q::testOnce` call into a simulation expression.
+    fn compile_simulation(&mut self, opcode: &str, args: &[QuintEx]) -> CompiledExpr {
+        let is_test_once = opcode == "q::testOnce";
+
+        let (nruns_expr, nsteps_expr, ntraces_expr, init_ex, step_ex, inv_ex) = if is_test_once {
+            // q::testOnce(nsteps, ntraces, init, step, inv)
+            (
+                None,
+                &args[0],
+                &args[1],
+                args[2].clone(),
+                args[3].clone(),
+                args[4].clone(),
+            )
+        } else {
+            // q::test(nruns, nsteps, ntraces, init, step, inv)
+            (
+                Some(&args[0]),
+                &args[1],
+                &args[2],
+                args[3].clone(),
+                args[4].clone(),
+                args[5].clone(),
+            )
+        };
+
+        let compiled_nruns = nruns_expr.map(|a| self.compile(a));
+        let compiled_nsteps = self.compile(nsteps_expr);
+        let compiled_ntraces = self.compile(ntraces_expr);
+
+        let parsed = ParsedQuint {
+            init: init_ex,
+            step: step_ex,
+            invariant: inv_ex,
+            witnesses: vec![],
+            table: self.table.clone(),
+        };
+
+        CompiledExpr::new(move |env| {
+            let nsteps = compiled_nsteps.execute(env)?.as_int() as usize;
+            let ntraces = compiled_ntraces.execute(env)?.as_int() as usize;
+            let nruns = match &compiled_nruns {
+                Some(c) => c.execute(env)?.as_int() as usize,
+                None => 1,
+            };
+
+            let seed = Some(env.rand.get_state());
+            match parsed.simulate(
+                SimulationConfig {
+                    steps: nsteps,
+                    samples: nruns,
+                    n_traces: ntraces,
+                    seed,
+                    store_metadata: false,
+                    // FIXME: Propagate verbosity into REPL
+                    verbosity: Verbosity::Quiet,
+                },
+                no_report(),
+            ) {
+                Ok(result) => {
+                    env.trace = result
+                        .best_traces
+                        .into_iter()
+                        .next()
+                        .map(|t| t.states)
+                        .unwrap_or_default();
+
+                    if result.result {
+                        Ok(Value::str("ok".into()))
+                    } else {
+                        Ok(Value::str("violation".into()))
+                    }
+                }
+                Err(sim_error) => {
+                    env.trace = sim_error.trace.states;
+                    Err(sim_error.error)
+                }
+            }
+        })
     }
 
     /// Utility to compile and evaluate an expression
@@ -643,6 +790,13 @@ fn builtin_value(name: &str) -> CompiledExpr {
                 Value::bool(true),
                 Value::bool(false),
             ])))
+        }),
+        "Int" => CompiledExpr::new(move |_| Ok(Value::infinite_int())),
+        "Nat" => CompiledExpr::new(move |_| Ok(Value::infinite_nat())),
+        "q::lastTrace" => CompiledExpr::new(|env| {
+            Ok(Value::list(
+                env.trace.iter().map(|s| s.value.clone()).collect(),
+            ))
         }),
         _ => unimplemented!("Unknown builtin name: {}", name),
     }
@@ -697,8 +851,8 @@ fn can_cache(def: &LookupDefinition) -> Cache {
 
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
-    let mut interpreter = Interpreter::new(table);
-    let mut env = Env::new(interpreter.var_storage.clone());
+    let mut interpreter = Interpreter::new(table.clone());
+    let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
 
     interpreter.eval(&mut env, expr.clone())
 }

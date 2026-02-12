@@ -1257,11 +1257,11 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
+[error] Runtime error (duration).
 HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 5:   action init = { x' = N }
                           ^
 
-Use --seed=0x1 --backend=typescript to reproduce.
 error: Runtime error
 ```
 
@@ -1342,7 +1342,6 @@ def farenheit(celsius) = celsius * 9 / 5 + 32
 static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
 def farenheit(celsius) = celsius * 9 / 5 + 32
     ^^^^^^^^^
-
 
 33
 
@@ -1723,4 +1722,104 @@ rm NoExpectTest.itf.json WithExpectTest.itf.json
 ```
 6
 6
+```
+
+## Seed produces reproducible results
+
+This test verifies that running with the same seed produces identical traces.
+
+<!-- !test in seed reproducibility -->
+```
+# First run: capture seed and trace output
+OUTPUT1=$(quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  --verbosity=3 \
+  ./testFixture/simulator/gettingStarted.qnt 2>&1)
+
+# Extract the seed from first run
+SEED=$(echo "$OUTPUT1" | grep -o "\-\-seed=0x[0-9a-f]*")
+
+# Filter out timing info and save trace from first run
+echo "$OUTPUT1" | grep -v "duration\|samples/s\|ETA\|speed\|traces/second\|No violation found" > run1.txt
+
+# Second run with the captured seed
+quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  --verbosity=3 \
+  $SEED \
+  ./testFixture/simulator/gettingStarted.qnt 2>&1 | grep -v "duration\|samples/s\|ETA\|speed\|traces/second\|No violation found" > run2.txt
+
+diff run1.txt run2.txt && echo "Traces are identical"
+
+# Cleanup
+rm -f run1.txt run2.txt
+```
+
+<!-- !test out seed reproducibility -->
+```
+Traces are identical
+```
+
+## Produces ITF trace with --out-itf
+
+<!-- !test in rust backend itf output -->
+```
+quint run \
+  --out-itf=rust-out.itf.json \
+  --max-steps=5 \
+  ./testFixture/simulator/gettingStarted.qnt > /dev/null
+cat rust-out.itf.json | jq '.vars'
+rm rust-out.itf.json
+```
+
+<!-- !test out rust backend itf output -->
+```
+[
+  "balances"
+]
+```
+
+## Nested parameterized calls with let
+
+<!-- !test check nested parameterized calls -->
+```
+quint run \
+  --max-steps=5 \
+  --max-samples=1 \
+  ./testFixture/nestedParameterizedCallsWithLet.qnt
+```
+
+## Debug output in init action
+
+This test verifies that q::debug output is printed.
+
+<!-- !test in debug -->
+```
+cat > /tmp/debug_test.qnt << 'EOF'
+module debugTest {
+  var x: int
+
+  action init = {
+    x' = q::debug("this tests debug", 42)
+  }
+
+  action step = {
+    x' = x + 1
+  }
+}
+EOF
+
+quint run \
+  --max-samples=1 \
+  --main=debugTest \
+  /tmp/debug_test.qnt 2>&1 | grep "this tests debug"
+
+rm /tmp/debug_test.qnt
+```
+
+<!-- !test out debug -->
+```
+> this tests debug 42
 ```

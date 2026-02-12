@@ -170,6 +170,12 @@ const replCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('backend', {
+        desc: 'the backend to use for evaluation',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   handler: runRepl,
 }
@@ -218,6 +224,12 @@ const testCmd = {
       .option('match', {
         desc: 'a string or regex that selects names to use as tests',
         type: 'string',
+      })
+      .option('backend', {
+        desc: 'the backend to use for tests',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'typescript',
       }),
   handler: (args: any) => {
     if (args.output != null) {
