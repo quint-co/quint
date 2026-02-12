@@ -82,6 +82,24 @@ export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, wi
 }
 
 /**
+ * Print violated invariants using indices provided by the Rust backend.
+ *
+ * @param violatedIndices The indices of invariants that were violated.
+ * @param invariants The list of invariant names/expressions.
+ */
+export function printViolatedInvariantsByIndex(violatedIndices: number[], invariants: string[]): void {
+  if (invariants.length <= 1 || violatedIndices.length === 0) {
+    return
+  }
+
+  for (const idx of violatedIndices) {
+    if (idx < invariants.length) {
+      console.log(chalk.red(`  ❌ ${invariants[idx]}`))
+    }
+  }
+}
+
+/**
  * Print violated invariants in the final state.
  *
  * @param state The final state.

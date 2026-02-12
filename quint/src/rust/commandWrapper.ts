@@ -36,7 +36,7 @@ export type ParsedQuint = {
   main: string
   init: QuintEx
   step: QuintEx
-  invariant: QuintEx
+  invariants: QuintEx[]
   witnesses: QuintEx[]
 }
 
@@ -108,6 +108,7 @@ export class CommandWrapper {
         witnessingTraces: [],
         samples: 0,
         traceStatistics: { averageTraceLength: 0, minTraceLength: 0, maxTraceLength: 0 },
+        violatedInvariants: [],
       }
     }
 
