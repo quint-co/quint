@@ -7,6 +7,7 @@
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintEx};
 use crate::value::Value;
+use crate::Verbosity;
 use itf;
 use serde::{Deserialize, Serialize};
 use std::io::{self, BufRead, Write};
@@ -22,7 +23,7 @@ enum ReplCommand {
         #[serde(default)]
         seed: Option<u64>,
         #[serde(default)]
-        verbosity: u8,
+        verbosity: Verbosity,
     },
     /// Update the lookup table with new definitions
     UpdateTable { table: LookupTable },
@@ -80,7 +81,7 @@ pub struct ReplEvaluator {
     interpreter: Option<Interpreter>,
     env: Option<Env>,
     trace_states: Vec<Value>,
-    verbosity: u8,
+    verbosity: Verbosity,
 }
 
 impl ReplEvaluator {
@@ -88,7 +89,12 @@ impl ReplEvaluator {
         Self::default()
     }
 
-    fn initialize(&mut self, table: LookupTable, seed: Option<u64>, verbosity: u8) -> ReplResponse {
+    fn initialize(
+        &mut self,
+        table: LookupTable,
+        seed: Option<u64>,
+        verbosity: Verbosity,
+    ) -> ReplResponse {
         self.verbosity = verbosity;
 
         // Create the interpreter with the table
@@ -97,9 +103,9 @@ impl ReplEvaluator {
 
         self.interpreter = Some(interpreter);
         self.env = Some(if let Some(seed) = seed {
-            Env::with_rand_state(storage, seed)
+            Env::with_rand_state(storage, seed, verbosity)
         } else {
-            Env::new(storage)
+            Env::new(storage, verbosity)
         });
 
         self.trace_states = Vec::new();

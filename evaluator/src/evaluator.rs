@@ -3,9 +3,11 @@
 //! Includes the compilation types and stateful datastructures used for
 //! memoization, caching, state variable storage, etc.
 
+use crate::itf::{DebugMessage, State};
 use crate::nondet;
 use crate::rand::Rand;
 use crate::storage::{Storage, VariableRegister};
+use crate::verbosity::Verbosity;
 use crate::{builtins::*, ir::*, value::*};
 use fxhash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
@@ -85,25 +87,39 @@ pub struct Env {
 
     // The trace collector, used to track state transitions during evaluation.
     // This is collected whenever `then` advances the state by calling `shift()`.
-    pub trace: Vec<Value>,
-    // TODO: trace recorder (for --verbosity)
+    pub trace: Vec<State>,
+
+    // Diagnostic messages for the current step. These are moved into the Step
+    // when `shift()` is called.
+    pub diagnostics: Vec<DebugMessage>,
+
+    // Verbosity level controlling debug output collection.
+    pub verbosity: Verbosity,
 }
 
 impl Env {
-    pub fn new(var_storage: Rc<RefCell<Storage>>) -> Self {
+    pub fn new(var_storage: Rc<RefCell<Storage>>, verbosity: Verbosity) -> Self {
         Self {
             var_storage,
             rand: Rand::new(),
             trace: Vec::new(),
+            diagnostics: Vec::new(),
+            verbosity,
         }
     }
 
     /// Create a new environment with a specific random state.
-    pub fn with_rand_state(var_storage: Rc<RefCell<Storage>>, state: u64) -> Self {
+    pub fn with_rand_state(
+        var_storage: Rc<RefCell<Storage>>,
+        state: u64,
+        verbosity: Verbosity,
+    ) -> Self {
         Self {
             var_storage,
             rand: Rand::with_state(state),
             trace: Vec::new(),
+            diagnostics: Vec::new(),
+            verbosity,
         }
     }
 
@@ -111,8 +127,9 @@ impl Env {
     pub fn shift(&mut self) {
         self.var_storage.borrow_mut().shift_vars();
         // After shifting, the current state is in `vars`, so we record it
-        let state = self.var_storage.borrow().as_record();
-        self.trace.push(state);
+        let value = self.var_storage.borrow().as_record();
+        let diagnostics = std::mem::take(&mut self.diagnostics);
+        self.trace.push(State { value, diagnostics });
         // Clear metadata after recording so it doesn't carry over to the next state
         self.var_storage.borrow_mut().clear_metadata();
     }
@@ -689,6 +706,8 @@ fn builtin_value(name: &str) -> CompiledExpr {
                 Value::bool(false),
             ])))
         }),
+        "Int" => CompiledExpr::new(move |_| Ok(Value::infinite_int())),
+        "Nat" => CompiledExpr::new(move |_| Ok(Value::infinite_nat())),
         _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }
@@ -743,7 +762,7 @@ fn can_cache(def: &LookupDefinition) -> Cache {
 /// Utility to compile and evaluate an expression in a new interpreter
 pub fn run(table: &LookupTable, expr: &QuintEx) -> Result<Value, QuintError> {
     let mut interpreter = Interpreter::new(table.clone());
-    let mut env = Env::new(interpreter.var_storage.clone());
+    let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
 
     interpreter.eval(&mut env, expr.clone())
 }

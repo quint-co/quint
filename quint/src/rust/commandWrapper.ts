@@ -18,7 +18,8 @@ import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
-import { ofItf } from '../itf'
+import { reviver } from '../jsonHelper'
+import { diagnosticsOfItf, ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
@@ -88,6 +89,7 @@ export class CommandWrapper {
       nthreads: nthreads,
       seed: seed,
       mbt: mbt ?? false,
+      verbosity: this.verbosityLevel,
     }
 
     const result = await this.runRustEvaluator(
@@ -113,23 +115,17 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed = JSONbig.parse(output)
-      if (parsed.error) {
-        throw new Error(parsed.error)
-      }
+      const parsed: Outcome = JSONbig.parse(output, reviver)
 
-      // Convert traces to ITF and ensure seed is bigint
-      // Note: When a SimulationError occurs in Rust, the error trace is included in bestTraces with result=false
+      // Convert traces to ITF and ensure seed is bigint Note: When a
+      // SimulationError occurs in Rust, the error trace is included in
+      // bestTraces with result=false
       parsed.bestTraces = parsed.bestTraces.map((trace: any) => ({
         ...trace,
         seed: BigInt(trace.seed),
         states: ofItf(trace.states),
+        diagnostics: diagnosticsOfItf(trace.states),
       }))
-
-      // Convert errors - these include errors from SimulationError
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({ ...err, reference: err.reference ? BigInt(err.reference) : undefined })
-      )
 
       // Call onTrace callback for each trace
       if (onTrace && parsed.bestTraces.length > 0 && parsed.bestTraces[0].states.length > 0) {
@@ -179,6 +175,7 @@ export class CommandWrapper {
       table: table,
       seed: seed,
       max_samples: maxSamples,
+      verbosity: this.verbosityLevel,
     }
 
     const result = await this.runRustEvaluator(
@@ -204,18 +201,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed = JSONbig.parse(output)
-      if (parsed.error) {
-        throw new Error(parsed.error)
-      }
-
-      // Convert errors to proper format
-      parsed.errors = parsed.errors.map(
-        (err: any): QuintError => ({
-          ...err,
-          reference: err.reference ? BigInt(err.reference) : undefined,
-        })
-      )
+      const parsed: TestResult = JSONbig.parse(output, reviver)
 
       // Convert seed to bigint
       parsed.seed = BigInt(parsed.seed)
@@ -225,6 +211,7 @@ export class CommandWrapper {
         parsed.traces = parsed.traces.map((trace: any) => ({
           ...trace,
           states: ofItf(trace.states),
+          diagnostics: diagnosticsOfItf(trace.states),
         }))
 
         // Call onTrace callback for each trace

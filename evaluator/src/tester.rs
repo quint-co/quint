@@ -2,6 +2,7 @@ use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupDefinition, LookupTable, QuintError};
 use crate::itf::Trace;
 use crate::progress::Reporter;
+use crate::verbosity::Verbosity;
 use serde::Serialize;
 
 /// A test case that can be executed
@@ -43,13 +44,14 @@ impl TestCase {
         seed: Option<u64>,
         max_samples: usize,
         mut reporter: R,
+        verbosity: Verbosity,
     ) -> TestResult {
         let test_name = &self.name;
 
         let mut interpreter = Interpreter::new(self.table.clone());
         let mut env = match seed {
-            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
-            None => Env::new(interpreter.var_storage.clone()),
+            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s, verbosity),
+            None => Env::new(interpreter.var_storage.clone(), verbosity),
         };
 
         let seed = env.rand.get_state();
@@ -61,7 +63,11 @@ impl TestCase {
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
-        let mut trace = None;
+        let mut trace = Trace {
+            states: Vec::new(),
+            violation: false,
+            seed,
+        };
 
         for _ in 0..max_samples {
             let prev_rng_state = env.rand.get_state();
@@ -69,37 +75,21 @@ impl TestCase {
             reporter.next_sample();
             nsamples += 1;
 
-            match compiled_test.execute(&mut env) {
-                Ok(result) => {
-                    env.shift();
+            let test_result = compiled_test.execute(&mut env);
+            env.shift();
 
+            trace.states = std::mem::take(&mut env.trace);
+
+            match test_result {
+                Ok(result) => {
                     if !result.as_bool() {
                         let error =
                             QuintError::new("QNT511", &format!("Test {test_name} returned false"))
                                 .with_reference(test_def_id);
-                        let states = std::mem::take(&mut env.trace);
-                        trace = Some(Trace {
-                            states,
-                            violation: true,
-                            seed,
-                        });
-                        return TestResult {
-                            name: test_name.clone(),
-                            status: TestStatus::Failed,
-                            errors: vec![error],
-                            seed,
-                            nsamples,
-                            traces: trace.into_iter().collect(),
-                        };
+                        errors.push(error);
+                        trace.violation = true;
+                        break;
                     }
-
-                    let states = std::mem::take(&mut env.trace);
-                    trace = Some(Trace {
-                        states,
-                        violation: false,
-                        seed,
-                    });
-
                     if env.rand.get_state() == prev_rng_state {
                         break;
                     }
@@ -119,11 +109,11 @@ impl TestCase {
 
         TestResult {
             name: test_name.clone(),
+            traces: vec![trace],
             status,
             errors,
             seed,
             nsamples,
-            traces: trace.into_iter().collect(),
         }
     }
 }

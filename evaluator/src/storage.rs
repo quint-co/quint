@@ -42,7 +42,7 @@ pub struct Snapshot {
     pub action_taken: Option<QuintName>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Storage {
     // Registers for the values in the current state, to be read during evaluation
     pub vars: ImmutableMap<QuintName, Rc<RefCell<VariableRegister>>>,
@@ -56,12 +56,6 @@ pub struct Storage {
     pub action_taken: Option<QuintName>,
     // Whether to store metadata for mbt
     pub store_metadata: bool,
-}
-
-impl Default for Storage {
-    fn default() -> Self {
-        Self::new(false)
-    }
 }
 
 impl Storage {

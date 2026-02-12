@@ -16,3 +16,26 @@ export function replacer(_key: String, value: any): any {
     return value
   }
 }
+
+/**
+ * Reviver function for JSON.parse to ensure proper type conversions during deserialization.
+ *
+ * A "reviver" is the standard JavaScript term for the optional second parameter to JSON.parse(),
+ * which is called for each key-value pair during parsing, allowing transformation of values.
+ *
+ * This reviver ensures that:
+ * - QuintError.reference fields are converted from numbers to bigint
+ *
+ * @param key - The property key being parsed
+ * @param value - The parsed value
+ * @returns The potentially transformed value
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#the_reviver_parameter
+ */
+export function reviver(key: string, value: any): any {
+  // Convert QuintError.reference from number to bigint
+  if (key === 'reference' && value !== null && value !== undefined) {
+    return BigInt(value)
+  }
+  return value
+}
