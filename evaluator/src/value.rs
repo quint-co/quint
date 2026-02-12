@@ -69,6 +69,9 @@ pub enum ValueInner {
     CrossProduct(Vec<Value>),
     PowerSet(Value),
     MapSet(Value, Value),
+    // Infinite sets
+    InfiniteInt, // represents the set of all integers
+    InfiniteNat, // represents the set of all natural numbers (>= 0)
 }
 
 impl Hash for Value {
@@ -138,6 +141,10 @@ impl Hash for ValueInner {
                 a.hash(state);
                 b.hash(state);
             }
+            ValueInner::InfiniteInt | ValueInner::InfiniteNat => {
+                // The discriminant is already hashed, which is sufficient
+                // for distinguishing between Int and Nat
+            }
         }
     }
 }
@@ -169,6 +176,11 @@ impl PartialEq for ValueInner {
             (Self::CrossProduct(a), Self::CrossProduct(b)) => *a == *b,
             (Self::PowerSet(a), Self::PowerSet(b)) => *a == *b,
             (Self::MapSet(a1, b1), Self::MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            (Self::InfiniteInt, Self::InfiniteInt) => true,
+            (Self::InfiniteNat, Self::InfiniteNat) => true,
+            // Infinite sets are not equal to any other set (including each other)
+            (Self::InfiniteInt, _) | (Self::InfiniteNat, _) => false,
+            (_, Self::InfiniteInt) | (_, Self::InfiniteNat) => false,
             // To compare two sets represented in different ways, we need to enumerate them both
             _ => {
                 let self_value = Value(Rc::new(self.clone()));
@@ -257,20 +269,29 @@ impl Value {
     pub fn map_set(a: Value, b: Value) -> Self {
         Value(Rc::new(ValueInner::MapSet(a, b)))
     }
+
+    pub fn infinite_int() -> Self {
+        Value(Rc::new(ValueInner::InfiniteInt))
+    }
+
+    pub fn infinite_nat() -> Self {
+        Value(Rc::new(ValueInner::InfiniteNat))
+    }
+
     /// Calculate the cardinality of the value without having to enumerate it
     /// (i.e. without calling `as_set`).
-    pub fn cardinality(&self) -> Result<usize, crate::ir::QuintError> {
+    pub fn cardinality(&self) -> Result<u64, crate::ir::QuintError> {
         match self.0.as_ref() {
-            ValueInner::Set(set) => Ok(set.len()),
-            ValueInner::Tuple(elems) => Ok(elems.len()),
-            ValueInner::Record(fields) => Ok(fields.len()),
-            ValueInner::Map(map) => Ok(map.len()),
-            ValueInner::List(elems) => Ok(elems.len()),
+            ValueInner::Set(set) => Ok(set.len() as u64),
+            ValueInner::Tuple(elems) => Ok(elems.len() as u64),
+            ValueInner::Record(fields) => Ok(fields.len() as u64),
+            ValueInner::Map(map) => Ok(map.len() as u64),
+            ValueInner::List(elems) => Ok(elems.len() as u64),
             ValueInner::Interval(start, end) => {
                 // Check for overflow when computing interval size
                 end.checked_sub(*start)
                     .and_then(|diff| diff.checked_add(1))
-                    .and_then(|size| size.try_into().ok())
+                    .and_then(|size| u64::try_from(size).ok())
                     .ok_or_else(|| {
                         QuintError::new(
                             "QNT601",
@@ -278,7 +299,7 @@ impl Value {
                         )
                     })
             }
-            ValueInner::CrossProduct(sets) => sets.iter().try_fold(1_usize, |acc, set| {
+            ValueInner::CrossProduct(sets) => sets.iter().try_fold(1_u64, |acc, set| {
                 let set_card = set.cardinality()?;
                 acc.checked_mul(set_card).ok_or_else(|| {
                     QuintError::new(
@@ -298,7 +319,7 @@ impl Value {
                         ),
                     )
                 })?;
-                2_usize.checked_pow(exp).ok_or_else(|| {
+                2_u64.checked_pow(exp).ok_or_else(|| {
                     QuintError::new(
                         "QNT601",
                         &format!(
@@ -327,6 +348,18 @@ impl Value {
                         ),
                     )
                 })
+            }
+            ValueInner::InfiniteInt => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Int is non-enumerable",
+                ))
+            }
+            ValueInner::InfiniteNat => {
+                Err(QuintError::new(
+                    "QNT501",
+                    "Infinite set Nat is non-enumerable",
+                ))
             }
             _ => panic!("Cardinality not implemented for {self:?}"),
         }
@@ -367,6 +400,10 @@ impl Value {
                         .try_fold(true, |acc, v| Ok(acc && range.contains(v)?))?
                 }
             }
+            (ValueInner::InfiniteInt, ValueInner::Int(_)) => true,
+            (ValueInner::InfiniteInt, _) => false,
+            (ValueInner::InfiniteNat, ValueInner::Int(n)) => *n >= 0,
+            (ValueInner::InfiniteNat, _) => false,
             _ => panic!("contains not implemented for {self:?}"),
         })
     }
@@ -376,7 +413,7 @@ impl Value {
     pub fn is_large_powerset(&self) -> bool {
         if let ValueInner::PowerSet(base_set) = self.0.as_ref() {
             if let Ok(card) = base_set.cardinality() {
-                return card >= u64::BITS as usize;
+                return card >= u64::BITS as u64;
             }
         }
         false
@@ -409,6 +446,20 @@ impl Value {
                 ValueInner::MapSet(subset_domain, subset_range),
                 ValueInner::MapSet(superset_domain, superset_range),
             ) => subset_domain == superset_domain && subset_range.subseteq(superset_range)?,
+            // Infinite set relationships
+            (ValueInner::InfiniteNat, ValueInner::InfiniteNat) => true,
+            (ValueInner::InfiniteNat, ValueInner::InfiniteInt) => true,
+            (ValueInner::InfiniteInt, ValueInner::InfiniteInt) => true,
+            (ValueInner::InfiniteInt, ValueInner::InfiniteNat) => false,
+            // Use the `contains` definition for infinite sets
+            (_, ValueInner::InfiniteNat | ValueInner::InfiniteInt) if self.is_set() => {
+                let self_set = self.as_set()?;
+                self_set
+                    .iter()
+                    .try_fold(true, |acc, v| Ok(acc && superset.contains(v)?))?
+            }
+            // Infinite sets can't be subsets of finite sets
+            (ValueInner::InfiniteInt, _) | (ValueInner::InfiniteNat, _) => false,
             // Fall back to the native implementation (`is_subset`) if no optimization is possible
             (_, _) => {
                 let self_set = self.as_set()?;
@@ -455,6 +506,8 @@ impl Value {
                 | ValueInner::CrossProduct(_)
                 | ValueInner::PowerSet(_)
                 | ValueInner::MapSet(_, _)
+                | ValueInner::InfiniteInt
+                | ValueInner::InfiniteNat
         )
     }
 
@@ -496,7 +549,7 @@ impl Value {
 
             ValueInner::PowerSet(value) => {
                 let base = value.as_set()?;
-                let size: usize = self.cardinality()?;
+                let size: u64 = self.cardinality()?;
                 Cow::Owned(
                     (0..size)
                         .map(|i| powerset_at_index(base.as_ref(), i))
@@ -545,6 +598,14 @@ impl Value {
 
                 Cow::Owned(result_set)
             }
+            ValueInner::InfiniteInt => Err(QuintError::new(
+                "QNT501",
+                "Infinite set Int is non-enumerable",
+            ))?,
+            ValueInner::InfiniteNat => Err(QuintError::new(
+                "QNT501",
+                "Infinite set Nat is non-enumerable",
+            ))?,
             _ => panic!("Expected set"),
         })
     }
@@ -625,11 +686,11 @@ impl Value {
 ///
 /// In practice, the index comes from a stateful random number generator, and we
 /// want the same seed to produce the same results.
-pub fn powerset_at_index(base: &ImmutableSet<Value>, i: usize) -> Value {
+pub fn powerset_at_index(base: &ImmutableSet<Value>, i: u64) -> Value {
     let mut elems = ImmutableSet::default();
     for (j, elem) in base.iter().enumerate() {
         // Check if the j-th bit is set in the index
-        if (i & (1 << j)) != 0 {
+        if (i & (1u64 << j)) != 0 {
             elems.insert(elem.clone());
         }
     }
@@ -674,6 +735,8 @@ impl fmt::Display for Value {
                 }
                 write!(f, ")")
             }
+            ValueInner::InfiniteInt => write!(f, "Int"),
+            ValueInner::InfiniteNat => write!(f, "Nat"),
             ValueInner::Tuple(elems) => {
                 write!(f, "(")?;
                 for (i, elem) in elems.iter().enumerate() {

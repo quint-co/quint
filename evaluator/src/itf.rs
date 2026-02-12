@@ -5,6 +5,7 @@
 //! This format can be parsed by Quint's typescript tool and by the ITF trace
 //! viewer extension on VSCode.
 
+use crate::trace_quality::TraceQuality;
 use crate::value::{Str, Value, ValueInner};
 use chrono;
 use itf;
@@ -29,11 +30,21 @@ pub struct DebugMessage {
     pub value: Value,
 }
 
-impl Trace {
-    pub fn has_diagnostics(&self) -> bool {
+impl TraceQuality for Trace {
+    fn is_violation(&self) -> bool {
+        self.violation
+    }
+
+    fn has_diagnostics(&self) -> bool {
         self.states.iter().any(|s| !s.diagnostics.is_empty())
     }
 
+    fn trace_length(&self) -> usize {
+        self.states.len()
+    }
+}
+
+impl Trace {
     pub fn to_itf(self, source: String) -> itf::Trace<itf::Value> {
         let mut vars = Vec::new();
         if let Some(state) = self.states.first() {
@@ -112,6 +123,12 @@ impl Value {
             ValueInner::Int(i) => itf::Value::Number(*i),
             ValueInner::Bool(b) => itf::Value::Bool(*b),
             ValueInner::Str(s) => itf::Value::String(s.to_string()),
+            ValueInner::InfiniteInt => itf::Value::Unserializable(
+                serde_json::from_value(serde_json::json!({"#unserializable": "Int"})).unwrap(),
+            ),
+            ValueInner::InfiniteNat => itf::Value::Unserializable(
+                serde_json::from_value(serde_json::json!({"#unserializable": "Nat"})).unwrap(),
+            ),
             ValueInner::Set(_)
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)
