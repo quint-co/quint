@@ -467,6 +467,7 @@ fn simulate_in_parallel(
         trace_statistics: last_trace_statistics,
         witnessing_traces: aggregated_witnesses,
         samples,
+        violated_invariants: vec![],
     }
 }
 

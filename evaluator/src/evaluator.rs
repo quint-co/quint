@@ -727,7 +727,7 @@ impl Interpreter {
         let parsed = ParsedQuint {
             init: init_ex,
             step: step_ex,
-            invariant: inv_ex,
+            invariants: vec![inv_ex],
             witnesses: vec![],
             table: self.table.clone(),
         };
