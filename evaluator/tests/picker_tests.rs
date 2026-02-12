@@ -143,3 +143,95 @@ fn powerset_very_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>>
 
     Ok(())
 }
+
+#[test]
+fn int_pick_can_be_negative() -> Result<(), Box<dyn std::error::Error>> {
+    // Test that picking from Int can return negative numbers
+    let quint_content = "module main {
+          var x: int
+          val input = x
+          action init = {
+            nondet v = Int.oneOf()
+            x' = v
+          }
+          action step = x' = x
+        }";
+
+    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let init_def = parsed.find_definition_by_name("init")?;
+    let mut interpreter = Interpreter::new(parsed.table.clone());
+
+    // Try multiple seeds to find a negative number
+    let mut found_negative = false;
+    let mut found_positive = false;
+
+    for seed in 0..100 {
+        let mut env =
+            Env::with_rand_state(interpreter.var_storage.clone(), seed, Verbosity::default());
+        let init = interpreter.eval(&mut env, init_def.expr.clone());
+        assert!(init.is_ok());
+
+        interpreter.shift();
+        let input_def = parsed.find_definition_by_name("input")?;
+        let input = interpreter.eval(&mut env, input_def.expr.clone())?;
+
+        if let quint_evaluator::value::ValueInner::Int(n) = input.0.as_ref() {
+            if *n < 0 {
+                found_negative = true;
+            }
+            if *n > 0 {
+                found_positive = true;
+            }
+            if found_negative && found_positive {
+                break;
+            }
+        }
+    }
+
+    assert!(
+        found_negative,
+        "Int.oneOf() should be able to return negative numbers"
+    );
+    assert!(
+        found_positive,
+        "Int.oneOf() should be able to return positive numbers"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn nat_pick_is_non_negative() -> Result<(), Box<dyn std::error::Error>> {
+    // Test that picking from Nat only returns non-negative numbers
+    let quint_content = "module main {
+          var x: int
+          val input = x
+          action init = {
+            nondet v = Nat.oneOf()
+            x' = v
+          }
+          action step = x' = x
+        }";
+
+    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let init_def = parsed.find_definition_by_name("init")?;
+    let mut interpreter = Interpreter::new(parsed.table.clone());
+
+    // Try multiple seeds to ensure we never get a negative number
+    for seed in 0..100 {
+        let mut env =
+            Env::with_rand_state(interpreter.var_storage.clone(), seed, Verbosity::default());
+        let init = interpreter.eval(&mut env, init_def.expr.clone());
+        assert!(init.is_ok());
+
+        interpreter.shift();
+        let input_def = parsed.find_definition_by_name("input")?;
+        let input = interpreter.eval(&mut env, input_def.expr.clone())?;
+
+        if let quint_evaluator::value::ValueInner::Int(n) = input.0.as_ref() {
+            assert!(*n >= 0, "Nat.oneOf() returned a negative number: {}", n);
+        }
+    }
+
+    Ok(())
+}

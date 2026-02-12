@@ -706,6 +706,8 @@ fn builtin_value(name: &str) -> CompiledExpr {
                 Value::bool(false),
             ])))
         }),
+        "Int" => CompiledExpr::new(move |_| Ok(Value::infinite_int())),
+        "Nat" => CompiledExpr::new(move |_| Ok(Value::infinite_nat())),
         _ => unimplemented!("Unknown builtin name: {}", name),
     }
 }

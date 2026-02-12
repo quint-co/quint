@@ -40,12 +40,11 @@ impl Rand {
         }
     }
 
-    pub fn next(&mut self, bound: usize) -> usize {
-        let bound64: u64 = bound.try_into().unwrap();
+    pub fn next(&mut self, bound: u64) -> u64 {
         let number = rand64(self.key, self.counter);
         self.counter = self.counter.saturating_add(1);
 
-        (number % bound64).try_into().unwrap()
+        number % bound
     }
 
     pub fn get_state(&self) -> u64 {
@@ -55,11 +54,9 @@ impl Rand {
     /// Generate a random BigUint in the range [0, bound).
     /// Maintains determinism by using the current counter state to seed the RNG.
     pub fn next_biguint(&mut self, bound: &BigUint) -> BigUint {
-        // For small bounds that fit in usize, use existing deterministic path
+        // For small bounds that fit in u64, use existing deterministic path
         if let Some(bound_u64) = bound.to_u64() {
-            if bound_u64 <= usize::MAX as u64 {
-                return BigUint::from(self.next(bound_u64 as usize));
-            }
+            return BigUint::from(self.next(bound_u64));
         }
 
         // For large bounds, create a seeded RNG from current state

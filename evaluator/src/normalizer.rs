@@ -10,6 +10,8 @@ impl Value {
     pub fn normalize(self) -> Result<Value, QuintError> {
         Ok(match self.0.as_ref() {
             ValueInner::Int(_) | ValueInner::Bool(_) | ValueInner::Str(_) => self,
+            // Infinite sets cannot be normalized (they're already in canonical form)
+            ValueInner::InfiniteInt | ValueInner::InfiniteNat => self,
             ValueInner::Set(_)
             | ValueInner::Interval(_, _)
             | ValueInner::CrossProduct(_)
