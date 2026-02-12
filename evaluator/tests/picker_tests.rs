@@ -166,7 +166,8 @@ fn int_pick_can_be_negative() -> Result<(), Box<dyn std::error::Error>> {
     let mut found_positive = false;
 
     for seed in 0..100 {
-        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
+        let mut env =
+            Env::with_rand_state(interpreter.var_storage.clone(), seed, Verbosity::default());
         let init = interpreter.eval(&mut env, init_def.expr.clone());
         assert!(init.is_ok());
 
@@ -218,7 +219,8 @@ fn nat_pick_is_non_negative() -> Result<(), Box<dyn std::error::Error>> {
 
     // Try multiple seeds to ensure we never get a negative number
     for seed in 0..100 {
-        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), seed);
+        let mut env =
+            Env::with_rand_state(interpreter.var_storage.clone(), seed, Verbosity::default());
         let init = interpreter.eval(&mut env, init_def.expr.clone());
         assert!(init.is_ok());
 
