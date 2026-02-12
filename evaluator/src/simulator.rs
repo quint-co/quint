@@ -5,10 +5,11 @@ use crate::{
     ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
     progress::Reporter,
+    verbosity::Verbosity,
 };
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::{cmp::Ordering, fmt};
 
 /// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize, Clone)]
@@ -18,6 +19,22 @@ pub struct ParsedQuint {
     pub invariant: QuintEx,
     pub witnesses: Vec<QuintEx>,
     pub table: LookupTable,
+}
+
+/// Configuration for simulation runs.
+pub struct SimulationConfig {
+    /// Number of steps to simulate per sample
+    pub steps: usize,
+    /// Number of samples to run
+    pub samples: usize,
+    /// Maximum number of traces to collect
+    pub n_traces: usize,
+    /// Optional seed for reproducibility
+    pub seed: Option<u64>,
+    /// Whether to store metadata for model-based testing
+    pub store_metadata: bool,
+    /// Verbosity level for output
+    pub verbosity: Verbosity,
 }
 
 /// Simulation output.
@@ -72,21 +89,36 @@ impl ParsedQuint {
     /// for reproducibility. Otherwise, a random seed will be generated.
     pub fn simulate<R: Reporter>(
         &self,
-        steps: usize,
-        samples: usize,
-        n_traces: usize,
+        config: SimulationConfig,
         mut reporter: R,
-        seed: Option<u64>,
     ) -> Result<SimulationResult, SimulationError> {
+        let SimulationConfig {
+            steps,
+            samples,
+            n_traces,
+            seed,
+            store_metadata,
+            verbosity,
+        } = config;
         let mut interpreter = Interpreter::new(self.table.clone());
+        // Setup the store metadata flag for MBT.
+        // This was deliberately not passed as an argument to the Interpreter constructor.
+        interpreter
+            .var_storage
+            .borrow_mut()
+            .set_store_metadata(store_metadata);
         let mut env = match seed {
-            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
-            None => Env::new(interpreter.var_storage.clone()),
+            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s, verbosity),
+            None => Env::new(interpreter.var_storage.clone(), verbosity),
         };
 
         let init = interpreter.compile(&self.init);
         let step = interpreter.compile(&self.step);
         let invariant = interpreter.compile(&self.invariant);
+
+        if store_metadata {
+            interpreter.create_nondet_picks();
+        }
 
         // Compile witnesses and initialize tracking
         let compiled_witnesses: Vec<_> = self
@@ -182,6 +214,7 @@ impl ParsedQuint {
                             violation: !success,
                             seed,
                         },
+                        verbosity,
                     );
 
                     if !success {
@@ -264,8 +297,13 @@ fn get_trace_statistics(trace_lengths: &[usize]) -> TraceStatistics {
 /// Collect a trace of the simulation, up to a maximum of `n_traces`.
 ///
 /// Assumes `best_traces` is sorted by quality.
-fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
-    insert_trace_sorted_by_quality(best_traces, trace);
+fn collect_trace(
+    best_traces: &mut Vec<Trace>,
+    n_traces: usize,
+    trace: Trace,
+    verbosity: Verbosity,
+) {
+    insert_trace_sorted_by_quality(best_traces, trace, verbosity);
     if best_traces.len() > n_traces {
         best_traces.pop();
     }
@@ -273,22 +311,49 @@ fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
 
 /// Compare two traces by quality.
 ///
-/// Prefer short traces for error, and longer traces for non error.
-/// Therefore, trace a is better than trace b iff
+/// Prefer short traces for error, and longer traces for non error. Therefore,
+/// trace a is better than trace b iff:
+///
 ///  - when a has an error: a is shorter or b has no error;
 ///  - when a has no error: a is longer and b has no error.
-fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
-    match (a.violation, b.violation) {
-        (true, true) => a.states.len().cmp(&b.states.len()),
-        (true, false) => std::cmp::Ordering::Less,
-        (false, true) => std::cmp::Ordering::Greater,
-        (false, false) => b.states.len().cmp(&a.states.len()),
+///
+/// For traces considered of equal value, both errors or both non-errors, we
+/// consider the one with diagnostics to be better.
+fn compare_traces_by_quality(a: &Trace, b: &Trace, verbosity: Verbosity) -> Ordering {
+    #[inline]
+    fn flag_cmp<F>(a: bool, b: bool, elze: F) -> Ordering
+    where
+        F: FnOnce(bool) -> Ordering,
+    {
+        match (a, b) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            _ => elze(a), // a and b can only be equal here
+        }
     }
+
+    flag_cmp(a.violation, b.violation, |both_violations| {
+        flag_cmp(
+            verbosity.has_diagnostics() && a.has_diagnostics(),
+            verbosity.has_diagnostics() && b.has_diagnostics(),
+            |_| {
+                if both_violations {
+                    a.states.len().cmp(&b.states.len())
+                } else {
+                    b.states.len().cmp(&a.states.len())
+                }
+            },
+        )
+    })
 }
 
 /// Insert a trace into a sorted vector of traces, maintaining the order by quality.
-fn insert_trace_sorted_by_quality(best_traces: &mut Vec<Trace>, trace: Trace) {
-    let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace));
+fn insert_trace_sorted_by_quality(
+    best_traces: &mut Vec<Trace>,
+    trace: Trace,
+    verbosity: Verbosity,
+) {
+    let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace, verbosity));
     match index {
         Ok(index) => best_traces.insert(index, trace),
         Err(index) => best_traces.insert(index, trace),

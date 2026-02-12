@@ -14,8 +14,11 @@ use argh::FromArgs;
 use eyre::bail;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
 use quint_evaluator::progress;
-use quint_evaluator::simulator::{ParsedQuint, SimulationError, SimulationResult, TraceStatistics};
+use quint_evaluator::simulator::{
+    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
+};
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
+use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
@@ -74,6 +77,10 @@ struct RunArgs {
     /// random seed for reproducibility
     #[argh(option)]
     seed: Option<u64>,
+
+    /// whether to produce metadata to be used by model-based testing (default: false)
+    #[argh(switch)]
+    mbt: bool,
 }
 
 /// Run simulation with input from STDIN
@@ -92,7 +99,7 @@ struct TestQuintArgs {}
 struct ReplFromStdinArgs {}
 
 /// Data expected on STDIN for simulation
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct SimulateInput {
     parsed: ParsedQuint,
     source: String,
@@ -104,6 +111,9 @@ struct SimulateInput {
     /// Optional seed for reproducibility. If provided, the simulation will use this seed.
     #[serde(default)]
     seed: Option<u64>,
+    #[serde(default)]
+    mbt: bool,
+    verbosity: Verbosity,
 }
 
 #[derive(Eq, PartialEq, Serialize)]
@@ -144,6 +154,8 @@ struct TestInput {
     #[serde(default)]
     seed: Option<u64>,
     max_samples: usize,
+    #[serde(default)]
+    verbosity: Verbosity,
 }
 
 #[derive(Serialize)]
@@ -211,13 +223,15 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
 
     let start = Instant::now();
     log!("Simulation", "Starting simulation");
-    let result = parsed.simulate(
-        args.max_steps,
-        args.max_samples,
-        args.n_traces,
-        progress::no_report(),
-        args.seed,
-    );
+    let config = SimulationConfig {
+        steps: args.max_steps,
+        samples: args.max_samples,
+        n_traces: args.n_traces,
+        seed: args.seed,
+        store_metadata: args.mbt,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report());
 
     let elapsed = start.elapsed();
 
@@ -254,17 +268,27 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         ntraces,
         nthreads,
         seed,
+        mbt,
+        verbosity,
         ..
     } = serde_json::from_reader(io::stdin())?;
 
     let source = Arc::new(source);
 
     // When a seed is provided, we use single-threaded execution for reproducibility
+    let config = SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed,
+        store_metadata: mbt,
+        verbosity,
+    };
     let outcome = if nthreads > 1 && seed.is_none() {
-        simulate_in_parallel(source, parsed, nsteps, nruns, ntraces, nthreads)
+        simulate_in_parallel(source, parsed, config, nthreads)
     } else {
         let reporter = progress::json_std_err_report(nruns);
-        let result = parsed.simulate(nsteps, nruns, ntraces, reporter, seed);
+        let result = parsed.simulate(config, reporter);
         to_sim_output(source, result)
     };
 
@@ -286,6 +310,7 @@ fn test_from_stdin() -> eyre::Result<()> {
         table,
         seed,
         max_samples,
+        verbosity,
     } = serde_json::from_reader(io::stdin())?;
 
     // Create test case and execute with progress reporting
@@ -295,7 +320,7 @@ fn test_from_stdin() -> eyre::Result<()> {
         name,
     };
     let reporter = progress::json_std_err_report(max_samples);
-    let result = test_case.execute(seed, max_samples, reporter);
+    let result = test_case.execute(seed, max_samples, reporter, verbosity);
     let output = to_test_output(result);
     serde_json::to_writer(io::stdout(), &output)?;
 
@@ -308,11 +333,17 @@ fn test_from_stdin() -> eyre::Result<()> {
 fn simulate_in_parallel(
     source: Arc<String>,
     parsed: ParsedQuint,
-    nsteps: usize,
-    nruns: usize,
-    ntraces: usize,
+    config: SimulationConfig,
     mut nthreads: usize,
 ) -> SimOutput {
+    let SimulationConfig {
+        steps: nsteps,
+        samples: nruns,
+        n_traces: ntraces,
+        seed: _,
+        store_metadata: mbt,
+        verbosity,
+    } = config;
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
     let mut threads = Vec::with_capacity(nthreads);
@@ -342,7 +373,15 @@ fn simulate_in_parallel(
         let thread = std::thread::Builder::new()
             .name(format!("simulator-thread-{i}"))
             .spawn(move || {
-                let result = parsed.simulate(nsteps, nruns, ntraces, reporter, None);
+                let config = SimulationConfig {
+                    steps: nsteps,
+                    samples: nruns,
+                    n_traces: ntraces,
+                    seed: None,
+                    store_metadata: mbt,
+                    verbosity,
+                };
+                let result = parsed.simulate(config, reporter);
                 let outcome = to_sim_output(source, result);
                 let _ = out_tx.send(outcome);
             })
@@ -392,11 +431,11 @@ fn simulate_in_parallel(
 fn to_test_output(result: TestResult) -> TestOutput {
     let traces = result
         .traces
-        .iter()
+        .into_iter()
         .map(|t| TestTrace {
-            seed: t.seed as usize,
-            states: t.clone().to_itf(result.name.clone()),
             result: !t.violation,
+            seed: t.seed as usize,
+            states: t.to_itf(result.name.clone()),
         })
         .collect();
 
@@ -419,50 +458,51 @@ fn to_sim_output(
     source: Arc<String>,
     result: Result<SimulationResult, SimulationError>,
 ) -> SimOutput {
-    let status = match &result {
-        Ok(r) if r.result => SimulationStatus::Success,
-        Ok(_) => SimulationStatus::Violation,
-        Err(_) => SimulationStatus::Error,
-    };
+    match result {
+        Ok(result) => {
+            let SimulationResult {
+                result,
+                best_traces,
+                trace_statistics,
+                witnessing_traces,
+                samples,
+            } = result;
 
-    let errors = result
-        .as_ref()
-        .err()
-        .map_or_else(Vec::new, |e| vec![e.error.clone()]);
+            SimOutput {
+                samples,
+                trace_statistics,
+                witnessing_traces,
+                status: if result {
+                    SimulationStatus::Success
+                } else {
+                    SimulationStatus::Violation
+                },
+                best_traces: best_traces
+                    .into_iter()
+                    .map(|t| SimulationTrace {
+                        seed: t.seed as usize,
+                        result: !t.violation,
+                        states: t.to_itf(source.to_string()),
+                    })
+                    .collect(),
+                errors: vec![],
+            }
+        }
+        Err(error) => {
+            let SimulationError { seed, trace, error } = error;
 
-    let best_traces = result.as_ref().map_or_else(
-        |e| {
-            // Include the error trace in best_traces so it gets reported to the user
-            vec![SimulationTrace {
-                seed: e.seed as usize,
-                states: e.trace.clone().to_itf((*source).clone()),
-                result: false,
-            }]
-        },
-        |r| {
-            r.best_traces
-                .iter()
-                .map(|t| SimulationTrace {
-                    seed: t.seed as usize,
-                    states: t.clone().to_itf((*source).clone()),
-                    result: !t.violation,
-                })
-                .collect()
-        },
-    );
-
-    SimOutput {
-        status,
-        errors,
-        best_traces,
-        trace_statistics: result
-            .as_ref()
-            .ok()
-            .map_or_else(TraceStatistics::default, |r| r.trace_statistics.clone()),
-        samples: result.as_ref().map_or(0, |r| r.samples),
-        witnessing_traces: result
-            .as_ref()
-            .ok()
-            .map_or_else(Vec::new, |r| r.witnessing_traces.clone()),
+            SimOutput {
+                samples: 0,
+                status: SimulationStatus::Error,
+                trace_statistics: TraceStatistics::default(),
+                errors: vec![error],
+                best_traces: vec![SimulationTrace {
+                    seed: seed as usize,
+                    states: trace.to_itf(source.to_string()),
+                    result: false,
+                }],
+                witnessing_traces: vec![],
+            }
+        }
     }
 }

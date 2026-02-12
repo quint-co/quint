@@ -4,6 +4,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use quint_evaluator::evaluator::{Env, Interpreter};
 use quint_evaluator::helpers;
 use quint_evaluator::simulator::ParsedQuint;
+use quint_evaluator::Verbosity;
 
 fn simulate(
     parsed: &ParsedQuint,
@@ -11,7 +12,7 @@ fn simulate(
     samples: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut interpreter = Interpreter::new(parsed.table.clone());
-    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42);
+    let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 0x42, Verbosity::default());
 
     let init = interpreter.compile(&parsed.init);
     let step = interpreter.compile(&parsed.step);

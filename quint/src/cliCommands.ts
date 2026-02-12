@@ -408,11 +408,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt) {
-      console.warn(chalk.yellow('Warning: --mbt is ignored when using the Rust backend (at this time).'))
-      console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
-    }
-
     // Parse the combined invariant for the Rust backend
     const invariantExpr = toExpr(prev, invariantString)
     if (invariantExpr.isLeft()) {
@@ -440,6 +435,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       prev.args.nTraces ?? 1,
       nThreads,
       prev.args.seed,
+      prev.args.mbt,
       options.onTrace
     )
   } else {
@@ -461,10 +457,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   simulator.seed = outcome.bestTraces[0]?.seed
   const states = outcome.bestTraces[0]?.states
+  const diagnostics = outcome.bestTraces[0]?.diagnostics || []
   const frames = recorder.bestTraces[0]?.frame?.subframes
 
   if (states && states.length > 0) {
-    maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
+    maybePrintCounterExample(verbosityLevel, states, diagnostics, frames, prev.args.hide || [])
   }
 
   switch (outcome.status) {

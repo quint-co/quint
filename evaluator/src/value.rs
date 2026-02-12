@@ -315,8 +315,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: base set size {} exceeds the maximum supported exponent size",
-                            base_size
+                            "Integer overflow in cardinality computation: base set size {base_size} exceeds the maximum supported exponent size"
                         ),
                     )
                 })?;
@@ -324,8 +323,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: powerset size 2^{} exceeds the maximum supported size",
-                            base_size
+                            "Integer overflow in cardinality computation: powerset size 2^{base_size} exceeds the maximum supported size"
                         ),
                     )
                 })
@@ -338,8 +336,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: domain set size {} exceeds the maximum supported exponent size",
-                            domain_size
+                            "Integer overflow in cardinality computation: domain set size {domain_size} exceeds the maximum supported exponent size"
                         ),
                     )
                 })?;
@@ -347,8 +344,7 @@ impl Value {
                     QuintError::new(
                         "QNT601",
                         &format!(
-                            "Integer overflow in cardinality computation: map set size {}^{} exceeds the maximum supported size",
-                            range_size, domain_size
+                            "Integer overflow in cardinality computation: map set size {range_size}^{domain_size} exceeds the maximum supported size"
                         ),
                     )
                 })
