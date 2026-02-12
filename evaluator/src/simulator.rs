@@ -5,6 +5,8 @@ use crate::{
     ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
     progress::Reporter,
+    trace_quality::insert_sorted_by_quality,
+    verbosity::Verbosity,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -18,6 +20,22 @@ pub struct ParsedQuint {
     pub invariant: QuintEx,
     pub witnesses: Vec<QuintEx>,
     pub table: LookupTable,
+}
+
+/// Configuration for simulation runs.
+pub struct SimulationConfig {
+    /// Number of steps to simulate per sample
+    pub steps: usize,
+    /// Number of samples to run
+    pub samples: usize,
+    /// Maximum number of traces to collect
+    pub n_traces: usize,
+    /// Optional seed for reproducibility
+    pub seed: Option<u64>,
+    /// Whether to store metadata for model-based testing
+    pub store_metadata: bool,
+    /// Verbosity level for output
+    pub verbosity: Verbosity,
 }
 
 /// Simulation output.
@@ -75,13 +93,17 @@ impl ParsedQuint {
     /// for reproducibility. Otherwise, a random seed will be generated.
     pub fn simulate<R: Reporter>(
         &self,
-        steps: usize,
-        samples: usize,
-        n_traces: usize,
+        config: SimulationConfig,
         mut reporter: R,
-        seed: Option<u64>,
-        store_metadata: bool,
     ) -> Result<SimulationResult, SimulationError> {
+        let SimulationConfig {
+            steps,
+            samples,
+            n_traces,
+            seed,
+            store_metadata,
+            verbosity,
+        } = config;
         let mut interpreter = Interpreter::new(self.table.clone());
         // Setup the store metadata flag for MBT.
         // This was deliberately not passed as an argument to the Interpreter constructor.
@@ -90,8 +112,8 @@ impl ParsedQuint {
             .borrow_mut()
             .set_store_metadata(store_metadata);
         let mut env = match seed {
-            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s),
-            None => Env::new(interpreter.var_storage.clone()),
+            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s, verbosity),
+            None => Env::new(interpreter.var_storage.clone(), verbosity),
         };
 
         let init = interpreter.compile(&self.init);
@@ -188,15 +210,15 @@ impl ParsedQuint {
                     }
 
                     trace_lengths.push(env.trace.len());
-
-                    collect_trace(
+                    insert_sorted_by_quality(
                         &mut best_traces,
-                        n_traces,
                         Trace {
                             states: std::mem::take(&mut env.trace),
                             violation: !success,
                             seed,
                         },
+                        n_traces,
+                        verbosity,
                     );
 
                     if !success {
@@ -275,48 +297,5 @@ fn get_trace_statistics(trace_lengths: &[usize]) -> TraceStatistics {
             / trace_lengths.len() as f64,
         max_trace_length: *trace_lengths.iter().max().unwrap_or(&0),
         min_trace_length: *trace_lengths.iter().min().unwrap_or(&0),
-    }
-}
-
-/// Collect a trace of the simulation, up to a maximum of `n_traces`.
-///
-/// Assumes `best_traces` is sorted by quality.
-fn collect_trace(best_traces: &mut Vec<Trace>, n_traces: usize, trace: Trace) {
-    insert_trace_sorted_by_quality(best_traces, trace);
-    if best_traces.len() > n_traces {
-        best_traces.pop();
-    }
-}
-
-/// Compare two traces by quality using their violation status and length.
-///
-/// Prefer short traces for error, and longer traces for non error.
-/// Therefore, trace a is better than trace b iff
-///  - when a has an error: a is shorter or b has no error;
-///  - when a has no error: a is longer and b has no error.
-pub fn compare_trace_quality(
-    a_violation: bool,
-    a_len: usize,
-    b_violation: bool,
-    b_len: usize,
-) -> std::cmp::Ordering {
-    match (a_violation, b_violation) {
-        (true, true) => a_len.cmp(&b_len),
-        (true, false) => std::cmp::Ordering::Less,
-        (false, true) => std::cmp::Ordering::Greater,
-        (false, false) => b_len.cmp(&a_len),
-    }
-}
-
-fn compare_traces_by_quality(a: &Trace, b: &Trace) -> std::cmp::Ordering {
-    compare_trace_quality(a.violation, a.states.len(), b.violation, b.states.len())
-}
-
-/// Insert a trace into a sorted vector of traces, maintaining the order by quality.
-fn insert_trace_sorted_by_quality(best_traces: &mut Vec<Trace>, trace: Trace) {
-    let index = best_traces.binary_search_by(|t| compare_traces_by_quality(t, &trace));
-    match index {
-        Ok(index) => best_traces.insert(index, trace),
-        Err(index) => best_traces.insert(index, trace),
     }
 }

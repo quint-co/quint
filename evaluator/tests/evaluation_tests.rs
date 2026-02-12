@@ -4,6 +4,7 @@ use quint_evaluator::{
     evaluator::{run, Env, EvalResult, Interpreter},
     helpers,
     value::Value,
+    Verbosity,
 };
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -70,7 +71,7 @@ fn eval_run(callee: &str, input: &str) -> EvalResult {
     let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
     let run_def = parsed.find_definition_by_name(callee).unwrap();
     let mut interpreter = Interpreter::new(parsed.table.clone());
-    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
 
     interpreter.eval(&mut env, run_def.expr.clone())
 }
@@ -96,7 +97,7 @@ fn assert_var_after_run(
     let parsed = helpers::parse(&quint_content, "init", "step", None)?;
     let run_def = parsed.find_definition_by_name(callee)?;
     let mut interpreter = Interpreter::new(parsed.table.clone());
-    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
 
     let run_result = interpreter.eval(&mut env, run_def.expr.clone());
 
@@ -1228,6 +1229,61 @@ fn run_q_debug_single_arg() -> Result<(), Box<dyn std::error::Error>> {
         "var n: int\n
          run run1 = (n' = 1).then(n' = q::debug(n + 1))",
     )
+}
+
+#[test]
+fn compile_int_builtin() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Int", "Int")
+}
+
+#[test]
+fn compile_int_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Int.contains(123)", "true")?;
+    assert_from_string("Int.contains(0)", "true")?;
+    assert_from_string("Int.contains(-123)", "true")
+}
+
+#[test]
+fn compile_nat_builtin() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat", "Nat")
+}
+
+#[test]
+fn compile_nat_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat.contains(123)", "true")?;
+    assert_from_string("Nat.contains(0)", "true")?;
+    assert_from_string("Nat.contains(-123)", "false")
+}
+
+#[test]
+fn compile_subseteq_nat_int() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat.subseteq(Nat)", "true")?;
+    assert_from_string("Nat.subseteq(Int)", "true")?;
+    assert_from_string("Int.subseteq(Int)", "true")?;
+    assert_from_string("Int.subseteq(Nat)", "false")
+}
+
+#[test]
+fn compile_equality_nat_int() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat == Nat", "true")?;
+    assert_from_string("Int == Int", "true")?;
+    assert_from_string("Nat == Int", "false")?;
+    assert_from_string("Int == Nat", "false")?;
+    assert_from_string("Int == Set(0, 1)", "false")
+}
+
+#[test]
+fn set_int_fails() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("Set(Int)");
+    assert!(result.is_err(), "Set(Int) should fail");
+    Ok(())
+}
+
+#[test]
+fn set_nat_fails() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("Set(Nat)");
+    assert!(result.is_err(), "Set(Nat) should fail");
+    Ok(())
 }
 
 #[test]

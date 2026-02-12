@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
+import { prettyQuintEx, printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { QuintEx, QuintModule } from './ir/quintIr'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
@@ -18,7 +18,7 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { ofItfNormalized, toItf } from './itf'
+import { DebugMessage, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left } from '@sweet-monads/either'
 import { cwd } from 'process'
@@ -29,6 +29,7 @@ import { QuintError } from './quintError'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
 import { ErrorMessage } from './ErrorMessage'
+import { Doc, brackets, format, line, nest, space, text } from './prettierimp'
 
 export type TraceHook = (index: number, status: string, vars: string[], states: QuintEx[], name?: string) => void
 
@@ -43,6 +44,7 @@ export type TraceHook = (index: number, status: string, vars: string[], states: 
 export function maybePrintCounterExample(
   verbosityLevel: number,
   states: QuintEx[],
+  diagnostics: DebugMessage[][],
   frames: ExecutionFrame[] = [],
   hideVars: string[] = []
 ): void {
@@ -52,7 +54,7 @@ export function maybePrintCounterExample(
       width: terminalWidth(),
       out: (s: string) => process.stdout.write(s),
     }
-    printTrace(myConsole, states, frames, hideVars)
+    printTrace(myConsole, states, diagnostics, frames, hideVars)
   }
 }
 
@@ -172,7 +174,7 @@ export function processApalacheResult(
       const status = trace !== undefined ? 'violation' : 'failure'
 
       if (trace !== undefined) {
-        maybePrintCounterExample(verbosityLevel, trace, [], stage.args.hide || [])
+        maybePrintCounterExample(verbosityLevel, trace, [], [], stage.args.hide || [])
 
         if (verbosity.hasResults(verbosityLevel)) {
           console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
@@ -305,11 +307,25 @@ export function outputTestResults(results: TestResult[], verbosityLevel: number,
     results.forEach(res => {
       if (res.status === 'passed') {
         out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-      }
-      if (res.status === 'failed') {
+      } else if (res.status === 'failed') {
         const errNo = chalk.red(nFailures)
         out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
         nFailures++
+      }
+      if (res.status !== 'ignored') {
+        for (const msgs of res.traces?.at(0)?.diagnostics || []) {
+          for (const msg of msgs) {
+            const doc: Doc = nest('       ', [
+              text('       '),
+              brackets(text('DEBUG')),
+              space,
+              text(msg.label),
+              line(),
+              prettyQuintEx(msg.value),
+            ])
+            out(format(terminalWidth(), 5, doc))
+          }
+        }
       }
     })
 
@@ -356,7 +372,7 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
         out('')
         // Skip frame display for Rust backend
         if (!testResult.traces) {
-          testResult.frames.forEach((f, index) => {
+          testResult.frames?.forEach((f, index) => {
             out(`[${chalk.bold('Frame ' + index)}]`)
             const console = {
               width: columns,
@@ -366,7 +382,7 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
             out('')
           })
 
-          if (testResult.frames.length == 0) {
+          if (testResult.frames?.length == 0) {
             out('    [No execution]')
           }
         }
