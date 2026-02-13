@@ -237,6 +237,86 @@ export class CommandWrapper {
   }
 
   /**
+   * Evaluate expressions at a given state using the Rust evaluator.
+   *
+   * @param {LookupTable} table - The lookup table for name resolution.
+   * @param {QuintEx} state - The state (as a record expression) to evaluate in.
+   * @param {QuintEx[]} exprs - The expressions to evaluate at the given state.
+   *
+   * @returns The evaluation results for each expression.
+   */
+  async evaluateAtState(
+    table: LookupTable,
+    state: QuintEx,
+    exprs: QuintEx[]
+  ): Promise<{ results: { value?: any; error?: QuintError }[] }> {
+    const input = { table, state, exprs }
+    const result = await this.runRustEvaluatorSimple('evaluate-at-state-from-stdin', input)
+
+    if (result.isLeft()) {
+      throw new Error(`Rust evaluator failed: ${result.value.message}`)
+    }
+
+    return JSONbig.parse(result.value, reviver)
+  }
+
+  /**
+   * Run the Rust evaluator with the given command and input.
+   * Simplified version without progress bar, for quick one-shot evaluations.
+   */
+  private async runRustEvaluatorSimple(command: string, input: any): Promise<Either<QuintError, string>> {
+    const exe = await getRustEvaluatorPath()
+    const args = [command]
+
+    let inputStr: string
+    try {
+      inputStr = JSONbig.stringify(input, bigintCheckerReplacer)
+    } catch (error) {
+      if (isQuintError(error)) {
+        return left(error)
+      }
+      throw error
+    }
+
+    debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
+
+    const process = spawn(exe, args, {
+      shell: false,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    process.stdin.write(inputStr)
+    process.stdin.end()
+
+    process.on('error', (err: Error) => {
+      throw new Error(`Failed to launch Rust evaluator: ${err.message}`)
+    })
+
+    const stdout = readline.createInterface({ input: process.stdout, terminal: false })
+
+    let output = ''
+    stdout.on('line', (line: string) => {
+      if (line.trimStart()[0] !== '{') {
+        console.log(line)
+      } else {
+        output = line
+      }
+    })
+
+    const [exitCode, signal] = await new Promise<[number | null, string | null]>(resolve => {
+      process.on('close', (code, signal) => resolve([code, signal]))
+    })
+
+    if (signal) {
+      return left({ code: 'QNT517', message: `Rust evaluator was killed by signal: ${signal}` })
+    } else if (exitCode !== 0) {
+      return left({ code: 'QNT516', message: `Rust evaluator exited with code ${exitCode}` })
+    }
+
+    return right(output)
+  }
+
+  /**
    * Run the Rust evaluator with the given command and input.
    * Shared implementation for all one-shot commands.
    */

@@ -13,7 +13,7 @@
  */
 
 import chalk from 'chalk'
-import { QuintModule } from './ir/quintIr'
+import { QuintEx, QuintModule } from './ir/quintIr'
 import { ApalacheResult, ServerEndpoint, connect, createConfig } from './apalache'
 import { loadTlcConfig, verify as runTlc } from './tlc'
 import { compileToTlaplus } from './compileToTlaplus'
@@ -26,8 +26,9 @@ import {
   processApalacheResult,
   processTlcResult,
 } from './cliReporting'
-import { PLACEHOLDERS, getInvariants, loadApalacheConfig, mkErrorMessage } from './cliHelpers'
+import { PLACEHOLDERS, getInvariants, loadApalacheConfig, mkErrorMessage, toExpr } from './cliHelpers'
 import { verbosity } from './verbosity'
+import { mergeInMany } from '@sweet-monads/either'
 
 // --------------------------------------------------------------------------------
 // TLC
@@ -137,6 +138,15 @@ export async function verifyWithApalacheBackend(
 
   const [invariantsString, invariantsList] = getInvariants(prev.args)
 
+  // Parse individual invariants into QuintEx for Rust-based violation reporting
+  let invariantExprs: QuintEx[] | undefined
+  if (invariantsList.length > 1) {
+    const parsed = mergeInMany(invariantsList.map(inv => toExpr(prev, inv)))
+    if (parsed.isRight()) {
+      invariantExprs = parsed.value
+    }
+  }
+
   if (args.inductiveInvariant) {
     const hasOrdinaryInvariant = invariantsList.length > 0
     const nPhases = hasOrdinaryInvariant ? 3 : 2
@@ -146,7 +156,7 @@ export async function verifyWithApalacheBackend(
     printInductiveInvariantProgress(verbosityLevel, args, 1, nPhases)
 
     const startMs = Date.now()
-    return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
+    return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(async res => {
       if (res.isLeft()) {
         return processApalacheResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
       }
@@ -162,26 +172,38 @@ export async function verifyWithApalacheBackend(
         'q::inductiveInv'
       )
 
-      return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
-        if (res.isLeft() || !hasOrdinaryInvariant) {
-          return processApalacheResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+      return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(
+        async res => {
+          if (res.isLeft() || !hasOrdinaryInvariant) {
+            return processApalacheResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
+          }
+
+          // Checking whether the inductive invariant implies the ordinary invariant
+          printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
+
+          const propConfig = createConfig(
+            loadedConfig,
+            parsedSpec,
+            { ...args, maxSteps: 0 },
+            ['q::inv'],
+            'q::inductiveInv'
+          )
+
+          return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(
+            async res => {
+              return processApalacheResult(
+                res,
+                startMs,
+                verbosityLevel,
+                verifying,
+                invariantsList,
+                invariantExprs,
+                prev.table
+              )
+            }
+          )
         }
-
-        // Checking whether the inductive invariant implies the ordinary invariant
-        printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
-
-        const propConfig = createConfig(
-          loadedConfig,
-          parsedSpec,
-          { ...args, maxSteps: 0 },
-          ['q::inv'],
-          'q::inductiveInv'
-        )
-
-        return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
-          return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList)
-        })
-      })
+      )
     })
   }
 
@@ -190,7 +212,7 @@ export async function verifyWithApalacheBackend(
   const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? ['q::inv'] : [])
   const startMs = Date.now()
 
-  return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
-    return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList)
+  return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(async res => {
+    return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList, invariantExprs, prev.table)
   })
 }

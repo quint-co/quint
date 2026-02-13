@@ -20,12 +20,14 @@ import { writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { DebugMessage, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
-import { Either, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
 import { ApalacheResult } from './apalache'
 import { TlcError } from './tlc'
 import { QuintError } from './quintError'
+import { LookupTable } from './names/base'
+import { CommandWrapper } from './rust/commandWrapper'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
 import { ErrorMessage } from './ErrorMessage'
@@ -162,52 +164,90 @@ export function processTlcResult(
  * @param res The result of the verification.
  * @param startMs The start time in milliseconds.
  * @param verbosityLevel The verbosity level.
- * @param verifying The current tracing stage.
+ * @param stage The current tracing stage.
  * @param invariantsList The list of invariants.
- * @param prev The previous stage context.
+ * @param invariantExprs Optional parsed invariant expressions for Rust-based evaluation.
+ * @param table Optional lookup table for Rust-based evaluation.
  * @returns The processed result.
  */
-export function processApalacheResult(
+export async function processApalacheResult(
   res: ApalacheResult<void>,
   startMs: number,
   verbosityLevel: number,
   stage: TracingStage,
-  invariantsList: string[]
-): CLIProcedure<TracingStage> {
+  invariantsList: string[],
+  invariantExprs?: QuintEx[],
+  table?: LookupTable
+): Promise<CLIProcedure<TracingStage>> {
   const elapsedMs = Date.now() - startMs
 
-  return res
-    .map((): TracingStage => {
-      if (verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-        if (verbosity.hasHints(verbosityLevel)) {
-          console.log(chalk.gray('You may increase --max-steps.'))
-          console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
-        }
+  if (res.isRight()) {
+    if (verbosity.hasResults(verbosityLevel)) {
+      console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+      if (verbosity.hasHints(verbosityLevel)) {
+        console.log(chalk.gray('You may increase --max-steps.'))
+        console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
       }
-      return { ...stage, status: 'ok', errors: [] }
-    })
-    .mapLeft(err => {
-      const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
-      const status = trace !== undefined ? 'violation' : 'failure'
+    }
+    return right({ ...stage, status: 'ok', errors: [] } as TracingStage)
+  }
 
-      if (trace !== undefined) {
-        maybePrintCounterExample(verbosityLevel, trace, [], [], stage.args.hide || [])
+  const err = res.value
+  const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
+  const status = trace !== undefined ? 'violation' : 'failure'
 
-        if (verbosity.hasResults(verbosityLevel)) {
-          console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-          printViolatedInvariants(trace[trace.length - 1], invariantsList, stage)
-        }
+  if (trace !== undefined) {
+    maybePrintCounterExample(verbosityLevel, trace, [], [], stage.args.hide || [])
 
-        if (stage.args.outItf && err.traces) {
-          writeToJson(stage.args.outItf, err.traces[0])
-        }
-      }
-      return {
-        msg: err.explanation,
-        stage: { ...stage, status, errors: err.errors, trace },
-      }
-    })
+    if (verbosity.hasResults(verbosityLevel)) {
+      console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+      await printViolatedInvariantsWithRust(
+        trace[trace.length - 1],
+        invariantsList,
+        stage,
+        verbosityLevel,
+        invariantExprs,
+        table
+      )
+    }
+
+    if (stage.args.outItf && err.traces) {
+      writeToJson(stage.args.outItf, err.traces[0])
+    }
+  }
+  return left({
+    msg: err.explanation,
+    stage: { ...stage, status, errors: err.errors, trace },
+  })
+}
+
+/**
+ * Print violated invariants using the Rust evaluator if available, otherwise fall back to TypeScript.
+ */
+async function printViolatedInvariantsWithRust(
+  state: QuintEx,
+  invariantsList: string[],
+  stage: TracingStage,
+  verbosityLevel: number,
+  invariantExprs?: QuintEx[],
+  table?: LookupTable
+): Promise<void> {
+  if (invariantExprs && table && invariantsList.length > 1) {
+    try {
+      const wrapper = new CommandWrapper(verbosityLevel)
+      const evalResults = await wrapper.evaluateAtState(table, state, invariantExprs)
+      const violatedIndices = evalResults.results
+        .map((r: any, i: number) => ({ r, i }))
+        .filter(({ r }: { r: any; i: number }) => r.value !== undefined && r.value === false)
+        .map(({ i }: { r: any; i: number }) => i)
+      printViolatedInvariantsByIndex(violatedIndices, invariantsList)
+    } catch (_) {
+      // Fall back to TypeScript evaluator if Rust is unavailable
+      printViolatedInvariants(state, invariantsList, stage)
+    }
+  } else {
+    printViolatedInvariants(state, invariantsList, stage)
+  }
 }
 
 export function outputJson(stage: ProcedureStage): string {
