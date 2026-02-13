@@ -18,6 +18,7 @@ pub mod repl;
 pub mod simulator;
 pub mod storage;
 pub mod tester;
+pub mod trace_quality;
 pub mod value;
 mod verbosity;
 

@@ -18,6 +18,7 @@ use quint_evaluator::simulator::{
     ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
 };
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
+use quint_evaluator::trace_quality::{insert_sorted_by_quality, TraceQuality};
 use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
@@ -143,6 +144,22 @@ struct SimulationTrace {
     seed: usize,
     states: itf::Trace<itf::Value>,
     result: bool,
+    #[serde(skip)]
+    has_diagnostics: bool,
+}
+
+impl TraceQuality for SimulationTrace {
+    fn is_violation(&self) -> bool {
+        !self.result
+    }
+
+    fn has_diagnostics(&self) -> bool {
+        self.has_diagnostics
+    }
+
+    fn trace_length(&self) -> usize {
+        self.states.states.len()
+    }
 }
 
 /// Data expected on STDIN for test execution
@@ -358,12 +375,17 @@ fn simulate_in_parallel(
         let parsed = parsed.clone();
 
         // In the case of a non-exact split, the first thread executes the
-        // remain runs because it'll probably have the most CPU time available
+        // remainder because it'll probably have the most CPU time available
         // since it starts before the other threads.
         let nruns = if i == 0 {
             (nruns / nthreads) + (nruns % nthreads)
         } else {
             nruns / nthreads
+        };
+        let per_thread_ntraces = if i == 0 {
+            (ntraces / nthreads) + (ntraces % nthreads)
+        } else {
+            ntraces / nthreads
         };
 
         let reporter = Arc::clone(&reporter_thread.reporter);
@@ -376,7 +398,7 @@ fn simulate_in_parallel(
                 let config = SimulationConfig {
                     steps: nsteps,
                     samples: nruns,
-                    n_traces: ntraces,
+                    n_traces: per_thread_ntraces,
                     seed: None,
                     store_metadata: mbt,
                     verbosity,
@@ -392,14 +414,19 @@ fn simulate_in_parallel(
 
     let mut samples = 0;
     let mut aggregated_witnesses = vec![];
+    let mut merged_best_traces: Vec<SimulationTrace> = Vec::new();
+    let mut last_trace_statistics;
+    let mut final_status = SimulationStatus::Success;
+    let mut final_errors: Vec<QuintError> = Vec::new();
 
     loop {
-        let mut outcome = out_rx.recv().expect("closed channel");
+        let outcome = out_rx.recv().expect("closed channel");
         samples += outcome.samples;
+        last_trace_statistics = outcome.trace_statistics;
 
         // Accumulate witness counts from all threads
         if aggregated_witnesses.is_empty() {
-            aggregated_witnesses = std::mem::take(&mut outcome.witnessing_traces);
+            aggregated_witnesses = outcome.witnessing_traces;
         } else {
             for (agg, count) in aggregated_witnesses
                 .iter_mut()
@@ -409,19 +436,36 @@ fn simulate_in_parallel(
             }
         }
 
-        nthreads -= 1;
-        if nthreads == 0 || outcome.status != SimulationStatus::Success {
-            // Report back the total number of samples executed by all threads
-            // instead of just this one. Note that trace statistics are
-            // preserved, meaning that the final report will correspond to the
-            // trace statistics of a single thread. Presuming the workload is
-            // homogeneous (no thread is performing work that is significantly
-            // different from the other threads), the report should still be
-            // statistically correct when all threads succeed.
-            outcome.samples = samples;
-            outcome.witnessing_traces = aggregated_witnesses;
-            return outcome;
+        // Escalate status: Error > Violation > Success
+        match outcome.status {
+            SimulationStatus::Error => {
+                final_status = SimulationStatus::Error;
+                final_errors = outcome.errors;
+            }
+            SimulationStatus::Violation if final_status != SimulationStatus::Error => {
+                final_status = SimulationStatus::Violation;
+            }
+            _ => {}
         }
+
+        // Merge best_traces using the same quality criteria as the threads
+        for trace in outcome.best_traces {
+            insert_sorted_by_quality(&mut merged_best_traces, trace, ntraces, verbosity);
+        }
+
+        nthreads -= 1;
+        if nthreads == 0 || final_status == SimulationStatus::Error {
+            break;
+        }
+    }
+
+    SimOutput {
+        status: final_status,
+        errors: final_errors,
+        best_traces: merged_best_traces,
+        trace_statistics: last_trace_statistics,
+        witnessing_traces: aggregated_witnesses,
+        samples,
     }
 }
 
@@ -481,6 +525,7 @@ fn to_sim_output(
                     .into_iter()
                     .map(|t| SimulationTrace {
                         seed: t.seed as usize,
+                        has_diagnostics: t.has_diagnostics(),
                         result: !t.violation,
                         states: t.to_itf(source.to_string()),
                     })
@@ -498,8 +543,9 @@ fn to_sim_output(
                 errors: vec![error],
                 best_traces: vec![SimulationTrace {
                     seed: seed as usize,
-                    states: trace.to_itf(source.to_string()),
+                    has_diagnostics: trace.has_diagnostics(),
                     result: false,
+                    states: trace.to_itf(source.to_string()),
                 }],
                 witnessing_traces: vec![],
             }
