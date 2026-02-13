@@ -16,7 +16,7 @@ fn simulate(
 
     let init = interpreter.compile(&parsed.init);
     let step = interpreter.compile(&parsed.step);
-    let invariant = interpreter.compile(&parsed.invariant);
+    let invariant = interpreter.compile(&parsed.invariants[0]);
 
     for _ in 1..=samples {
         init.execute(&mut env)?;
