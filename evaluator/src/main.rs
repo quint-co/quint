@@ -12,7 +12,7 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
+use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{
     ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
@@ -37,6 +37,7 @@ enum Command {
     SimulateFromStdin(SimulateQuintArgs),
     TestFromStdin(TestQuintArgs),
     ReplFromStdin(ReplFromStdinArgs),
+    EvaluateAtStateFromStdin(EvaluateAtStateArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -98,6 +99,11 @@ struct TestQuintArgs {}
 #[derive(FromArgs)]
 #[argh(subcommand, name = "repl-from-stdin")]
 struct ReplFromStdinArgs {}
+
+/// Evaluate expressions at a given state from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "evaluate-at-state-from-stdin")]
+struct EvaluateAtStateArgs {}
 
 /// Data expected on STDIN for simulation
 #[derive(Deserialize)]
@@ -176,6 +182,35 @@ struct TestInput {
     verbosity: Verbosity,
 }
 
+/// Data expected on STDIN for evaluate-at-state
+#[derive(Deserialize)]
+struct EvaluateAtStateInput {
+    table: LookupTable,
+    state: QuintEx,
+    exprs: Vec<QuintEx>,
+}
+
+/// Data to be written to STDOUT after evaluate-at-state
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EvaluateAtStateOutput {
+    results: Vec<EvaluateAtStateResult>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EvaluateAtStateResult {
+    #[serde(flatten)]
+    result: EvaluateResult,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum EvaluateResult {
+    Ok { value: itf::Value },
+    Err { error: QuintError },
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct TestTrace {
@@ -208,6 +243,7 @@ fn main() -> eyre::Result<()> {
         Command::SimulateFromStdin(_) => simulate_from_stdin(),
         Command::TestFromStdin(_) => test_from_stdin(),
         Command::ReplFromStdin(_) => repl_from_stdin(),
+        Command::EvaluateAtStateFromStdin(_) => evaluate_at_state_from_stdin(),
     }
 }
 
@@ -340,6 +376,42 @@ fn test_from_stdin() -> eyre::Result<()> {
     let reporter = progress::json_std_err_report(max_samples);
     let result = test_case.execute(seed, max_samples, reporter, verbosity);
     let output = to_test_output(result);
+    serde_json::to_writer(io::stdout(), &output)?;
+
+    Ok(())
+}
+
+/// Reads input from standard input (STDIN), evaluates expressions at a given state,
+/// and writes the results to standard output (STDOUT).
+fn evaluate_at_state_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+
+    // Read input from STDIN
+    let EvaluateAtStateInput {
+        table,
+        state,
+        exprs,
+    } = serde_json::from_reader(io::stdin())?;
+
+    // Call the evaluate_at_state function
+    let eval_results = quint_evaluator::evaluator::evaluate_at_state(&table, &state, &exprs);
+
+    // Convert results to output format
+    let results: Vec<EvaluateAtStateResult> = eval_results
+        .into_iter()
+        .map(|res| EvaluateAtStateResult {
+            result: match res {
+                Ok(value) => EvaluateResult::Ok {
+                    value: value.to_itf(),
+                },
+                Err(error) => EvaluateResult::Err { error },
+            },
+        })
+        .collect();
+
+    let output = EvaluateAtStateOutput { results };
+
+    // Serialize the output to JSON and print it to STDOUT
     serde_json::to_writer(io::stdout(), &output)?;
 
     Ok(())

@@ -817,6 +817,59 @@ fn var_with_namespaces(id: QuintId, namespaces: &[QuintName]) -> QuintName {
     QuintName::from(key)
 }
 
+/// Evaluate expressions in the context of a given state.
+///
+///
+/// # Arguments
+/// * `table` - The lookup table for name resolution
+/// * `state` - The state as a QuintEx
+/// * `exprs` - The expressions to evaluate in that state
+///
+/// # Returns
+/// A vector of evaluation results, one per expression
+pub fn evaluate_at_state(
+    table: &LookupTable,
+    state: &QuintEx,
+    exprs: &[QuintEx],
+) -> Vec<EvalResult> {
+    // Create a new interpreter and environment
+    let mut interpreter = Interpreter::new(table.clone());
+    let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
+
+    // First, evaluate the state expression to get the state record
+    let state_expr = interpreter.compile(state);
+    let state_value = match state_expr.execute(&mut env) {
+        Ok(v) => v,
+        Err(e) => {
+            // If state evaluation fails, return the error for all expressions
+            return exprs.iter().map(|_| Err(e.clone())).collect();
+        }
+    };
+
+    // Load the state into variable storage
+    let record_map = state_value.as_record_map();
+    if !record_map.is_empty() {
+        let storage = interpreter.var_storage.borrow_mut();
+        for (name, value) in record_map.iter() {
+            if let Some(register) = storage.vars.get(name) {
+                register.borrow_mut().value = Some(value.clone());
+            }
+        }
+    } else {
+        // State is not a record, return error for all expressions
+        panic!("State expression did not evaluate to a record");
+    }
+
+    // Evaluate each expression in the context of the loaded state
+    exprs
+        .iter()
+        .map(|expr| {
+            let compiled = interpreter.compile(expr);
+            compiled.execute(&mut env)
+        })
+        .collect()
+}
+
 #[derive(Debug, PartialEq)]
 enum Cache {
     // Don't cache
