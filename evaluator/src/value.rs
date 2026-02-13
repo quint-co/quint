@@ -17,7 +17,7 @@
 //! should have the same hash).
 
 use crate::evaluator::{CompiledExpr, Env, EvalResult};
-use crate::ir::{QuintError, QuintName};
+use crate::ir::{QuintError, QuintEx, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::Itertools;
@@ -264,6 +264,53 @@ impl Value {
 
     pub fn power_set(value: Value) -> Self {
         Value(Rc::new(ValueInner::PowerSet(value)))
+    }
+
+    /// Convert a literal QuintEx directly to a Value without the compiler.
+    /// State expressions from ITF traces have all IDs = 0, which causes memo
+    /// cache collisions in the compiler. This bypasses compilation entirely,
+    /// similar to `rv.fromQuintEx` on the TypeScript side.
+    pub fn from_ex(expr: &QuintEx) -> Self {
+        match expr {
+            QuintEx::QuintInt { value, .. } => Value::int(*value),
+            QuintEx::QuintBool { value, .. } => Value::bool(*value),
+            QuintEx::QuintStr { value, .. } => Value::str(value.clone()),
+            QuintEx::QuintApp { opcode, args, .. } => match opcode.as_str() {
+                "Rec" => Value::record(
+                    args.chunks_exact(2)
+                        .map(|chunk| {
+                            let key = match &chunk[0] {
+                                QuintEx::QuintStr { value, .. } => value.clone(),
+                                _ => panic!("Record key must be a string"),
+                            };
+                            (key, Value::from_ex(&chunk[1]))
+                        })
+                        .collect(),
+                ),
+                "Tup" => Value::tuple(args.iter().map(Value::from_ex).collect()),
+                "List" => Value::list(args.iter().map(Value::from_ex).collect()),
+                "Set" => Value::set(args.iter().map(Value::from_ex).collect()),
+                "Map" => Value::map(
+                    args.iter()
+                        .map(|arg| match arg {
+                            QuintEx::QuintApp { args: pair, .. } => {
+                                (Value::from_ex(&pair[0]), Value::from_ex(&pair[1]))
+                            }
+                            _ => panic!("Map entry must be a tuple"),
+                        })
+                        .collect(),
+                ),
+                "variant" => {
+                    let label = match &args[0] {
+                        QuintEx::QuintStr { value, .. } => value.clone(),
+                        _ => panic!("Variant label must be a string"),
+                    };
+                    Value::variant(label, Value::from_ex(&args[1]))
+                }
+                other => panic!("Unsupported opcode in state literal: {other}"),
+            },
+            _ => panic!("Unsupported expression in state literal: {expr:?}"),
+        }
     }
 
     pub fn map_set(a: Value, b: Value) -> Self {

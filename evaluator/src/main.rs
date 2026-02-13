@@ -194,14 +194,7 @@ struct EvaluateAtStateInput {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EvaluateAtStateOutput {
-    results: Vec<EvaluateAtStateResult>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct EvaluateAtStateResult {
-    #[serde(flatten)]
-    result: EvaluateResult,
+    results: Vec<EvaluateResult>,
 }
 
 #[derive(Serialize)]
@@ -397,15 +390,13 @@ fn evaluate_at_state_from_stdin() -> eyre::Result<()> {
     let eval_results = quint_evaluator::evaluator::evaluate_at_state(&table, &state, &exprs);
 
     // Convert results to output format
-    let results: Vec<EvaluateAtStateResult> = eval_results
+    let results: Vec<EvaluateResult> = eval_results
         .into_iter()
-        .map(|res| EvaluateAtStateResult {
-            result: match res {
-                Ok(value) => EvaluateResult::Ok {
-                    value: value.to_itf(),
-                },
-                Err(error) => EvaluateResult::Err { error },
+        .map(|res| match res {
+            Ok(value) => EvaluateResult::Ok {
+                value: value.to_itf(),
             },
+            Err(error) => EvaluateResult::Err { error },
         })
         .collect();
 

@@ -832,41 +832,38 @@ pub fn evaluate_at_state(
     state: &QuintEx,
     exprs: &[QuintEx],
 ) -> Vec<EvalResult> {
-    // Create a new interpreter and environment
+    // Convert the state directly to a Value, bypassing the compiler.
+    // State expressions from ITF traces have all IDs = 0, which causes
+    // memo cache collisions in the compiler.
+    let state_value = Value::from_ex(state);
+
+    // Create the interpreter for evaluating the invariant expressions
     let mut interpreter = Interpreter::new(table.clone());
     let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
 
-    // First, evaluate the state expression to get the state record
-    let state_expr = interpreter.compile(state);
-    let state_value = match state_expr.execute(&mut env) {
-        Ok(v) => v,
-        Err(e) => {
-            // If state evaluation fails, return the error for all expressions
-            return exprs.iter().map(|_| Err(e.clone())).collect();
-        }
-    };
+    // Compile the expressions first so that variables are registered in storage
+    let compiled_exprs: Vec<CompiledExpr> = exprs
+        .iter()
+        .map(|expr| interpreter.compile(expr))
+        .collect();
 
-    // Load the state into variable storage
+    // Load state values into variable storage, matching by register name
+    // (storage keys are id-based, but the record map uses variable names)
     let record_map = state_value.as_record_map();
-    if !record_map.is_empty() {
-        let storage = interpreter.var_storage.borrow_mut();
-        for (name, value) in record_map.iter() {
-            if let Some(register) = storage.vars.get(name) {
+    {
+        let storage = interpreter.var_storage.borrow();
+        for (_key, register) in storage.vars.iter() {
+            let var_name = register.borrow().name.clone();
+            if let Some(value) = record_map.get(&var_name) {
                 register.borrow_mut().value = Some(value.clone());
             }
         }
-    } else {
-        // State is not a record, return error for all expressions
-        panic!("State expression did not evaluate to a record");
     }
 
-    // Evaluate each expression in the context of the loaded state
-    exprs
+    // Evaluate each compiled expression in the context of the loaded state
+    compiled_exprs
         .iter()
-        .map(|expr| {
-            let compiled = interpreter.compile(expr);
-            compiled.execute(&mut env)
-        })
+        .map(|compiled| compiled.execute(&mut env))
         .collect()
 }
 
