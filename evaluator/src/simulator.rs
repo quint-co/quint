@@ -80,17 +80,15 @@ impl ParsedQuint {
     /// Combines multiple invariants into a single expression using AND.
     /// If the list is empty, returns `true`.
     fn combine_invariants(&self) -> QuintEx {
-        self.invariants.iter().fold(
-            QuintEx::QuintBool {
-                id: 0,
-                value: true,
-            },
-            |acc, inv| QuintEx::QuintApp {
-                id: 0,
-                opcode: "and".into(),
-                args: vec![acc, inv.clone()],
-            },
-        )
+        self.invariants
+            .iter()
+            .fold(QuintEx::QuintBool { id: 0, value: true }, |acc, inv| {
+                QuintEx::QuintApp {
+                    id: 0,
+                    opcode: "and".into(),
+                    args: vec![acc, inv.clone()],
+                }
+            })
     }
 
     /// Simulate a Quint model for a given number of steps and samples, storing
