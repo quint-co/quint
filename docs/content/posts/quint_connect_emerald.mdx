@@ -1,0 +1,287 @@
+---
+title: "Model-Based Testing EVM networks with Quint and AI"
+date: 2026-02-13
+excerpt: We used Quint Connect and AI to increase test coverage and find a bug in Emerald
+authors:
+    - name: Erick Pintor
+tags:
+    - intermediate
+---
+
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+
+# Model-Based Testing EVM networks with Quint and AI
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+<Image
+  src="/blog-covers/quint_connect_emerald.jpg"
+  alt="A Robot standing behind a box containing a green emerald rock on a soft pillow"
+  width={1000}
+  height={500}
+/>
+
+Following the release of [Quint
+Connect](https://quint-lang.org/posts/quint_connect), we started using it to set
+up model-based testing for our in-house projects and today we’re pleased to
+share the successful story of
+[Emerald](https://github.com/informalsystems/emerald/) and Quint Connect.
+
+Emerald is an open-source framework for building high performance,
+EVM-compatible networks. It is composed of two major components: the
+[Malachite](https://github.com/circlefin/malachite) consensus engine, and the
+[Reth](https://github.com/paradigmxyz/reth) execution client for compatibility
+with the Ethereum network. Being a crucial software that benefits from rigorous
+testing, Emerald is the perfect showcase for Quint Connect.
+
+Quint Connect is a Rust library for model-based testing (MBT) that connects a
+Quint specification with its implementation. With Quint Connect, we can not only
+ensure that applications implement their specification, but also that
+specification and implementation don't diverge over time.
+
+We have experienced challenges before when attempting to bring MBT to an ongoing
+project due to the cost of writing specifications and the boilerplate code to
+run model-generated tests against the implementation. This would only make sense
+in highly critical and stable codebases. In the work reported here, AI has
+reduced the overall cost of implementing MBT, thus demonstrating that Quint
+Connect can bring higher test quality to a wider class of systems at low cost.
+
+By formally specifying Emerald in Quint and testing it with Quint Connect, we
+have helped the team crystallize their understanding about the system properties
+and invariants, increasing overall test coverage, and ended up finding a memory
+leak bug.
+
+## Emerald's Quint Specification
+
+A common adoption barrier for MBT is the fact that a lot of applications are not
+born with a formal specification. That was also the case for Emerald but,
+luckily, the Quint team at Informal has been actively researching ways in which
+we can leverage LLMs to assist with the specification of both new and legacy
+systems.
+
+We started this process by asking AI to read the implementation of Emerald and
+write a Quint specification for it using the
+[Choreo](https://quint-lang.org/choreo) library. This specification was then
+refined multiple times to clarify our understanding of the system until we were
+satisfied with its depiction of how Emerald behaves.
+
+Perhaps the most interesting aspect of Emerald's specification is that we
+decided to not model the consensus or the execution engine components. Instead,
+we have modeled how Emerald behaves when given a consensus input from Malachite
+as well as how Emerald keeps track of Ethereum's block lifecycle. This approach
+reduces state space size while keeping traces focused on Emerald behavior rather
+than its external components.
+
+Additionally, we have modeled different forms of failures that might affect
+Emerald nodes in production, such as process restart or data corruption. These
+failures allow us to verify our model is fault-tolerant, and also provide
+adversarial scenarios that can be replayed during MBT to ensure the
+implementation remains correct.
+
+Check out the Emerald specification
+[here](https://github.com/informalsystems/emerald/tree/main/specs/emerald.qnt).
+For a quick peek at the modeled inputs and failure cases, take a look at a
+snippet of the specification's main Choreo listener below.
+
+```quint
+pure def main_listener(ctx: LocalContext): Set[Transition] = {
+  Set(
+    // ...
+    // Starts a new consensus round
+    choreo::cue(ctx, listen_started_round, handle_started_round),
+    // Builds a new block to propose
+    choreo::cue(ctx, listen_get_value, handle_get_value),
+    // Vote on the proposed block
+    choreo::cue(ctx, listen_received_proposal, handle_received_proposal),
+    // Decides on the proposed block 
+    choreo::cue(ctx, listen_decided, handle_decided),
+    // Timeout on the current consensus round
+    choreo::cue(ctx, listen_timeout, consensus_timeout)
+    // ...
+  ).flatten()
+}
+```
+
+While modeling Emerald in Quint, we have validated three invariants. Most
+importantly, the
+[agreement](https://github.com/informalsystems/emerald/blob/517ce81ee7220aa44b86b436e2c1478f944d5416/specs/emerald.qnt#L693-L702)
+invariant states: all nodes agree on decided blocks. This ensures that there are
+no nodes that commit different blocks for the same consensus instance.
+
+With the Emerald application modeled, we then moved to the implementation of MBT
+for the codebase.
+
+## Model-based testing
+
+After modeling Emerald in Quint, we worked with AI once again to write the
+boilerplate code necessary to run model-based testing with Quint Connect.
+
+An interesting aspect of having the specification generated from the code is
+that code and spec ended up at a similar level of abstraction: actions taken by
+the Quint specification closely map to Malachite consensus inputs. This almost
+1:1 mapping between specification and code helped AI significantly while
+generating the boilerplate that connects Emerald's specification with its
+implementation.
+
+Naturally, as with any other AI-assisted coding project, we ended up refactoring
+and refining the MBT suite to reflect code organization patterns and best
+practices that we believe make this test suite both understandable and
+maintainable over time. Nevertheless, AI assistance was crucial to accelerate
+MBT adoption in the Emerald codebase.
+
+The result is a testing pipeline managed by Quint Connect that uses the Emerald
+specification as input to generate traces that can be replayed against its
+implementation via the AI generated test driver.
+
+<Image
+  src="/quint_connect_emerald_architecture.png"
+  alt="Specs executed by Quint generate traces that the test engine replay on the implementation using the test driver"
+  width={1000}
+  height={500}
+/>
+
+Here's a snippet of the test driver demonstrating how steps from the generated
+traces are replayed against the application code:
+
+```rust
+impl quint_connect::Driver for EmeraldDriver {
+    // ...
+    fn step(&mut self, step: &Step) -> Result {
+        switch!(step {
+            InitAction => {
+                self.init()?;
+            },
+            ConsensusReadyAction(node) => {
+                self.perform(node, |app, _|
+                    app.consensus_ready()
+                )?;
+            },
+            StartedRoundAction(node, height, round, proposer) => {
+                self.perform(node, |app, hist|
+                    app.started_round(hist, height, round, proposer)
+                )?;
+            },
+            // ...
+        }
+    }
+}
+```
+
+Upon replaying a step from the trace, Quint Connect automatically asserts that
+the state of the specification matches the state of the implementation. Suffice
+to define, with the help of AI, the state mapping data structure:
+
+```rust
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+pub struct SpecState(pub BTreeMap<Node, NodeState>);
+
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+pub struct NodeState {
+    pub consensus_height: Height,
+    pub consensus_round: Round,
+    pub last_decided_height: Height,
+    #[serde(with = "As::<de::Option::<_>>")]
+    pub last_decided_payload: Option<Payload>,
+    pub proposals: BTreeSet<Proposal>,
+}
+
+impl quint_connect::State<EmeraldDriver> for SpecState {
+    fn from_driver(driver: &EmeraldDriver) -> Result<Self> {
+        // AI generated code to extract the application state ...
+    }
+}
+```
+
+Another area where AI really shines in conjunction with Quint tools is in
+providing a digestible summary of test failures. Every once in a while we would
+hit a test failure composed of hundreds of steps. Reading all of Quint Connect's
+debugging info could be time-consuming and tedious. Instead, we asked AI to
+digest the test failure output and generate a [Quint
+run](https://quint-lang.org/docs/lang#runs) with the exact same steps. We would
+often ask AI to minimize the test failure by running the test while commenting
+out unnecessary steps in the Quint run. The result is a minimal and
+deterministic step-by-step guide to reproduce the failure.
+
+Here's an example of a Quint run extracted from a test failure that prompted us
+to refine the specification of how Malachite works in the presence of stale
+nodes (see PR [#202](https://github.com/informalsystems/emerald/pull/202) for
+details):
+
+```quint
+run repro =
+  genesisStart
+    // Node 1 proposes, nodes 2 and 3 decide
+    .then("node1".getValue(proposal(1, 0, 0)))
+    .then("node2".receivedProposal(proposal(1, 0, 0)))
+    .then("node3".receivedProposal(proposal(1, 0, 0)))
+    .then("node2".decided(proposal(1, 0, 0)))
+    .then("node3".decided(proposal(1, 0, 0)))
+    // Node 1 crashes and restarts
+    .then("node1".crash())
+    .then("node1".consensusReady(1, 0))
+    .then("node1".startedRound(1, 0))
+    // Node 1 proposes a new value
+    .then("node1".getValue(proposal(1, 0, 1)))
+    // Node 1 receives the decided value for height=1
+    .then("node1".processSyncedValue(proposal(1, 0, 0)))
+    // Node 1 now has 2 proposals for height=1 and round=0
+    .expect(
+      val proposals = s.system.get("node1").proposals
+      and {
+        proposal(1, 0, 0).in(proposals),
+        proposal(1, 0, 1).in(proposals)
+      }
+    )
+    // THIS SHOULD NOT BE ALLOWED!
+    //
+    // After receiving a value via sync,
+    // Malachite will immediately call Decided.
+    .then("node1".getValue(proposal(1, 0, 0)))
+```
+
+This process of going from a test failure to a minimal Quint run has helped us
+find discrepancies between specification and code. The scenarios that were
+deemed most interesting still live in the codebase in the form of Quint runs
+that still exercise those behaviors in the form of automated tests via Quint
+Connect – see the full list of test cases
+[here](https://github.com/informalsystems/emerald/blob/main/tests/mbt/tests/mbt.rs).
+
+## The results
+
+The process of modeling Emerald in Quint sparked some interesting conversations
+about some of the Malachite semantics and their effect on the Emerald codebase.
+This isn’t unusual, though. Since Quint specifications sit at a much higher
+level of abstraction than code, they can often express nuanced behavior in a
+manner that’s simpler to reason about.
+
+Initially, the MBT implementation found problems that turned out to be known
+issues. After working through them and refining the model, we ended up
+uncovering a subtle leak where completed data streams were kept indefinitely,
+causing the machine to run out of memory eventually – see pull request
+[#178](https://github.com/informalsystems/emerald/pull/178) for details.
+
+Although finding bugs is always a great outcome, we highlight that ensuring
+conformance between specification and implementation while exercising edge cases
+both at the spec and code level is the greatest value MBT provides. To that end,
+we have made the MBT suite part of Emerald's continuous integration pipeline.
+
+Finally, even though we didn’t aim for complete coverage, the addition of MBT to
+the Emerald codebase pushed test coverage to about 80% at the application layer.
+Additional work on model-based tests in conjunction with other testing
+techniques can improve this number even further.
+
+## Try it out
+
+Interested in model-based testing for your project? Check out [Quint
+Connect](https://quint-lang.org/posts/quint_connect) to learn how to bridge the
+gap between specification and code. If you're building institutional blockchain
+networks, explore [Emerald](https://github.com/informalsystems/emerald/) and its
+formal specification as a reference for how MBT can catch bugs before they reach
+production.
+
+<Comments/>
