@@ -18,7 +18,7 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { DebugMessage, ofItfNormalized, toItf } from './itf'
+import { DebugMessage, ItfState, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left, right } from '@sweet-monads/either'
 import { cwd } from 'process'
@@ -27,7 +27,7 @@ import { ApalacheResult } from './apalache'
 import { TlcError } from './tlc'
 import { QuintError } from './quintError'
 import { LookupTable } from './names/base'
-import { CommandWrapper } from './rust/commandWrapper'
+import { findViolatedInvariants } from './rust/invariantsReporter'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
 import { ErrorMessage } from './ErrorMessage'
@@ -201,13 +201,14 @@ export async function processApalacheResult(
 
     if (verbosity.hasResults(verbosityLevel)) {
       console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+      const itfStates = err.traces?.[0]?.states
+      const lastItfState = itfStates?.[itfStates.length - 1]
       await printViolatedInvariantsWithRust(
-        trace[trace.length - 1],
         invariantsList,
-        stage,
         verbosityLevel,
         invariantExprs,
-        table
+        table,
+        lastItfState
       )
     }
 
@@ -222,31 +223,22 @@ export async function processApalacheResult(
 }
 
 /**
- * Print violated invariants using the Rust evaluator if available, otherwise fall back to TypeScript.
+ * Print violated invariants using the Rust evaluator.
  */
 async function printViolatedInvariantsWithRust(
-  state: QuintEx,
   invariantsList: string[],
-  stage: TracingStage,
   verbosityLevel: number,
   invariantExprs?: QuintEx[],
-  table?: LookupTable
+  table?: LookupTable,
+  itfState?: ItfState
 ): Promise<void> {
-  if (invariantExprs && table && invariantsList.length > 1) {
-    try {
-      const wrapper = new CommandWrapper(verbosityLevel)
-      const evalResults = await wrapper.evaluateAtState(table, state, invariantExprs)
-      const violatedIndices = evalResults.results
-        .map((r: any, i: number) => ({ r, i }))
-        .filter(({ r }: { r: any; i: number }) => r.value !== undefined && r.value === false)
-        .map(({ i }: { r: any; i: number }) => i)
-      printViolatedInvariantsByIndex(violatedIndices, invariantsList)
-    } catch (_) {
-      // Fall back to TypeScript evaluator if Rust is unavailable
-      printViolatedInvariants(state, invariantsList, stage)
+  if (invariantExprs && table && itfState && invariantsList.length > 1) {
+    const result = await findViolatedInvariants(itfState, table, invariantExprs, verbosityLevel)
+    if (result.isRight()) {
+      printViolatedInvariantsByIndex(result.value, invariantsList)
+    } else {
+      console.warn(chalk.yellow(`Warning: could not determine violated invariants: ${result.value.message}`))
     }
-  } else {
-    printViolatedInvariants(state, invariantsList, stage)
   }
 }
 
