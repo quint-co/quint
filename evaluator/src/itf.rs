@@ -133,12 +133,8 @@ impl Value {
             itf::Value::List(elems) => {
                 Value::list(elems.into_iter().map(Value::from_itf).collect())
             }
-            itf::Value::Tuple(tup) => {
-                Value::tuple(tup.into_iter().map(Value::from_itf).collect())
-            }
-            itf::Value::Set(set) => {
-                Value::set(set.into_iter().map(Value::from_itf).collect())
-            }
+            itf::Value::Tuple(tup) => Value::tuple(tup.into_iter().map(Value::from_itf).collect()),
+            itf::Value::Set(set) => Value::set(set.into_iter().map(Value::from_itf).collect()),
             itf::Value::Map(map) => Value::map(
                 map.into_iter()
                     .map(|(k, v)| (Value::from_itf(k), Value::from_itf(v)))

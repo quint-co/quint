@@ -213,6 +213,14 @@ export async function verifyWithApalacheBackend(
   const startMs = Date.now()
 
   return verifyWithApalache(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(async res => {
-    return processApalacheResult(res, startMs, verbosityLevel, verifying, invariantsList, invariantExprs, prev.resolver.table)
+    return processApalacheResult(
+      res,
+      startMs,
+      verbosityLevel,
+      verifying,
+      invariantsList,
+      invariantExprs,
+      prev.resolver.table
+    )
   })
 }

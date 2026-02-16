@@ -12,12 +12,12 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
+use quint_evaluator::evaluator::evaluate_at_state;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{
     ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
 };
-use quint_evaluator::evaluator::evaluate_at_state;
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::trace_quality::{insert_sorted_by_quality, TraceQuality};
 use quint_evaluator::Verbosity;

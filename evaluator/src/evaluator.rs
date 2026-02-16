@@ -838,17 +838,15 @@ pub fn evaluate_at_state(
     let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
 
     // Compile the expressions
-    let compiled_exprs: Vec<CompiledExpr> = exprs
-        .iter()
-        .map(|expr| interpreter.compile(expr))
-        .collect();
+    let compiled_exprs: Vec<CompiledExpr> =
+        exprs.iter().map(|expr| interpreter.compile(expr)).collect();
 
     let record_map = state_value.as_record_map();
     {
         let storage = interpreter.var_storage.borrow();
         for (_key, register) in storage.vars.iter() {
             let var_name = register.borrow().name.clone();
-            
+
             if let Some(value) = record_map.get(&var_name) {
                 register.borrow_mut().value = Some(value.clone());
             }

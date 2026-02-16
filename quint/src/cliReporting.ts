@@ -203,13 +203,7 @@ export async function processApalacheResult(
       console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
       const itfStates = err.traces?.[0]?.states
       const lastItfState = itfStates?.[itfStates.length - 1]
-      await printViolatedInvariantsWithRust(
-        invariantsList,
-        verbosityLevel,
-        invariantExprs,
-        table,
-        lastItfState
-      )
+      await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
     }
 
     if (stage.args.outItf && err.traces) {
