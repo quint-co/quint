@@ -1,4 +1,4 @@
-//! Conversion of Traces with [`Value`]s to ITF (Informal Trace Format).
+//! Conversion between [`Value`]s and ITF (Informal Trace Format).
 //!
 //! Read more about it [here](https://apalache-mc.org/docs/adr/015adr-trace.html).
 //!
@@ -118,6 +118,65 @@ impl Trace {
 }
 
 impl Value {
+    /// Convert an ITF value directly to a Quint [`Value`].
+    pub fn from_itf(itf_value: itf::Value) -> Self {
+        match itf_value {
+            itf::Value::Bool(b) => Value::bool(b),
+            itf::Value::Number(n) => Value::int(n),
+            itf::Value::String(s) => Value::str(Str::from(s)),
+            itf::Value::BigInt(b) => {
+                use num_bigint::BigInt as NumBigInt;
+                let n: NumBigInt = b.into_inner();
+                let n: i64 = n.try_into().expect("BigInt value does not fit in i64");
+                Value::int(n)
+            }
+            itf::Value::List(elems) => {
+                Value::list(elems.into_iter().map(Value::from_itf).collect())
+            }
+            itf::Value::Tuple(tup) => {
+                Value::tuple(tup.into_iter().map(Value::from_itf).collect())
+            }
+            itf::Value::Set(set) => {
+                Value::set(set.into_iter().map(Value::from_itf).collect())
+            }
+            itf::Value::Map(map) => Value::map(
+                map.into_iter()
+                    .map(|(k, v)| (Value::from_itf(k), Value::from_itf(v)))
+                    .collect(),
+            ),
+            itf::Value::Record(rec) => {
+                // Variants are encoded as records with "tag" and "value" fields.
+                // Detect that pattern and convert back to a Variant.
+                if rec.len() == 2 {
+                    if let (Some(itf::Value::String(tag)), Some(value)) =
+                        (rec.get("tag"), rec.get("value"))
+                    {
+                        return Value::variant(
+                            Str::from(tag.clone()),
+                            Value::from_itf(value.clone()),
+                        );
+                    }
+                }
+                // Apalache encodes empty tuples as { tag: "UNIT" }
+                if rec.len() == 1 {
+                    if let Some(itf::Value::String(tag)) = rec.get("tag") {
+                        if tag == "UNIT" {
+                            return Value::tuple(Default::default());
+                        }
+                    }
+                }
+                Value::record(
+                    rec.into_iter()
+                        .map(|(k, v)| (Str::from(k), Value::from_itf(v)))
+                        .collect(),
+                )
+            }
+            itf::Value::Unserializable(_) => {
+                panic!("Cannot convert unserializable ITF value to Value")
+            }
+        }
+    }
+
     pub fn to_itf(&self) -> itf::Value {
         match self.0.as_ref() {
             ValueInner::Int(i) => itf::Value::Number(*i),

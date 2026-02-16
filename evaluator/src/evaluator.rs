@@ -819,41 +819,36 @@ fn var_with_namespaces(id: QuintId, namespaces: &[QuintName]) -> QuintName {
 
 /// Evaluate expressions in the context of a given state.
 ///
-///
 /// # Arguments
+/// * `state` - The state as an ITF value (a record mapping variable names to values)
 /// * `table` - The lookup table for name resolution
-/// * `state` - The state as a QuintEx
 /// * `exprs` - The expressions to evaluate in that state
 ///
 /// # Returns
 /// A vector of evaluation results, one per expression
 pub fn evaluate_at_state(
+    state: itf::Value,
     table: &LookupTable,
-    state: &QuintEx,
     exprs: &[QuintEx],
 ) -> Vec<EvalResult> {
-    // Convert the state directly to a Value, bypassing the compiler.
-    // State expressions from ITF traces have all IDs = 0, which causes
-    // memo cache collisions in the compiler.
-    let state_value = Value::from_ex(state);
+    let state_value = Value::from_itf(state);
 
     // Create the interpreter for evaluating the invariant expressions
     let mut interpreter = Interpreter::new(table.clone());
     let mut env = Env::new(interpreter.var_storage.clone(), Verbosity::default());
 
-    // Compile the expressions first so that variables are registered in storage
+    // Compile the expressions
     let compiled_exprs: Vec<CompiledExpr> = exprs
         .iter()
         .map(|expr| interpreter.compile(expr))
         .collect();
 
-    // Load state values into variable storage, matching by register name
-    // (storage keys are id-based, but the record map uses variable names)
     let record_map = state_value.as_record_map();
     {
         let storage = interpreter.var_storage.borrow();
         for (_key, register) in storage.vars.iter() {
             let var_name = register.borrow().name.clone();
+            
             if let Some(value) = record_map.get(&var_name) {
                 register.borrow_mut().value = Some(value.clone());
             }

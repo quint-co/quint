@@ -17,6 +17,7 @@ use quint_evaluator::progress;
 use quint_evaluator::simulator::{
     ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
 };
+use quint_evaluator::evaluator::evaluate_at_state;
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::trace_quality::{insert_sorted_by_quality, TraceQuality};
 use quint_evaluator::Verbosity;
@@ -185,8 +186,8 @@ struct TestInput {
 /// Data expected on STDIN for evaluate-at-state
 #[derive(Deserialize)]
 struct EvaluateAtStateInput {
+    state: itf::State<itf::Value>,
     table: LookupTable,
-    state: QuintEx,
     exprs: Vec<QuintEx>,
 }
 
@@ -386,8 +387,7 @@ fn evaluate_at_state_from_stdin() -> eyre::Result<()> {
         exprs,
     } = serde_json::from_reader(io::stdin())?;
 
-    // Call the evaluate_at_state function
-    let eval_results = quint_evaluator::evaluator::evaluate_at_state(&table, &state, &exprs);
+    let eval_results = evaluate_at_state(state.value, &table, &exprs);
 
     // Convert results to output format
     let results: Vec<EvaluateResult> = eval_results
