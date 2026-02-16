@@ -482,9 +482,10 @@ error: tpos is used before it is assigned. You need to have either `tpos == <exp
 
 ### Shows which property broke when checking inductive invariants
 
-Here we pass only `TypeOK` as the inductive invariant, which is not strong enough to imply `TerminationDetection`. 
+Here we pass only `TypeOK` as the inductive invariant, which is not strong enough to imply `TerminationDetection`.
 
-<!-- !test in weak inductive invariant -->
+<!-- TODO: Re-enable once the Rust evaluator release includes the `evaluate-at-state-from-stdin` command -->
+<!-- test in weak inductive invariant -->
 ```
 output=$(quint verify ../examples/classic/distributed/ewd840/ewd840.qnt --invariant TerminationDetection --inductive-invariant TypeOK --main ewd840_3)
 exit_code=$?
@@ -493,8 +494,8 @@ exit $exit_code
 
 ```
 
-<!-- !test exit 1 -->
-<!-- !test out weak inductive invariant -->
+<!-- test exit 1 -->
+<!-- test out weak inductive invariant -->
 ```
 > [1/3] Checking whether the inductive invariant 'TypeOK' holds in the initial state(s) defined by 'init'...
 > [2/3] Checking whether 'step' preserves the inductive invariant 'TypeOK'...
