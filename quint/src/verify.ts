@@ -138,9 +138,9 @@ export async function verifyWithApalacheBackend(
 
   const [invariantsString, invariantsList] = getInvariants(prev.args)
 
-  // Parse individual invariants into QuintEx for Rust-based violation reporting
+  // Parse individual invariants into QuintEx for Rust-based violation reporting.
   let invariantExprs: QuintEx[] | undefined
-  if (invariantsList.length > 1) {
+  if (invariantsList.length > 1 || (invariantsList.length > 0 && args.inductiveInvariant)) {
     const parsed = mergeInMany(invariantsList.map(inv => toExpr(prev, inv)))
     if (parsed.isRight()) {
       invariantExprs = parsed.value

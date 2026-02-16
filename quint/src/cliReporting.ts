@@ -90,7 +90,7 @@ export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, wi
  * @param invariants The list of invariant names/expressions.
  */
 export function printViolatedInvariantsByIndex(violatedIndices: number[], invariants: string[]): void {
-  if (invariants.length <= 1 || violatedIndices.length === 0) {
+  if (violatedIndices.length === 0) {
     return
   }
 
@@ -226,7 +226,7 @@ async function printViolatedInvariantsWithRust(
   table?: LookupTable,
   itfState?: ItfState
 ): Promise<void> {
-  if (invariantExprs && table && itfState && invariantsList.length > 1) {
+  if (invariantExprs && table && itfState) {
     const result = await findViolatedInvariants(itfState, table, invariantExprs, verbosityLevel)
     if (result.isRight()) {
       printViolatedInvariantsByIndex(result.value, invariantsList)
