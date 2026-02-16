@@ -19,7 +19,7 @@ import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
 import { reviver } from '../jsonHelper'
-import { diagnosticsOfItf, ofItf } from '../itf'
+import { ItfState, diagnosticsOfItf, ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
@@ -92,12 +92,10 @@ export class CommandWrapper {
       verbosity: this.verbosityLevel,
     }
 
-    const result = await this.runRustEvaluator(
-      'simulate-from-stdin',
-      input,
-      'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
-      nruns
-    )
+    const result = await this.runRustEvaluator('simulate-from-stdin', input, {
+      format: 'Running... [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s',
+      total: nruns,
+    })
 
     // Handle errors from rust processes failing, where we don't manage to get output from rust
     if (result.isLeft()) {
@@ -179,12 +177,10 @@ export class CommandWrapper {
       verbosity: this.verbosityLevel,
     }
 
-    const result = await this.runRustEvaluator(
-      'test-from-stdin',
-      input,
-      `     ${testName} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s`,
-      maxSamples
-    )
+    const result = await this.runRustEvaluator('test-from-stdin', input, {
+      format: `     ${testName} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} samples | {speed} samples/s`,
+      total: maxSamples,
+    })
 
     // Handle process errors
     if (result.isLeft()) {
@@ -239,92 +235,39 @@ export class CommandWrapper {
   /**
    * Evaluate expressions at a given state using the Rust evaluator.
    *
+   * @param {ItfState} state - The state as a raw ITF value (record mapping variable names to ITF values).
    * @param {LookupTable} table - The lookup table for name resolution.
-   * @param {QuintEx} state - The state (as a record expression) to evaluate in.
    * @param {QuintEx[]} exprs - The expressions to evaluate at the given state.
    *
    * @returns The evaluation results for each expression.
    */
   async evaluateAtState(
+    state: ItfState,
     table: LookupTable,
-    state: QuintEx,
     exprs: QuintEx[]
-  ): Promise<{ results: { value?: any; error?: QuintError }[] }> {
+  ): Promise<Either<QuintError, { results: { value?: any; error?: QuintError }[] }>> {
     const input = { table, state, exprs }
-    const result = await this.runRustEvaluatorSimple('evaluate-at-state-from-stdin', input)
+    const result = await this.runRustEvaluator('evaluate-at-state-from-stdin', input)
 
     if (result.isLeft()) {
-      throw new Error(`Rust evaluator failed: ${result.value.message}`)
+      return left(result.value)
     }
 
-    return JSONbig.parse(result.value, reviver)
-  }
-
-  /**
-   * Run the Rust evaluator with the given command and input.
-   * Simplified version without progress bar, for quick one-shot evaluations.
-   */
-  private async runRustEvaluatorSimple(command: string, input: any): Promise<Either<QuintError, string>> {
-    const exe = await getRustEvaluatorPath()
-    const args = [command]
-
-    let inputStr: string
     try {
-      inputStr = JSONbig.stringify(input, bigintCheckerReplacer)
+      return right(JSONbig.parse(result.value, reviver))
     } catch (error) {
-      if (isQuintError(error)) {
-        return left(error)
-      }
-      throw error
+      return left({ code: 'QNT516', message: `Failed to parse data from Rust evaluator: ${error}` })
     }
-
-    debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
-
-    const process = spawn(exe, args, {
-      shell: false,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-
-    process.stdin.write(inputStr)
-    process.stdin.end()
-
-    process.on('error', (err: Error) => {
-      throw new Error(`Failed to launch Rust evaluator: ${err.message}`)
-    })
-
-    const stdout = readline.createInterface({ input: process.stdout, terminal: false })
-
-    let output = ''
-    stdout.on('line', (line: string) => {
-      if (line.trimStart()[0] !== '{') {
-        console.log(line)
-      } else {
-        output = line
-      }
-    })
-
-    const [exitCode, signal] = await new Promise<[number | null, string | null]>(resolve => {
-      process.on('close', (code, signal) => resolve([code, signal]))
-    })
-
-    if (signal) {
-      return left({ code: 'QNT517', message: `Rust evaluator was killed by signal: ${signal}` })
-    } else if (exitCode !== 0) {
-      return left({ code: 'QNT516', message: `Rust evaluator exited with code ${exitCode}` })
-    }
-
-    return right(output)
   }
 
   /**
    * Run the Rust evaluator with the given command and input.
-   * Shared implementation for all one-shot commands.
+   * Optionally displays a progress bar driven by stderr JSON events.
    */
   private async runRustEvaluator(
     command: string,
     input: any,
-    progressFormat: string,
-    iterations: number
+    progress?: { format: string; total: number }
   ): Promise<Either<QuintError, string>> {
     const exe = await getRustEvaluatorPath()
     const args = [command]
@@ -343,16 +286,19 @@ export class CommandWrapper {
 
     debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
 
-    // Create progress bar
-    const progressBar = new SingleBar(
-      {
-        clearOnComplete: true,
-        forceRedraw: true,
-        format: progressFormat,
-      },
-      Presets.rect
-    )
-    progressBar.start(iterations, 0, { speed: '0' })
+    // Create progress bar if requested
+    let progressBar: SingleBar | undefined
+    if (progress) {
+      progressBar = new SingleBar(
+        {
+          clearOnComplete: true,
+          forceRedraw: true,
+          format: progress.format,
+        },
+        Presets.rect
+      )
+      progressBar.start(progress.total, 0, { speed: '0' })
+    }
 
     const startTime = Date.now()
 
@@ -386,25 +332,29 @@ export class CommandWrapper {
       }
     })
 
-    // Convert stderr to a readable stream that emits its output line by line
+    // Always capture stderr for error reporting
+    const stderrLines: string[] = []
     const stderr = readline.createInterface({
       input: process.stderr,
       terminal: false,
     })
 
-    // Handle progress updates from stderr
     stderr.on('line', (line: string) => {
-      try {
-        const progress = JSON.parse(line)
+      if (progressBar) {
+        try {
+          const progress = JSON.parse(line)
 
-        if (progress.type === 'progress') {
-          const elapsedSeconds = (Date.now() - startTime) / 1000
-          const speed = Math.round(progress.current / elapsedSeconds)
-          progressBar.update(progress.current, { speed })
+          if (progress.type === 'progress') {
+            const elapsedSeconds = (Date.now() - startTime) / 1000
+            const speed = Math.round(progress.current / elapsedSeconds)
+            progressBar.update(progress.current, { speed })
+            return
+          }
+        } catch (_) {
+          progressBar.stop()
         }
-      } catch (_) {
-        progressBar.stop()
       }
+      stderrLines.push(line)
     })
 
     // Wait for process completion
@@ -412,7 +362,9 @@ export class CommandWrapper {
       process.on('close', (code, signal) => resolve([code, signal]))
     })
 
-    progressBar.stop()
+    progressBar?.stop()
+
+    const stderrOutput = stderrLines.join('\n')
 
     if (signal === 'SIGKILL') {
       return left({
@@ -432,7 +384,7 @@ export class CommandWrapper {
     } else if (exitCode !== 0) {
       return left({
         code: 'QNT516',
-        message: `Rust evaluator exited with code ${exitCode}`,
+        message: `Rust evaluator exited with code ${exitCode}${stderrOutput ? `\n${stderrOutput}` : ''}`,
       })
     }
 
