@@ -25,6 +25,7 @@ import {
   MarkupContent,
   MarkupKind,
   ProposedFeatures,
+  ReferenceParams,
   RenameParams,
   SignatureHelp,
   SignatureHelpParams,
@@ -52,6 +53,7 @@ import { completeIdentifier, getFieldCompletions, getSuggestedBuiltinsForType } 
 import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
+import { findReferencesAtPosition } from './references'
 import { getDeclRegExp } from './rename'
 import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
@@ -93,6 +95,7 @@ export class QuintLanguageServer {
           },
           hoverProvider: true,
           renameProvider: true,
+          referencesProvider: true,
           signatureHelpProvider: {
             triggerCharacters: ['('],
           },
@@ -184,7 +187,8 @@ export class QuintLanguageServer {
       }
 
       const range = locToRange(loc)
-      const uri = URI.parse(loc.source).toString()
+      const parsedSource = URI.parse(loc.source)
+      const uri = parsedSource.scheme ? parsedSource.toString() : URI.file(loc.source).toString()
 
       // Definitions start with a qualifier. This finds where the definition name
       // actually starts and corrects the range. If the file is not opened in the
@@ -194,6 +198,7 @@ export class QuintLanguageServer {
       const text = documents.get(uri)?.getText(range) ?? name
       const unqualifiedName = name.split('::').pop()!
       const start = text.search(new RegExp(unqualifiedName))
+      const startOffset = start >= 0 ? start : 0
       return [
         {
           // The range for the name being hover over
@@ -202,7 +207,7 @@ export class QuintLanguageServer {
           // The range for the entire definition (including the qualifier and body)
           targetRange: range,
           // The range for the definition's name
-          targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + start } },
+          targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + startOffset } },
         },
       ]
     })
@@ -459,6 +464,20 @@ export class QuintLanguageServer {
       }
 
       return { changes: { [params.textDocument.uri]: changes } }
+    })
+
+    connection.onReferences((params: ReferenceParams) => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      return findReferencesAtPosition(
+        parsedData,
+        params.textDocument.uri,
+        params.position,
+        params.context.includeDeclaration
+      )
     })
 
     // Make the text document manager listen on the connection

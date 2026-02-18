@@ -27,7 +27,33 @@ export function findDefinition(
   // Find definition of name
   const def = table.get(id)
   if (!def) {
-    return { nameId: id, name }
+    // Some positions (e.g., on app nodes) may not map directly by id.
+    // Resolve by name, preferring refs that match the cursor position.
+    const candidates = [...table.entries()].filter(([_, binding]) => binding.name === name)
+    if (candidates.length === 0) {
+      return { nameId: id, name }
+    }
+
+    const localRef = candidates.find(([refId, _]) => {
+      const loc = sourceMap.get(refId)
+      return loc ? containsPosition(loc, source, position) : false
+    })
+
+    if (localRef) {
+      return {
+        nameId: id,
+        name,
+        definitionId: localRef[1].id,
+      }
+    }
+
+    const declaration = candidates.find(([refId, binding]) => refId === binding.id)
+    const byName = declaration?.[1] ?? candidates[0][1]
+    return {
+      nameId: id,
+      name,
+      definitionId: byName.id,
+    }
   }
 
   return {
@@ -35,4 +61,14 @@ export function findDefinition(
     name,
     definitionId: def.id,
   }
+}
+
+function containsPosition(loc: Loc, source: string, position: Position): boolean {
+  return (
+    loc.source === source &&
+    position.line >= loc.start.line &&
+    (!loc.end || position.line <= loc.end.line) &&
+    position.character >= loc.start.col &&
+    (!loc.end || position.character <= loc.end.col)
+  )
 }

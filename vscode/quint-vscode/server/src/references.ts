@@ -1,0 +1,88 @@
+import { ParserPhase3 } from '@informalsystems/quint'
+import { Location, Position } from 'vscode-languageserver/node'
+import { URI } from 'vscode-uri'
+import { findDefinition } from './definitions'
+import { findBestMatchingResult, locToRange } from './reporting'
+
+export function findReferencesAtPosition(
+  parsedData: ParserPhase3,
+  uri: string,
+  position: Position,
+  includeDeclaration: boolean
+): Location[] {
+  const { table, sourceMap } = parsedData
+  const sourceFile = URI.parse(uri).path
+  const allIds: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
+  const match = findBestMatchingResult(sourceMap, allIds, position, sourceFile)
+  if (!match) {
+    return []
+  }
+
+  const declarationId = resolveDeclarationId(parsedData, uri, position, match.id)
+  if (!declarationId) {
+    return []
+  }
+
+  const referencedIds = [...table.entries()]
+    .filter(([_, value]) => value.id === declarationId)
+    .map(([id]) => id)
+
+  if (includeDeclaration) {
+    referencedIds.push(declarationId)
+  }
+
+  const dedupedIds = [...new Set(referencedIds.map(id => id.toString()))].map(id => BigInt(id))
+
+  return dedupedIds.reduce((references, id) => {
+    const loc = sourceMap.get(id)
+    if (!loc) {
+      return references
+    }
+
+    references.push({
+      uri: asUri(loc.source),
+      range: locToRange(loc),
+    })
+    return references
+  }, [] as Location[])
+}
+
+function asUri(source: string): string {
+  const parsed = URI.parse(source)
+  return parsed.scheme ? parsed.toString() : URI.file(source).toString()
+}
+
+function resolveDeclarationId(parsedData: ParserPhase3, uri: string, position: Position, fallbackId: bigint): bigint | undefined {
+  const { table, sourceMap } = parsedData
+  const link = findDefinition(parsedData, uri, position)
+  if (link?.definitionId) {
+    return link.definitionId
+  }
+
+  // Some operator applications are not directly indexed by id in `table`.
+  // In that case, resolve by name and use the declaration target id.
+  if (link?.name) {
+    const byName = [...table.entries()].filter(([_, binding]) => binding.name === link.name)
+    if (byName.length > 0) {
+      const source = URI.parse(uri).path
+      const localRef = byName.find(([refId, _binding]) => {
+        const loc = sourceMap.get(refId)
+        return (
+          loc &&
+          loc.source === source &&
+          position.line >= loc.start.line &&
+          (!loc.end || position.line <= loc.end.line) &&
+          position.character >= loc.start.col &&
+          (!loc.end || position.character <= loc.end.col)
+        )
+      })
+      if (localRef) {
+        return localRef[1].id
+      }
+      const declarationEntry = byName.find(([id, binding]) => id === binding.id)
+      return declarationEntry?.[1].id ?? byName[0][1].id
+    }
+  }
+
+  return table.get(fallbackId)?.id ?? fallbackId
+}
