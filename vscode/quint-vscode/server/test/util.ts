@@ -85,6 +85,6 @@ export function parseProjectOrThrow(
     return [parsedData, { rootDir, entryUri }]
   } finally {
     // Parsing already loaded all imported files into memory.
-       rmdirSync(rootDir, { recursive: true })
-    }
+    rmdirSync(rootDir, { recursive: true })
+  }
 }

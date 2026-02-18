@@ -18,9 +18,7 @@ export function findReferencesAtPosition(
     return []
   }
 
-  const referencedIds = [...table.entries()]
-    .filter(([_, value]) => value.id === declarationId)
-    .map(([id]) => id)
+  const referencedIds = [...table.entries()].filter(([_, value]) => value.id === declarationId).map(([id]) => id)
 
   if (includeDeclaration) {
     referencedIds.push(declarationId)
@@ -75,7 +73,12 @@ function asUri(source: string): string {
   return parsed.scheme ? parsed.toString() : URI.file(source).toString()
 }
 
-function resolveDeclarationId(parsedData: ParserPhase3, uri: string, position: Position, fallbackId: bigint): bigint | undefined {
+function resolveDeclarationId(
+  parsedData: ParserPhase3,
+  uri: string,
+  position: Position,
+  fallbackId: bigint
+): bigint | undefined {
   const { table, sourceMap } = parsedData
   const link = findDefinition(parsedData, uri, position)
   if (link?.definitionId) {
