@@ -39,12 +39,44 @@ describe('findReferencesAtPosition', () => {
     assert.isAtLeast(referencesWithDecl.length, referencesWithoutDecl.length)
   })
 
+  it('finds references when cursor is at end of selected symbol', () => {
+    const fooStartIndex = moduleText.indexOf('foo +')
+    const endOfFooPosition = indexToPosition(moduleText, fooStartIndex + 'foo'.length)
+    const references = findReferencesAtPosition(parsedData, mockedUri, endOfFooPosition, false)
+
+    assert.isAtLeast(references.length, 2)
+  })
+
   it('finds references when the cursor is on the declaration', () => {
     const declIndex = moduleText.indexOf('foo = 1')
     const declPosition = indexToPosition(moduleText, declIndex)
     const references = findReferencesAtPosition(parsedData, mockedUri, declPosition, false)
 
     assert.isAtLeast(references.length, 2)
+  })
+
+  it('returns no references when cursor is on numeric literal', () => {
+    const literalIndex = moduleText.indexOf('1')
+    const literalPosition = indexToPosition(moduleText, literalIndex)
+    const references = findReferencesAtPosition(parsedData, mockedUri, literalPosition, false)
+
+    assert.deepEqual(references, [])
+  })
+
+  it('returns no references on numeric literal even with includeDeclaration', () => {
+    const literalIndex = moduleText.indexOf('1')
+    const literalPosition = indexToPosition(moduleText, literalIndex)
+    const references = findReferencesAtPosition(parsedData, mockedUri, literalPosition, true)
+
+    assert.deepEqual(references, [])
+  })
+
+  it('returns no references when cursor is on operator token', () => {
+    const plusIndex = moduleText.indexOf('+')
+    const plusPosition = indexToPosition(moduleText, plusIndex)
+    const references = findReferencesAtPosition(parsedData, mockedUri, plusPosition, true)
+
+    assert.deepEqual(references, [])
   })
 
   it('finds references for def usages', () => {

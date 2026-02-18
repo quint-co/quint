@@ -1,4 +1,4 @@
-import { ParserPhase3 } from '@informalsystems/quint'
+import { Loc, ParserPhase3 } from '@informalsystems/quint'
 import { Location, Position } from 'vscode-languageserver/node'
 import { URI } from 'vscode-uri'
 import { findDefinition } from './definitions'
@@ -13,12 +13,7 @@ export function findReferencesAtPosition(
   const { table, sourceMap } = parsedData
   const sourceFile = URI.parse(uri).path
   const allIds: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
-  const match = findBestMatchingResult(sourceMap, allIds, position, sourceFile)
-  if (!match) {
-    return []
-  }
-
-  const declarationId = resolveDeclarationId(parsedData, uri, position, match.id)
+  const declarationId = resolveDeclarationIdAroundPosition(parsedData, uri, position, sourceMap, allIds, sourceFile)
   if (!declarationId) {
     return []
   }
@@ -45,6 +40,34 @@ export function findReferencesAtPosition(
     })
     return references
   }, [] as Location[])
+}
+
+function resolveDeclarationIdAroundPosition(
+  parsedData: ParserPhase3,
+  uri: string,
+  position: Position,
+  sourceMap: Map<bigint, Loc>,
+  allIds: [bigint, null][],
+  sourceFile: string
+): bigint | undefined {
+  const lookupPositions = [position]
+  // VS Code can invoke references with the cursor at the end of a selected token.
+  if (position.character > 0) {
+    lookupPositions.push({ ...position, character: position.character - 1 })
+  }
+
+  for (const lookupPosition of lookupPositions) {
+    const match = findBestMatchingResult(sourceMap, allIds, lookupPosition, sourceFile)
+    if (!match) {
+      continue
+    }
+    const declarationId = resolveDeclarationId(parsedData, uri, lookupPosition, match.id)
+    if (declarationId) {
+      return declarationId
+    }
+  }
+
+  return undefined
 }
 
 function asUri(source: string): string {
@@ -84,5 +107,5 @@ function resolveDeclarationId(parsedData: ParserPhase3, uri: string, position: P
     }
   }
 
-  return table.get(fallbackId)?.id ?? fallbackId
+  return table.get(fallbackId)?.id
 }
