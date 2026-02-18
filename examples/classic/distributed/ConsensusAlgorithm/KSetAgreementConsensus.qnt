@@ -18,8 +18,8 @@ module KSetAgreementConsensus {
 
   val kSetAgreement = {
     // Get all decided values (excluding None) and ensure they are unique
-    val decidedValues = Procs.exclude(crashed).map(p => procState.get(p).y).filter(v => v != None)
-
+    val decidedValues = Procs.exclude(crashed).map(p => procState.get(p).decision).filter(v => v != None)
+  
     // Check that number of unique decided values is at most K
     decidedValues.size() <= K
   }
@@ -28,11 +28,11 @@ module KSetAgreementConsensus {
 module KSetProperValues {
   // quint run --main KSetProperValues --invariant kSetAgreement KSetAgreementConsensus.qnt
   // quint test --main KSetProperValues KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
+  import KSetAgreementConsensus(NUM_PPROCESSES = 8, MAX_FAULTS = 3, ACTUAL_FAULTS = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest =
     init
-    .then((F/K + 1).reps(_ => step))
+    .then(((MAX_FAULTS/K + 1) * 4 + 1).reps(_ => step))
     .expect(kSetAgreement)
     .expect(validity)
 }
@@ -42,11 +42,11 @@ module KSetBadValues {
   // The command above should fail, but it might take a few minutes (and extra samples) to find a violation
   // Use --seed=0x12d0977afd37f0 to find it (generated in quint v0.23.0)
   // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
-  import KSetAgreementConsensus(N = 8, F = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
+  import KSetAgreementConsensus(NUM_PPROCESSES = 8, MAX_FAULTS = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
   run consensusRunTest  =
     init
-      .then((F/K + 1).reps(_ => step))
+      .then(((MAX_FAULTS/K + 1) * 4 + 1).reps(_ => step))
       .expect(validity)
 
   //
@@ -97,7 +97,7 @@ module KSetBadValues {
           newCorrectValues.union(newCrashedProcsValues)
         }
 
-      { ...procState.get(p), S: processedValues }
+      { ...procState.get(p), valuesCurrentRound: processedValues }
     }),
   }
 
