@@ -1,5 +1,5 @@
 import { Loc, ParserPhase3 } from '@informalsystems/quint'
-import { findName } from './reporting'
+import { findName, isPositionInLoc } from './reporting'
 import { Position } from 'vscode-languageserver/node'
 import { URI } from 'vscode-uri'
 
@@ -36,7 +36,7 @@ export function findDefinition(
 
     const localRef = candidates.find(([refId, _]) => {
       const loc = sourceMap.get(refId)
-      return loc ? containsPosition(loc, source, position) : false
+      return loc ? isPositionInLoc(loc, position, source) : false
     })
 
     if (localRef) {
@@ -61,14 +61,4 @@ export function findDefinition(
     name,
     definitionId: def.id,
   }
-}
-
-function containsPosition(loc: Loc, source: string, position: Position): boolean {
-  return (
-    loc.source === source &&
-    position.line >= loc.start.line &&
-    (!loc.end || position.line <= loc.end.line) &&
-    position.character >= loc.start.col &&
-    (!loc.end || position.character <= loc.end.col)
-  )
 }

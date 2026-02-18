@@ -2,7 +2,7 @@ import { Loc, ParserPhase3 } from '@informalsystems/quint'
 import { Location, Position } from 'vscode-languageserver/node'
 import { URI } from 'vscode-uri'
 import { findDefinition } from './definitions'
-import { findBestMatchingResult, locToRange } from './reporting'
+import { findBestMatchingResult, isPositionInLoc, locToRange } from './reporting'
 
 export function findReferencesAtPosition(
   parsedData: ParserPhase3,
@@ -90,14 +90,7 @@ function resolveDeclarationId(parsedData: ParserPhase3, uri: string, position: P
       const source = URI.parse(uri).path
       const localRef = byName.find(([refId, _binding]) => {
         const loc = sourceMap.get(refId)
-        return (
-          loc &&
-          loc.source === source &&
-          position.line >= loc.start.line &&
-          (!loc.end || position.line <= loc.end.line) &&
-          position.character >= loc.start.col &&
-          (!loc.end || position.character <= loc.end.col)
-        )
+        return loc ? isPositionInLoc(loc, position, source) : false
       })
       if (localRef) {
         return localRef[1].id
@@ -107,5 +100,12 @@ function resolveDeclarationId(parsedData: ParserPhase3, uri: string, position: P
     }
   }
 
-  return table.get(fallbackId)?.id
+  const declarationFromRef = table.get(fallbackId)?.id
+  if (declarationFromRef) {
+    return declarationFromRef
+  }
+
+  // If this id is the declaration target of some references, treat it as a valid symbol declaration id.
+  const isDeclarationId = [...table.values()].some(binding => binding.id === fallbackId)
+  return isDeclarationId ? fallbackId : undefined
 }

@@ -167,17 +167,35 @@ export function locToRange(loc: Loc): Range {
   }
 }
 
+export function isPositionInLoc(loc: Loc, position: Position, sourceFile: string): boolean {
+  if (!loc || loc.source !== sourceFile) {
+    return false
+  }
+
+  const end = loc.end ?? loc.start
+  if (position.line < loc.start.line || position.line > end.line) {
+    return false
+  }
+
+  if (loc.start.line === end.line) {
+    return position.character >= loc.start.col && position.character <= end.col
+  }
+
+  if (position.line === loc.start.line) {
+    return position.character >= loc.start.col
+  }
+
+  if (position.line === end.line) {
+    return position.character <= end.col
+  }
+
+  return true
+}
+
 function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFile: string): T[] {
   const filteredResults = results.filter(([loc, _result]) => {
     // Position is part of effect's expression range
-    return (
-      loc &&
-      loc.source === sourceFile &&
-      position.line >= loc.start.line &&
-      (!loc.end || position.line <= loc.end.line) &&
-      position.character >= loc.start.col &&
-      (!loc.end || position.character <= loc.end.col)
-    )
+    return isPositionInLoc(loc, position, sourceFile)
   })
 
   // Sort effects by range size. We want to show the most specific effect for the position.

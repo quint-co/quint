@@ -93,6 +93,34 @@ describe('findReferencesAtPosition', () => {
     assert.isAtLeast(references.length, 2)
   })
 
+  it('finds references for var declaration and usages', () => {
+    const text = `module test {
+  var counter: int
+  def f() = counter + counter
+}`
+    const [modules, sourceMap, table] = parseOrThrow(text)
+    const parsedData = { modules, sourceMap, table } as unknown as ParserPhase3
+    const declIndex = text.indexOf('counter: int')
+    const declPosition = indexToPosition(text, declIndex)
+
+    const references = findReferencesAtPosition(parsedData, mockedUri, declPosition, true)
+    assert.isAtLeast(references.length, 3)
+  })
+
+  it('finds var references when cursor is at end of selected var name', () => {
+    const text = `module test {
+  var counter: int
+  def f() = counter + counter
+}`
+    const [modules, sourceMap, table] = parseOrThrow(text)
+    const parsedData = { modules, sourceMap, table } as unknown as ParserPhase3
+    const varNameStart = text.indexOf('counter: int')
+    const endOfVarName = indexToPosition(text, varNameStart + 'counter'.length)
+
+    const references = findReferencesAtPosition(parsedData, mockedUri, endOfVarName, true)
+    assert.isAtLeast(references.length, 3)
+  })
+
   it('finds references across imported files/modules', () => {
     const [parsedData, { rootDir, entryUri }] = parseProjectOrThrow('B.qnt', {
       'A.qnt': `module A {
