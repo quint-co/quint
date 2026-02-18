@@ -41,10 +41,10 @@ export async function findViolatedInvariants(
     return left(evalResults.value)
   }
 
-  const violatedIndices = evalResults.value.results
-    .map((r: any, i: number) => ({ r, i }))
-    .filter(({ r }: { r: any; i: number }) => r.value !== undefined && r.value === false)
-    .map(({ i }: { r: any; i: number }) => i)
+  const violatedIndices = evalResults.value
+    .map((value, i) => ({ value, i }))
+    .filter(({ value }) => value === false)
+    .map(({ i }) => i)
 
   return right(violatedIndices)
 }

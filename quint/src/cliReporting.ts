@@ -203,7 +203,9 @@ export async function processApalacheResult(
       console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
       const itfStates = err.traces?.[0]?.states
       const lastItfState = itfStates?.[itfStates.length - 1]
-      await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
+      if (invariantExprs && table && lastItfState) {
+        await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
+      }
     }
 
     if (stage.args.outItf && err.traces) {
@@ -222,17 +224,15 @@ export async function processApalacheResult(
 async function printViolatedInvariantsWithRust(
   invariantsList: string[],
   verbosityLevel: number,
-  invariantExprs?: QuintEx[],
-  table?: LookupTable,
-  itfState?: ItfState
+  invariantExprs: QuintEx[],
+  table: LookupTable,
+  itfState: ItfState
 ): Promise<void> {
-  if (invariantExprs && table && itfState) {
-    const result = await findViolatedInvariants(itfState, table, invariantExprs, verbosityLevel)
-    if (result.isRight()) {
-      printViolatedInvariantsByIndex(result.value, invariantsList)
-    } else {
-      console.warn(chalk.yellow(`Warning: could not determine violated invariants: ${result.value.message}`))
-    }
+  const result = await findViolatedInvariants(itfState, table, invariantExprs, verbosityLevel)
+  if (result.isRight()) {
+    printViolatedInvariantsByIndex(result.value, invariantsList)
+  } else {
+    console.warn(chalk.yellow(`Warning: could not determine violated invariants: ${result.value.message}`))
   }
 }
 

@@ -19,7 +19,7 @@ import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
 import { reviver } from '../jsonHelper'
-import { ItfState, diagnosticsOfItf, ofItf } from '../itf'
+import { ItfState, ItfValue, diagnosticsOfItf, ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
@@ -239,13 +239,13 @@ export class CommandWrapper {
    * @param {LookupTable} table - The lookup table for name resolution.
    * @param {QuintEx[]} exprs - The expressions to evaluate at the given state.
    *
-   * @returns The evaluation results for each expression.
+   * @returns Either an error or the list of evaluated ITF values (one per expression).
    */
   async evaluateAtState(
     state: ItfState,
     table: LookupTable,
     exprs: QuintEx[]
-  ): Promise<Either<QuintError, { results: { value?: any; error?: QuintError }[] }>> {
+  ): Promise<Either<QuintError, ItfValue[]>> {
     const input = { table, state, exprs }
     const result = await this.runRustEvaluator('evaluate-at-state-from-stdin', input)
 
@@ -254,7 +254,15 @@ export class CommandWrapper {
     }
 
     try {
-      return right(JSONbig.parse(result.value, reviver))
+      const parsed = JSONbig.parse(result.value, reviver)
+      const values: ItfValue[] = []
+      for (const r of parsed.results) {
+        if (r.error) {
+          return left(r.error)
+        }
+        values.push(r.value)
+      }
+      return right(values)
     } catch (error) {
       return left({ code: 'QNT516', message: `Failed to parse data from Rust evaluator: ${error}` })
     }
