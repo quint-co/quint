@@ -12,7 +12,8 @@ use std::time::Instant;
 
 use argh::FromArgs;
 use eyre::bail;
-use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError};
+use quint_evaluator::evaluator::evaluate_at_state;
+use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{
     ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
@@ -37,6 +38,7 @@ enum Command {
     SimulateFromStdin(SimulateQuintArgs),
     TestFromStdin(TestQuintArgs),
     ReplFromStdin(ReplFromStdinArgs),
+    EvaluateAtStateFromStdin(EvaluateAtStateArgs),
 }
 
 /// Run simulation with command-line arguments
@@ -99,6 +101,11 @@ struct TestQuintArgs {}
 #[argh(subcommand, name = "repl-from-stdin")]
 struct ReplFromStdinArgs {}
 
+/// Evaluate expressions at a given state from STDIN
+#[derive(FromArgs)]
+#[argh(subcommand, name = "evaluate-at-state-from-stdin")]
+struct EvaluateAtStateArgs {}
+
 /// Data expected on STDIN for simulation
 #[derive(Deserialize)]
 struct SimulateInput {
@@ -136,6 +143,7 @@ struct SimOutput {
     trace_statistics: TraceStatistics,
     witnessing_traces: Vec<usize>,
     samples: usize,
+    violated_invariants: Vec<usize>,
 }
 
 #[derive(Serialize)]
@@ -175,6 +183,28 @@ struct TestInput {
     verbosity: Verbosity,
 }
 
+/// Data expected on STDIN for evaluate-at-state
+#[derive(Deserialize)]
+struct EvaluateAtStateInput {
+    state: itf::State<itf::Value>,
+    table: LookupTable,
+    exprs: Vec<QuintEx>,
+}
+
+/// Data to be written to STDOUT after evaluate-at-state
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EvaluateAtStateOutput {
+    results: Vec<EvaluateResult>,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum EvaluateResult {
+    Ok { value: itf::Value },
+    Err { error: QuintError },
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct TestTrace {
@@ -207,6 +237,7 @@ fn main() -> eyre::Result<()> {
         Command::SimulateFromStdin(_) => simulate_from_stdin(),
         Command::TestFromStdin(_) => test_from_stdin(),
         Command::ReplFromStdin(_) => repl_from_stdin(),
+        Command::EvaluateAtStateFromStdin(_) => evaluate_at_state_from_stdin(),
     }
 }
 
@@ -344,6 +375,39 @@ fn test_from_stdin() -> eyre::Result<()> {
     Ok(())
 }
 
+/// Reads input from standard input (STDIN), evaluates expressions at a given state,
+/// and writes the results to standard output (STDOUT).
+fn evaluate_at_state_from_stdin() -> eyre::Result<()> {
+    log::set_json(true);
+
+    // Read input from STDIN
+    let EvaluateAtStateInput {
+        table,
+        state,
+        exprs,
+    } = serde_json::from_reader(io::stdin())?;
+
+    let eval_results = evaluate_at_state(state.value, &table, &exprs);
+
+    // Convert results to output format
+    let results: Vec<EvaluateResult> = eval_results
+        .into_iter()
+        .map(|res| match res {
+            Ok(value) => EvaluateResult::Ok {
+                value: value.to_itf(),
+            },
+            Err(error) => EvaluateResult::Err { error },
+        })
+        .collect();
+
+    let output = EvaluateAtStateOutput { results };
+
+    // Serialize the output to JSON and print it to STDOUT
+    serde_json::to_writer(io::stdout(), &output)?;
+
+    Ok(())
+}
+
 /// Run simulation in parallel. It splits the `nruns` across `nthreads`. It
 /// returns the outcome of the first non-successful thread, or the last
 /// successful if all succeeded.
@@ -466,6 +530,7 @@ fn simulate_in_parallel(
         trace_statistics: last_trace_statistics,
         witnessing_traces: aggregated_witnesses,
         samples,
+        violated_invariants: vec![],
     }
 }
 
@@ -510,12 +575,14 @@ fn to_sim_output(
                 trace_statistics,
                 witnessing_traces,
                 samples,
+                violated_invariants,
             } = result;
 
             SimOutput {
                 samples,
                 trace_statistics,
                 witnessing_traces,
+                violated_invariants,
                 status: if result {
                     SimulationStatus::Success
                 } else {
@@ -548,6 +615,7 @@ fn to_sim_output(
                     states: trace.to_itf(source.to_string()),
                 }],
                 witnessing_traces: vec![],
+                violated_invariants: vec![],
             }
         }
     }

@@ -58,6 +58,7 @@ import {
   outputTestResults,
   prepareOnTrace,
   printViolatedInvariants,
+  printViolatedInvariantsByIndex,
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
@@ -408,12 +409,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    // Parse the combined invariant for the Rust backend
-    const invariantExpr = toExpr(prev, invariantString)
-    if (invariantExpr.isLeft()) {
+    const individualInvariantsResult = mergeInMany(individualInvariants.map(inv => toExpr(prev, inv)))
+    if (individualInvariantsResult.isLeft()) {
       return cliErr('Argument error', {
         ...simulator,
-        errors: [mkErrorMessage(prev.sourceMap)(invariantExpr.value)],
+        errors: individualInvariantsResult.value.map(mkErrorMessage(new Map())),
       })
     }
 
@@ -426,7 +426,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         main: mainName,
         init,
         step,
-        invariant: invariantExpr.value,
+        invariants: individualInvariantsResult.value,
         witnesses: witnesses,
       },
       prev.path,
@@ -510,7 +510,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
             chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
-        printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
+        // Use Rust-provided violated invariants if available, otherwise fall back to TS evaluation
+        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0) {
+          printViolatedInvariantsByIndex(outcome.violatedInvariants, individualInvariants)
+        } else {
+          printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
+        }
       }
 
       if (verbosity.hasHints(verbosityLevel)) {

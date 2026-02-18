@@ -50,6 +50,7 @@ export interface Outcome {
   witnessingTraces: number[]
   samples: number
   traceStatistics: TraceStatistics
+  violatedInvariants: number[]
 }
 
 export interface TraceStatistics {

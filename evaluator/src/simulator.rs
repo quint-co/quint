@@ -17,7 +17,9 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 pub struct ParsedQuint {
     pub init: QuintEx,
     pub step: QuintEx,
-    pub invariant: QuintEx,
+    /// Individual invariants to check. These will be combined with AND during simulation,
+    /// but evaluated separately to report which specific invariants were violated.
+    pub invariants: Vec<QuintEx>,
     pub witnesses: Vec<QuintEx>,
     pub table: LookupTable,
 }
@@ -45,6 +47,7 @@ pub struct SimulationResult {
     pub trace_statistics: TraceStatistics,
     pub samples: usize,
     pub witnessing_traces: Vec<usize>,
+    pub violated_invariants: Vec<usize>,
 }
 
 /// Simulation error that includes context about when the error occurred.
@@ -74,6 +77,20 @@ pub struct TraceStatistics {
 }
 
 impl ParsedQuint {
+    /// Combines multiple invariants into a single expression using AND.
+    /// If the list is empty, returns `true`.
+    fn combine_invariants(&self) -> QuintEx {
+        self.invariants
+            .iter()
+            .fold(QuintEx::QuintBool { id: 0, value: true }, |acc, inv| {
+                QuintEx::QuintApp {
+                    id: 0,
+                    opcode: "and".into(),
+                    args: vec![acc, inv.clone()],
+                }
+            })
+    }
+
     /// Simulate a Quint model for a given number of steps and samples, storing
     /// up to `n_traces` traces of the greatest quality.
     ///
@@ -118,7 +135,17 @@ impl ParsedQuint {
 
         let init = interpreter.compile(&self.init);
         let step = interpreter.compile(&self.step);
-        let invariant = interpreter.compile(&self.invariant);
+
+        // Combine individual invariants with AND for efficient checking during simulation
+        let combined_invariant = self.combine_invariants();
+        let invariant = interpreter.compile(&combined_invariant);
+
+        // Compile individual invariants for violation reporting
+        let individual_invariants: Vec<_> = self
+            .invariants
+            .iter()
+            .map(|inv| interpreter.compile(inv))
+            .collect();
 
         if store_metadata {
             interpreter.create_nondet_picks();
@@ -137,6 +164,7 @@ impl ParsedQuint {
         let mut best_traces = Vec::with_capacity(n_traces + 1);
         let mut trace_lengths = Vec::with_capacity(n_traces + 1);
         let mut errors_found: usize = 0;
+        let mut violated_invariants: Vec<usize> = vec![];
 
         for sample_number in 1..=samples {
             reporter.next_sample();
@@ -206,6 +234,7 @@ impl ParsedQuint {
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
                             witnessing_traces,
+                            violated_invariants: vec![],
                         });
                     }
 
@@ -223,6 +252,24 @@ impl ParsedQuint {
 
                     if !success {
                         errors_found += 1;
+
+                        // Check which individual invariants failed on the FIRST violation only
+                        if errors_found == 1 {
+                            violated_invariants = individual_invariants
+                                .iter()
+                                .enumerate()
+                                .filter_map(|(idx, inv)| {
+                                    if let Ok(result) = inv.execute(&mut env) {
+                                        if !result.as_bool() {
+                                            return Some(idx);
+                                        }
+                                    }
+                                    None
+                                })
+                                .collect();
+                        }
+
+                        // Continue collecting violations until we have n_traces
                         if errors_found >= n_traces.max(1) {
                             return Ok(SimulationResult {
                                 result: false,
@@ -230,6 +277,7 @@ impl ParsedQuint {
                                 trace_statistics: get_trace_statistics(&trace_lengths),
                                 samples: sample_number,
                                 witnessing_traces,
+                                violated_invariants,
                             });
                         }
                     }
@@ -279,6 +327,7 @@ impl ParsedQuint {
             trace_statistics: get_trace_statistics(&trace_lengths),
             samples,
             witnessing_traces,
+            violated_invariants: vec![],
         })
     }
 }

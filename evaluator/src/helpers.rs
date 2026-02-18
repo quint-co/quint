@@ -101,11 +101,11 @@ pub fn parse_from_path(
             .unwrap()
             .expr
             .clone(),
-        invariant: output
+        invariants: vec![output
             .find_definition_by_name("q::inv")
             .unwrap()
             .expr
-            .clone(),
+            .clone()],
         witnesses: vec![],
         table: output.table,
     })

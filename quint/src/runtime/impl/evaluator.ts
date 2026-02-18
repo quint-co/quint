@@ -307,6 +307,7 @@ export class Evaluator {
       witnessingTraces,
       samples: runNo,
       traceStatistics: getTraceStatistics(traceLengths),
+      violatedInvariants: [],
     }
   }
 
