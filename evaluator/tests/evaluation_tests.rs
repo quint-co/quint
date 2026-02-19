@@ -1081,7 +1081,7 @@ fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::
         err.to_string(),
         "[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1122,7 +1122,7 @@ fn run_reps_false_when_action_is_false() -> Result<(), Box<dyn std::error::Error
         err.to_string(),
         "[QNT513] Reps loop could not continue after iteration #6 evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1162,7 +1162,7 @@ fn run_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1187,7 +1187,7 @@ fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Erro
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert_eq!(err.to_string(), "[QNT508] Cannot continue to \"expect\"");
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1204,7 +1204,7 @@ fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
