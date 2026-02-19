@@ -87,8 +87,9 @@ module ConsensusAlg {
 
   val agreement = Procs.exclude(crashed).forall(process1 => {
     Procs.exclude(crashed).forall(process2 => {
-      (procState.get(process1).decision != None and procState.get(process2).decision != None) implies
-        procState.get(process1).decision == procState.get(process2).decision
+      (procState.get(process1).decision != None and procState.get(process2).decision != None)
+        implies
+      procState.get(process1).decision == procState.get(process2).decision
     })
   })
 
@@ -204,11 +205,16 @@ module ConsensusAlg {
 
     val newCorrectValues: Set[Set[Value]] = correctProcsMessages.map(message => message.values)
     if (crashedProcsMessages.size() == 0) {
-      procState' = procState.keys().mapBy(process => {... procState.get(process), valuesCurrentRound: newCorrectValues})
+      procState' = procState.keys().mapBy(process => {
+        ... procState.get(process),
+        valuesCurrentRound: newCorrectValues
+      })
     } else {
-      val newCrashedProcsValues: Set[Set[Value]] = crashedProcsMessages.map(message => message.values)
+      val newCrashedProcsValues: Set[Set[Value]] =
+        crashedProcsMessages.map(message => message.values)
       // for each process we pick from which newly crashed they receive a message
-      nondet crashedMessagesReceived = Procs.setOfMaps(newCrashedProcsValues.union(Set(Set()))).oneOf()
+      nondet crashedMessagesReceived =
+        Procs.setOfMaps(newCrashedProcsValues.union(Set(Set()))).oneOf()
 
       procState' = procState.keys().mapBy(process => {
         ...procState.get(process),
@@ -289,9 +295,13 @@ module badValues {
       .then(((MAX_FAULTS + 1) * 4 + 1).reps(_ => step))
       .expect(validity)
 
-  /// We crash one process, and the set of excluded processes does not receive that process's messages
+  /// We crash one process, and the set of excluded processes does not receive
+  /// that process's messages
   run stepHideProcessMessagesFromSet(crashedProcess, excludedProcesses) = {
-    crashProcess(crashedProcess).then(sendMessages).then(receiveMessage(excludedProcesses)).then(computeAction)
+    crashProcess(crashedProcess)
+      .then(sendMessages)
+      .then(receiveMessage(excludedProcesses))
+      .then(computeAction)
   }
 
   /// If there is at most one fault (MAX_FAULTS = 1) two rounds should be enough to reach agreement.
