@@ -7,6 +7,7 @@
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintEx};
 use crate::itf::DebugMessage;
+use crate::rand::Rand;
 use crate::value::Value;
 use crate::Verbosity;
 use itf;
@@ -36,6 +37,10 @@ enum ReplCommand {
     GetTraceStates {},
     /// Reset the evaluator state
     Reset {},
+    /// Get the current RNG seed state
+    GetSeed {},
+    /// Set the RNG seed state
+    SetSeed { seed: u64 },
 }
 
 /// Responses sent by the REPL evaluator
@@ -63,6 +68,10 @@ enum ReplResponse {
     TraceStates { states: Vec<itf::Value> },
     /// Confirmation of reset
     ResetComplete {},
+    /// Result carrying the current seed value
+    SeedResult { seed: u64 },
+    /// Confirmation of seed being set
+    SeedSet {},
     /// Error response
     Error { message: String },
     /// Error response to be used for when the server cannot recover
@@ -238,6 +247,29 @@ impl ReplEvaluator {
         ReplResponse::ResetComplete {}
     }
 
+    fn get_seed(&self) -> ReplResponse {
+        match &self.env {
+            Some(env) => ReplResponse::SeedResult {
+                seed: env.rand.get_state(),
+            },
+            None => ReplResponse::Error {
+                message: "Evaluator not initialized".to_string(),
+            },
+        }
+    }
+
+    fn set_seed(&mut self, seed: u64) -> ReplResponse {
+        match &mut self.env {
+            Some(env) => {
+                env.rand = Rand::with_state(seed);
+                ReplResponse::SeedSet {}
+            }
+            None => ReplResponse::Error {
+                message: "Evaluator not initialized".to_string(),
+            },
+        }
+    }
+
     fn handle_command(&mut self, command: ReplCommand) -> ReplResponse {
         match command {
             ReplCommand::Initialize {
@@ -250,6 +282,8 @@ impl ReplEvaluator {
             ReplCommand::ReplShift {} => self.repl_shift(),
             ReplCommand::GetTraceStates {} => self.get_trace_states(),
             ReplCommand::Reset {} => self.reset(),
+            ReplCommand::GetSeed {} => self.get_seed(),
+            ReplCommand::SetSeed { seed } => self.set_seed(seed),
         }
     }
 }

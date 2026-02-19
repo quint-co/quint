@@ -380,4 +380,3 @@ echo '9223372036854775808' | quint --backend=rust -q 2>&1 | grep -o "QNT600.*i64
 ```
 QNT600] Integer literal 9223372036854775808 is outside i64 range
 ```
-

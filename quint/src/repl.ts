@@ -470,11 +470,22 @@ export function quintRepl(
                 out(r('.seed requires an integer, or no argument\n'))
               } else {
                 if (m[1].trim() === '') {
-                  out(g(`.seed=${state.seed}\n`))
-                } else {
-                  state.seed = BigInt(m[1])
-                  if (verbosity.hasReplPrompt(state.verbosity)) {
+                  // Get seed
+                  if (state.evaluator instanceof ReplServerWrapper) {
+                    const seed = await state.evaluator.getSeed()
+                    out(g(`.seed=${seed}\n`))
+                  } else {
                     out(g(`.seed=${state.seed}\n`))
+                  }
+                } else {
+                  // Set seed
+                  const newSeed = BigInt(m[1])
+                  if (state.evaluator instanceof ReplServerWrapper) {
+                    await state.evaluator.setSeed(newSeed)
+                  }
+                  state.seed = newSeed
+                  if (verbosity.hasReplPrompt(state.verbosity)) {
+                    out(g(`.seed=${newSeed}\n`))
                   }
                 }
               }

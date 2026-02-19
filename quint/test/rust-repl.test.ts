@@ -395,6 +395,31 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('seed reproduces nondeterministic evaluation with same result', async () => {
+    const input = dedent(
+      `var x: int
+      |action init = { nondet v = 0.to(9999).oneOf(); x' = v }
+      |.seed=123
+      |init
+      |x
+      |.seed=123
+      |init
+      |x
+      |`
+    )
+    const result = await withIO(input)
+    // Extract the values of x from the output (lines following ">>> x")
+    const lines = result.split('\n')
+    const xOutputs: string[] = []
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim() === '>>> x') {
+        xOutputs.push(lines[i + 1])
+      }
+    }
+    assert(xOutputs.length === 2, `expected 2 x outputs, got ${xOutputs.length}: ${result}`)
+    expect(xOutputs[0]).to.equal(xOutputs[1])
+  })
+
   it('handle exceptions', async () => {
     const input = dedent(
       `Set(Int)
