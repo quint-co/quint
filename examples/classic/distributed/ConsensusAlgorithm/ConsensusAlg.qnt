@@ -53,9 +53,18 @@ module ConsensusAlg {
   pure def compute(state: LocalState): LocalState = {
     val newReceivedValues = state.receivedValues.union(flatten(state.valuesCurrentRound))
     val newRound = state.currentRound + 1
-    val newDecision = if (state.currentRound == MAX_ROUNDS) Some(minValue(newReceivedValues)) else state.decision
+    val newDecision = {
+      if (state.currentRound == MAX_ROUNDS) Some(minValue(newReceivedValues))
+      else state.decision
+    }
 
-    { receivedValues: newReceivedValues, currentRound: newRound, decision: newDecision, valuesCurrentRound: Set(), proposalValue: state.proposalValue }
+    { 
+      receivedValues: newReceivedValues,
+      currentRound: newRound,
+      decision: newDecision,
+      valuesCurrentRound: Set(),
+      proposalValue: state.proposalValue
+    }
   }
 
   //
@@ -125,7 +134,13 @@ module ConsensusAlg {
 
   action initializeProcsStateWithDistinctValues = all {
     procState' = Procs.mapBy(processId => {
-      { receivedValues: Set(processId), currentRound: 1, decision: None, valuesCurrentRound: Set(), proposalValue: processId }
+      { 
+        receivedValues: Set(processId),
+        currentRound: 1, 
+        decision: None,
+        valuesCurrentRound: Set(), 
+        proposalValue: processId
+      }
     }),
     round' = 1,
     correctProcsMessages' = Set(),
@@ -140,7 +155,10 @@ module ConsensusAlg {
     }),
     crashedProcsMessages' =
       if (newlyCrashed.size() > 0) {
-         newlyCrashed.map(process => { sender: process, values: procState.get(process).receivedValues })
+        newlyCrashed.map(process => { 
+          sender: process,
+          values: procState.get(process).receivedValues 
+        })
       } else {
         Set()
       },
