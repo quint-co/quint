@@ -19,7 +19,7 @@ pub type QuintName = HipStr<'static>;
 pub struct QuintError {
     pub code: String,
     pub message: String,
-    pub reference: Option<QuintId>,
+    pub trace: Vec<QuintId>,
 }
 
 impl QuintError {
@@ -27,7 +27,7 @@ impl QuintError {
         QuintError {
             code: code.to_string(),
             message: message.to_string(),
-            reference: None,
+            trace: Vec::new(),
         }
     }
 
@@ -35,8 +35,13 @@ impl QuintError {
         QuintError {
             code: self.code,
             message: self.message,
-            reference: Some(reference),
+            trace: vec![reference],
         }
+    }
+
+    pub fn push_trace(mut self, id: QuintId) -> Self {
+        self.trace.push(id);
+        self
     }
 }
 

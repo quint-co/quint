@@ -21,6 +21,7 @@ import { QuintError, quintErrorToString } from './quintError'
 export interface ErrorMessage {
   explanation: string
   locs: Loc[]
+  traceLocs?: Loc[]
 }
 
 export interface Loc {
