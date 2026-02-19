@@ -276,7 +276,7 @@ module badValues {
     crashProcess(crashedProcess).then(sendMessages).then(receiveMessage(excludedProcesses)).then(computeAction)
   }
 
-  /// If there is at most one fault (MaxFaults = 1) two rounds should be enough to reach agreement.
+  /// If there is at most one fault (MAX_FAULTS = 1) two rounds should be enough to reach agreement.
   /// But in reality we have two faulty processes, 1 and 2. In the first round, process 1 crashes,
   /// and process 2 receives messages from process 1. In the second round, process 2 crashes, and
   /// some process see the 1 while others don't
