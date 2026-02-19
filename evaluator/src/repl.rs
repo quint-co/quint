@@ -6,6 +6,7 @@
 
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintEx};
+use crate::itf::DebugMessage;
 use crate::value::Value;
 use crate::Verbosity;
 use itf;
@@ -49,6 +50,7 @@ enum ReplResponse {
     EvaluationResult {
         #[serde(flatten)]
         result: ReplResult,
+        diagnostics: Vec<DebugMessage>,
     },
     /// Result of state shift with old and new states
     ReplShiftResult {
@@ -149,17 +151,15 @@ impl ReplEvaluator {
         };
 
         let compiled = interpreter.compile(&expr);
+        let result = match compiled.execute(env) {
+            Ok(value) => ReplResult::Ok { ok: value.to_itf() },
+            Err(err) => ReplResult::Err { err },
+        };
 
-        match compiled.execute(env) {
-            Ok(value) => {
-                let result_itf = value.to_itf();
-                ReplResponse::EvaluationResult {
-                    result: ReplResult::Ok { ok: result_itf },
-                }
-            }
-            Err(error) => ReplResponse::EvaluationResult {
-                result: ReplResult::Err { err: error },
-            },
+        let diagnostics = std::mem::take(&mut env.diagnostics);
+        ReplResponse::EvaluationResult {
+            result,
+            diagnostics,
         }
     }
 
