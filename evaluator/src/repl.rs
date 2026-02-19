@@ -238,11 +238,20 @@ impl ReplEvaluator {
     }
 
     fn reset(&mut self) -> ReplResponse {
-        if let Some(env) = &self.env {
-            let mut storage = env.var_storage.borrow_mut();
-            storage.vars.clear();
-            storage.next_vars.clear();
+        // Create a fresh interpreter (clears all caches, memos, registries).
+        // The table will be repopulated via a subsequent UpdateTable command.
+        let interpreter = Interpreter::new(LookupTable::default());
+        let storage = interpreter.var_storage.clone();
+        self.interpreter = Some(interpreter);
+
+        // Create a fresh env, preserving seed and verbosity
+        if let Some(old_env) = &self.env {
+            let seed = old_env.rand.get_state();
+            self.env = Some(Env::with_rand_state(storage, seed, self.verbosity));
+        } else {
+            self.env = Some(Env::new(storage, self.verbosity));
         }
+
         self.trace_states.clear();
         ReplResponse::ResetComplete {}
     }

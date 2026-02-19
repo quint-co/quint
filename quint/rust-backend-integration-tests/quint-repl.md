@@ -367,6 +367,33 @@ Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
 >>> .exit
 ```
 
+### Reload resets evaluator state
+
+Verifies that `.reload` properly resets the Rust evaluator's state.
+After stepping the counter forward, `.reload` should give a clean slate
+so that `init` produces a fresh `n = 1` with no stale state.
+
+<!-- !test in repl reload resets state -->
+```
+quint --backend=rust -r ../examples/language-features/counters.qnt::counters init OnPositive n .reload init n .exit --verbosity 1 2>&1 | tail -n +3
+```
+
+<!-- !test out repl reload resets state -->
+```
+>>> init
+true
+>>> OnPositive
+true
+>>> n
+2
+>>> .reload
+>>> init
+true
+>>> n
+1
+>>> .exit
+```
+
 ### REPL fails with bigint outside i64 range
 
 This test verifies that the Rust backend REPL rejects integers outside the i64 range.

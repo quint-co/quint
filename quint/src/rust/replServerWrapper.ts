@@ -335,6 +335,21 @@ export class ReplServerWrapper {
   }
 
   /**
+   * Reset the Rust evaluator state (interpreter, env, traces) while keeping the process alive.
+   * Used by .load/.reload to get a clean slate without respawning the subprocess.
+   */
+  async reset(): Promise<void> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'Reset' })
+
+    if (response.response !== 'ResetComplete') {
+      throw new Error('Failed to reset Rust evaluator')
+    }
+
+    this.traceCache = undefined
+  }
+
+  /**
    * Wait for initialization to complete
    */
   async waitForInitialization(): Promise<void> {

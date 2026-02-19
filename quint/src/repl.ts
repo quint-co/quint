@@ -148,16 +148,15 @@ class ReplState {
   }
 
   async clear() {
-    await this.shutdown()
-
     const rng = newRng(this.rng.getState())
     const recorder = newTraceRecorder(this.verbosity, rng)
 
     this.moduleHist = ''
     this.exprHist = []
     this.compilationState = newCompilationState()
-    if (this.useRustEvaluator) {
-      this.evaluator = new ReplServerWrapper(new Map(), recorder, rng)
+    if (this.evaluator instanceof ReplServerWrapper) {
+      // Keep the Rust process alive, just reset its state
+      await this.evaluator.reset()
     } else {
       this.evaluator = new Evaluator(new Map(), recorder, rng)
     }
@@ -316,8 +315,10 @@ export function quintRepl(
 
   // load the code from a filename and optionally import a module
   async function load(filename: string, moduleName: string | undefined) {
-    // Note: we don't call state.clear() here because loadFromFile creates a new state anyway
-    // and for the Rust backend, clear() would spawn an unnecessary subprocess
+    // Reset all state for a clean load/reload.
+    // For Rust backend this sends a Reset command (keeps the subprocess alive).
+    // For TS backend this creates a fresh evaluator.
+    await state.clear()
 
     const newState = loadFromFile(out, state, filename)
     if (!newState) {

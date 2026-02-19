@@ -241,6 +241,40 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('clear resets evaluator state', async () => {
+    const input = dedent(
+      `var x: int
+      |x' = 0
+      |x' = x + 1
+      |x
+      |.clear
+      |var x: int
+      |x' = 42
+      |x
+      |`
+    )
+    const output = dedent(
+      `>>> var x: int
+      |
+      |>>> x' = 0
+      |true
+      |>>> x' = x + 1
+      |true
+      |>>> x
+      |1
+      |>>> .clear
+      |
+      |>>> var x: int
+      |
+      |>>> x' = 42
+      |true
+      |>>> x
+      |42
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   xit('change verbosity and track executions', async () => {
     const input = dedent(
       `pure def plus(x, y) = x + y
