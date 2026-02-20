@@ -8,6 +8,7 @@
  */
 
 import { existsSync, readFileSync } from 'fs'
+import * as readline from 'readline'
 import { basename, dirname, resolve } from 'path'
 import { cwd } from 'process'
 import chalk from 'chalk'
@@ -621,6 +622,25 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
 
+  // Warn when using temporal properties with Apalache, which has only experimental support
+  if (prev.args.temporal && prev.args.backend !== 'tlc') {
+    console.warn(
+      chalk.yellow(
+        '\n  WARNING: Apalache has experimental support for temporal properties and might give incorrect results.\n' +
+          '  Consider using --backend tlc, which fully supports temporal properties.\n'
+      )
+    )
+
+    const confirmed = await askUserYesNo('Do you want to proceed with Apalache anyway? (y/N) ')
+    if (!confirmed) {
+      return cliErr('Aborted: re-run with --backend tlc for full temporal property support', {
+        ...verifying,
+        errors: [],
+        sourceCode: prev.sourceCode,
+      })
+    }
+  }
+
   if (prev.args.backend === 'tlc') {
     return verifyWithTlcBackend(prev, verifying, verbosityLevel)
   }
@@ -743,4 +763,20 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
   }
 
   return right({ ...parsing, documentation: new Map(allEntries) })
+}
+
+/**
+ * Prompt the user with a yes/no question on the terminal. Defaults to "no".
+ */
+function askUserYesNo(question: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  })
+  return new Promise(resolve => {
+    rl.question(chalk.yellow(question), answer => {
+      rl.close()
+      resolve(answer.trim().toLowerCase() === 'y')
+    })
+  })
 }
