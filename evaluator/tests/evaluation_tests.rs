@@ -1309,3 +1309,31 @@ fn cardinality_overflow() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn error_trace_on_division_by_zero() {
+    // A direct error should produce a trace with at least one entry
+    let result = eval_expr("1 / 0");
+    let err = result.unwrap_err();
+    assert!(
+        !err.trace.is_empty(),
+        "Division by zero should have a stack trace"
+    );
+}
+
+#[test]
+fn error_trace_through_user_def() {
+    // When a user-defined operator triggers an error, the trace should grow
+    // with each call site in the chain
+    let result = eval_expr(
+        "def f(x) = 1 / x
+         def g(y) = f(y)
+         g(0)",
+    );
+    let err = result.unwrap_err();
+    assert!(
+        err.trace.len() == 3,
+        "Error through nested user-defined calls should have exactly 3 trace entries, got {}",
+        err.trace.len()
+    );
+}
