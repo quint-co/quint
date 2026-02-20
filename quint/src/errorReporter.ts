@@ -153,7 +153,13 @@ export function createFinders(sourceCode: Map<string, string>): Map<string, any>
  * @param indent - number of spaces to indent the output
  * @returns formatted line with carets pointing to the error
  */
-function formatLine(lineIndex: Maybe<number>, startCol: number, endCol: number, line: string, indent: number = 0): string {
+function formatLine(
+  lineIndex: Maybe<number>,
+  startCol: number,
+  endCol: number,
+  line: string,
+  indent: number = 0
+): string {
   let output = ''
   const indentStr = ' '.repeat(indent)
   const lineNumberIndicator = lineIndex.isJust() ? `${lineIndex.value}: ` : ''

@@ -56,9 +56,7 @@ export function resolveTraceLocations(sourceMap: Map<bigint, Loc>, error: QuintE
   if (!traceRest || traceRest.length === 0) {
     return undefined
   }
-  return traceRest
-    .map(id => sourceMap.get(id))
-    .filter((loc): loc is Loc => loc !== undefined)
+  return traceRest.map(id => sourceMap.get(id)).filter((loc): loc is Loc => loc !== undefined)
 }
 
 export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
