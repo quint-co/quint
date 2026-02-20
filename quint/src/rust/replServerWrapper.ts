@@ -44,6 +44,7 @@ type ReplCommand =
   | { cmd: 'Reset' }
   | { cmd: 'GetSeed' }
   | { cmd: 'SetSeed'; seed: bigint }
+  | { cmd: 'SetVerbosity'; verbosity: number }
 
 /**
  * Responses received from the Rust REPL evaluator
@@ -63,6 +64,7 @@ type ReplResponse =
   | { response: 'ResetComplete' }
   | { response: 'SeedResult'; seed: bigint }
   | { response: 'SeedSet' }
+  | { response: 'VerbositySet' }
   | { response: 'Error'; message: string }
   | { response: 'FatalError'; message: string }
 
@@ -275,6 +277,15 @@ export class ReplServerWrapper {
 
     if (response.response !== 'SeedSet') {
       throw new Error('Failed to set seed on Rust evaluator')
+    }
+  }
+
+  async setVerbosity(verbosity: number): Promise<void> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'SetVerbosity', verbosity })
+
+    if (response.response !== 'VerbositySet') {
+      throw new Error('Failed to set verbosity on Rust evaluator')
     }
   }
 

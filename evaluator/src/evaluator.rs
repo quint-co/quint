@@ -748,8 +748,7 @@ impl Interpreter {
                     n_traces: ntraces,
                     seed,
                     store_metadata: false,
-                    // FIXME: Propagate verbosity into REPL
-                    verbosity: Verbosity::Quiet,
+                    verbosity: env.verbosity,
                 },
                 no_report(),
             ) {
@@ -761,6 +760,11 @@ impl Interpreter {
                         .map(|t| t.states)
                         .unwrap_or_default();
 
+                    // Extract diagnostics from the simulation trace states
+                    for state in &env.trace {
+                        env.diagnostics.extend(state.diagnostics.iter().cloned());
+                    }
+
                     if result.result {
                         Ok(Value::str("ok".into()))
                     } else {
@@ -768,6 +772,10 @@ impl Interpreter {
                     }
                 }
                 Err(sim_error) => {
+                    // Extract diagnostics from the error trace states
+                    for state in &sim_error.trace.states {
+                        env.diagnostics.extend(state.diagnostics.iter().cloned());
+                    }
                     env.trace = sim_error.trace.states;
                     Err(sim_error.error)
                 }

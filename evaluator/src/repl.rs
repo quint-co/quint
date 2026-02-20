@@ -41,6 +41,8 @@ enum ReplCommand {
     GetSeed {},
     /// Set the RNG seed state
     SetSeed { seed: u64 },
+    /// Set the verbosity level
+    SetVerbosity { verbosity: Verbosity },
 }
 
 /// Responses sent by the REPL evaluator
@@ -72,6 +74,8 @@ enum ReplResponse {
     SeedResult { seed: u64 },
     /// Confirmation of seed being set
     SeedSet {},
+    /// Confirmation of verbosity being set
+    VerbositySet {},
     /// Error response
     Error { message: String },
     /// Error response to be used for when the server cannot recover
@@ -279,6 +283,14 @@ impl ReplEvaluator {
         }
     }
 
+    fn set_verbosity(&mut self, verbosity: Verbosity) -> ReplResponse {
+        self.verbosity = verbosity;
+        if let Some(env) = &mut self.env {
+            env.verbosity = verbosity;
+        }
+        ReplResponse::VerbositySet {}
+    }
+
     fn handle_command(&mut self, command: ReplCommand) -> ReplResponse {
         match command {
             ReplCommand::Initialize {
@@ -293,6 +305,7 @@ impl ReplEvaluator {
             ReplCommand::Reset {} => self.reset(),
             ReplCommand::GetSeed {} => self.get_seed(),
             ReplCommand::SetSeed { seed } => self.set_seed(seed),
+            ReplCommand::SetVerbosity { verbosity } => self.set_verbosity(verbosity),
         }
     }
 }

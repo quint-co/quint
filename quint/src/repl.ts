@@ -455,6 +455,9 @@ export function quintRepl(
                 out(r('.verbosity requires a level from 0 to 5\n'))
               } else {
                 state.verbosity = Number(m[1])
+                if (state.evaluator instanceof ReplServerWrapper) {
+                  await state.evaluator.setVerbosity(state.verbosity)
+                }
                 if (verbosity.hasReplPrompt(state.verbosity)) {
                   out(g(`.verbosity=${state.verbosity}\n`))
                 }

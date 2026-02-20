@@ -24,7 +24,7 @@ pub struct State {
     pub diagnostics: Vec<DebugMessage>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DebugMessage {
     pub label: Str,
     pub value: Value,

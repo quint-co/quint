@@ -219,6 +219,33 @@ quint --backend=rust --verbosity=3 'q::debug("value:", { foo: 42, bar: "Hello, W
 >>> q::debug("value:", { foo: 42, bar: "Hello, World!" })
 [DEBUG] value: { bar: "Hello, World!", foo: 42 }
 { bar: "Hello, World!", foo: 42 }
+>>> 
+```
+
+### `q::debug` inside `q::testOnce` prints debug output with verbosity >= 3
+
+Setting `.verbosity=1` should suppress the debug output.
+
+<!-- !test in repl testOnce verbosity -->
+
+```
+{
+  echo "q::testOnce(10, 1, init, step, inv)"
+  echo ".verbosity=1"
+  echo "q::testOnce(10, 1, init, step, inv)"
+  echo ".exit"
+} | quint --backend=rust --verbosity=3 -r ./testFixture/simulator/debugCounter.qnt::debugCounter 2>&1 \
+  | tail -n +3 | head -n -1
+```
+
+<!-- !test out repl testOnce verbosity -->
+```
+>>> [DEBUG] n 0
+[DEBUG] n 1
+[DEBUG] n 2
+"violation"
+>>> .verbosity=1
+>>> "violation"
 ```
 
 ### REPL continues to work after missing name errors
