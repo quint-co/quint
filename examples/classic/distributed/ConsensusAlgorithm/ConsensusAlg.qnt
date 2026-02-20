@@ -280,9 +280,11 @@ module properValues {
 
   run consensusRunTest =
     init
-      .then(((MAX_FAULTS + 1) * 4 + 1).reps(_ => step))
+      .then(((MAX_FAULTS + 1) * 4).reps(_ => step))
       .expect(agreement)
       .expect(validity)
+      .expect(procState.keys().exists(p => procState.get(p).decision != None))
+
 }
 
 module badValues {
@@ -292,7 +294,7 @@ module badValues {
 
   run consensusRunTest =
     init
-      .then(((MAX_FAULTS + 1) * 4 + 1).reps(_ => step))
+      .then(((MAX_FAULTS + 1) * 4).reps(_ => step))
       .expect(validity)
 
   /// We crash one process, and the set of excluded processes does not receive

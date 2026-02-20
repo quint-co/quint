@@ -32,7 +32,7 @@ module KSetProperValues {
 
   run consensusRunTest =
     init
-    .then(((MAX_FAULTS/K + 1) * 4 + 1).reps(_ => step))
+    .then(((MAX_FAULTS/K + 1) * 4).reps(_ => step))
     .expect(kSetAgreement)
     .expect(validity)
 }
@@ -46,7 +46,7 @@ module KSetBadValues {
 
   run consensusRunTest  =
     init
-      .then(((MAX_FAULTS/K + 1) * 4 + 1).reps(_ => step))
+      .then(((MAX_FAULTS/K + 1) * 4).reps(_ => step))
       .expect(validity)
 
   //
