@@ -24,6 +24,9 @@ use quint_evaluator::Verbosity;
 use quint_evaluator::{helpers, log};
 use serde::{Deserialize, Serialize};
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(FromArgs)]
 #[argh(description = "Quint simulator")]
 struct TopLevel {
