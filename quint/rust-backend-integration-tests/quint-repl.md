@@ -248,6 +248,19 @@ Setting `.verbosity=1` should suppress the debug output.
 >>> "violation"
 ```
 
+### REPL accepts `--seed` from the command line
+
+<!-- !test in repl seed from cli -->
+
+```
+echo '.seed' | quint --backend=rust --seed=0xabc -q | head -n -1
+```
+
+<!-- !test out repl seed from cli -->
+```
+.seed=2748
+```
+
 ### REPL continues to work after missing name errors
 
 <!-- !test in repl works after name error -->

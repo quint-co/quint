@@ -208,6 +208,7 @@ export interface ReplOptions {
   importModule?: string
   replInput?: string[]
   verbosity: number
+  seed?: bigint
   backend?: 'typescript' | 'rust'
 }
 
@@ -242,7 +243,8 @@ export function quintRepl(
   })
 
   // the state
-  const state: ReplState = new ReplState(options.verbosity, newRng(), useRustEvaluator)
+  const rng = options.seed !== undefined ? newRng(options.seed) : newRng()
+  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator)
 
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
