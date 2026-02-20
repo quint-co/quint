@@ -197,3 +197,26666 @@ failover,
 /*! step !*/
 
 /*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
+
+/*! 1 + 3 !*/
+
+/*! Set(1, 2, 3).map(i => i * 2) !*/
+
+/*! fahrenheit(freezingTemperature) !*/
+
+/*! fahrenheit(boilingTemperature) !*/
+
+/*! 0.to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius) !*/
+
+/*! veryCold !*/
+
+/*! veryHot !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! temperature !*/
+
+/*! heatingOn !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! pressButton !*/
+
+/*! failover !*/
+
+/*! temperature !*/
+
+/*! all { temperature' = 100, heatingOn' = true, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! heatingOn !*/
+
+/*! temperature !*/
+
+/*! beeping !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! kettleState !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! heat !*/
+
+/*! temperature !*/
+
+/*! init !*/
+
+/*! pressButton !*/
+
+/*! heat !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! depressButton !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! failover !*/
+
+/*! kettleState !*/
+
+/*! all { heatingOn' = true, temperature' = 100, beeping' = false } !*/
+
+/*! any {
+depressButton,
+failover,
+} !*/
+
+/*! init !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! step !*/
+
+/*! initNondet !*/
