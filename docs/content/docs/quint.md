@@ -54,6 +54,9 @@ Options:
                  the module                                             [string]
       --verbosity  control how much output is produced (0 to 5)
                                                            [number] [default: 2]
+      --seed       random seed to use for non-deterministic choice      [string]
+      --backend    the backend to use for evaluation
+                [string] [choices: "typescript", "rust"] [default: "typescript"]
 ```
 
 ```sh
