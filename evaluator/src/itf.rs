@@ -30,6 +30,16 @@ pub struct DebugMessage {
     pub value: Value,
 }
 
+impl serde::Serialize for DebugMessage {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let mut s = s.serialize_struct("DebugMessage", 2)?;
+        s.serialize_field("label", self.label.as_str())?;
+        s.serialize_field("value", &self.value.to_itf())?;
+        s.end()
+    }
+}
+
 impl TraceQuality for Trace {
     fn is_violation(&self) -> bool {
         self.violation
@@ -58,21 +68,10 @@ impl Trace {
 
         let mut states = Vec::new();
         for (state, i) in self.states.into_iter().zip(0u64..) {
-            let diagnostics: Vec<_> = state
-                .diagnostics
-                .into_iter()
-                .map(|diag| {
-                    serde_json::json!({
-                        "label": diag.label,
-                        "value": diag.value.to_itf()
-                    })
-                })
-                .collect();
-
             let mut other = BTreeMap::new();
             other.insert(
                 "diagnostics".to_string(),
-                serde_json::to_string(&diagnostics).expect("failed to serialize diagnostics"),
+                serde_json::to_string(&state.diagnostics).expect("failed to serialize diagnostics"),
             );
 
             states.push(itf::State {

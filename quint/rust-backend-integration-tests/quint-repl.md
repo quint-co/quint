@@ -211,14 +211,14 @@ quint --backend=rust -r ../examples/language-features/instances.qnt::instances "
 <!-- !test in repl debug prints value to stdout and returns value -->
 
 ```
-echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint --backend=rust | tail -n +3
+quint --backend=rust --verbosity=3 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | tail -n +3
 ```
 
 <!-- !test out repl debug prints value to stdout and returns value -->
 ```
->>> > value: { bar: "Hello, World!", foo: 42 }
+>>> q::debug("value:", { foo: 42, bar: "Hello, World!" })
+[DEBUG] value: { bar: "Hello, World!", foo: 42 }
 { bar: "Hello, World!", foo: 42 }
->>> 
 ```
 
 ### REPL continues to work after missing name errors

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `Nat` and `Int` to rust backend (#1894)
 - Added support for the `--n-traces` flag in the Rust backend (#1898)
 - Added support for `--invariants` flag in the Rust backend (#1902)
+- The rust backend will report diagnostics for the REPL (#1909)
 
 ### Changed
 
