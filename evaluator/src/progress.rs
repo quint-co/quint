@@ -54,8 +54,9 @@ impl Reporter for JsonStdErr {
     fn next_sample(&mut self) {
         self.current_samples += 1;
         let progress = Self::fmt(self.current_samples, self.total_samples);
-        let mut stderr = io::stderr().lock();
-        writeln!(stderr, "{progress}").expect("failed to write progress to stderr");
+        let mut stderr = io::stderr();
+        serde_json::to_writer(stderr, &progress).expect("failed to write progress to stdout");
+        write!(stderr, "\n").expect("failed to write \n to stderr");
     }
 }
 
