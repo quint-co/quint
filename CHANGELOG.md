@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved memory allocation profile of LSP-server log messages (#1877)
 - Stream JSON in and out or rust evaluator to reduce memory allocations (#1882)
 - Improved power set sampling coverage in the Rust backend (#1888)
+- Changed default Rust allocator to MiMalloc (#1914)
 
 ### Deprecated
 ### Removed
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
 - Fixed LSP-server crashing upon console.{log, error} messages (#1875)
 - Fixed integer overflow errors not being reported properly in the Rust backend (#1887)
+- Added a warning when checking temporal formulas with Apalache (#1908)
 
 ### Security
 
