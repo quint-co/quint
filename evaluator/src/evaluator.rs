@@ -184,12 +184,16 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(table: LookupTable) -> Self {
+        Self::with_var_storage(table, Rc::new(RefCell::new(Storage::default())))
+    }
+
+    pub fn with_var_storage(table: LookupTable, var_storage: Rc<RefCell<Storage>>) -> Self {
         Self {
             table,
             param_registry: FxHashMap::default(),
             const_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
-            var_storage: Rc::new(RefCell::new(Storage::default())),
+            var_storage,
             memo: Rc::new(RefCell::new(FxHashMap::default())),
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
@@ -741,15 +745,15 @@ impl Interpreter {
             };
 
             let seed = Some(env.rand.get_state());
-            match parsed.simulate(
+            match parsed.simulate_with_env(
+                env,
                 SimulationConfig {
                     steps: nsteps,
                     samples: nruns,
                     n_traces: ntraces,
                     seed,
                     store_metadata: false,
-                    // FIXME: Propagate verbosity into REPL
-                    verbosity: Verbosity::Quiet,
+                    verbosity: env.verbosity,
                 },
                 no_report(),
             ) {

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `--invariants` flag in the Rust backend (#1902)
 - The rust backend will report diagnostics for the REPL (#1909)
 - The rust backend now displays a stack trace on runtime errors (#1910)
+- Added support for `--seed` int the REPL CLI (#1912)
 
 ### Changed
 
