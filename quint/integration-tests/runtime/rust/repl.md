@@ -219,6 +219,46 @@ quint --backend=rust --verbosity=3 'q::debug("value:", { foo: 42, bar: "Hello, W
 >>> q::debug("value:", { foo: 42, bar: "Hello, World!" })
 [DEBUG] value: { bar: "Hello, World!", foo: 42 }
 { bar: "Hello, World!", foo: 42 }
+>>> 
+```
+
+### `q::debug` inside `q::testOnce` prints debug output with verbosity >= 3
+
+Setting `.verbosity=1` should suppress the debug output.
+
+<!-- !test in repl testOnce verbosity -->
+
+```
+{
+  echo "q::testOnce(10, 1, init, step, inv)"
+  echo ".verbosity=1"
+  echo "q::testOnce(10, 1, init, step, inv)"
+  echo ".exit"
+} | quint --backend=rust --verbosity=3 -r ./testFixture/simulator/debugCounter.qnt::debugCounter 2>&1 \
+  | tail -n +3 | head -n -1
+```
+
+<!-- !test out repl testOnce verbosity -->
+```
+>>> [DEBUG] n 0
+[DEBUG] n 1
+[DEBUG] n 2
+"violation"
+>>> .verbosity=1
+>>> "violation"
+```
+
+### REPL accepts `--seed` from the command line
+
+<!-- !test in repl seed from cli -->
+
+```
+echo '.seed' | quint --backend=rust --seed=0xabc -q | head -n -1
+```
+
+<!-- !test out repl seed from cli -->
+```
+.seed=2748
 ```
 
 ### REPL continues to work after missing name errors
@@ -367,6 +407,33 @@ Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
 >>> .exit
 ```
 
+### Reload resets evaluator state
+
+Verifies that `.reload` properly resets the Rust evaluator's state.
+After stepping the counter forward, `.reload` should give a clean slate
+so that `init` produces a fresh `n = 1` with no stale state.
+
+<!-- !test in repl reload resets state -->
+```
+quint --backend=rust -r ../examples/language-features/counters.qnt::counters init OnPositive n .reload init n .exit --verbosity 1 2>&1 | tail -n +3
+```
+
+<!-- !test out repl reload resets state -->
+```
+>>> init
+true
+>>> OnPositive
+true
+>>> n
+2
+>>> .reload
+>>> init
+true
+>>> n
+1
+>>> .exit
+```
+
 ### REPL fails with bigint outside i64 range
 
 This test verifies that the Rust backend REPL rejects integers outside the i64 range.
@@ -380,4 +447,3 @@ echo '9223372036854775808' | quint --backend=rust -q 2>&1 | grep -o "QNT600.*i64
 ```
 QNT600] Integer literal 9223372036854775808 is outside i64 range
 ```
-
