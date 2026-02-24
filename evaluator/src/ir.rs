@@ -32,6 +32,10 @@ impl QuintError {
     }
 
     pub fn with_reference(self, reference: QuintId) -> Self {
+        debug_assert!(
+            self.trace.is_empty(),
+            "with_reference called on an error that already has a stack trace"
+        );
         QuintError {
             code: self.code,
             message: self.message,
