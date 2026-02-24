@@ -74,7 +74,7 @@
   "scripts": {
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
-    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts test/**/**/*.test.ts",
     "test-w": "while inotifywait -r -e close_write ./ ; do npm run test; done",
     "test-f": "mocha --reporter-option maxDiffSize=0 -r ts-node/register",
     "coverage": "nyc npm run test",
