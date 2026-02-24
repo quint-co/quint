@@ -169,7 +169,10 @@ impl ReplEvaluator {
             Err(err) => ReplResult::Err { err },
         };
 
-        let diagnostics = std::mem::take(&mut env.diagnostics);
+        let mut diagnostics = std::mem::take(&mut env.diagnostics);
+        for state in &mut env.trace {
+            diagnostics.extend(std::mem::take(&mut state.diagnostics));
+        }
         ReplResponse::EvaluationResult {
             result,
             diagnostics,
