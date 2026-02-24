@@ -491,13 +491,19 @@ quint compile --target tlaplus ./testFixture/ApalacheCompilationError.qnt 2> >(s
 <!-- !test exit 1 -->
 <!-- !test err ApalacheCompliationError.qnt to TLA+ -->
 ```
-HOME/ApalacheCompilationError.qnt:19:5 - error: [QNT409] Action A is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
-19:     A,
-        ^
 
-HOME/ApalacheCompilationError.qnt:20:5 - error: [QNT409] Action parameterizedAction is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
-20:     parameterizedAction(x),
-        ^^^^^^^^^^^^^^^^^^^^^^
+ Error [QNT409]: Action A is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+
+  at HOME/ApalacheCompilationError.qnt:19:5
+  19:     A,
+          ^
+
+
+ Error [QNT409]: Action parameterizedAction is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+
+  at HOME/ApalacheCompilationError.qnt:20:5
+  20:     parameterizedAction(x),
+          ^^^^^^^^^^^^^^^^^^^^^^
 
 error: Failed to convert init to predicate
 ```

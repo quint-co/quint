@@ -1081,7 +1081,7 @@ fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::
         err.to_string(),
         "[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1122,7 +1122,7 @@ fn run_reps_false_when_action_is_false() -> Result<(), Box<dyn std::error::Error
         err.to_string(),
         "[QNT513] Reps loop could not continue after iteration #6 evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1162,7 +1162,7 @@ fn run_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1187,7 +1187,7 @@ fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Erro
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert_eq!(err.to_string(), "[QNT508] Cannot continue to \"expect\"");
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1204,7 +1204,7 @@ fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1308,4 +1308,32 @@ fn cardinality_overflow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+}
+
+#[test]
+fn error_trace_on_division_by_zero() {
+    // A direct error should produce a trace with at least one entry
+    let result = eval_expr("1 / 0");
+    let err = result.unwrap_err();
+    assert!(
+        !err.trace.is_empty(),
+        "Division by zero should have a stack trace"
+    );
+}
+
+#[test]
+fn error_trace_through_user_def() {
+    // When a user-defined operator triggers an error, the trace should grow
+    // with each call site in the chain
+    let result = eval_expr(
+        "def f(x) = 1 / x
+         def g(y) = f(y)
+         g(0)",
+    );
+    let err = result.unwrap_err();
+    assert!(
+        err.trace.len() == 3,
+        "Error through nested user-defined calls should have exactly 3 trace entries, got {}",
+        err.trace.len()
+    );
 }
