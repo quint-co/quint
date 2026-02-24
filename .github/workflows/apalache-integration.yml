@@ -1,0 +1,115 @@
+name: Apalache Integration Tests
+
+on:
+  # Every pull request
+  pull_request:
+  # When part of a merge queue
+  merge_group:
+  # Pushes into the trunk
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'quint/**'
+              - 'examples/**'
+
+  apalache-integration-tests:
+    name: Apalache Integration Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "19"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Fetch Apalache
+        run: make apalache
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: npm install -g txm
+      - name: Start Apalache server
+        run: |
+          _build/apalache/bin/apalache-mc server &
+          sleep 5
+      - name: Apalache integration tests
+        run: cd ./quint && npm run apalache-integration
+
+  apalache-integration-tests-aggregator:
+    name: Apalache Integration Tests
+    needs: apalache-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Apalache integration tests completed successfully!"
+
+  examples-dashboard:
+    name: Examples Dashboard by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        run: quint --version
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "19"
+      - name: Set up Apalache
+        run: make apalache
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: matrix.operating-system == 'macos-latest'
+        # TODO(#1004): Workaround for GNU parallel not being available on macOS
+        name: Install GNU parallel
+        run: brew install parallel
+      - name: Ensure the examples dashboard is up to date
+        run: |
+          make examples
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" && exit 1)
+
+  examples-dashboard-aggregator:
+    name: Examples Dashboard
+    needs: examples-dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Examples Dashboard checks completed successfully!"
