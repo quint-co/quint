@@ -42,7 +42,7 @@ class ToStringWritable extends Writable {
 }
 
 // run a test with mocked input/output and return the input + output
-const withIO = async (inputText: string): Promise<string> => {
+const withIO = async (inputText: string, verbosityLevel: number = 2): Promise<string> => {
   // save the current chalk level and reset chalk to no color
   const savedChalkLevel = chalk.level
   chalk.level = 0
@@ -57,7 +57,7 @@ const withIO = async (inputText: string): Promise<string> => {
   // Use { end: false } to prevent ending output when input ends
   input.pipe(output, { end: false })
 
-  const rl = quintRepl(input, output, { verbosity: 2, backend: 'rust' }, () => {})
+  const rl = quintRepl(input, output, { verbosity: verbosityLevel, backend: 'rust' }, () => {})
   await output.isReady()
 
   // Send input line-by-line to the REPL. We emit 'data' events for each line,
@@ -77,7 +77,8 @@ const withIO = async (inputText: string): Promise<string> => {
   await once(rl, 'close')
 
   chalk.level = savedChalkLevel
-  return output.buffer
+  // Remove trailing newline that gets added when the REPL closes
+  return output.buffer.replace(/\n$/, '')
 }
 
 // the standard banner, which gets repeated
@@ -93,43 +94,11 @@ ${output}`
   expect(result).to.equal(expected)
 }
 
-async function withIODiagnostics(inputText: string): Promise<string | undefined> {
-  const savedChalkLevel = chalk.level
-  chalk.level = 0
-
-  const output = new ToStringWritable()
-  const input = new PassThrough()
-  input.pipe(output, { end: false })
-
-  // maybePrintDiagnostics in ReplServerWrapper uses console.log, not the output stream.
-  // Redirect console.log to the output buffer so [DEBUG] lines are captured.
-  const savedConsoleLog = console.log
-  console.log = (...args: unknown[]) => output.write(args.map(a => String(a)).join(' ') + '\n')
-
-  const rl = quintRepl(input, output, { verbosity: 3, backend: 'rust' }, () => {})
-  await output.isReady()
-
-  const lines = inputText.split(/(?<=\n)/)
-  for (const line of lines) {
-    input.emit('data', line)
-    await output.isReady()
-  }
-  input.end()
-  input.unpipe(output)
-  input.destroy()
-
-  await once(rl, 'close')
-
-  console.log = savedConsoleLog
-  chalk.level = savedChalkLevel
-  return output.buffer
-}
-
 async function assertReplDiagnostics(input: string, output: string) {
   const expected = `${banner}
 ${output}`
 
-  const result = await withIODiagnostics(input)
+  const result = await withIO(input, 3)
   assert(typeof result === 'string', 'expected result to be a string')
   expect(result).to.equal(expected)
 }
