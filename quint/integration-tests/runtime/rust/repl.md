@@ -14,6 +14,18 @@ rm "$TMPFILE"
 
 ## quint repl tests
 
+### OK on repl input
+
+<!-- !test check repl 1 + 1 -->
+    quint --backend=rust "1 + 1"
+
+<!-- !test check repl with multiple cmds -->
+    quint --backend=rust "1 + 1" "2 + 2"
+
+<!-- !test check repl 1 + 1 with echo -->
+    echo "1 + 1" | quint --backend=rust
+
+
 ### Repl loads a file with -r
 
 <!-- !test in repl loads a file -->
@@ -119,12 +131,13 @@ true
 
 <!-- !test in repl malformed expressions -->
 ```
-echo -e "1 +" | quint --backend=rust | grep -o 'syntax error: error: \[QNT000\]'
+echo -e "1 +" | quint --backend=rust | grep -oE 'syntax error:|Error \[QNT000\]'
 ```
 
 <!-- !test out repl malformed expressions -->
 ```
-syntax error: error: [QNT000]
+syntax error:
+Error [QNT000]
 ```
 
 ### Repl evaluates coin
@@ -271,9 +284,12 @@ echo -e 'inexisting_name\n1 + 1' | quint --backend=rust -q
 
 <!-- !test out repl works after name error -->
 ```
-static analysis error: error: [QNT404] Name 'inexisting_name' not found
-inexisting_name
-^^^^^^^^^^^^^^^
+static analysis error: 
+ Error [QNT404]: Name 'inexisting_name' not found
+
+  at <input-0>:0:1
+  inexisting_name
+  ^^^^^^^^^^^^^^^
 
 2
 
@@ -291,13 +307,19 @@ echo -e 'def farenheit(celsius) = celsius * 9 / 5 + 32\ndef farenheit(celsius) =
 <!-- !test out repl works after conflict -->
 ```
 
-static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
-def farenheit(celsius) = celsius * 9 / 5 + 32
-    ^^^^^^^^^
+static analysis error: 
+ Error [QNT101]: Conflicting definitions found for name 'farenheit' in module '__repl__'
 
-static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
-def farenheit(celsius) = celsius * 9 / 5 + 32
-    ^^^^^^^^^
+  at <input-0>:0:5
+  def farenheit(celsius) = celsius * 9 / 5 + 32
+      ^^^^^^^^^
+
+static analysis error: 
+ Error [QNT101]: Conflicting definitions found for name 'farenheit' in module '__repl__'
+
+  at <input-1>:0:5
+  def farenheit(celsius) = celsius * 9 / 5 + 32
+      ^^^^^^^^^
 
 33
 
@@ -312,23 +334,32 @@ echo -e 'def foo = 1 + "a"\nfoo\n1 + "a"\n1 + 1' | quint --backend=rust -q
 
 <!-- !test out repl works after type errors -->
 ```
-static analysis error: error: [QNT000] Couldn't unify int and str
+static analysis error: 
+ Error [QNT000]: Couldn't unify int and str
 Trying to unify int and str
 Trying to unify (int, int) => int and (int, str) => _t0
 
-def foo = 1 + "a"
-          ^^^^^^^
 
-static analysis error: error: [QNT404] Name 'foo' not found
-foo
-^^^
+  at <input-0>:0:11
+  def foo = 1 + "a"
+            ^^^^^^^
 
-static analysis error: error: [QNT000] Couldn't unify int and str
+static analysis error: 
+ Error [QNT404]: Name 'foo' not found
+
+  at <input-1>:0:1
+  foo
+  ^^^
+
+static analysis error: 
+ Error [QNT000]: Couldn't unify int and str
 Trying to unify int and str
 Trying to unify (int, int) => int and (int, str) => _t0
 
-1 + "a"
-^^^^^^^
+
+  at <input-2>:0:1
+  1 + "a"
+  ^^^^^^^
 
 2
 
@@ -346,14 +377,17 @@ Errors from `amWrong` should not affect the definition and usage of `amRight`
   echo "amWrong"
   echo "action amRight = all { myVar' = true }"
   echo "amRight"
-} | quint --backend=rust -r ../examples/language-features/instances.qnt::instances --verbosity 1 2>&1 | tail -n7
+} | quint --backend=rust -r ../examples/language-features/instances.qnt::instances --verbosity 1 2>&1 | tail -n10
 ```
 
 <!-- !test out regression 428 -->
 ```
->>> static analysis error: error: [QNT404] Name 'amWrong' not found
-amWrong
-^^^^^^^
+>>> static analysis error: 
+ Error [QNT404]: Name 'amWrong' not found
+
+  at <input-2>:0:1
+  amWrong
+  ^^^^^^^
 
 >>> 
 >>> true
@@ -445,5 +479,5 @@ echo '9223372036854775808' | quint --backend=rust -q 2>&1 | grep -o "QNT600.*i64
 
 <!-- !test out repl bigint outside i64 range -->
 ```
-QNT600] Integer literal 9223372036854775808 is outside i64 range
+QNT600]: Integer literal 9223372036854775808 is outside i64 range
 ```
