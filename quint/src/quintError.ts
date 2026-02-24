@@ -22,6 +22,8 @@ export interface QuintError {
   message: string
   /* The id of the component that caused the error */
   reference?: bigint
+  /* Call stack trace */
+  trace?: bigint[]
   /* Additional data for the error */
   data?: QuintErrorData
 }

@@ -314,7 +314,7 @@ impl ParsedQuint {
                         error: QuintError {
                             code: "QNT500".to_string(),
                             message: msg.to_string(),
-                            reference: None,
+                            trace: Vec::new(),
                         },
                     });
                 }

@@ -160,12 +160,15 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> 1 + false
-      |static analysis error: error: [QNT000] Couldn't unify int and bool
+      |static analysis error: 
+      | Error [QNT000]: Couldn't unify int and bool
       |Trying to unify int and bool
       |Trying to unify (int, int) => int and (int, bool) => _t0
       |
-      |1 + false
-      |^^^^^^^^^
+      |
+      |  at <input-0>:0:1
+      |  1 + false
+      |  ^^^^^^^^^
       |
       |>>> `
     )
@@ -229,13 +232,19 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |static analysis error: error: [QNT404] Name 'n' not found
-      |n * n
-      |^
+      |static analysis error: 
+      | Error [QNT404]: Name 'n' not found
       |
-      |static analysis error: error: [QNT404] Name 'n' not found
-      |n * n
-      |    ^
+      |  at <input-0>:0:1
+      |  n * n
+      |  ^
+      |
+      |static analysis error: 
+      | Error [QNT404]: Name 'n' not found
+      |
+      |  at <input-0>:0:5
+      |  n * n
+      |      ^
       |
       |>>> `
     )
@@ -282,9 +291,12 @@ describe('repl ok', () => {
       |[Frame 0]
       |div(2, 0) => none
       |
-      |runtime error: error: [QNT503] Division by zero
-      |pure def div(x, y) = x / y
-      |                     ^^^^^
+      |runtime error: 
+      | Error [QNT503]: Division by zero
+      |
+      |  at <input-0>:0:22
+      |  pure def div(x, y) = x / y
+      |                       ^^^^^
       |
       |>>> `
     )
@@ -397,9 +409,12 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: error: [QNT501] Infinite set Int is non-enumerable
-      |Set(Int)
-      |^^^^^^^^
+      |runtime error: 
+      | Error [QNT501]: Infinite set Int is non-enumerable
+      |
+      |  at <input-0>:0:1
+      |  Set(Int)
+      |  ^^^^^^^^
       |
       |>>> `
     )
