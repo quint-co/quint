@@ -46,9 +46,12 @@ quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture
 
 <!-- !test out junk -->
 ```
-Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
-9: the parser
-   ^^^
+
+ Error [QNT000]: extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+
+Q/testFixture/modulesAndJunk.qnt:9:1
+  9: the parser
+     ^^^
 
 error: parsing failed
 ```
@@ -69,9 +72,12 @@ redirects allow us to filter stderr instead of stdout.
 <!-- !test exit 1 -->
 <!-- !test err parsing invalid file -->
 ```
-./testFixture/_1011nameOutOfScope.qnt:5:11 - error: [QNT404] Name 'x' not found
-5:   val A = x + 1
-             ^
+
+ Error [QNT404]: Name 'x' not found
+
+  at ./testFixture/_1011nameOutOfScope.qnt:5:11
+  5:   val A = x + 1
+               ^
 
 error: parsing failed
 ```
@@ -145,11 +151,14 @@ quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
 
 <!-- !test err typecheck failure gives non-zero exit -->
 ```
-./testFixture/TrivialTypeError.qnt:2:7 - error: [QNT000] Couldn't unify str and int
+
+ Error [QNT000]: Couldn't unify str and int
 Trying to unify str and int
 
-2:   val x : int = "not an int"
-         ^
+
+  at ./testFixture/TrivialTypeError.qnt:2:7
+  2:   val x : int = "not an int"
+           ^
 
 error: typechecking failed
 ```
@@ -165,15 +174,21 @@ quint typecheck ./testFixture/typechecking/OverrideErrors.qnt 2> >(sed "s:$(pwd)
 
 <!-- !test err typecheck failure on override -->
 ```
-./testFixture/typechecking/OverrideErrors.qnt:8:16 - error: [QNT000] Couldn't unify bool and int
+
+ Error [QNT000]: Couldn't unify bool and int
 Trying to unify bool and int
 
-8:   import A(c = 1) as A1
-                  ^
 
-./testFixture/typechecking/OverrideErrors.qnt:9:16 - error: [QNT201] Instance overrides must be pure, but the value for c reads variables 'x'
-9:   import A(c = x) as A2
-                  ^
+  at ./testFixture/typechecking/OverrideErrors.qnt:8:16
+  8:   import A(c = 1) as A1
+                    ^
+
+
+ Error [QNT201]: Instance overrides must be pure, but the value for c reads variables 'x'
+
+  at ./testFixture/typechecking/OverrideErrors.qnt:9:16
+  9:   import A(c = x) as A2
+                    ^
 
 error: typechecking failed
 ```
@@ -339,16 +354,35 @@ true
 >>> .exit
 ```
 
-### Repl reports proper errors for malformed expressions 
+### Repl reports proper errors for malformed expressions
 
 <!-- !test in repl malformed expressions -->
 ```
-echo -e "1 +" | quint | grep -o 'syntax error: error: \[QNT000\]'
+echo -e "1 +" | quint | grep -o 'Error \[QNT000\]'
 ```
 
 <!-- !test out repl malformed expressions -->
 ```
-syntax error: error: [QNT000]
+Error [QNT000]
+```
+
+### Repl evaluates coin
+
+This is a regression test for #648.
+
+<!-- !test in repl evaluates coin -->
+```
+quint -r ../examples/tutorials/coin.qnt::coin init balances .exit --verbosity 1 2>&1 \
+  | tail -n 5
+```
+
+<!-- !test out repl evaluates coin -->
+```
+>>> init
+true
+>>> balances
+Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+>>> .exit
 ```
 
 
@@ -374,9 +408,10 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
-      45:          assert(n == 0),
-                   ^^^^^^^^^^^^^^
+       Error [QNT508]: Assertion failed
+      HOME/failingTestCounters.qnt:45:10
+        45:          assert(n == 0),
+                     ^^^^^^^^^^^^^^
     Use --seed=0x1 --match=failingTest to repeat.
 
 
@@ -435,9 +470,10 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
-      45:          assert(n == 0),
-                   ^^^^^^^^^^^^^^
+       Error [QNT508]: Assertion failed
+      HOME/failingTestCounters.qnt:45:10
+        45:          assert(n == 0),
+                     ^^^^^^^^^^^^^^
 
 [Frame 0]
 init => true
@@ -611,25 +647,6 @@ Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 Use --seed=0x11 --backend=typescript to reproduce.
-```
-
-### Repl evaluates coin
-
-This is a regression test for #648.
-
-<!-- !test in repl evaluates coin -->
-```
-quint -r ../examples/tutorials/coin.qnt::coin init balances .exit --verbosity 1 2>&1 \
-  | tail -n 5
-```
-
-<!-- !test out repl evaluates coin -->
-```
->>> init
-true
->>> balances
-Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
->>> .exit
 ```
 
 ### Run finds an overflow in Coin
@@ -1104,9 +1121,10 @@ exit $exit_code
   1 failed
 
   1) mintTwiceThenSendError:
-      HOME/coin.qnt:176:9 - error: [QNT511] Test mintTwiceThenSendError returned false
-      176:     run mintTwiceThenSendError = {
-                   ^^^^^^^^^^^^^^^^^^^^^^
+       Error [QNT511]: Test mintTwiceThenSendError returned false
+      HOME/coin.qnt:176:9
+        176:     run mintTwiceThenSendError = {
+                     ^^^^^^^^^^^^^^^^^^^^^^
 
 [Frame 0]
 init => true
@@ -1230,9 +1248,10 @@ exit $exit_code
   1 failed
 
   1) myTest:
-      HOME/_1040compileError.qnt:5:12 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
-      5:     assert(n > 0)
-                    ^
+       Error [QNT500]: Uninitialized const n. Use: import <moduleName>(n=<value>).*
+        at HOME/_1040compileError.qnt:5:12
+        5:     assert(n > 0)
+                      ^
     Use --seed=0x1 --match=myTest to repeat.
 
 
@@ -1258,9 +1277,12 @@ exit $exit_code
 <!-- !test out run uninitialized -->
 ```
 [error] Runtime error (duration).
-HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
-5:   action init = { x' = N }
-                          ^
+
+ Error [QNT500]: Uninitialized const N. Use: import <moduleName>(N=<value>).*
+
+HOME/_1041compileConst.qnt:5:24
+  5:   action init = { x' = N }
+                            ^
 
 error: Runtime error
 ```
@@ -1315,9 +1337,12 @@ echo -e 'inexisting_name\n1 + 1' | quint -q
 
 <!-- !test out repl works after name error -->
 ```
-static analysis error: error: [QNT404] Name 'inexisting_name' not found
-inexisting_name
-^^^^^^^^^^^^^^^
+static analysis error: 
+ Error [QNT404]: Name 'inexisting_name' not found
+
+  at <input-0>:0:1
+  inexisting_name
+  ^^^^^^^^^^^^^^^
 
 2
 
@@ -1335,13 +1360,19 @@ echo -e 'def farenheit(celsius) = celsius * 9 / 5 + 32\ndef farenheit(celsius) =
 <!-- !test out repl works after conflict -->
 ```
 
-static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
-def farenheit(celsius) = celsius * 9 / 5 + 32
-    ^^^^^^^^^
+static analysis error: 
+ Error [QNT101]: Conflicting definitions found for name 'farenheit' in module '__repl__'
 
-static analysis error: error: [QNT101] Conflicting definitions found for name 'farenheit' in module '__repl__'
-def farenheit(celsius) = celsius * 9 / 5 + 32
-    ^^^^^^^^^
+  at <input-0>:0:5
+  def farenheit(celsius) = celsius * 9 / 5 + 32
+      ^^^^^^^^^
+
+static analysis error: 
+ Error [QNT101]: Conflicting definitions found for name 'farenheit' in module '__repl__'
+
+  at <input-1>:0:5
+  def farenheit(celsius) = celsius * 9 / 5 + 32
+      ^^^^^^^^^
 
 33
 
@@ -1356,23 +1387,32 @@ echo -e 'def foo = 1 + "a"\nfoo\n1 + "a"\n1 + 1' | quint -q
 
 <!-- !test out repl works after type errors -->
 ```
-static analysis error: error: [QNT000] Couldn't unify int and str
+static analysis error: 
+ Error [QNT000]: Couldn't unify int and str
 Trying to unify int and str
 Trying to unify (int, int) => int and (int, str) => _t0
 
-def foo = 1 + "a"
-          ^^^^^^^
 
-static analysis error: error: [QNT404] Name 'foo' not found
-foo
-^^^
+  at <input-0>:0:11
+  def foo = 1 + "a"
+            ^^^^^^^
 
-static analysis error: error: [QNT000] Couldn't unify int and str
+static analysis error: 
+ Error [QNT404]: Name 'foo' not found
+
+  at <input-1>:0:1
+  foo
+  ^^^
+
+static analysis error: 
+ Error [QNT000]: Couldn't unify int and str
 Trying to unify int and str
 Trying to unify (int, int) => int and (int, str) => _t0
 
-1 + "a"
-^^^^^^^
+
+  at <input-2>:0:1
+  1 + "a"
+  ^^^^^^^
 
 2
 
@@ -1391,11 +1431,14 @@ quint typecheck ./testFixture/typechecking/ImportFileWithError.qnt 2>&1 | sed 's
 
 <!-- !test out error for file -->
 ```
-HOME/testFixture/typechecking/FileWithError.qnt:2:7 - error: [QNT000] Couldn't unify bool and int
+
+ Error [QNT000]: Couldn't unify bool and int
 Trying to unify bool and int
 
-2:   val a: int = true
-         ^
+
+HOME/testFixture/typechecking/FileWithError.qnt:2:7
+  2:   val a: int = true
+           ^
 
 error: typechecking failed
 ```
@@ -1475,17 +1518,26 @@ exit $exit_code
 
 <!-- !test out parse case sensitive filenames -->
 ```
-      HOME/_1060case.qnt:3:3 - error: [QNT408] Importing two files that only differ in case:       HOME/_1022importee2.qnt vs.       HOME/_1022IMPORTEE2.qnt. Choose one way.
-3:   import importee2 as I from "_1022IMPORTEE2"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      HOME/_1060case.qnt:2:3 - error: [QNT405] Module 'importee2' not found
-2:   import importee2 as i from "_1022importee2"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ Error [QNT408]: Importing two files that only differ in case:       HOME/_1022importee2.qnt vs.       HOME/_1022IMPORTEE2.qnt. Choose one way.
 
-      HOME/_1060case.qnt:3:3 - error: [QNT405] Module 'importee2' not found
-3:   import importee2 as I from "_1022IMPORTEE2"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  at       HOME/_1060case.qnt:3:3
+  3:   import importee2 as I from "_1022IMPORTEE2"
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+ Error [QNT405]: Module 'importee2' not found
+
+  at       HOME/_1060case.qnt:2:3
+  2:   import importee2 as i from "_1022importee2"
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+ Error [QNT405]: Module 'importee2' not found
+
+  at       HOME/_1060case.qnt:3:3
+  3:   import importee2 as I from "_1022IMPORTEE2"
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: parsing failed
 ```
@@ -1605,14 +1657,17 @@ Errors from `amWrong` should not affect the definition and usage of `amRight`
   echo "amWrong"
   echo "action amRight = all { myVar' = true }"
   echo "amRight"
-} | quint -r ../examples/language-features/instances.qnt::instances --verbosity 1 2>&1 | tail -n7
+} | quint -r ../examples/language-features/instances.qnt::instances --verbosity 1 2>&1 | tail -n10
 ```
 
 <!-- !test out regression 428 -->
 ```
->>> static analysis error: error: [QNT404] Name 'amWrong' not found
-amWrong
-^^^^^^^
+>>> static analysis error: 
+ Error [QNT404]: Name 'amWrong' not found
+
+  at <input-2>:0:1
+  amWrong
+  ^^^^^^^
 
 >>> 
 >>> true
@@ -1665,19 +1720,22 @@ exit $exit_code
   3 failed
 
   1) bFailsTest:
-      HOME/thenErrorMessages.qnt:11:11 - error: [QNT513] Cannot continue in `then` because the highlighted expression evaluated to false
-      11:     .then(b)
-                    ^
+       Error [QNT513]: Cannot continue in `then` because the highlighted expression evaluated to false
+      HOME/thenErrorMessages.qnt:11:11
+        11:     .then(b)
+                      ^
     Use --seed=0x1 --match=bFailsTest to repeat.
   2) initFailsTest:
-      HOME/thenErrorMessages.qnt:15:23 - error: [QNT513] Cannot continue in `then` because the highlighted expression evaluated to false
-      15:   run initFailsTest = init(false)
-                                ^^^^^^^^^^^
+       Error [QNT513]: Cannot continue in `then` because the highlighted expression evaluated to false
+      HOME/thenErrorMessages.qnt:15:23
+        15:   run initFailsTest = init(false)
+                                  ^^^^^^^^^^^
     Use --seed=0x1 --match=initFailsTest to repeat.
   3) lastActionFailsTest:
-      HOME/thenErrorMessages.qnt:18:7 - error: [QNT511] Test lastActionFailsTest returned false
-      18:   run lastActionFailsTest = init(true)
-                ^^^^^^^^^^^^^^^^^^^
+       Error [QNT511]: Test lastActionFailsTest returned false
+      HOME/thenErrorMessages.qnt:18:7
+        18:   run lastActionFailsTest = init(true)
+                  ^^^^^^^^^^^^^^^^^^^
     Use --seed=0x1 --match=lastActionFailsTest to repeat.
 
 
