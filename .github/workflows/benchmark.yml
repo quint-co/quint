@@ -63,17 +63,33 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
 
-      - name: Install Quint
+      # --- Run benchmarks on main (baseline) ---
+      - name: Checkout main branch
+        run: git checkout main
+
+      - name: Install Quint (main)
         run: cd ../quint && npm ci && npm run compile && npm link
 
-      - name: Build benchmarks
+      - name: Build benchmarks (main)
         run: cargo build --release --benches
 
-      - name: Run benchmark
-        run: |
-          # Run benchmarks and save results
-          cargo criterion --message-format=json > benchmark_results.json
+      - name: Run benchmarks (main)
+        run: cargo criterion --message-format=json > baseline_results.json
 
+      # --- Run benchmarks on PR branch ---
+      - name: Checkout PR branch
+        run: git checkout ${{ github.head_ref }}
+
+      - name: Install Quint (PR)
+        run: cd ../quint && npm ci && npm run compile && npm link
+
+      - name: Build benchmarks (PR)
+        run: cargo build --release --benches
+
+      - name: Run benchmarks (PR)
+        run: cargo criterion --message-format=json > benchmark_results.json
+
+      # --- Compare results ---
       - name: Process benchmark results
         id: benchmark-processing
         uses: actions/github-script@v7
@@ -93,22 +109,51 @@ jobs:
               }
             }
 
-            const results = fs.readFileSync('evaluator/benchmark_results.json', 'utf8')
-              .split('\n')
-              .filter(Boolean)
-              .map(JSON.parse);
+            function parseResults(filePath) {
+              const map = new Map();
+              fs.readFileSync(filePath, 'utf8')
+                .split('\n')
+                .filter(Boolean)
+                .map(JSON.parse)
+                .forEach(result => {
+                  if (result.reason === 'benchmark-complete') {
+                    map.set(result.id, result.mean.estimate);
+                  }
+                });
+              return map;
+            }
+
+            const baseline = parseResults('evaluator/baseline_results.json');
+            const current = parseResults('evaluator/benchmark_results.json');
+
+            // Collect all benchmark names from both runs
+            const allBenchmarks = new Set([...baseline.keys(), ...current.keys()]);
 
             let comment = '## Benchmark Results\n\n';
-            comment += '| Benchmark | Time |\n';
-            comment += '|-----------|------|\n';
+            comment += '| Benchmark | Main | PR | Change |\n';
+            comment += '|-----------|------|-----|--------|\n';
 
-            results.forEach(result => {
-              if (result.reason === 'benchmark-complete') {
-                const name = result.id;
-                const time = formatTime(result.mean.estimate);
-                comment += `| ${name} | ${time} |\n`;
+            for (const name of allBenchmarks) {
+              const baseTime = baseline.get(name);
+              const currTime = current.get(name);
+
+              if (baseTime != null && currTime != null) {
+                const changePercent = ((currTime - baseTime) / baseTime) * 100;
+                let changeStr;
+                if (Math.abs(changePercent) < 2) {
+                  changeStr = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
+                } else if (changePercent > 0) {
+                  changeStr = `+${changePercent.toFixed(1)}% :warning:`;
+                } else {
+                  changeStr = `${changePercent.toFixed(1)}% :rocket:`;
+                }
+                comment += `| ${name} | ${formatTime(baseTime)} | ${formatTime(currTime)} | ${changeStr} |\n`;
+              } else if (baseTime == null) {
+                comment += `| ${name} | — | ${formatTime(currTime)} | *new* |\n`;
+              } else {
+                comment += `| ${name} | ${formatTime(baseTime)} | — | *removed* |\n`;
               }
-            });
+            }
 
             core.setOutput('benchmark-comment', comment);
 

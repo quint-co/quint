@@ -32,6 +32,7 @@ chrono = "0.4.40"
 hipstr = { version = "0.8.0", features = ["serde"] }
 num-bigint = { version = "0.4", features = ["rand"] }
 num-traits = "0.2.19"
+mimalloc = "0.1.48"
 
 [dev-dependencies]
 insta = {version = "1.22.0", features = ["yaml"]}
