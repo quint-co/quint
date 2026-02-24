@@ -215,37 +215,43 @@ error: found a counterexample
 
 ## Temporal properties
 
-### Can verify with single temporal property
+### Apalache: Can verify with single temporal property (with confirmation)
 
-<!-- !test check can specify --temporal -->
-```
-quint verify --temporal eventuallyOne ./testFixture/apalache/temporalTest.qnt
-```
+Apalache has experimental support for temporal properties, so the user must confirm.
 
-### Can verify with two temporal properties
-
-<!-- !test check can specify multiple temporal props -->
+<!-- !test check Apalache can specify --temporal with confirmation -->
 ```
-quint verify --temporal eventuallyOne,eventuallyFive ./testFixture/apalache/temporalTest.qnt
+echo "y" | quint verify --temporal eventuallyOne ./testFixture/apalache/temporalTest.qnt
 ```
 
-### Temporal violations are reported with traces
+### Apalache: Can verify with two temporal properties (with confirmation)
 
-<!-- !test in prints a trace on temporal violation -->
+<!-- !test check Apalache can specify multiple temporal props with confirmation -->
 ```
-output=$(quint verify --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt)
+echo "y" | quint verify --temporal eventuallyOne,eventuallyFive ./testFixture/apalache/temporalTest.qnt
+```
+
+### Apalache: Temporal violations are reported with traces (with confirmation)
+
+<!-- !test in Apalache prints a trace on temporal violation -->
+```
+output=$(echo "y" | quint verify --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
 exit $exit_code
 ```
 
 <!-- !test exit 1 -->
-<!-- !test err prints a trace on temporal violation -->
-```
-error: found a counterexample
+<!-- !test err Apalache prints a trace on temporal violation -->
 ```
 
-<!-- !test out prints a trace on temporal violation -->
+  WARNING: Apalache has experimental support for temporal properties and might give incorrect results.
+  Consider using --backend tlc, which fully supports temporal properties.
+
+Do you want to proceed with Apalache anyway? (y/N) error: found a counterexample
+```
+
+<!-- !test out Apalache prints a trace on temporal violation -->
 ```
 An example execution:
 
@@ -262,6 +268,37 @@ An example execution:
 [State 5] { n: 1 }
 
 [violation] Found an issue (duration).
+```
+
+### TLC: Can verify with single temporal property
+
+TLC fully supports temporal properties, so no confirmation is needed.
+
+<!-- !test check TLC can specify --temporal -->
+```
+quint verify --backend tlc --temporal eventuallyOne ./testFixture/apalache/temporalTest.qnt
+```
+
+### TLC: Can verify with two temporal properties
+
+FIXME: `eventuallyFive` breaks with stuttering as we are not providing fairness assumptions. Using the `SPEC` TLC config might be a workaround.
+
+<!-- !test check TLC can specify multiple temporal props -->
+```
+quint verify --backend tlc --temporal eventuallyOne,eventuallyOne ./testFixture/apalache/temporalTest.qnt
+```
+
+### TLC: Temporal violation is detected
+
+<!-- !test in TLC detects temporal violation -->
+```
+quint verify --backend tlc --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC detects temporal violation -->
+```
+error: found a counterexample
 ```
 
 ## Compiling to TLA+
@@ -454,13 +491,19 @@ quint compile --target tlaplus ./testFixture/ApalacheCompilationError.qnt 2> >(s
 <!-- !test exit 1 -->
 <!-- !test err ApalacheCompliationError.qnt to TLA+ -->
 ```
-HOME/ApalacheCompilationError.qnt:19:5 - error: [QNT409] Action A is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
-19:     A,
-        ^
 
-HOME/ApalacheCompilationError.qnt:20:5 - error: [QNT409] Action parameterizedAction is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
-20:     parameterizedAction(x),
-        ^^^^^^^^^^^^^^^^^^^^^^
+ Error [QNT409]: Action A is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+
+  at HOME/ApalacheCompilationError.qnt:19:5
+  19:     A,
+          ^
+
+
+ Error [QNT409]: Action parameterizedAction is used both for init and for step, and therefore can't be converted into TLA+. You can duplicate this with a different name to use on init. Sorry Quint can't do it for you yet.
+
+  at HOME/ApalacheCompilationError.qnt:20:5
+  20:     parameterizedAction(x),
+          ^^^^^^^^^^^^^^^^^^^^^^
 
 error: Failed to convert init to predicate
 ```

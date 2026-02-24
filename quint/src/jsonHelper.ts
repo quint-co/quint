@@ -33,9 +33,13 @@ export function replacer(_key: String, value: any): any {
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#the_reviver_parameter
  */
 export function reviver(key: string, value: any): any {
-  // Convert QuintError.reference from number to bigint
+  // Convert QuintError.reference from number to bigint (TS backend compatibility)
   if (key === 'reference' && value !== null && value !== undefined) {
     return BigInt(value)
+  }
+  // Convert QuintError.trace elements from number to bigint (Rust backend)
+  if (key === 'trace' && Array.isArray(value)) {
+    return value.map((v: any) => BigInt(v))
   }
   return value
 }

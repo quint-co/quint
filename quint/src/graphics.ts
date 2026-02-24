@@ -337,7 +337,7 @@ export function printTrace(
       filteredState = { ...state, args: filteredArgs }
     }
 
-    if (index < diagnostics.length) {
+    if (index < diagnostics.length && diagnostics[index].length > 0) {
       for (const msg of diagnostics[index]) {
         const doc: Doc = group([brackets(text('DEBUG')), space, text(msg.label), line(), prettyQuintEx(msg.value)])
         console.out(format(console.width, 0, doc))

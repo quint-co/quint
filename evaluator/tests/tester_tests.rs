@@ -47,9 +47,9 @@ fn failing_test_returns_qnt511() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].code, "QNT511");
     assert!(result.errors[0].message.contains("returned false"));
-    // Error reference should point to the test definition
-    assert!(result.errors[0].reference.is_some());
-    assert_eq!(result.errors[0].reference.unwrap(), test_case.test_def.id());
+    // Error trace should point to the test definition
+    assert!(!result.errors[0].trace.is_empty());
+    assert_eq!(result.errors[0].trace[0], test_case.test_def.id());
     assert_eq!(result.seed, 0);
 }
 
@@ -64,8 +64,8 @@ fn failing_assert_returns_qnt508() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].code, "QNT508");
     assert!(result.errors[0].message.contains("Assertion failed"));
-    // Error reference should be set (automatic wrapping adds it)
-    assert!(result.errors[0].reference.is_some());
+    // Error trace should be set (automatic wrapping adds it)
+    assert!(!result.errors[0].trace.is_empty());
 }
 
 #[test]
@@ -79,5 +79,5 @@ fn failing_expect_action_returns_qnt508() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].code, "QNT508");
     // Could be either "Cannot continue" or "does not hold" depending on which part fails
-    assert!(result.errors[0].reference.is_some());
+    assert!(!result.errors[0].trace.is_empty());
 }
