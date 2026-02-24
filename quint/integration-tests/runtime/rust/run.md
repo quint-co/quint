@@ -11,6 +11,103 @@ bash -
 
 ## quint run tests
 
+### OK on run instances
+
+<!-- !test check instances - Run -->
+    quint run --backend=rust ../examples/language-features/instances.qnt --invariant=inv
+
+### OK on run prisoners
+
+<!-- !test check prisoners - Syntax/Types & Effects/Invariants -->
+    quint run --backend=rust --main=prisoners3 --invariant='countInv and safetyInv' \
+    ../examples/puzzles/prisoners/prisoners.qnt
+
+### FAIL on run lottery
+
+<!-- !test exit 1 -->
+<!-- !test check lottery - Run -->
+    quint run --backend=rust --max-samples=10000 --max-steps=10 --seed=0x29f8e808de5ed \
+      --invariant=noBuyInDrawingInv --main=lotteryMempool \
+      ../examples/solidity/icse23-fig7/lottery.qnt
+
+### OK on run BinSearch
+
+<!-- !test exit 0 -->
+<!-- !test check BinSearch - Run -->
+    quint run --backend=rust --max-samples=10000 --max-steps=10 \
+      --invariant=Postcondition --main=BinSearch10 \
+      ../examples/classic/sequential/BinSearch/BinSearch.qnt
+
+### OK on run simplePonzi::noNegativeInv
+
+<!-- !test exit 0 -->
+<!-- !test check simplePonzi - Run noNegativeInv -->
+    quint run --backend=rust --max-samples=10000 \
+      --invariant=noNegativeInv --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### FAIL on run simplePonzi::progressInv
+
+<!-- !test exit 1 -->
+<!-- !test check simplePonzi - Run progressInv -->
+    quint run --backend=rust \
+      --invariant=progressInv --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### OK on run gradualPonzi::noNegativeInv
+
+<!-- !test exit 0 -->
+<!-- !test check gradualPonzi - Run noNegativeInv -->
+    quint run --backend=rust --max-samples=1000 \
+      --invariant=noNegativeInv --main=gradualPonziTest \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run gradualPonzi::progressInv
+
+<!-- !test exit 1 -->
+<!-- !test check gradualPonzi - Run progressInv -->
+    quint run --backend=rust --invariant=progressInv --main=gradualPonziTest \
+      --max-samples=1 --max-steps=50 \
+      --seed=0x427e3ee3d0610539 \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run gradualPonzi::noLeftoversInv
+
+<!-- !test exit 1 -->
+<!-- !test check gradualPonzi - Run noLeftoversInv -->
+    quint run --backend=rust --invariant=noLeftoversInv --main=gradualPonziTest \
+      --seed=0x405df8f62fcd7 \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run river::noSolution
+
+<!-- !test exit 1 -->
+<!-- !test check river - Run noSolution -->
+    quint run --backend=rust --invariant=noSolution --seed=0x2fa6b93d1eef3 \
+      ../examples/puzzles/river/river.qnt
+
+### OK on run river::safety
+
+<!-- !test exit 0 -->
+<!-- !test check river - Run safety -->
+    quint run --backend=rust --invariant=safety ../examples/puzzles/river/river.qnt
+
+### OK on run with the default module
+
+See [#1195](https://github.com/informalsystems/quint/issues/1195).
+
+<!-- !test exit 0 -->
+<!-- !test check run the default module -->
+    quint run --backend=rust ./testFixture/_1050diffName.qnt
+
+### OK on run 1736
+
+Regression test for [#1736](https://github.com/informalsystems/quint/issues/1736).
+Tests that `quint run` works with nested setOfMaps and oneOf.
+
+<!-- !test check 1736 -->
+    quint run --backend=rust testFixture/bug1736setOfMaps.qnt
+
 ### Run finds an invariant violation
 
 The command `run` finds an invariant violation.
@@ -136,7 +233,15 @@ An example execution:
 
 [State 0] { mbt::actionTaken: "init" }
 
-[State 1] { mbt::actionTaken: "withdraw" }
+[State 1] { mbt::actionTaken: "deposit" }
+
+[State 2] { mbt::actionTaken: "deposit" }
+
+[State 3] { mbt::actionTaken: "deposit" }
+
+[State 4] { mbt::actionTaken: "deposit" }
+
+[State 5] { mbt::actionTaken: "withdraw" }
 
 [violation] Found an issue (duration).
 Use --verbosity=3 to show executions.
@@ -176,27 +281,6 @@ Use --verbosity to produce more (or less) output.
 Use --seed=0x1d4c5 --backend=rust to reproduce.
 ```
 
-### Run shows the operator calls
-
-The command `run` shows operator calls on a small spec.
-
-<!-- !test in run shows calls -->
-```
-output=$(quint run --backend=rust --max-steps=1 --seed=0x1 \
-  --invariant=no_negatives \
-  --verbosity=3 \
-  ./testFixture/simulator/gettingStarted.qnt 2>&1)
-exit_code=$?
-echo "$output" | grep -E "q::initAndInvariant|q::stepAndInvariant" | head -n 2
-exit $exit_code
-```
-
-<!-- !test exit 1 -->
-<!-- !test out run shows calls -->
-```
-q::initAndInvariant => true
-q::stepAndInvariant => false
-```
 
 ### Run outputs ITF
 
@@ -288,9 +372,12 @@ exit $exit_code
 <!-- !test out run uninitialized -->
 ```
 [error] Runtime error (duration).
-HOME/_1041compileConst.qnt:5:24 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
-5:   action init = { x' = N }
-                          ^
+
+ Error [QNT500]: Uninitialized const N. Use: import <moduleName>(N=<value>).*
+
+HOME/_1041compileConst.qnt:5:24
+  5:   action init = { x' = N }
+                            ^
 
 Use --seed=0x1 --backend=rust to reproduce.
 error: Runtime error
@@ -335,9 +422,12 @@ An example execution:
 [State 1] { x: 2 }
 
 [error] Runtime error (duration).
-HOME/runtimeError.qnt:9:22 - error: [QNT510] Out of bounds, nth(2)
-9:   action step = x' = vec[x]
-                        ^^^^^^
+
+ Error [QNT510]: Out of bounds, nth(2)
+
+HOME/runtimeError.qnt:9:22
+  9:   action step = x' = vec[x]
+                          ^^^^^^
 
 Use --seed=SEED --backend=rust to reproduce.
 error: Runtime error
@@ -540,7 +630,7 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run bigint outside i64 range -->
 ```
-QNT600] Integer literal 9223372036854775808 is outside i64 range
+QNT600]: Integer literal 9223372036854775808 is outside i64 range
 ```
 
 ## Debug output in init action
