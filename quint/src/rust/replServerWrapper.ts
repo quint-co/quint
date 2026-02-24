@@ -42,6 +42,9 @@ type ReplCommand =
   | { cmd: 'ReplShift' }
   | { cmd: 'GetTraceStates' }
   | { cmd: 'Reset' }
+  | { cmd: 'GetSeed' }
+  | { cmd: 'SetSeed'; seed: bigint }
+  | { cmd: 'SetVerbosity'; verbosity: number }
 
 /**
  * Responses received from the Rust REPL evaluator
@@ -59,6 +62,9 @@ type ReplResponse =
     }
   | { response: 'TraceStates'; states: any[] }
   | { response: 'ResetComplete' }
+  | { response: 'SeedResult'; seed: bigint }
+  | { response: 'SeedSet' }
+  | { response: 'VerbositySet' }
   | { response: 'Error'; message: string }
   | { response: 'FatalError'; message: string }
 
@@ -254,6 +260,35 @@ export class ReplServerWrapper {
     await this.sendCommand({ cmd: 'UpdateTable', table })
   }
 
+  async getSeed(): Promise<bigint> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'GetSeed' })
+
+    if (response.response === 'SeedResult') {
+      return response.seed
+    }
+
+    throw new Error('Failed to get seed from Rust evaluator')
+  }
+
+  async setSeed(seed: bigint): Promise<void> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'SetSeed', seed })
+
+    if (response.response !== 'SeedSet') {
+      throw new Error('Failed to set seed on Rust evaluator')
+    }
+  }
+
+  async setVerbosity(verbosity: number): Promise<void> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'SetVerbosity', verbosity })
+
+    if (response.response !== 'VerbositySet') {
+      throw new Error('Failed to set verbosity on Rust evaluator')
+    }
+  }
+
   async replShift(): Promise<[boolean, string[], RuntimeValue | undefined, RuntimeValue | undefined]> {
     await this.initializationPromise
     const response = await this.sendCommand({ cmd: 'ReplShift' })
@@ -308,6 +343,21 @@ export class ReplServerWrapper {
     }
 
     throw new Error('Failed to get trace states from evaluator')
+  }
+
+  /**
+   * Reset the Rust evaluator state (interpreter, env, traces) while keeping the process alive.
+   * Used by .load/.reload to get a clean slate without respawning the subprocess.
+   */
+  async reset(): Promise<void> {
+    await this.initializationPromise
+    const response = await this.sendCommand({ cmd: 'Reset' })
+
+    if (response.response !== 'ResetComplete') {
+      throw new Error('Failed to reset Rust evaluator')
+    }
+
+    this.traceCache = undefined
   }
 
   /**
