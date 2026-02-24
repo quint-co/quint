@@ -29,6 +29,8 @@ import { ofItfValue } from '../itf'
 import { RuntimeValue, rv } from '../runtime/impl/runtimeValue'
 import { zerog } from '../idGenerator'
 import { getRustEvaluatorPath } from './binaryManager'
+import { prettyQuintEx, terminalWidth } from '../graphics'
+import { Doc, brackets, format, group, line, space, text } from '../prettierimp'
 
 /**
  * Commands sent to the Rust REPL evaluator
@@ -47,7 +49,7 @@ type ReplCommand =
 type ReplResponse =
   | { response: 'Initialized'; success: boolean }
   | { response: 'TableUpdated'; success: boolean }
-  | { response: 'EvaluationResult'; ok?: any; err?: QuintError }
+  | { response: 'EvaluationResult'; ok?: any; err?: QuintError; diagnostics: { label: string; value: any }[] }
   | {
       response: 'ReplShiftResult'
       shifted: boolean
@@ -124,13 +126,6 @@ export class ReplServerWrapper {
     })
 
     this.stdout.on('line', (line: string) => {
-      // Check if this is debug output (starts with '>')
-      if (line.startsWith('>')) {
-        // Print debug output directly to stdout
-        console.log(line)
-        return
-      }
-
       try {
         const response: ReplResponse = JSONbig.parse(line, reviver)
 
@@ -230,6 +225,7 @@ export class ReplServerWrapper {
     if (response.response === 'FatalError') {
       return left({ code: 'QNT000', message: response.message, reference: undefined })
     } else if (response.response === 'EvaluationResult') {
+      this.maybePrintDiagnostics(response.diagnostics)
       if (response.ok !== undefined) {
         return right(ofItfValue(response.ok, zerog.nextId))
       } else if (response.err !== undefined) {
@@ -240,6 +236,17 @@ export class ReplServerWrapper {
     }
 
     return left({ code: 'QNT000', message: 'Unexpected response from evaluator', reference: undefined })
+  }
+
+  private maybePrintDiagnostics(diagnostics: { label: string; value: any }[]) {
+    if (diagnostics.length > 0) {
+      const columns = terminalWidth()
+      for (const diag of diagnostics) {
+        const value = ofItfValue(diag.value, zerog.nextId)
+        const doc: Doc = group([brackets(text('DEBUG')), space, text(diag.label), line(), prettyQuintEx(value)])
+        console.log(format(columns, 0, doc))
+      }
+    }
   }
 
   async updateTable(table: LookupTable): Promise<void> {
