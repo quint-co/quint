@@ -1,0 +1,248 @@
+name: Integration Tests
+
+on:
+  # Every pull request
+  pull_request:
+  # When part of a merge queue
+  merge_group:
+  # Pushes into the trunk
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      quint: ${{ steps.filter.outputs.quint }}
+      evaluator: ${{ steps.filter.outputs.evaluator }}
+      examples: ${{ steps.filter.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quint:
+              - 'quint/**'
+            evaluator:
+              - 'evaluator/**'
+            examples:
+              - 'examples/**'
+
+  lang-integration-tests:
+    name: Lang Integration Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || needs.changes.outputs.examples == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - run: npm install -g txm
+      - uses: dcarbone/install-jq-action@v2
+      - name: Lang CLI integration tests
+        run: cd ./quint && txm integration-tests/lang/cli.md
+      - name: Lang IO integration tests
+        # These tests fail on windows due to CRLF line ending mismatches
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
+        run: cd ./quint && txm integration-tests/lang/io.md
+      - name: TypeScript runtime integration tests
+        if: matrix.operating-system != 'windows-latest'
+        run: cd ./quint && txm integration-tests/runtime/typescript/repl.md && txm integration-tests/runtime/typescript/run.md && txm integration-tests/runtime/typescript/test.md
+
+  lang-integration-tests-aggregator:
+    name: Lang Integration Tests
+    needs: lang-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All lang integration tests completed successfully!"
+
+  rust-backend-integration-tests:
+    name: Rust Backend Integration Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || needs.changes.outputs.evaluator == 'true' || needs.changes.outputs.examples == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ./evaluator && cargo build --release
+      - name: Install Rust evaluator locally
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - run: npm install -g txm
+      - uses: dcarbone/install-jq-action@v2
+      - name: Rust backend integration tests
+        run: cd ./quint && npm run rust-evaluator-integration
+
+  rust-backend-integration-tests-aggregator:
+    name: Rust Backend Integration Tests
+    needs: rust-backend-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Rust backend integration tests completed successfully!"
+
+  verification-integration-tests:
+    name: Verification Integration Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || needs.changes.outputs.evaluator == 'true' || needs.changes.outputs.examples == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "19"
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ./evaluator && cargo build --release
+      - name: Install Rust evaluator locally
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - run: npm install -g txm
+      - name: Verification integration tests
+        run: |
+          cd ./quint
+          make -C .. apalache
+          VERSION=$(grep "DEFAULT_APALACHE_VERSION_TAG = " src/apalache.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/apalache-dist-$VERSION
+          cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
+          _build/apalache/bin/apalache-mc server &
+          sleep 5
+          npm run verification-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  verification-integration-tests-aggregator:
+    name: Verification Integration Tests
+    needs: verification-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Apalache integration tests completed successfully!"
+
+  examples-dashboard:
+    name: Examples Dashboard by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || needs.changes.outputs.evaluator == 'true' || needs.changes.outputs.examples == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "19"
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ./evaluator && cargo build --release
+      - name: Install Rust evaluator locally
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        run: quint --version
+      - name: Set up apalache
+        run: |
+          # Fetch the latest apalache release
+          make apalache
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: matrix.operating-system == 'macos-latest'
+        # TODO(#1004): Workaround for GNU parallel not being available on macOS
+        name: Install GNU parallel
+        run: brew install parallel
+      - name: Ensure the examples dashboard is up to date
+        run: |
+          make examples
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" && exit 1)
+
+  examples-dashboard-aggregator:
+    name: Examples Dashboard
+    needs: examples-dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Examples Dashboard checks completed successfully!"
+
+  distribution-integration-tests:
+    name: Distribution Integration Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || needs.changes.outputs.evaluator == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "19"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - run: npm install -g txm
+      - name: Apalache distribution integration tests
+        run: cd ./quint && npm run apalache-distribution-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Rust release distribution integration tests
+        run: cd ./quint && npm run rust-distribution-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  distribution-integration-tests-aggregator:
+    name: Distribution Integration Tests
+    needs: distribution-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All distribution integration tests completed successfully!"
