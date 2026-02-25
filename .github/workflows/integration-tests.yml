@@ -64,7 +64,7 @@ jobs:
         run: cd ./quint && txm integration-tests/lang/io.md
       - name: TypeScript runtime integration tests
         if: matrix.operating-system != 'windows-latest'
-        run: cd ./quint && txm integration-tests/runtime/typescript/repl.md && txm integration-tests/runtime/typescript/run.md && txm integration-tests/runtime/typescript/test.md
+        run: cd ./quint && npm run ts-evaluator-integration
 
   lang-integration-tests-aggregator:
     name: Lang Integration Tests
@@ -239,10 +239,3 @@ jobs:
         run: cd ./quint && npm run rust-distribution-integration
         env:
           GH_TOKEN: ${{ github.token }}
-
-  distribution-integration-tests-aggregator:
-    name: Distribution Integration Tests
-    needs: distribution-integration-tests
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "All distribution integration tests completed successfully!"
