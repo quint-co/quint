@@ -272,7 +272,7 @@ impl ParsedQuint {
                             violation: !success,
                             seed,
                         },
-                        n_traces,
+                        n_traces.max(1),
                         verbosity,
                     );
 
