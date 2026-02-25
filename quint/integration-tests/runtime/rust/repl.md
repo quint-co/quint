@@ -6,7 +6,7 @@ running against a locally-built evaluator (not the released version).
 These tests run in PR CI after building the Rust evaluator from source.
 
 <!-- !test program
-TMPFILE=$(mktemp ./tmp.XXXXXX.sh)
+TMPFILE=$(mktemp /tmp/quint-repl-XXXXXX)
 cat > "$TMPFILE"
 bash "$TMPFILE"
 rm "$TMPFILE"
