@@ -84,14 +84,12 @@ export class ReplServerWrapper {
   public recorder: TraceRecorder
   private verbosityLevel: number
   private traceCache?: Trace
-  private out: (text: string) => void
 
   private initializationPromise: Promise<void>
 
-  constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng, out: (text: string) => void) {
+  constructor(table: LookupTable, recorder: TraceRecorder, rng: Rng) {
     this.recorder = recorder
     this.verbosityLevel = recorder.verbosityLevel
-    this.out = out
     this.initializationPromise = this.initialize(table, rng.getState())
   }
 
@@ -252,7 +250,7 @@ export class ReplServerWrapper {
       for (const diag of diagnostics) {
         const value = ofItfValue(diag.value, zerog.nextId)
         const doc: Doc = group([brackets(text('DEBUG')), space, text(diag.label), line(), prettyQuintEx(value)])
-        this.out(format(columns, 0, doc) + '\n')
+        console.log(format(columns, 0, doc))
       }
     }
   }

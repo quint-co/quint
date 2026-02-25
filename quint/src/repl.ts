@@ -104,8 +104,7 @@ class ReplState {
     rng: Rng,
     useRustEvaluator: boolean = false,
     existingEvaluator?: Evaluator | ReplServerWrapper,
-    existingNameResolver?: NameResolver,
-    out?: writer
+    existingNameResolver?: NameResolver
   ) {
     const recorder = newTraceRecorder(verbosityLevel, rng)
     this.moduleHist = ''
@@ -117,7 +116,7 @@ class ReplState {
       // Reuse existing evaluator (important for Rust backend to avoid spawning multiple subprocesses)
       this.evaluator = existingEvaluator
     } else if (useRustEvaluator) {
-      this.evaluator = new ReplServerWrapper(new Map(), recorder, rng, out ?? (text => process.stdout.write(text)))
+      this.evaluator = new ReplServerWrapper(new Map(), recorder, rng)
     } else {
       this.evaluator = new Evaluator(new Map(), recorder, rng)
     }
@@ -245,7 +244,7 @@ export function quintRepl(
 
   // the state
   const rng = options.seed !== undefined ? newRng(options.seed) : newRng()
-  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator, undefined, undefined, out)
+  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator)
 
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -772,7 +771,7 @@ async function tryEval(out: writer, state: ReplState, newInput: string): Promise
 
         if (shifted && verbosity.hasDiffs(state.verbosity)) {
           const diffDoc = diffRuntimeValueDoc(oldState!, newState!, { collapseThreshold: 2 })
-          out(format(terminalWidth(), 0, diffDoc) + '\n')
+          console.log(format(terminalWidth(), 0, diffDoc))
         }
 
         if (missing.length > 0) {
