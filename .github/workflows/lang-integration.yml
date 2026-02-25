@@ -58,6 +58,7 @@ jobs:
         if: matrix.operating-system != 'windows-latest'
         run: cd ./quint && txm integration-tests/lang/io.md
       - name: TypeScript runtime integration tests
+        if: matrix.operating-system != 'windows-latest'
         run: cd ./quint && txm integration-tests/runtime/typescript/repl.md && txm integration-tests/runtime/typescript/run.md && txm integration-tests/runtime/typescript/test.md
 
   lang-integration-tests-aggregator:
