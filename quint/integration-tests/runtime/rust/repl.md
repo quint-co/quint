@@ -248,7 +248,7 @@ Setting `.verbosity=1` should suppress the debug output.
   echo "q::testOnce(10, 1, init, step, inv)"
   echo ".exit"
 } | quint --backend=rust --verbosity=3 -r ./testFixture/simulator/debugCounter.qnt::debugCounter 2>&1 \
-  | tail -n +3 | head -n -1
+  | tail -n +3 | sed '$d'
 ```
 
 <!-- !test out repl testOnce verbosity -->
@@ -266,7 +266,7 @@ Setting `.verbosity=1` should suppress the debug output.
 <!-- !test in repl seed from cli -->
 
 ```
-echo '.seed' | quint --backend=rust --seed=0xabc -q | head -n -1
+echo '.seed' | quint --backend=rust --seed=0xabc -q | sed '$d'
 ```
 
 <!-- !test out repl seed from cli -->
