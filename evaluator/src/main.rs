@@ -449,18 +449,11 @@ fn simulate_in_parallel(
         } else {
             nruns / nthreads
         };
-        // When ntraces < nthreads (e.g. the default ntraces=1 with 8 CPU
-        // threads for example), integer div gives per_thread_ntraces=0 for all threads
-        // except thread 0. A capacity of 0 causes insert_sorted_by_quality to
-        // immediately discard every trace, so those threads detect violations
-        // but never store a trace for them.
-        // Fix: ensure every thread has capacity for at least 1 trace.
-        let per_thread_ntraces = (if i == 0 {
+        let per_thread_ntraces = if i == 0 {
             (ntraces / nthreads) + (ntraces % nthreads)
         } else {
             ntraces / nthreads
-        })
-        .max(ntraces.min(1));
+        };
 
         let reporter = Arc::clone(&reporter_thread.reporter);
         let source = Arc::clone(&source);
