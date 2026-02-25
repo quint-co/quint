@@ -30,6 +30,7 @@ jobs:
           filters: |
             code:
               - 'quint/**'
+              - 'evaluator/**'
               - 'examples/**'
 
   apalache-integration-tests:
@@ -50,19 +51,27 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "19"
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ./evaluator && cargo build --release
+      - name: Install Rust evaluator locally
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
-      - name: Fetch Apalache
-        run: make apalache
-        env:
-          GH_TOKEN: ${{ github.token }}
       - run: npm install -g txm
-      - name: Start Apalache server
+      - name: Apalache integration tests
         run: |
+          cd ./quint
+          make -C .. apalache
           _build/apalache/bin/apalache-mc server &
           sleep 5
-      - name: Apalache integration tests
-        run: cd ./quint && npm run apalache-integration
+          npm run apalache-integration
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   apalache-integration-tests-aggregator:
     name: Apalache Integration Tests
@@ -85,16 +94,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - run: cd ./quint && npm ci
-      - run: cd ./quint && npm run compile && npm link
-      - name: Ensure all dependencies are specified
-        run: quint --version
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
           java-version: "19"
-      - name: Set up Apalache
-        run: make apalache
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ./evaluator && cargo build --release
+      - name: Install Rust evaluator locally
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        run: quint --version
+      - name: Set up apalache
+        run: |
+          # Fetch the latest apalache release
+          make apalache
         env:
           GH_TOKEN: ${{ github.token }}
       - if: matrix.operating-system == 'macos-latest'
