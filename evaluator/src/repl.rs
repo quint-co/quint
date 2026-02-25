@@ -169,7 +169,7 @@ impl ReplEvaluator {
             Err(err) => ReplResult::Err { err },
         };
 
-        // This is only for the repl use, we don't worry about performance penalty of reallocations. 
+        // This is only for the repl use, we don't worry about performance penalty of reallocations.
         let mut diagnostics = Vec::new();
         for state in &mut env.trace {
             diagnostics.extend(std::mem::take(&mut state.diagnostics));
