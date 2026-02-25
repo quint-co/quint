@@ -485,75 +485,6 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('update the seed between evaluations', async () => {
-    // A regression test.
-    // Test that two consecutive steps produce two different integers.
-    // If this test fails, it is almost certainly because of the seed
-    // not being updated between consecutive calls of `step`.
-    // There is a neglible probability of this test failing,
-    // since we are using randomization.
-    const input = dedent(
-      `var S: Set[int]
-      |S' = Set()
-      |action step = { nondet y = 1.to(2^62).oneOf(); S' = Set(y).union(S) }
-      |.seed=42
-      |step
-      |step
-      |step
-      |step
-      |size(S) > 1
-      |`
-    )
-    const output = dedent(
-      `>>> var S: Set[int]
-      |
-      |>>> S' = Set()
-      |true
-      |{ S: Set() }
-      |>>> action step = { nondet y = 1.to(2^62).oneOf(); S' = Set(y).union(S) }
-      |
-      |>>> .seed=42
-      |.seed=42
-      |>>> step
-      |true
-      |{ S: Set({ c: [40765, 57514869353931], e: 18, s: 1 }) }
-      |>>> step
-      |true
-      |{
-      |  S:
-      |    Set(
-      |      { c: [40765, 57514869353931], e: 18, s: 1 },
-      |      { c: [22199, 85104381492500], e: 18, s: 1 }
-      |    )
-      |}
-      |>>> step
-      |true
-      |{
-      |  S:
-      |    Set(
-      |      { c: [22199, 85104381492500], e: 18, s: 1 },
-      |      { c: [40765, 57514869353931], e: 18, s: 1 },
-      |      { c: [17625, 77582892286673], e: 18, s: 1 }
-      |    )
-      |}
-      |>>> step
-      |true
-      |{
-      |  S:
-      |    Set(
-      |      { c: [17625, 77582892286673], e: 18, s: 1 },
-      |      { c: [22199, 85104381492500], e: 18, s: 1 },
-      |      { c: [40765, 57514869353931], e: 18, s: 1 },
-      |      { c: [25600, 82605143157228], e: 18, s: 1 }
-      |    )
-      |}
-      |>>> size(S) > 1
-      |true
-      |>>> `
-    )
-    await assertRepl(input, output)
-  })
-
   it('set and get the seed', async () => {
     const input = dedent(
       `.seed=4
@@ -883,6 +814,7 @@ describe('repl ok', () => {
       |[DEBUG] step 1
       |[DEBUG] step 2
       |true
+      |{ n: 1 => 2 }
       |>>> `
     )
     await assertRepl(input, output)

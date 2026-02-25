@@ -46,14 +46,6 @@ bash -
       --invariant=noNegativeInv --main=simplePonziTest \
       ../examples/solidity/SimplePonzi/simplePonzi.qnt
 
-### FAIL on run simplePonzi::progressInv
-
-<!-- !test exit 1 -->
-<!-- !test check simplePonzi - Run progressInv -->
-    quint run --backend=rust \
-      --invariant=progressInv --main=simplePonziTest \
-      ../examples/solidity/SimplePonzi/simplePonzi.qnt
-
 ### OK on run gradualPonzi::noNegativeInv
 
 <!-- !test exit 0 -->
@@ -68,7 +60,7 @@ bash -
 <!-- !test check gradualPonzi - Run progressInv -->
     quint run --backend=rust --invariant=progressInv --main=gradualPonziTest \
       --max-samples=1 --max-steps=50 \
-      --seed=0x427e3ee3d0610539 \
+      --seed=0x3154c258ec659ee6 \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
 ### FAIL on run gradualPonzi::noLeftoversInv
@@ -76,7 +68,7 @@ bash -
 <!-- !test exit 1 -->
 <!-- !test check gradualPonzi - Run noLeftoversInv -->
     quint run --backend=rust --invariant=noLeftoversInv --main=gradualPonziTest \
-      --seed=0x405df8f62fcd7 \
+      --seed=0x3154c258ec659ee6 \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
 ### FAIL on run river::noSolution

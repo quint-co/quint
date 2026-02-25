@@ -313,7 +313,7 @@ error: parsing failed
 
 <!-- !test in n-traces greater than max-samples -->
 ```sh
-quint run ./examples/language-features/counters.qnt --n-traces 10 --max-samples 5
+quint run ./examples/language-features/counters.qnt --n-traces 10 --max-samples 5 --backend=rust
 ```
 
 <!-- !test exit 1 -->
@@ -324,7 +324,7 @@ quint run ./examples/language-features/counters.qnt --n-traces 10 --max-samples 
 
 <!-- !test in n-traces greater than default max-samples -->
 ```sh
-quint run ./examples/language-features/counters.qnt --n-traces 20000
+quint run ./examples/language-features/counters.qnt --n-traces 20000 --backend=rust
 ```
 
 <!-- !test exit 1 -->
@@ -337,7 +337,7 @@ quint run ./examples/language-features/counters.qnt --n-traces 20000
 
 <!-- !test in non-array options set more than once -->
 ```sh
-quint run ./examples/language-features/counters.qnt --max-steps 10 --max-steps 15
+quint run ./examples/language-features/counters.qnt --max-steps 10 --max-steps 15 --backend=rust
 ```
 
 <!-- !test exit 1 -->
