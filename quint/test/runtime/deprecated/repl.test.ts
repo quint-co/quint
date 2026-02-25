@@ -389,7 +389,6 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-
   it('set and get the seed', async () => {
     const input = dedent(
       `.seed=4
