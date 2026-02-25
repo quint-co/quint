@@ -57,7 +57,7 @@ const withIO = async (inputText: string): Promise<string> => {
   // Use { end: false } to prevent ending output when input ends
   input.pipe(output, { end: false })
 
-  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
+  const rl = quintRepl(input, output, { verbosity: 1 }, () => {})
   await output.isReady()
 
   // Send input line-by-line to the REPL. We emit 'data' events for each line,
@@ -251,44 +251,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('clear resets evaluator state', async () => {
-    const input = dedent(
-      `var x: int
-      |x' = 0
-      |x' = x + 1
-      |x
-      |.clear
-      |var x: int
-      |x' = 42
-      |x
-      |`
-    )
-    const output = dedent(
-      `>>> var x: int
-      |
-      |>>> x' = 0
-      |true
-      |{ x: 0 }
-      |>>> x' = x + 1
-      |true
-      |{ x: 0 => 1 }
-      |>>> x
-      |1
-      |>>> .clear
-      |
-      |>>> var x: int
-      |
-      |>>> x' = 42
-      |true
-      |{ x: 42 }
-      |>>> x
-      |42
-      |>>> `
-    )
-    await assertRepl(input, output)
-  })
-
-  xit('change verbosity and track executions', async () => {
+  it('change verbosity and track executions', async () => {
     const input = dedent(
       `pure def plus(x, y) = x + y
       |.verbosity=4
@@ -389,6 +352,40 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('update the seed between evaluations', async () => {
+    // A regression test.
+    // Test that two consecutive steps produce two different integers.
+    // If this test fails, it is almost certainly because of the seed
+    // not being updated between two consecutive calls of `step`.
+    // There is a neglible probability of 1/2^1024 of this test failing,
+    // since we are using randomization.
+    const input = dedent(
+      `var S: Set[int]
+      |S' = Set()
+      |action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |step
+      |step
+      |size(S)
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> S' = Set()
+      |true
+      |>>> action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |
+      |>>> step
+      |true
+      |>>> step
+      |true
+      |>>> size(S)
+      |2
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('set and get the seed', async () => {
     const input = dedent(
       `.seed=4
@@ -406,31 +403,6 @@ describe('repl ok', () => {
       |>>> `
     )
     await assertRepl(input, output)
-  })
-
-  it('seed reproduces nondeterministic evaluation with same result', async () => {
-    const input = dedent(
-      `var x: int
-      |action init = { nondet v = 0.to(9999).oneOf(); x' = v }
-      |.seed=123
-      |init
-      |x
-      |.seed=123
-      |init
-      |x
-      |`
-    )
-    const result = await withIO(input)
-    // Extract the values of x from the output (lines following ">>> x")
-    const lines = result.split('\n')
-    const xOutputs: string[] = []
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim() === '>>> x') {
-        xOutputs.push(lines[i + 1])
-      }
-    }
-    assert(xOutputs.length === 2, `expected 2 x outputs, got ${xOutputs.length}: ${result}`)
-    expect(xOutputs[0]).to.equal(xOutputs[1])
   })
 
   it('handle exceptions', async () => {
@@ -474,17 +446,14 @@ describe('repl ok', () => {
       |
       |>>> Init
       |true
-      |{ x: 0 }
       |>>> x
       |0
       |>>> Next
       |true
-      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> Next
       |true
-      |{ x: 1 => 2 }
       |>>> x
       |2
       |>>> `
@@ -538,22 +507,18 @@ describe('repl ok', () => {
       |
       |>>> Init
       |true
-      |{ x: 0 }
       |>>> x
       |0
       |>>> Next
       |true
-      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> Next
       |true
-      |{ x: 1 => 0 }
       |>>> x
       |0
       |>>> Next
       |true
-      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> `
@@ -563,7 +528,7 @@ describe('repl ok', () => {
 
   it('action-level disjunctions and non-determinism', async () => {
     const input = dedent(
-      `.seed=42
+      `
       |var x: int
       |action Init = x' = 0
       |action Next = any {
@@ -582,8 +547,7 @@ describe('repl ok', () => {
       |`
     )
     const output = dedent(
-      `>>> .seed=42
-      |.seed=42
+      `>>> 
       |>>> var x: int
       |
       |>>> action Init = x' = 0
@@ -596,22 +560,18 @@ describe('repl ok', () => {
       |
       |>>> Init
       |true
-      |{ x: 0 }
       |>>> -1 <= x and x <= 1
       |true
       |>>> Next
       |true
-      |{ x: 0 => -1 }
       |>>> -2 <= x and x <= 2
       |true
       |>>> Next
       |true
-      |{ x: -1 => -2 }
       |>>> -3 <= x and x <= 3
       |true
       |>>> Next
       |true
-      |{ x: -2 => -3 }
       |>>> -4 <= x and x <= 4
       |true
       |>>> `
@@ -621,7 +581,7 @@ describe('repl ok', () => {
 
   it('nondet and oneOf', async () => {
     const input = dedent(
-      `.seed=42
+      `
       |var x: int
       |
       |x' = 0
@@ -634,56 +594,48 @@ describe('repl ok', () => {
       |2 <= x and x <= 5
       |nondet t = oneOf(tuples(2.to(5), 3.to(4))); x' = t._1 + t._2
       |5 <= x and x <= 9
-      |nondet i = oneOf(1.to(100)); x' = i
+      |nondet i = oneOf(Nat); x' = i
       |x >= 0
-      |nondet i = oneOf(0.to(100)); x' = i
+      |nondet i = oneOf(Int); x' = i
       |Int.contains(x)
-      |nondet m = 1.to(5).setOfMaps(1.to(10)).oneOf(); x' = m.get(3)
+      |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
       |x.in(Int)
       |nondet m = Set().oneOf(); x' = m
       |`
     )
     const output = dedent(
-      `>>> .seed=42
-      |.seed=42
+      `>>> 
       |>>> var x: int
       |
       |>>> 
       |>>> x' = 0
       |true
-      |{ x: 0 }
       |>>> x == 0
       |true
       |>>> { nondet y = oneOf(Set(1, 2, 3))
       |...   x' = y }
       |... 
       |true
-      |{ x: 0 => 2 }
       |>>> 1 <= x and x <= 3
       |true
       |>>> nondet y = oneOf(2.to(5)); x' = y
       |true
-      |{ x: 2 }
       |>>> 2 <= x and x <= 5
       |true
       |>>> nondet t = oneOf(tuples(2.to(5), 3.to(4))); x' = t._1 + t._2
       |true
-      |{ x: 2 => 6 }
       |>>> 5 <= x and x <= 9
       |true
-      |>>> nondet i = oneOf(1.to(100)); x' = i
+      |>>> nondet i = oneOf(Nat); x' = i
       |true
-      |{ x: 6 => 81 }
       |>>> x >= 0
       |true
-      |>>> nondet i = oneOf(0.to(100)); x' = i
+      |>>> nondet i = oneOf(Int); x' = i
       |true
-      |{ x: 81 => 54 }
       |>>> Int.contains(x)
       |true
-      |>>> nondet m = 1.to(5).setOfMaps(1.to(10)).oneOf(); x' = m.get(3)
+      |>>> nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
       |true
-      |{ x: 54 => 10 }
       |>>> x.in(Int)
       |true
       |>>> nondet m = Set().oneOf(); x' = m
@@ -695,20 +647,16 @@ describe('repl ok', () => {
 
   it('nondet and oneOf over sets of sets', async () => {
     const input = dedent(
-      `.seed=42
-      |var S: Set[int]
+      `var S: Set[int]
       |nondet y = oneOf(powerset(1.to(3))); S' = y
       |S.subseteq(1.to(3))
       |`
     )
     const output = dedent(
-      `>>> .seed=42
-      |.seed=42
-      |>>> var S: Set[int]
+      `>>> var S: Set[int]
       |
       |>>> nondet y = oneOf(powerset(1.to(3))); S' = y
       |true
-      |{ S: Set() }
       |>>> S.subseteq(1.to(3))
       |true
       |>>> `

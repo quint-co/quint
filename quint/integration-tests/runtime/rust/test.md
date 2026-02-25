@@ -1,10 +1,5 @@
 # Integration tests with locally-built Rust backend
 
-Tests in this script verify features of the Rust backend that require
-running against a locally-built evaluator (not the released version).
-
-These tests run in PR CI after building the Rust evaluator from source.
-
 <!-- !test program
 bash -
 -->
