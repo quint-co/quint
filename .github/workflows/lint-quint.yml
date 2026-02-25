@@ -1,0 +1,73 @@
+name: Lint Quint
+
+on:
+  # Every pull request
+  pull_request:
+  # When part of a merge queue
+  merge_group:
+  # Pushes into the trunk
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      quint: ${{ steps.filter.outputs.quint }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quint:
+              - 'quint/**'
+
+  format-check:
+    name: Format Check
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm install
+      - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
+
+  generated-files-up-to-date:
+    name: Generated files up-to-date
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm install
+      - name: Compile and update test fixtures
+        run: npm run generate
+      - name: Check that generated files are up to date
+        run: |
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Generated files are not up to date. Run 'npm run generate'" &&  exit 1)

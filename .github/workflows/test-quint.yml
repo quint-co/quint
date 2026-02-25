@@ -1,0 +1,78 @@
+name: Test Quint
+
+on:
+  # Every pull request
+  pull_request:
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      quint: ${{ steps.filter.outputs.quint }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quint:
+              - 'quint/**'
+
+  unit-tests:
+    name: Unit Tests by OS
+    needs: changes
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
+    runs-on: ${{ matrix.operating-system }}
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build Rust evaluator
+        run: cd ../evaluator && cargo build --release
+      - name: Install Rust evaluator locally (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp ../evaluator/target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+      - name: Install Rust evaluator locally (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp ../evaluator/target/release/quint_evaluator.exe ~/.quint/rust-evaluator-$VERSION/quint-evaluator.exe
+      - run: npm install
+      - run: npm run compile
+      - run: npm test
+
+  unit-tests-aggregator:
+    name: Unit Tests
+    # Needed to aggregate all matrix options under the same name for the requirement
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All OS tests completed successfully!"
