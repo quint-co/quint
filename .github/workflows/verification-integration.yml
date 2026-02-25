@@ -1,4 +1,4 @@
-name: Apalache Integration Tests
+name: Verification Integration Tests
 
 on:
   # Every pull request
@@ -33,8 +33,8 @@ jobs:
               - 'evaluator/**'
               - 'examples/**'
 
-  apalache-integration-tests:
-    name: Apalache Integration Tests by OS
+  verification-integration-tests:
+    name: Verification Integration Tests by OS
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.operating-system }}
@@ -63,7 +63,7 @@ jobs:
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - run: npm install -g txm
-      - name: Apalache integration tests
+      - name: Verification integration tests
         run: |
           cd ./quint
           make -C .. apalache
@@ -72,13 +72,13 @@ jobs:
           cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
           _build/apalache/bin/apalache-mc server &
           sleep 5
-          npm run apalache-integration
+          npm run verification-integration
         env:
           GH_TOKEN: ${{ github.token }}
 
-  apalache-integration-tests-aggregator:
-    name: Apalache Integration Tests
-    needs: apalache-integration-tests
+  verification-integration-tests-aggregator:
+    name: Verification Integration Tests
+    needs: verification-integration-tests
     runs-on: ubuntu-latest
     steps:
       - run: echo "All Apalache integration tests completed successfully!"

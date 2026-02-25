@@ -61,7 +61,7 @@ jobs:
       - run: npm install -g txm
       - uses: dcarbone/install-jq-action@v2
       - name: Rust backend integration tests
-        run: cd ./quint && npm run rust-backend-integration
+        run: cd ./quint && npm run rust-evaluator-integration
 
   rust-backend-integration-tests-aggregator:
     name: Rust Backend Integration Tests

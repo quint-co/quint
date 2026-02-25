@@ -50,8 +50,15 @@ jobs:
       - run: cd ./quint && npm run compile && npm link
       - run: npm install -g txm
       - uses: dcarbone/install-jq-action@v2
-      - name: Lang integration tests
-        run: cd ./quint && npm run lang-integration
+      - name: Lang CLI integration tests
+        run: cd ./quint && txm integration-tests/lang/cli.md
+      - name: Lang IO integration tests
+        # These tests fail on windows due to CRLF line ending mismatches
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
+        run: cd ./quint && txm integration-tests/lang/io.md
+      - name: TypeScript runtime integration tests
+        run: cd ./quint && txm integration-tests/runtime/typescript/repl.md && txm integration-tests/runtime/typescript/run.md && txm integration-tests/runtime/typescript/test.md
 
   lang-integration-tests-aggregator:
     name: Lang Integration Tests
