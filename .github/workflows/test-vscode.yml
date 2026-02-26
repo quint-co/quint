@@ -33,7 +33,7 @@ jobs:
               - 'vscode/**'
               - 'quint/**'
 
-  quint-vscode-plugin:
+  unit-tests:
     name: Unit Tests by OS
     needs: changes
     if: ${{ needs.changes.outputs.vscode == 'true' || github.ref == 'refs/heads/main' }}
@@ -72,10 +72,10 @@ jobs:
       - name: Check that we can create the vsix package
         run: cd ./vscode/quint-vscode && nix develop -c vsce package
 
-  quint-vscode-plugin-aggregator:
+  unit-tests-aggregator:
     name: Unit Tests
     # Needed to aggregate all matrix options under the same name for the requirement
-    needs: quint-vscode-plugin
+    needs: unit-tests
     runs-on: ubuntu-latest
     steps:
       - run: echo "All OS tests completed successfully!"

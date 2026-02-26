@@ -46,8 +46,8 @@ jobs:
             evaluator:
               - 'evaluator/**'
 
-  fmt:
-    name: Formatting
+  format-check:
+    name: Format Check
     needs: changes
     if: ${{ needs.changes.outputs.evaluator == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
