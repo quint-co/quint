@@ -114,6 +114,7 @@ impl ParsedQuint {
     ///
     /// If `seed` is provided, it will be used to initialize the random number generator
     /// for reproducibility. Otherwise, a random seed will be generated.
+    #[allow(clippy::result_large_err)]
     pub fn simulate<R: Reporter>(
         &self,
         config: SimulationConfig,
@@ -131,6 +132,7 @@ impl ParsedQuint {
     ///
     /// The interpreter is created sharing the environment's `var_storage`,
     /// so the caller controls which storage is used.
+    #[allow(clippy::result_large_err)]
     pub fn simulate_with_env<R: Reporter>(
         &self,
         env: &mut Env,
