@@ -659,3 +659,19 @@ rm /tmp/debug_test.qnt
 ```
 [DEBUG] this tests debug 42
 ```
+
+## Pending diagnostics are flushed on runtime error
+
+Regression test for the diagnostics flushing feature: q::debug messages accumulated
+during a step that fails with a runtime error should be printed as pending diagnostics.
+
+<!-- !test in pending diagnostics flushed on runtime error -->
+```
+quint run --backend=rust --verbosity=3 --seed=0xf3358ea77be2efe2 \
+  testFixture/simulator/flushingDiagnostics.qnt 2>&1 | grep "\[DEBUG\] Stop me"
+```
+
+<!-- !test out pending diagnostics flushed on runtime error -->
+```
+[DEBUG] Stop me "x"
+```

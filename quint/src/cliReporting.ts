@@ -48,7 +48,8 @@ export function maybePrintCounterExample(
   states: QuintEx[],
   diagnostics: DebugMessage[][],
   frames: ExecutionFrame[] = [],
-  hideVars: string[] = []
+  hideVars: string[] = [],
+  pendingDiagnostics?: DebugMessage[]
 ): void {
   if (verbosity.hasStateOutput(verbosityLevel)) {
     console.log(chalk.gray('An example execution:\n'))
@@ -56,7 +57,7 @@ export function maybePrintCounterExample(
       width: terminalWidth(),
       out: (s: string) => process.stdout.write(s),
     }
-    printTrace(myConsole, states, diagnostics, frames, hideVars)
+    printTrace(myConsole, states, diagnostics, frames, hideVars, pendingDiagnostics)
   }
 }
 

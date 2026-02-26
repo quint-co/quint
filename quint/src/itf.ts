@@ -270,6 +270,17 @@ export interface DebugMessage {
   value: QuintEx
 }
 
+/** Extracts pending diagnostics from the ITF trace-level metadata.
+ * These are diagnostics from a failing step that never produced a new state. */
+export function pendingDiagnosticsOfItf(itf: ItfTrace): DebugMessage[] {
+  if (itf['#meta']?.pending_diagnostics) {
+    const msgs: { label: string; value: any }[] = JSON.parse(itf['#meta'].pending_diagnostics)
+    msgs.forEach(msg => (msg.value = ofItfValue(msg.value, zerog.nextId)))
+    return msgs
+  }
+  return []
+}
+
 /** Extracts diagnostics embedded into ITF's metadata. Returns a matrics of
  * diagnostics per state in the ITF trace. */
 export function diagnosticsOfItf(itf: ItfTrace): DebugMessage[][] {
