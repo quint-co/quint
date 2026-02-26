@@ -3,7 +3,7 @@
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{LookupTable, QuintError, QuintEx},
-    itf::Trace,
+    itf::{Trace,DebugMessage},
     progress::Reporter,
     rand::Rand,
     storage::Storage,
@@ -60,6 +60,8 @@ pub struct SimulationError {
     pub seed: u64,
     pub trace: Trace,
     pub error: QuintError,
+    /// Diagnostics accumulated during a failing step
+    pub pending_diagnostics: Vec<DebugMessage>,
 }
 
 impl fmt::Display for SimulationError {
@@ -309,7 +311,8 @@ impl ParsedQuint {
                     }
                 }
                 Ok(Err(e)) => {
-                    // QuintError occurred
+                    // QuintError occurred. Capture any pending diagnostics.
+                    let pending_diagnostics = std::mem::take(&mut env.diagnostics);
                     let trace = std::mem::take(&mut env.trace);
                     return Err(SimulationError {
                         seed,
@@ -319,6 +322,7 @@ impl ParsedQuint {
                             seed,
                         },
                         error: e,
+                        pending_diagnostics,
                     });
                 }
                 Err(panic_info) => {
@@ -329,6 +333,7 @@ impl ParsedQuint {
                         .or_else(|| panic_info.downcast_ref::<String>().map(|s| s.as_str()))
                         .unwrap_or("Unknown panic in thread");
 
+                    let pending_diagnostics = std::mem::take(&mut env.diagnostics);
                     let trace = std::mem::take(&mut env.trace);
                     return Err(SimulationError {
                         seed,
@@ -342,6 +347,7 @@ impl ParsedQuint {
                             message: msg.to_string(),
                             trace: Vec::new(),
                         },
+                        pending_diagnostics,
                     });
                 }
             }

@@ -56,6 +56,14 @@ impl TraceQuality for Trace {
 
 impl Trace {
     pub fn to_itf(self, source: String) -> itf::Trace<itf::Value> {
+        self.to_itf_with_pending_diagnostics(source, vec![])
+    }
+
+    pub fn to_itf_with_pending_diagnostics(
+        self,
+        source: String,
+        pending_diagnostics: Vec<DebugMessage>,
+    ) -> itf::Trace<itf::Value> {
         let mut vars = Vec::new();
         if let Some(state) = self.states.first() {
             // Find the variable names by taking the fields from the first
@@ -92,6 +100,13 @@ impl Trace {
                 "ok".to_string()
             },
         );
+        if !pending_diagnostics.is_empty() {
+            other.insert(
+                "pendingDiagnostics".to_string(),
+                serde_json::to_string(&pending_diagnostics)
+                    .expect("failed to serialize pending diagnostics"),
+            );
+        }
 
         itf::Trace {
             meta: itf::trace::Meta {
