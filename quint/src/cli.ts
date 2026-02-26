@@ -205,9 +205,8 @@ const testCmd = {
       })
       .hide('output')
       .option('max-samples', {
-        desc: 'the maximum number of successful runs to try for every randomized test',
+        desc: 'the maximum number of successful runs to try for every randomized test (default: 1 when --seed is set, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
@@ -241,9 +240,6 @@ const testCmd = {
       args.outItf = args['out-itf'] = args.output
       delete args.output
     }
-    if (args.seed !== undefined) {
-      args.maxSamples = args['max-samples'] = 1
-    }
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult)
   },
 }
@@ -263,9 +259,8 @@ const runCmd = {
         type: 'string',
       })
       .option('max-samples', {
-        desc: 'the maximum number of runs to attempt before giving up',
+        desc: 'the maximum number of runs to attempt before giving up (default: 1 if --seed is supplied, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('n-traces', {
         desc: 'how many traces to generate (only affects output to out-itf)',
@@ -341,9 +336,6 @@ const runCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) => {
-    if (args.seed !== undefined) {
-      args.maxSamples = args['max-samples'] = 1
-    }
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult)
   },
 }
@@ -454,6 +446,10 @@ const validate = (argv: any, opts: any) => {
     if (key !== '_' && !opts.array.includes(key) && Array.isArray(argv[key])) {
       throw new Error(`--${key} can not be specified more than once`)
     }
+  }
+  // Apply the effective default for --max-samples (for run and test commands).
+  if ((argv['_'][0] === 'run' || argv['_'][0] === 'test') && argv['max-samples'] === undefined) {
+    argv['max-samples'] = argv.maxSamples = argv.seed !== undefined ? 1 : 10000
   }
   // Validate that --n-traces is not greater than --max-samples.
   if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {
