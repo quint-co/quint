@@ -19,7 +19,7 @@ import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
 import { reviver } from '../jsonHelper'
-import { ItfState, ItfValue, diagnosticsOfItf, ofItf } from '../itf'
+import { ItfState, ItfValue, diagnosticsOfItf, pendingDiagnosticsOfItf, ofItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
@@ -124,6 +124,7 @@ export class CommandWrapper {
         seed: BigInt(trace.seed),
         states: ofItf(trace.states),
         diagnostics: diagnosticsOfItf(trace.states),
+        pendingDiagnostics: pendingDiagnosticsOfItf(trace.states),
       }))
 
       // Call onTrace callback for each trace
