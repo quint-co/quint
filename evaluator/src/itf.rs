@@ -102,7 +102,7 @@ impl Trace {
         );
         if !pending_diagnostics.is_empty() {
             other.insert(
-                "pendingDiagnostics".to_string(),
+                "pending_diagnostics".to_string(),
                 serde_json::to_string(&pending_diagnostics)
                     .expect("failed to serialize pending diagnostics"),
             );
