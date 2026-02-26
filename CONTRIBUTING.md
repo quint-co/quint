@@ -349,30 +349,37 @@ well-known shell utilities to manipulate the output for matching test
 expectations, such as `sed` to remove machine-specific data and `head`/`tail` to
 check only parts of the output.
 
-The files containing tests for `txm` are:
+The tests are organized under [integration-tests/](./integration-tests/):
 
-- [cli-tests.md](./cli-tests.md) for tests where we only match the exit code.
-- [io-cli-tests.md](./io-cli-tests.md) for tests where we assert over STDOUT and
-  STDERR output.
-  - These are kept in a separate file because we don't run them on Windows (on
-    our CI), as we had too many encoding issues there.
-- [verification-tests.md](./verification-tests.md) for tests that run model
-  checkers (Apalache and TLC) on Quint specs.
-- [apalache-dist-tests.md](./apalache-dist-tests.md) for special tests on
-  downloading and starting Apalache from Quint.
-  - These are kept in a separate file because they run in a CI environment where
-    Apalache was not installed.
+- [lang/cli.md](./integration-tests/lang/cli.md) for tests where we only match
+  the exit code. Compatible with all platforms including Windows.
+- [lang/io.md](./integration-tests/lang/io.md) for tests where we assert over
+  STDOUT and STDERR output. Not run on Windows due to CRLF encoding issues.
+- [runtime/typescript/](./integration-tests/runtime/typescript/) for tests of
+  the TypeScript runtime (repl, run, test commands).
+- [runtime/rust/](./integration-tests/runtime/rust/) for tests of the Rust
+  evaluator backend (repl, run, test commands).
+- [verification.md](./integration-tests/verification.md) for tests that run
+  model checkers (Apalache and TLC) on Quint specs.
+- [distribution/](./integration-tests/distribution/) for tests on downloading
+  and caching Apalache and the Rust evaluator binary.
 
-Run integration tests:
+To run all integration tests locally:
 
   ```sh
-  npm run compile && npm link && npm run integration
+  npm run compile && npm link && npm run all-integration
   ```
-  
-PS: this will not run the Apalache-related tests, as they usually won't break as
-consequences of changes in the Quint codebase. They are run in the CI, and you
-can run them locally by running `npm run apalache-integration` and `npm run
-apalache-dist` if you want.
+
+You can also run individual suites:
+
+  ```sh
+  npm run lang-integration           # language tests (parse/typecheck/compile)
+  npm run ts-evaluator-integration   # TypeScript runtime tests (repl, run, test)
+  npm run rust-evaluator-integration # Rust backend runtime tests (repl, run, test)
+  npm run verification-integration   # Apalache/TLC model checker tests
+  npm run apalache-distribution-integration  # Apalache download/cache tests
+  npm run rust-distribution-integration     # Rust evaluator download tests
+  ```
 
 ### Adding dependencies
 

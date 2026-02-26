@@ -5,9 +5,9 @@ import { PassThrough, Writable } from 'stream'
 import { Buffer } from 'buffer'
 import chalk from 'chalk'
 
-import { quintRepl } from '../src/repl'
-import { dedent } from './textUtils'
-import { version } from '../src/version'
+import { quintRepl } from '../../../src/repl'
+import { dedent } from '../../textUtils'
+import { version } from '../../../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
@@ -57,7 +57,7 @@ const withIO = async (inputText: string): Promise<string> => {
   // Use { end: false } to prevent ending output when input ends
   input.pipe(output, { end: false })
 
-  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
+  const rl = quintRepl(input, output, { verbosity: 1, backend: 'typescript' }, () => {})
   await output.isReady()
 
   // Send input line-by-line to the REPL. We emit 'data' events for each line,
@@ -324,6 +324,7 @@ describe('repl ok', () => {
       |.verbosity=4
       |>>> x' = 0
       |true
+      |{ x: 0 }
       |>>> action step = x' = x + 1
       |
       |>>> action input1 = step
@@ -332,6 +333,7 @@ describe('repl ok', () => {
       |
       |>>> input1
       |true
+      |{ x: 0 => 1 }
       |
       |[Frame 0]
       |input1 => true
@@ -339,6 +341,7 @@ describe('repl ok', () => {
       |
       |>>> input2
       |true
+      |{ x: 1 => 2 }
       |
       |[Frame 0]
       |input2 => true
@@ -681,6 +684,7 @@ describe('repl ok', () => {
       |.verbosity=3
       |>>> init.then(step).then(step)
       |true
+      |{ n: 1 => 2 }
       |
       |[Frame 0]
       |init => true

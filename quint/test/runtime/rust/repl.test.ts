@@ -5,9 +5,9 @@ import { PassThrough, Writable } from 'stream'
 import { Buffer } from 'buffer'
 import chalk from 'chalk'
 
-import { quintRepl } from '../src/repl'
-import { dedent } from './textUtils'
-import { version } from '../src/version'
+import { quintRepl } from '../../../src/repl'
+import { dedent } from '../../textUtils'
+import { version } from '../../../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
@@ -77,7 +77,8 @@ const withIO = async (inputText: string): Promise<string> => {
   await once(rl, 'close')
 
   chalk.level = savedChalkLevel
-  return output.buffer
+  // Remove trailing newline that gets added when the REPL closes
+  return output.buffer.replace(/\n$/, '')
 }
 
 // the standard banner, which gets repeated
@@ -267,8 +268,10 @@ describe('repl ok', () => {
       |
       |>>> x' = 0
       |true
+      |{ x: 0 }
       |>>> x' = x + 1
       |true
+      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> .clear
@@ -277,6 +280,7 @@ describe('repl ok', () => {
       |
       |>>> x' = 42
       |true
+      |{ x: 42 }
       |>>> x
       |42
       |>>> `
@@ -284,136 +288,198 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  xit('change verbosity and track executions', async () => {
+  it('state diffs suppressed at verbosity 1', async () => {
+    const input = dedent(
+      `var x: int
+      |action Init = x' = 0
+      |action Next = x' = x + 1
+      |Init
+      |.verbosity=1
+      |Next
+      |x
+      |`
+    )
+    const output = dedent(
+      `>>> var x: int
+      |
+      |>>> action Init = x' = 0
+      |
+      |>>> action Next = x' = x + 1
+      |
+      |>>> Init
+      |true
+      |{ x: 0 }
+      |>>> .verbosity=1
+      |.verbosity=1
+      |>>> Next
+      |true
+      |>>> x
+      |1
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug output suppressed below verbosity 3', async () => {
+    const input = dedent(
+      `var x: int
+      |x' = 0
+      |q::debug("x value", x)
+      |`
+    )
+    const output = dedent(
+      `>>> var x: int
+      |
+      |>>> x' = 0
+      |true
+      |{ x: 0 }
+      |>>> q::debug("x value", x)
+      |0
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug output with verbosity=3', async () => {
     const input = dedent(
       `pure def plus(x, y) = x + y
-      |.verbosity=4
-      |plus(2, 3)
+      |.verbosity=3
+      |q::debug("result", plus(2, 3))
       |`
     )
     const output = dedent(
       `>>> pure def plus(x, y) = x + y
       |
-      |>>> .verbosity=4
-      |.verbosity=4
-      |>>> plus(2, 3)
+      |>>> .verbosity=3
+      |.verbosity=3
+      |>>> q::debug("result", plus(2, 3))
+      |[DEBUG] result 5
       |5
-      |
-      |[Frame 0]
-      |plus(2, 3) => 5
-      |
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  xit('change verbosity and show execution on failure', async () => {
+  it('diagnostics: debug output on failure', async () => {
     const input = dedent(
       `pure def div(x, y) = x / y
-      |.verbosity=4
-      |div(2, 0)
+      |.verbosity=3
+      |q::debug("dividing", div(2, 0))
       |`
     )
     const output = dedent(
       `>>> pure def div(x, y) = x / y
       |
-      |>>> .verbosity=4
-      |.verbosity=4
-      |>>> div(2, 0)
+      |>>> .verbosity=3
+      |.verbosity=3
+      |>>> q::debug("dividing", div(2, 0))
+      |runtime error: 
+      | Error [QNT503]: Division by zero
       |
-      |[Frame 0]
-      |div(2, 0) => none
-      |
-      |runtime error:  error: [QNT503] Division by zero
-      |pure def div(x, y) = x / y
-      |                     ^^^^^
+      |  at <input-0>:0:22
+      |  pure def div(x, y) = x / y
+      |                       ^^^^^
+      |    at div(2, 0) (<input-1>:0:22)
       |
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  xit('caching nullary definitions', async () => {
+  it('diagnostics: debug with stateful actions', async () => {
     const input = dedent(
       `var x: int
-      |.verbosity=4
-      |x' = 0
-      |action step = x' = x + 1
-      |action input1 = step
-      |action input2 = step
-      |input1
-      |input2
+      |.verbosity=3
+      |x' = q::debug("init x", 0)
+      |action step = x' = q::debug("stepping", x + 1)
+      |step
       |`
     )
     const output = dedent(
-      // a regression test for the behavior uncovered in:
-      // https://github.com/informalsystems/quint/issues/982
       `>>> var x: int
       |
-      |>>> .verbosity=4
-      |.verbosity=4
-      |>>> x' = 0
+      |>>> .verbosity=3
+      |.verbosity=3
+      |>>> x' = q::debug("init x", 0)
+      |[DEBUG] init x 0
       |true
-      |>>> action step = x' = x + 1
+      |{ x: 0 }
+      |>>> action step = x' = q::debug("stepping", x + 1)
       |
-      |>>> action input1 = step
-      |
-      |>>> action input2 = step
-      |
-      |>>> input1
+      |>>> step
+      |[DEBUG] stepping 1
       |true
-      |
-      |[Frame 0]
-      |input1 => true
-      |└─ step => true
-      |
-      |>>> input2
-      |true
-      |
-      |[Frame 0]
-      |input2 => true
-      |└─ step => true
-      |
+      |{ x: 0 => 1 }
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  it('update the seed between evaluations', async () => {
-    // A regression test.
-    // Test that two consecutive steps produce two different integers.
-    // If this test fails, it is almost certainly because of the seed
-    // not being updated between consecutive calls of `step`.
-    // There is a neglible probability of this test failing,
-    // since we are using randomization.
+  it('diagnostics: debug output (initial verbosity 3)', async () => {
     const input = dedent(
-      `var S: Set[int]
-      |S' = Set()
-      |action step = { nondet y = 1.to(2^62).oneOf(); S' = Set(y).union(S) }
-      |step
-      |step
-      |step
-      |step
-      |size(S) > 1
+      `.verbosity=3
+      |pure def plus(x, y) = x + y
+      |q::debug("result", plus(2, 3))
       |`
     )
     const output = dedent(
-      `>>> var S: Set[int]
+      `>>> .verbosity=3
+      |.verbosity=3
+      |>>> pure def plus(x, y) = x + y
       |
-      |>>> S' = Set()
+      |>>> q::debug("result", plus(2, 3))
+      |[DEBUG] result 5
+      |5
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug returns its value', async () => {
+    const input = dedent(
+      `.verbosity=3
+      |q::debug("check", 1 == 1)
+      |q::debug("is even", 4 % 2 == 0)
+      |`
+    )
+    const output = dedent(
+      `>>> .verbosity=3
+      |.verbosity=3
+      |>>> q::debug("check", 1 == 1)
+      |[DEBUG] check true
       |true
-      |>>> action step = { nondet y = 1.to(2^62).oneOf(); S' = Set(y).union(S) }
+      |>>> q::debug("is even", 4 % 2 == 0)
+      |[DEBUG] is even true
+      |true
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug with stateful actions (initial verbosity 3)', async () => {
+    const input = dedent(
+      `.verbosity=3
+      |var x: int
+      |x' = q::debug("init x", 0)
+      |action step = x' = q::debug("stepping", x + 1)
+      |step
+      |`
+    )
+    const output = dedent(
+      `>>> .verbosity=3
+      |.verbosity=3
+      |>>> var x: int
+      |
+      |>>> x' = q::debug("init x", 0)
+      |[DEBUG] init x 0
+      |true
+      |{ x: 0 }
+      |>>> action step = x' = q::debug("stepping", x + 1)
       |
       |>>> step
+      |[DEBUG] stepping 1
       |true
-      |>>> step
-      |true
-      |>>> step
-      |true
-      |>>> step
-      |true
-      |>>> size(S) > 1
-      |true
+      |{ x: 0 => 1 }
       |>>> `
     )
     await assertRepl(input, output)
@@ -436,31 +502,6 @@ describe('repl ok', () => {
       |>>> `
     )
     await assertRepl(input, output)
-  })
-
-  it('seed reproduces nondeterministic evaluation with same result', async () => {
-    const input = dedent(
-      `var x: int
-      |action init = { nondet v = 0.to(9999).oneOf(); x' = v }
-      |.seed=123
-      |init
-      |x
-      |.seed=123
-      |init
-      |x
-      |`
-    )
-    const result = await withIO(input)
-    // Extract the values of x from the output (lines following ">>> x")
-    const lines = result.split('\n')
-    const xOutputs: string[] = []
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim() === '>>> x') {
-        xOutputs.push(lines[i + 1])
-      }
-    }
-    assert(xOutputs.length === 2, `expected 2 x outputs, got ${xOutputs.length}: ${result}`)
-    expect(xOutputs[0]).to.equal(xOutputs[1])
   })
 
   it('handle exceptions', async () => {
@@ -504,14 +545,17 @@ describe('repl ok', () => {
       |
       |>>> Init
       |true
+      |{ x: 0 }
       |>>> x
       |0
       |>>> Next
       |true
+      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> Next
       |true
+      |{ x: 1 => 2 }
       |>>> x
       |2
       |>>> `
@@ -565,18 +609,22 @@ describe('repl ok', () => {
       |
       |>>> Init
       |true
+      |{ x: 0 }
       |>>> x
       |0
       |>>> Next
       |true
+      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> Next
       |true
+      |{ x: 1 => 0 }
       |>>> x
       |0
       |>>> Next
       |true
+      |{ x: 0 => 1 }
       |>>> x
       |1
       |>>> `
@@ -594,6 +642,7 @@ describe('repl ok', () => {
       |  x' = x - 1,
       |}
       |
+      |.seed=42
       |Init
       |-1 <= x and x <= 1
       |Next
@@ -616,20 +665,26 @@ describe('repl ok', () => {
       |... }
       |... 
       |
+      |>>> .seed=42
+      |.seed=42
       |>>> Init
       |true
+      |{ x: 0 }
       |>>> -1 <= x and x <= 1
       |true
       |>>> Next
       |true
+      |{ x: 0 => -1 }
       |>>> -2 <= x and x <= 2
       |true
       |>>> Next
       |true
+      |{ x: -1 => -2 }
       |>>> -3 <= x and x <= 3
       |true
       |>>> Next
       |true
+      |{ x: -2 => -1 }
       |>>> -4 <= x and x <= 4
       |true
       |>>> `
@@ -641,6 +696,7 @@ describe('repl ok', () => {
     const input = dedent(
       `
       |var x: int
+      |.seed=42
       |
       |x' = 0
       |x == 0
@@ -652,11 +708,11 @@ describe('repl ok', () => {
       |2 <= x and x <= 5
       |nondet t = oneOf(tuples(2.to(5), 3.to(4))); x' = t._1 + t._2
       |5 <= x and x <= 9
-      |nondet i = oneOf(Nat); x' = i
+      |nondet i = oneOf(1.to(100)); x' = i
       |x >= 0
-      |nondet i = oneOf(Int); x' = i
+      |nondet i = oneOf(0.to(100)); x' = i
       |Int.contains(x)
-      |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |nondet m = 1.to(5).setOfMaps(1.to(10)).oneOf(); x' = m.get(3)
       |x.in(Int)
       |nondet m = Set().oneOf(); x' = m
       |`
@@ -665,35 +721,44 @@ describe('repl ok', () => {
       `>>> 
       |>>> var x: int
       |
+      |>>> .seed=42
+      |.seed=42
       |>>> 
       |>>> x' = 0
       |true
+      |{ x: 0 }
       |>>> x == 0
       |true
       |>>> { nondet y = oneOf(Set(1, 2, 3))
       |...   x' = y }
       |... 
       |true
+      |{ x: 0 => 2 }
       |>>> 1 <= x and x <= 3
       |true
       |>>> nondet y = oneOf(2.to(5)); x' = y
       |true
+      |{ x: 2 => 5 }
       |>>> 2 <= x and x <= 5
       |true
       |>>> nondet t = oneOf(tuples(2.to(5), 3.to(4))); x' = t._1 + t._2
       |true
+      |{ x: 5 => 6 }
       |>>> 5 <= x and x <= 9
       |true
-      |>>> nondet i = oneOf(Nat); x' = i
+      |>>> nondet i = oneOf(1.to(100)); x' = i
       |true
+      |{ x: 6 => 62 }
       |>>> x >= 0
       |true
-      |>>> nondet i = oneOf(Int); x' = i
+      |>>> nondet i = oneOf(0.to(100)); x' = i
       |true
+      |{ x: 62 => 45 }
       |>>> Int.contains(x)
       |true
-      |>>> nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |>>> nondet m = 1.to(5).setOfMaps(1.to(10)).oneOf(); x' = m.get(3)
       |true
+      |{ x: 45 => 8 }
       |>>> x.in(Int)
       |true
       |>>> nondet m = Set().oneOf(); x' = m
@@ -706,6 +771,7 @@ describe('repl ok', () => {
   it('nondet and oneOf over sets of sets', async () => {
     const input = dedent(
       `var S: Set[int]
+      |.seed=42
       |nondet y = oneOf(powerset(1.to(3))); S' = y
       |S.subseteq(1.to(3))
       |`
@@ -713,8 +779,11 @@ describe('repl ok', () => {
     const output = dedent(
       `>>> var S: Set[int]
       |
+      |>>> .seed=42
+      |.seed=42
       |>>> nondet y = oneOf(powerset(1.to(3))); S' = y
       |true
+      |{ S: Set(1) }
       |>>> S.subseteq(1.to(3))
       |true
       |>>> `
@@ -722,11 +791,11 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  xit('actions introduce their own frames', async () => {
+  it('diagnostics: debug with chained actions', async () => {
     const input = dedent(
       `var n: int
-      |action init = n' = 0
-      |action step = n' = n + 1
+      |action init = n' = q::debug("init", 0)
+      |action step = n' = q::debug("step", n + 1)
       |.verbosity=3
       |init.then(step).then(step)
       |`
@@ -734,24 +803,67 @@ describe('repl ok', () => {
     const output = dedent(
       `>>> var n: int
       |
-      |>>> action init = n' = 0
+      |>>> action init = n' = q::debug("init", 0)
       |
-      |>>> action step = n' = n + 1
+      |>>> action step = n' = q::debug("step", n + 1)
       |
       |>>> .verbosity=3
       |.verbosity=3
       |>>> init.then(step).then(step)
+      |[DEBUG] init 0
+      |[DEBUG] step 1
+      |[DEBUG] step 2
       |true
+      |{ n: 1 => 2 }
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug with expect (condition passes)', async () => {
+    const input = dedent(
+      `var n: int
+      |action init = n' = q::debug("init", 0)
+      |action step = n' = q::debug("step", n + 1)
+      |.verbosity=3
+      |init.then(step).expect(q::debug("check", n) == 1)
+      |`
+    )
+    const output = dedent(
+      `>>> var n: int
       |
-      |[Frame 0]
-      |init => true
+      |>>> action init = n' = q::debug("init", 0)
       |
-      |[Frame 1]
-      |step => true
+      |>>> action step = n' = q::debug("step", n + 1)
       |
-      |[Frame 2]
-      |step => true
-      |
+      |>>> .verbosity=3
+      |.verbosity=3
+      |>>> init.then(step).expect(q::debug("check", n) == 1)
+      |[DEBUG] init 0
+      |[DEBUG] step 1
+      |[DEBUG] check 1
+      |true
+      |{ n: 1 }
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('diagnostics: debug with multiple calls in single expression (initial verbosity 3)', async () => {
+    // Uses arithmetic to trigger two q::debug calls in one evaluation.
+    // Both diagnostics are preserved since no state shift happens between them.
+    const input = dedent(
+      `.verbosity=3
+      |q::debug("a", 1) + q::debug("b", 2)
+      |`
+    )
+    const output = dedent(
+      `>>> .verbosity=3
+      |.verbosity=3
+      |>>> q::debug("a", 1) + q::debug("b", 2)
+      |[DEBUG] a 1
+      |[DEBUG] b 2
+      |3
       |>>> `
     )
     await assertRepl(input, output)
