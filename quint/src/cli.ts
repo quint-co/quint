@@ -180,7 +180,7 @@ const replCmd = {
         desc: 'the backend to use for evaluation',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   handler: runRepl,
 }
@@ -234,14 +234,16 @@ const testCmd = {
         desc: 'the backend to use for tests',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   handler: (args: any) => {
     if (args.output != null) {
       args.outItf = args['out-itf'] = args.output
       delete args.output
     }
-
+    if (args.seed !== undefined) {
+      args.maxSamples = args['max-samples'] = 1
+    }
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult)
   },
 }
@@ -329,7 +331,7 @@ const runCmd = {
         desc: 'the backend to use for simulation',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -338,8 +340,12 @@ const runCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult),
+  handler: (args: any) => {
+    if (args.seed !== undefined) {
+      args.maxSamples = args['max-samples'] = 1
+    }
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult)
+  },
 }
 
 // construct verify commands with yargs
@@ -378,7 +384,6 @@ const verifyCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-        default: verbosity.defaultLevel,
       })
       .option('apalache-version', {
         desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
@@ -415,13 +420,17 @@ const verifyCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
+  handler: (args: any) => {
+    if (args.verbosity === undefined) {
+      args.verbosity = args.backend === 'tlc' ? 3 : verbosity.defaultLevel
+    }
     load(args)
       .then(chainCmd(parse))
       .then(chainCmd(typecheck))
       .then(chainCmd(compile))
       .then(chainCmd(verifySpec))
-      .then(outputResult),
+      .then(outputResult)
+  },
 }
 
 // construct documenting commands with yargs
