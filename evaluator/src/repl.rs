@@ -7,6 +7,7 @@
 use crate::evaluator::{Env, Interpreter};
 use crate::ir::{LookupTable, QuintEx};
 use crate::itf::DebugMessage;
+use crate::rand::Rand;
 use crate::value::Value;
 use crate::Verbosity;
 use itf;
@@ -36,6 +37,12 @@ enum ReplCommand {
     GetTraceStates {},
     /// Reset the evaluator state
     Reset {},
+    /// Get the current RNG seed state
+    GetSeed {},
+    /// Set the RNG seed state
+    SetSeed { seed: u64 },
+    /// Set the verbosity level
+    SetVerbosity { verbosity: Verbosity },
 }
 
 /// Responses sent by the REPL evaluator
@@ -63,6 +70,12 @@ enum ReplResponse {
     TraceStates { states: Vec<itf::Value> },
     /// Confirmation of reset
     ResetComplete {},
+    /// Result carrying the current seed value
+    SeedResult { seed: u64 },
+    /// Confirmation of seed being set
+    SeedSet {},
+    /// Confirmation of verbosity being set
+    VerbositySet {},
     /// Error response
     Error { message: String },
     /// Error response to be used for when the server cannot recover
@@ -156,7 +169,12 @@ impl ReplEvaluator {
             Err(err) => ReplResult::Err { err },
         };
 
-        let diagnostics = std::mem::take(&mut env.diagnostics);
+        // This is only for the repl use, we don't worry about performance penalty of reallocations.
+        let mut diagnostics = Vec::new();
+        for state in &mut env.trace {
+            diagnostics.extend(std::mem::take(&mut state.diagnostics));
+        }
+        diagnostics.extend(std::mem::take(&mut env.diagnostics));
         ReplResponse::EvaluationResult {
             result,
             diagnostics,
@@ -229,13 +247,53 @@ impl ReplEvaluator {
     }
 
     fn reset(&mut self) -> ReplResponse {
-        if let Some(env) = &self.env {
-            let mut storage = env.var_storage.borrow_mut();
-            storage.vars.clear();
-            storage.next_vars.clear();
+        // Create a fresh interpreter (clears all caches, memos, registries).
+        // The table will be repopulated via a subsequent UpdateTable command.
+        let interpreter = Interpreter::new(LookupTable::default());
+        let storage = interpreter.var_storage.clone();
+        self.interpreter = Some(interpreter);
+
+        // Create a fresh env, preserving seed and verbosity
+        if let Some(old_env) = &self.env {
+            let seed = old_env.rand.get_state();
+            self.env = Some(Env::with_rand_state(storage, seed, self.verbosity));
+        } else {
+            self.env = Some(Env::new(storage, self.verbosity));
         }
+
         self.trace_states.clear();
         ReplResponse::ResetComplete {}
+    }
+
+    fn get_seed(&self) -> ReplResponse {
+        match &self.env {
+            Some(env) => ReplResponse::SeedResult {
+                seed: env.rand.get_state(),
+            },
+            None => ReplResponse::Error {
+                message: "Evaluator not initialized".to_string(),
+            },
+        }
+    }
+
+    fn set_seed(&mut self, seed: u64) -> ReplResponse {
+        match &mut self.env {
+            Some(env) => {
+                env.rand = Rand::with_state(seed);
+                ReplResponse::SeedSet {}
+            }
+            None => ReplResponse::Error {
+                message: "Evaluator not initialized".to_string(),
+            },
+        }
+    }
+
+    fn set_verbosity(&mut self, verbosity: Verbosity) -> ReplResponse {
+        self.verbosity = verbosity;
+        if let Some(env) = &mut self.env {
+            env.verbosity = verbosity;
+        }
+        ReplResponse::VerbositySet {}
     }
 
     fn handle_command(&mut self, command: ReplCommand) -> ReplResponse {
@@ -250,6 +308,9 @@ impl ReplEvaluator {
             ReplCommand::ReplShift {} => self.repl_shift(),
             ReplCommand::GetTraceStates {} => self.get_trace_states(),
             ReplCommand::Reset {} => self.reset(),
+            ReplCommand::GetSeed {} => self.get_seed(),
+            ReplCommand::SetSeed { seed } => self.set_seed(seed),
+            ReplCommand::SetVerbosity { verbosity } => self.set_verbosity(verbosity),
         }
     }
 }

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the `--n-traces` flag in the Rust backend (#1898)
 - Added support for `--invariants` flag in the Rust backend (#1902)
 - The rust backend will report diagnostics for the REPL (#1909)
+- The rust backend now displays a stack trace on runtime errors (#1910)
+- Added support for `--seed` int the REPL CLI (#1912)
 
 ### Changed
 
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed LSP-server crashing upon console.{log, error} messages (#1875)
 - Fixed integer overflow errors not being reported properly in the Rust backend (#1887)
 - Added a warning when checking temporal formulas with Apalache (#1908)
+- Fixed a bug related to the progress bar display in single threaded Rust (#1911)
 
 ### Security
 

@@ -21,6 +21,7 @@ import { QuintError, quintErrorToString } from './quintError'
 export interface ErrorMessage {
   explanation: string
   locs: Loc[]
+  traceLocs?: Loc[]
 }
 
 export interface Loc {
@@ -45,12 +46,27 @@ export function sourceIdToLoc(sourceMap: Map<bigint, Loc>, id: bigint): Loc {
   }
 }
 
+export function resolveErrorLocation(sourceMap: Map<bigint, Loc>, error: QuintError): Loc | undefined {
+  const errorId = error.trace?.[0] ?? error.reference
+  return errorId ? sourceMap.get(errorId) : undefined
+}
+
+export function resolveTraceLocations(sourceMap: Map<bigint, Loc>, error: QuintError): Loc[] | undefined {
+  const traceRest = error.trace?.slice(1)
+  if (!traceRest || traceRest.length === 0) {
+    return undefined
+  }
+  return traceRest.map(id => sourceMap.get(id)).filter((loc): loc is Loc => loc !== undefined)
+}
+
 export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
   return error => {
-    const loc = error.reference ? sourceMap.get(error.reference) : undefined
+    const loc = resolveErrorLocation(sourceMap, error)
+    const traceLocs = resolveTraceLocations(sourceMap, error)
     return {
       explanation: quintErrorToString(error),
       locs: compact([loc]),
+      traceLocs,
     }
   }
 }

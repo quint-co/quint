@@ -159,12 +159,15 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> 1 + false
-      |static analysis error: error: [QNT000] Couldn't unify int and bool
+      |static analysis error: 
+      | Error [QNT000]: Couldn't unify int and bool
       |Trying to unify int and bool
       |Trying to unify (int, int) => int and (int, bool) => _t0
       |
-      |1 + false
-      |^^^^^^^^^
+      |
+      |  at <input-0>:0:1
+      |  1 + false
+      |  ^^^^^^^^^
       |
       |>>> `
     )
@@ -228,14 +231,54 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |static analysis error: error: [QNT404] Name 'n' not found
-      |n * n
-      |^
+      |static analysis error: 
+      | Error [QNT404]: Name 'n' not found
       |
-      |static analysis error: error: [QNT404] Name 'n' not found
-      |n * n
-      |    ^
+      |  at <input-0>:0:1
+      |  n * n
+      |  ^
       |
+      |static analysis error: 
+      | Error [QNT404]: Name 'n' not found
+      |
+      |  at <input-0>:0:5
+      |  n * n
+      |      ^
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('clear resets evaluator state', async () => {
+    const input = dedent(
+      `var x: int
+      |x' = 0
+      |x' = x + 1
+      |x
+      |.clear
+      |var x: int
+      |x' = 42
+      |x
+      |`
+    )
+    const output = dedent(
+      `>>> var x: int
+      |
+      |>>> x' = 0
+      |true
+      |>>> x' = x + 1
+      |true
+      |>>> x
+      |1
+      |>>> .clear
+      |
+      |>>> var x: int
+      |
+      |>>> x' = 42
+      |true
+      |>>> x
+      |42
       |>>> `
     )
     await assertRepl(input, output)
@@ -281,7 +324,7 @@ describe('repl ok', () => {
       |[Frame 0]
       |div(2, 0) => none
       |
-      |runtime error: error: [QNT503] Division by zero
+      |runtime error:  error: [QNT503] Division by zero
       |pure def div(x, y) = x / y
       |                     ^^^^^
       |
@@ -395,6 +438,31 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('seed reproduces nondeterministic evaluation with same result', async () => {
+    const input = dedent(
+      `var x: int
+      |action init = { nondet v = 0.to(9999).oneOf(); x' = v }
+      |.seed=123
+      |init
+      |x
+      |.seed=123
+      |init
+      |x
+      |`
+    )
+    const result = await withIO(input)
+    // Extract the values of x from the output (lines following ">>> x")
+    const lines = result.split('\n')
+    const xOutputs: string[] = []
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim() === '>>> x') {
+        xOutputs.push(lines[i + 1])
+      }
+    }
+    assert(xOutputs.length === 2, `expected 2 x outputs, got ${xOutputs.length}: ${result}`)
+    expect(xOutputs[0]).to.equal(xOutputs[1])
+  })
+
   it('handle exceptions', async () => {
     const input = dedent(
       `Set(Int)
@@ -402,9 +470,12 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: error: [QNT501] Infinite set Int is non-enumerable
-      |Set(Int)
-      |^^^^^^^^
+      |runtime error: 
+      | Error [QNT501]: Infinite set Int is non-enumerable
+      |
+      |  at <input-0>:0:1
+      |  Set(Int)
+      |  ^^^^^^^^
       |
       |>>> `
     )

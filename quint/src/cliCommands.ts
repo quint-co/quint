@@ -270,6 +270,7 @@ export async function runRepl(argv: any) {
     importModule: moduleName,
     replInput: argv.commands,
     verbosity: argv.quiet ? 0 : argv.verbosity,
+    seed: argv.seed,
     backend: argv.backend,
   }
   quintRepl(process.stdin, process.stdout, options)
@@ -512,7 +513,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         )
 
         // Use Rust-provided violated invariants if available, otherwise fall back to TS evaluation
-        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0) {
+        // Only print individual violations when there are multiple invariants
+        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0 && individualInvariants.length > 1) {
           printViolatedInvariantsByIndex(outcome.violatedInvariants, individualInvariants)
         } else {
           printViolatedInvariants(states[states.length - 1], individualInvariants, prev)

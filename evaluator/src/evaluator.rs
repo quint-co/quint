@@ -184,12 +184,16 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(table: LookupTable) -> Self {
+        Self::with_var_storage(table, Rc::new(RefCell::new(Storage::default())))
+    }
+
+    pub fn with_var_storage(table: LookupTable, var_storage: Rc<RefCell<Storage>>) -> Self {
         Self {
             table,
             param_registry: FxHashMap::default(),
             const_registry: FxHashMap::default(),
             scoped_cached_values: FxHashMap::default(),
-            var_storage: Rc::new(RefCell::new(Storage::default())),
+            var_storage,
             memo: Rc::new(RefCell::new(FxHashMap::default())),
             memo_by_instance: FxHashMap::default(),
             namespaces: Vec::new(),
@@ -515,9 +519,8 @@ impl Interpreter {
         let compiled_expr = self.compile_expr_core(expr);
         let wrapped_expr = CompiledExpr::new(move |env| {
             compiled_expr.execute(env).map_err(|err| {
-                // This is where we add the reference to the error, if it is not already there.
-                // This way, we don't need to worry about references anywhere else :)
-                if err.reference.is_none() {
+                // Add the reference to the error trace if it's empty (first error location)
+                if err.trace.is_empty() {
                     return err.with_reference(id);
                 }
                 err
@@ -594,7 +597,7 @@ impl Interpreter {
                         let op = compile_lazy_op(&opcode);
                         op.execute(env, &compiled_args).map_err(|err| {
                             // Improve reference of `then`-related errors
-                            if opcode == "then" && err.code == "QNT513" && err.reference.is_none() {
+                            if opcode == "then" && err.code == "QNT513" && err.trace.is_empty() {
                                 // Check if first arg is a nested 'then' call
                                 if let QuintEx::QuintApp {
                                     opcode: inner_opcode,
@@ -681,12 +684,13 @@ impl Interpreter {
     pub fn compile_op(&mut self, id: &QuintId, op: &str) -> CompiledExprWithArgs {
         match self.table.get(id).cloned() {
             Some(def) => {
-                // A user-defined operator
+                // A user-defined operator: push call site to error trace
+                let call_site_id = *id;
                 let op = self.compile_def(&def);
                 CompiledExprWithArgs::new(move |env, args| {
                     let lambda = op.execute(env)?;
                     let closure = lambda.as_closure();
-                    closure(env, args)
+                    closure(env, args).map_err(|err| err.push_trace(call_site_id))
                 })
             }
             // A built-in. We already checked that this is not lazy before.
@@ -741,15 +745,15 @@ impl Interpreter {
             };
 
             let seed = Some(env.rand.get_state());
-            match parsed.simulate(
+            match parsed.simulate_with_env(
+                env,
                 SimulationConfig {
                     steps: nsteps,
                     samples: nruns,
                     n_traces: ntraces,
                     seed,
                     store_metadata: false,
-                    // FIXME: Propagate verbosity into REPL
-                    verbosity: Verbosity::Quiet,
+                    verbosity: env.verbosity,
                 },
                 no_report(),
             ) {

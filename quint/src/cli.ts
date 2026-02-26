@@ -171,6 +171,11 @@ const replCmd = {
         type: 'number',
         default: verbosity.defaultLevel,
       })
+      .option('seed', {
+        desc: 'random seed to use for non-deterministic choice',
+        type: 'string',
+      })
+      .coerce('seed', coerceSeed)
       .option('backend', {
         desc: 'the backend to use for evaluation',
         type: 'string',

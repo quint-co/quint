@@ -148,16 +148,15 @@ class ReplState {
   }
 
   async clear() {
-    await this.shutdown()
-
     const rng = newRng(this.rng.getState())
     const recorder = newTraceRecorder(this.verbosity, rng)
 
     this.moduleHist = ''
     this.exprHist = []
     this.compilationState = newCompilationState()
-    if (this.useRustEvaluator) {
-      this.evaluator = new ReplServerWrapper(new Map(), recorder, rng)
+    if (this.evaluator instanceof ReplServerWrapper) {
+      // Keep the Rust process alive, just reset its state
+      await this.evaluator.reset()
     } else {
       this.evaluator = new Evaluator(new Map(), recorder, rng)
     }
@@ -209,6 +208,7 @@ export interface ReplOptions {
   importModule?: string
   replInput?: string[]
   verbosity: number
+  seed?: bigint
   backend?: 'typescript' | 'rust'
 }
 
@@ -243,7 +243,8 @@ export function quintRepl(
   })
 
   // the state
-  const state: ReplState = new ReplState(options.verbosity, newRng(), useRustEvaluator)
+  const rng = options.seed !== undefined ? newRng(options.seed) : newRng()
+  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator)
 
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -316,8 +317,10 @@ export function quintRepl(
 
   // load the code from a filename and optionally import a module
   async function load(filename: string, moduleName: string | undefined) {
-    // Note: we don't call state.clear() here because loadFromFile creates a new state anyway
-    // and for the Rust backend, clear() would spawn an unnecessary subprocess
+    // Reset all state for a clean load/reload.
+    // For Rust backend this sends a Reset command (keeps the subprocess alive).
+    // For TS backend this creates a fresh evaluator.
+    await state.clear()
 
     const newState = loadFromFile(out, state, filename)
     if (!newState) {
@@ -454,6 +457,9 @@ export function quintRepl(
                 out(r('.verbosity requires a level from 0 to 5\n'))
               } else {
                 state.verbosity = Number(m[1])
+                if (state.evaluator instanceof ReplServerWrapper) {
+                  await state.evaluator.setVerbosity(state.verbosity)
+                }
                 if (verbosity.hasReplPrompt(state.verbosity)) {
                   out(g(`.verbosity=${state.verbosity}\n`))
                 }
@@ -470,11 +476,22 @@ export function quintRepl(
                 out(r('.seed requires an integer, or no argument\n'))
               } else {
                 if (m[1].trim() === '') {
-                  out(g(`.seed=${state.seed}\n`))
-                } else {
-                  state.seed = BigInt(m[1])
-                  if (verbosity.hasReplPrompt(state.verbosity)) {
+                  // Get seed
+                  if (state.evaluator instanceof ReplServerWrapper) {
+                    const seed = await state.evaluator.getSeed()
+                    out(g(`.seed=${seed}\n`))
+                  } else {
                     out(g(`.seed=${state.seed}\n`))
+                  }
+                } else {
+                  // Set seed
+                  const newSeed = BigInt(m[1])
+                  if (state.evaluator instanceof ReplServerWrapper) {
+                    await state.evaluator.setSeed(newSeed)
+                  }
+                  state.seed = newSeed
+                  if (verbosity.hasReplPrompt(state.verbosity)) {
+                    out(g(`.seed=${newSeed}\n`))
                   }
                 }
               }

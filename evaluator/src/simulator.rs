@@ -5,12 +5,16 @@ use crate::{
     ir::{LookupTable, QuintError, QuintEx},
     itf::Trace,
     progress::Reporter,
+    rand::Rand,
+    storage::Storage,
     trace_quality::insert_sorted_by_quality,
     verbosity::Verbosity,
 };
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::fmt;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::rc::Rc;
 
 /// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize, Clone)]
@@ -97,7 +101,7 @@ impl ParsedQuint {
     /// Start evaluating `init` and check that it satisfies the `invariant`.
     /// Then, evaluate `step` `steps` times, checking that `invariant` holds every time.
     ///
-    /// Repeat this `samples` times, and return the best `n_traces` traces
+    /// Repeat this `samples` times, and return the best `n_traces` traces.
     ///
     /// If `init` returns false, simulation stops immediately.
     /// If `invariant` returns false, the violation is recorded and simulation
@@ -111,6 +115,24 @@ impl ParsedQuint {
     pub fn simulate<R: Reporter>(
         &self,
         config: SimulationConfig,
+        reporter: R,
+    ) -> Result<SimulationResult, SimulationError> {
+        let var_storage = Rc::new(RefCell::new(Storage::default()));
+        let mut env = match config.seed {
+            Some(s) => Env::with_rand_state(var_storage, s, config.verbosity),
+            None => Env::new(var_storage, config.verbosity),
+        };
+        self.simulate_with_env(&mut env, config, reporter)
+    }
+
+    /// Like [`simulate`](Self::simulate), but uses a caller-provided environment.
+    ///
+    /// The interpreter is created sharing the environment's `var_storage`,
+    /// so the caller controls which storage is used.
+    pub fn simulate_with_env<R: Reporter>(
+        &self,
+        env: &mut Env,
+        config: SimulationConfig,
         mut reporter: R,
     ) -> Result<SimulationResult, SimulationError> {
         let SimulationConfig {
@@ -119,19 +141,23 @@ impl ParsedQuint {
             n_traces,
             seed,
             store_metadata,
-            verbosity,
+            ..
         } = config;
-        let mut interpreter = Interpreter::new(self.table.clone());
-        // Setup the store metadata flag for MBT.
-        // This was deliberately not passed as an argument to the Interpreter constructor.
-        interpreter
-            .var_storage
+
+        if let Some(s) = seed {
+            env.rand = Rand::with_state(s);
+        }
+
+        env.var_storage
             .borrow_mut()
             .set_store_metadata(store_metadata);
-        let mut env = match seed {
-            Some(s) => Env::with_rand_state(interpreter.var_storage.clone(), s, verbosity),
-            None => Env::new(interpreter.var_storage.clone(), verbosity),
-        };
+        env.trace.clear();
+        env.diagnostics.clear();
+
+        let mut interpreter =
+            Interpreter::with_var_storage(self.table.clone(), env.var_storage.clone());
+
+        let verbosity = env.verbosity;
 
         let init = interpreter.compile(&self.init);
         let step = interpreter.compile(&self.step);
@@ -174,7 +200,7 @@ impl ParsedQuint {
 
             // Wrap execute calls to catch panics and print seed
             let result = catch_unwind(AssertUnwindSafe(|| -> Result<bool, QuintError> {
-                if !init.execute(&mut env)?.as_bool() {
+                if !init.execute(env)?.as_bool() {
                     return Ok(false);
                 }
 
@@ -190,7 +216,7 @@ impl ParsedQuint {
                                 continue;
                             }
 
-                            if let Ok(result) = compiled_witnesses[i].execute(&mut env) {
+                            if let Ok(result) = compiled_witnesses[i].execute(env) {
                                 if result.as_bool() {
                                     trace_witnessed[i] = true;
                                     witnessing_traces[i] += 1;
@@ -204,12 +230,12 @@ impl ParsedQuint {
                         }
                     }
 
-                    if !invariant.execute(&mut env)?.as_bool() {
+                    if !invariant.execute(env)?.as_bool() {
                         trace_lengths.push(env.trace.len());
                         return Ok(false);
                     }
 
-                    if step_number != steps + 1 && !step.execute(&mut env)?.as_bool() {
+                    if step_number != steps + 1 && !step.execute(env)?.as_bool() {
                         // The run cannot be extended. In some cases, this may indicate a deadlock.
                         // Since we are doing random simulation, it is very likely
                         // that we have not generated good values for extending
@@ -246,7 +272,7 @@ impl ParsedQuint {
                             violation: !success,
                             seed,
                         },
-                        n_traces,
+                        n_traces.max(1),
                         verbosity,
                     );
 
@@ -259,7 +285,7 @@ impl ParsedQuint {
                                 .iter()
                                 .enumerate()
                                 .filter_map(|(idx, inv)| {
-                                    if let Ok(result) = inv.execute(&mut env) {
+                                    if let Ok(result) = inv.execute(env) {
                                         if !result.as_bool() {
                                             return Some(idx);
                                         }
@@ -314,7 +340,7 @@ impl ParsedQuint {
                         error: QuintError {
                             code: "QNT500".to_string(),
                             message: msg.to_string(),
-                            reference: None,
+                            trace: Vec::new(),
                         },
                     });
                 }
