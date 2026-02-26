@@ -1,11 +1,11 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 
-import { newTraceRecorder } from '../../src/runtime/trace'
-import { QuintApp } from '../../src/ir/quintIr'
-import { verbosity } from '../../src/verbosity'
-import { newRng } from '../../src/rng'
-import { QuintError } from '../../src/quintError'
+import { newTraceRecorder } from '../../../src/runtime/trace'
+import { QuintApp } from '../../../src/ir/quintIr'
+import { verbosity } from '../../../src/verbosity'
+import { newRng } from '../../../src/rng'
+import { QuintError } from '../../../src/quintError'
 import { left } from '@sweet-monads/either'
 
 const emptyFrameError: QuintError = { code: 'QNT501', message: 'empty frame' }

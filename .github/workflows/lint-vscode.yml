@@ -32,6 +32,7 @@ jobs:
               - 'vscode/**'
 
   format-check:
+    name: Format Check
     needs: changes
     if: ${{ needs.changes.outputs.vscode == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest

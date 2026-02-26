@@ -42,7 +42,7 @@ jobs:
             evaluator:
               - 'evaluator/**'
 
-  unit:
+  unit-tests:
     name: Unit Tests
     needs: changes
     if: ${{ needs.changes.outputs.evaluator == 'true' || github.ref == 'refs/heads/main' }}
