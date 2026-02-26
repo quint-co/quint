@@ -3,7 +3,7 @@
 use crate::{
     evaluator::{Env, Interpreter},
     ir::{LookupTable, QuintError, QuintEx},
-    itf::{Trace,DebugMessage},
+    itf::{DebugMessage, Trace},
     progress::Reporter,
     rand::Rand,
     storage::Storage,

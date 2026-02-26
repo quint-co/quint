@@ -620,10 +620,8 @@ fn to_sim_output(
                     seed: seed as usize,
                     has_diagnostics,
                     result: false,
-                    states: trace.to_itf_with_pending_diagnostics(
-                        source.to_string(),
-                        pending_diagnostics,
-                    ),
+                    states: trace
+                        .to_itf_with_pending_diagnostics(source.to_string(), pending_diagnostics),
                 }],
                 witnessing_traces: vec![],
                 violated_invariants: vec![],
