@@ -35,6 +35,7 @@ export interface SimulatorOptions {
 export interface SimulationTrace {
   states: QuintEx[]
   diagnostics?: DebugMessage[][]
+  pendingDiagnostics?: DebugMessage[]
   result: boolean
   seed: bigint
 }

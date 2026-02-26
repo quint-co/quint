@@ -604,8 +604,13 @@ fn to_sim_output(
             }
         }
         Err(error) => {
-            let SimulationError { seed, trace, error } = error;
-
+            let SimulationError {
+                seed,
+                trace,
+                error,
+                pending_diagnostics,
+            } = error;
+            let has_diagnostics = trace.has_diagnostics() || !pending_diagnostics.is_empty();
             SimOutput {
                 samples: 0,
                 status: SimulationStatus::Error,
@@ -613,9 +618,10 @@ fn to_sim_output(
                 errors: vec![error],
                 best_traces: vec![SimulationTrace {
                     seed: seed as usize,
-                    has_diagnostics: trace.has_diagnostics(),
+                    has_diagnostics,
                     result: false,
-                    states: trace.to_itf(source.to_string()),
+                    states: trace
+                        .to_itf_with_pending_diagnostics(source.to_string(), pending_diagnostics),
                 }],
                 witnessing_traces: vec![],
                 violated_invariants: vec![],

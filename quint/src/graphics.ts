@@ -306,7 +306,8 @@ export function printTrace(
   states: QuintEx[],
   diagnostics: DebugMessage[][],
   frames: ExecutionFrame[],
-  hideVars: string[] = []
+  hideVars: string[] = [],
+  pendingDiagnostics?: DebugMessage[]
 ): void {
   const b = chalk.bold
 
@@ -350,6 +351,21 @@ export function printTrace(
     console.out(format(console.width, 0, stateDoc))
     console.out('\n\n')
   })
+
+  if (pendingDiagnostics && pendingDiagnostics.length > 0) {
+    for (const msg of pendingDiagnostics) {
+      const doc: Doc = group([
+        richtext(chalk.yellow, '[DEBUG]'),
+        space,
+        richtext(chalk.yellow, msg.label),
+        line(),
+        prettyQuintEx(msg.value),
+      ])
+      console.out(format(console.width, 0, doc))
+      console.out('\n')
+    }
+    console.out('\n')
+  }
 }
 
 // a helper function to produce specific indentation
