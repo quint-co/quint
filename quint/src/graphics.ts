@@ -354,7 +354,13 @@ export function printTrace(
 
   if (pendingDiagnostics && pendingDiagnostics.length > 0) {
     for (const msg of pendingDiagnostics) {
-      const doc: Doc = group([brackets(text('DEBUG')), space, text(msg.label), line(), prettyQuintEx(msg.value)])
+      const doc: Doc = group([
+        richtext(chalk.yellow, '[DEBUG]'),
+        space,
+        richtext(chalk.yellow, msg.label),
+        line(),
+        prettyQuintEx(msg.value),
+      ])
       console.out(format(console.width, 0, doc))
       console.out('\n')
     }
