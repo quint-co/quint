@@ -21,10 +21,11 @@ again.
 
 <!-- !test in server not running -->
 ```
-quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
+quint_home=$(mktemp -d)
+QUINT_HOME="$quint_home" quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
   sed 's!https://.*!(asseturl)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
-quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
+QUINT_HOME="$quint_home" quint verify --verbosity=1 ../examples/language-features/booleans.qnt | \
   sed 's!\(Using existing Apalache distribution in \).*!\1(distdir)!' | \
   sed -e 's/([0-9]*ms)/(duration)/'
 ```
