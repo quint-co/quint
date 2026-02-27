@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.31.0 -- 2026-02-27
+
+### Added
 
 - Added TLC as an alternative backend to `quint verify` via `--backend=tlc`(#1844)
 - Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
