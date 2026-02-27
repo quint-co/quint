@@ -31,7 +31,9 @@ jobs:
           npm link
           # Fetch the latest apalache release
           make -C .. apalache
-          # Copy Apalache to the quint config dir so TLC backend can find the JAR
+          # Run the apalache distribution test first (requires clean state: no server, no existing dist).
+          npm run apalache-distribution-integration
+          # This downloads Apalache to ~/.quint so the TLC backend can find the JAR later.
           VERSION=$(grep "DEFAULT_APALACHE_VERSION_TAG = " src/apalache.ts | sed "s/.*'\(.*\)'/\1/")
           mkdir -p ~/.quint/apalache-dist-$VERSION
           cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
@@ -41,8 +43,8 @@ jobs:
           sleep 5
           # Download the rust evaluator before the tests
           quint run testFixture/simulator/gettingStarted.qnt --backend rust --max-samples=1 --max-steps=1
-          # Run the integration tests
-          npm run all-integration
+          # Run remaining integration tests
+          npm run lang-integration && npm run ts-evaluator-integration && npm run rust-evaluator-integration && npm run verification-integration && npm run rust-distribution-integration
         env:
           GH_TOKEN: ${{ github.token }}
         # These tests fail on windows currently
