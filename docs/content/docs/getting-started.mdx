@@ -1,5 +1,6 @@
 import { Steps, Tabs, Callout } from 'nextra/components'
 import Image from 'next/image'
+import { ToolCards } from '../../components/ToolCards'
 
 # Getting Started
 
@@ -103,6 +104,10 @@ au BufNewFile,BufReadPost *.qnt runtime syntax/quint.vim
 
 ### Write a specification
 
+<Callout>
+**Prefer AI assistance?** The [Quint LLM Kit ↗](https://github.com/informalsystems/quint-llm-kit) provides Claude Code agents and commands that help you generate Quint specs from existing code or documentation. Run `/spec:next` to get guided suggestions at any point.
+</Callout>
+
 In order to run Quint, we first need a specification. Let's use this simple bank specification, which has a bug.
 
 ```quint
@@ -192,3 +197,7 @@ This will verify all possible executions of up to 10 steps. We can be confident 
 </Steps>
 
 That's it! Now that you have the tools and know the workflow, you might want to learn how to write your own specs! Check out the Quint [Lessons](/docs/lessons) and [Examples ↗](https://github.com/informalsystems/quint/tree/main/examples).
+
+## Other tools built for Quint
+
+<ToolCards />
