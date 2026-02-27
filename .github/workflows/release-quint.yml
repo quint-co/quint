@@ -31,6 +31,10 @@ jobs:
           npm link
           # Fetch the latest apalache release
           make -C .. apalache
+          # Copy Apalache to the quint config dir so TLC backend can find the JAR
+          VERSION=$(grep "DEFAULT_APALACHE_VERSION_TAG = " src/apalache.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/apalache-dist-$VERSION
+          cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
           # Start the apalache server
           _build/apalache/bin/apalache-mc server &
           # Wait for the server to start
