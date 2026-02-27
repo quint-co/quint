@@ -6,7 +6,15 @@ on:
       - "v*.*.*"
 
 jobs:
+  unit-tests:
+    uses: ./.github/workflows/test-quint.yml
+
+  integration-tests:
+    uses: ./.github/workflows/integration-tests.yml
+    secrets: inherit
+
   release:
+    needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,31 +31,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Compile
         run: npm ci
-      - name: Run unit tests
-        run: npm run test
-      - name: Run integration tests
-        run: |
-          # Link quint to the system path
-          npm link
-          # Fetch the latest apalache release
-          make -C .. apalache
-          # This downloads Apalache to ~/.quint so the TLC backend can find the JAR later.
-          VERSION=$(grep "DEFAULT_APALACHE_VERSION_TAG = " src/apalache.ts | sed "s/.*'\(.*\)'/\1/")
-          mkdir -p ~/.quint/apalache-dist-$VERSION
-          cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
-          # Start the apalache server
-          _build/apalache/bin/apalache-mc server &
-          # Wait for the server to start
-          sleep 5
-          # Download the rust evaluator before the tests
-          quint run testFixture/simulator/gettingStarted.qnt --backend rust --max-samples=1 --max-steps=1
-          # Run remaining integration tests
-          npm run all-integration
-        env:
-          GH_TOKEN: ${{ github.token }}
-        # These tests fail on windows currently
-        # See https://github.com/anko/txm/issues/10
-        if: matrix.operating-system != 'windows-latest'
       - name: Extract release notes
         # Get the release notes for the version by printing all lines between lines
         # starting with the version header and ending with the next version header,
@@ -66,6 +49,7 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   wait-for-npm:
     needs: release
     runs-on: ubuntu-latest
