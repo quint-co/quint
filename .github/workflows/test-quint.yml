@@ -13,6 +13,7 @@ on:
   push:
     branches:
       - main
+  workflow_call:
 
 jobs:
   changes:
@@ -34,7 +35,7 @@ jobs:
   unit-tests:
     name: Unit Tests by OS
     needs: changes
-    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' }}
+    if: ${{ needs.changes.outputs.quint == 'true' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     runs-on: ${{ matrix.operating-system }}
     defaults:
       run:
