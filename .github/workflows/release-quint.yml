@@ -32,8 +32,8 @@ jobs:
           # Fetch the latest apalache release
           make -C .. apalache
           # Run the apalache distribution test first (requires clean state: no server, no existing dist).
-          # This downloads Apalache to ~/.quint so the TLC backend can find the JAR later.
           npm run apalache-distribution-integration
+          # This downloads Apalache to ~/.quint so the TLC backend can find the JAR later.
           VERSION=$(grep "DEFAULT_APALACHE_VERSION_TAG = " src/apalache.ts | sed "s/.*'\(.*\)'/\1/")
           mkdir -p ~/.quint/apalache-dist-$VERSION
           cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
