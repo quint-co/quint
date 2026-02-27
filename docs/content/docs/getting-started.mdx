@@ -29,10 +29,14 @@ Welcome to Quint! In this short guide, we'll cover everything from installation 
  If you have [Nix](https://nixos.org/) installed, you can obtain a shell with Quint and all its dependencies installed by running:
 
  ```sh
- nix-shell -p quint
+ nix shell "github:NixOS/nixpkgs#quint"
  ```
 
- Note that the release cycle with Nix is slower than with other alternatives, so latest features might not be available.
+ Exiting the shell will remove `quint` from your `PATH`. If you want to keep it, run:
+
+ ```sh
+ nix profile add "github:NixOS/nixpkgs#quint"
+ ```
 
  The Nix package is a great option to use in the CI.
  </Tabs.Tab>
