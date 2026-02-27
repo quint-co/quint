@@ -180,7 +180,7 @@ const replCmd = {
         desc: 'the backend to use for evaluation',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   handler: runRepl,
 }
@@ -205,9 +205,8 @@ const testCmd = {
       })
       .hide('output')
       .option('max-samples', {
-        desc: 'the maximum number of successful runs to try for every randomized test',
+        desc: 'the maximum number of successful runs to try for every randomized test (default: 1 when --seed is set, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
@@ -234,14 +233,13 @@ const testCmd = {
         desc: 'the backend to use for tests',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   handler: (args: any) => {
     if (args.output != null) {
       args.outItf = args['out-itf'] = args.output
       delete args.output
     }
-
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult)
   },
 }
@@ -261,9 +259,8 @@ const runCmd = {
         type: 'string',
       })
       .option('max-samples', {
-        desc: 'the maximum number of runs to attempt before giving up',
+        desc: 'the maximum number of runs to attempt before giving up (default: 1 if --seed is supplied, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('n-traces', {
         desc: 'how many traces to generate (only affects output to out-itf)',
@@ -329,7 +326,7 @@ const runCmd = {
         desc: 'the backend to use for simulation',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -338,8 +335,9 @@ const runCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult),
+  handler: (args: any) => {
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult)
+  },
 }
 
 // construct verify commands with yargs
@@ -378,7 +376,6 @@ const verifyCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-        default: verbosity.defaultLevel,
       })
       .option('apalache-version', {
         desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
@@ -415,13 +412,17 @@ const verifyCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
+  handler: (args: any) => {
+    if (args.verbosity === undefined) {
+      args.verbosity = args.backend === 'tlc' ? 3 : verbosity.defaultLevel
+    }
     load(args)
       .then(chainCmd(parse))
       .then(chainCmd(typecheck))
       .then(chainCmd(compile))
       .then(chainCmd(verifySpec))
-      .then(outputResult),
+      .then(outputResult)
+  },
 }
 
 // construct documenting commands with yargs
@@ -445,6 +446,10 @@ const validate = (argv: any, opts: any) => {
     if (key !== '_' && !opts.array.includes(key) && Array.isArray(argv[key])) {
       throw new Error(`--${key} can not be specified more than once`)
     }
+  }
+  // Apply the effective default for --max-samples (for run and test commands).
+  if ((argv['_'][0] === 'run' || argv['_'][0] === 'test') && argv['max-samples'] === undefined) {
+    argv['max-samples'] = argv.maxSamples = argv.seed !== undefined ? 1 : 10000
   }
   // Validate that --n-traces is not greater than --max-samples.
   if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {

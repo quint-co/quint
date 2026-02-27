@@ -75,7 +75,7 @@ bash -
 
 <!-- !test exit 1 -->
 <!-- !test check river - Run noSolution -->
-    quint run --backend=rust --invariant=noSolution --seed=0x2fa6b93d1eef3 \
+    quint run --backend=rust --invariant=noSolution --seed=0x2fa6b93d1eef3 --max-samples=10000 \
       ../examples/puzzles/river/river.qnt
 
 ### OK on run river::safety
@@ -106,7 +106,7 @@ The command `run` finds an invariant violation.
 
 <!-- !test in run finds violation -->
 ```
-output=$(quint run --backend=rust --seed=0x308623f2a48e7 --max-steps=4 \
+output=$(quint run --backend=rust --seed=0x308623f2a48e7 --max-steps=4 --max-samples=10000 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
@@ -247,7 +247,7 @@ The command `run` finds an example.
 
 <!-- !test in run finds example -->
 ```
-quint run --backend=rust --seed=17 --max-steps=4 --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
+quint run --backend=rust --seed=17 --max-steps=4 --max-samples=10000 --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
   sed 's/([0-9]*ms.*)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
 ```
@@ -319,7 +319,7 @@ rm out-itf-example.itf.json
 
 <!-- !test in run with n-traces itf violation -->
 ```
-quint run --backend=rust --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --seed=123 --verbosity=0  ./testFixture/simulator/gettingStarted.qnt \
+quint run --backend=rust --out-itf=out-itf-example.itf.json --n-traces=3 --max-steps=5 --max-samples=10000 --seed=123 --verbosity=0  ./testFixture/simulator/gettingStarted.qnt \
    --invariant=no_negatives 
 cat out-itf-example0.itf.json | jq '.["#meta"].status'
 cat out-itf-example1.itf.json | jq '.["#meta"].status'

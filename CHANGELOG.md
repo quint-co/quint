@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added TLC as an alternative backend to `quint verify` via `--backend=tlc`(#1844)
 - Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
 - Add error handling for rust process termination via signal (#1880)
 - The rust backend will now print the seed and trace even on runtime errors and panics (#1879)
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stream JSON in and out or rust evaluator to reduce memory allocations (#1882)
 - Improved power set sampling coverage in the Rust backend (#1888)
 - Changed default Rust allocator to MiMalloc (#1914)
+- Switched the default backend for `quint run` and `quint test` to Rust (#1919)
+- Changed the Rust simulator to support only i64 integers instead of BigInts, which remain supported by the TypeScript simulator (#1887)
 
 ### Deprecated
 ### Removed

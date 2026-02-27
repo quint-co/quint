@@ -162,7 +162,7 @@ when `totalSupply` grows large enough to exceed the bigint implementation's rang
 <!-- !test exit 1 -->
 <!-- !test in erc20Tests overflow -->
 ```
-output=$(quint test --backend=rust --seed=1 --main=erc20Tests --match=transferTest \
+output=$(quint test --backend=rust --seed=1 --main=erc20Tests --match=transferTest --max-samples=10000 \
   ../examples/solidity/ERC20/erc20.qnt)
 exit_code=$?
 echo "$output" | sed -e 's#[^ (]*erc20.qnt#HOME/erc20.qnt#g'
