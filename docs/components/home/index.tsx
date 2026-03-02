@@ -16,6 +16,7 @@ import { classNames } from './classNames'
 import { ProsOrConsList } from './ProsOrConsList'
 import { ProjectsGridCompact } from './ProjectsGridCompact'
 import { projects } from '../../data/projects'
+import { ToolCards } from '../ToolCards'
 
 const benefits = [
   [
@@ -163,6 +164,13 @@ export function Home() {
             >
               Detailed List
             </Link>
+          </div>
+
+          <div className="mx-auto max-w-6xl mt-20 mb-8">
+            <h2 className="text-4xl text-center font-bold leading-tight">
+              Try some <span className="text-quint-purple">tools</span> built for Quint
+            </h2>
+            <ToolCards />
           </div>
 
           <NewsletterSignupBanner />
