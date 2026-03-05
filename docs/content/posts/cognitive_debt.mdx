@@ -1,0 +1,184 @@
+---
+title: "Towards a Solution for Cognitive Debt"
+date: 2026-03-09
+excerpt: We used to build trust and understanding while coding. With LLMs, we need a new process.
+authors:
+    - name: Josef Widder
+    - name: Gabriela Moreira
+tags:
+    - beginner
+---
+
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+
+# Towards a Solution for Cognitive Debt
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+<Image
+  src="/blog-covers/cognitive_debt.jpg"
+  alt="A robot sailing a boat full of code boxes with a lighthouse in the back"
+  width={1000}
+  height={500}
+/>
+
+The software we run, we use because we **trust the process** of engineering it. If you update your smartphone the day when a new OS software version is published, you either don't care, or implicitly trust that the OS company knows what they are doing, that is, you trust their process.
+
+In these processes, one starts from design documents (requirements, ARDs, etc.), and then whether following waterfall, agile, scrum, or TDD, the process iterates until the engineering team has established enough trust in the result. However, a common pain point is that the software is deviating from the initial design documents. The reason for this is that the design work effectively is not finished with the design documents, but designing and getting understanding and trust is done to a large degree while coding. So understanding the solution space, building trust, designing the final solution is happening in the coding process. Let's call this part of the process **understand-while-coding**.
+
+## How LLMs Change Things
+
+LLMs change the coding process dramatically. Everyone who has used an AI to generate code has experienced the disconnect between what the AI has generated and what is in our heads. How do we get understanding of a big chunk of code that the LLM just generated? The more code, the bigger our anxiety. An anxiety we didn't have in the understand-while-coding era.
+
+The trust and understanding we built during understand-while-coding is gone with LLMs, or to the minimum will drastically change. The truth is that we as a community don't know how to deal with this problem. We just know that things have changed.
+
+When understand-while-coding is not happening anymore, we need a new process that we can trust. If coding is happening in the AI's "brain", then we must build our understanding and trust in the solution somewhere else. In other words, design must happen somewhere else. And we need a design strategy that together with LLM-generated code leads to a new process that we can trust.
+
+This is why we now need to make explicit the techniques and skills we need for protocol design in the LLM era. In the new process, rather than having the code as the most important design artifact, we need design artifacts in a form that
+
+1. we can use to convince ourselves about the quality and correctness of the designed solution and thus build **trust and understanding in the design**
+2. is easily digestible by LLMs to serve as input to code generation,
+3. we can check the LLM-generated code against to obtain **trust and understanding in the generated code**.
+
+## Why Natural Language Falls Short
+
+AI companies would have us believe that these artifacts can be prompts. For many systems, this may work. For most systems we at Informal have worked on over the past years, it won't. Requirements and solutions for problems that involve concurrency, asynchrony, partial failure, etc. are very badly captured in natural language. We found such problems in consensus engines, databases, ZK systems **(TODO: name examples everyone can connect to)** What's the problem with English? There are plenty. Some examples:
+
+* Figuring out whether a set of English requirements is free from contradictions is hard. An LLM may want to make you as happy as possible by targeting 8 out of 9 requirements, and figuring out that the 9th is not solved or achievable will be on you
+* English is ambiguous: very often when we go back to a client to tell them their system is not satisfying Requirement K, they tell us that this is not what they "mean" by the statement of Requirement K. Natural language is a bad design language because its meaning is ambiguous. So simple prompting alone is a bad design tool.
+* English is not executable. You are forced to think through scenarios yourself, on a piece of paper or whiteboard, and it is very likely to miss edge cases in this process (ones that used to be found while doing understand-while-coding)
+
+## Our Bet: Executable Specifications
+
+Like many others we advocate for spec-driven development, and for this, our bet is on Quint. Quint is not only a specification language but also a toolset that is very powerful in this process:
+
+* Quint, the language, is designed to represent protocols in a way that is intuitive to read by software engineers and protocol designers, while having precise semantics.
+* Quint allows designers to formally express requirements, and check them automatically
+* Quint is executable, and comes with a set of tools, e.g., for random simulation and interactive exploration of steps, states, and traces. These tools, on the one hand, can be used by humans to understand and build trust, and on the other hand can be used by an AI agent for precise reasoning within a closed refinement loop: Quint finds bugs in the AI's design, and the AI can learn from these bugs to improve the design autonomously.
+* During the whole engineering process, a Quint spec can serve as a source of truth for simulation, verification, code generation, test generation, and for explaining what the generated code is supposed to do.
+
+Defining checkable requirements in Quint can be done in a few different forms:
+
+### Properties
+
+Something that must hold in *every* reachable state, checked by simulation or exhaustive verification. Since we are working with a model, we can write properties about the global state and track whatever we need, like in this case where we track total money withdrawn from a set of ATMs, and check that it's not more than it's supposed to (like the `INITIAL_BALANCE` if we don't have transfers and deposits):
+
+```quint
+/// Total amount withdrawn per account (tracked globally via Extensions)
+/// must never exceed the initial balance, regardless of how many ATMs
+/// processed withdrawals, in what order, or with what delays.
+val no_overdraft = ACCOUNTS.forall(account =>
+  s.extensions.total_withdrawn.get(account) <= INITIAL_BALANCE
+)
+```
+
+```sh
+quint run atm_distributed.qnt --invariant=no_overdraft
+```
+
+If the protocol is correct, Quint reports no violation. If there's a bug (say, two ATMs both approve a withdrawal before either has seen the other's request) Quint produces a concrete step-by-step trace showing the exact interleaving that caused the overdraft. This means there are no false positives, and we have a reproducible scenario to feed back to LLMs and tell them to fix the design.
+
+### Witnesses
+
+Something that should be *possible*, without specifying how. This is the complement to properties: you're not asking "does X ever go wrong?" but "can the system actually do Y at all?" Witnesses are written as negated invariants so the simulator can try to *violate* them. So the violation is the good outcome, proving reachability.
+
+One way to satisfy a property like `no_overdraft` is by having a system not do anything at all: the property holds in that case, because `total_withdrawn` is always zero and no withdrawal ever commits. To see whether values are actually withdrawn at some point, we can define:
+
+```quint
+// True when total_withdrawn has accumulated something for some account
+val anyWithdrawalTracked: bool =
+  ACCOUNTS.exists(acc => s.extensions.total_withdrawn.get(acc) > 0)
+
+// Violated (i.e., confirmed reachable) when any withdrawal has been tracked
+val canTrackWithdrawals: bool = not(anyWithdrawalTracked)
+```
+
+```sh
+quint run atm_distributed_witnesses.qnt --invariant=canTrackWithdrawals
+```
+
+```ansi
+[31m[violation][39m Found an issue [90m(12ms at 83 traces/second).[39m
+[90mUse --seed=0x3f1a2b8c to reproduce.[39m
+error: Invariant violated
+```
+
+The violation proves that withdrawals can commit and make the global counter increment. If no violation were found, `no_overdraft` would be meaningless (the protocol would be stuck in a state where nothing ever happens).
+
+We can also see how often this scenario happens with `--witnesses`:
+
+```sh
+quint run atm_distributed_witnesses.qnt --witnesses anyWithdrawalTracked
+```
+
+```ansi
+[32mWitnesses:[39m
+[33manyWithdrawalTracked[39m was witnessed in [32m720[39m trace(s) out of 10000 explored [90m(7.20%)[39m
+[90mUse --seed=0x349c5db9295c602c --backend=rust to reproduce.[39m
+```
+
+### Example Runs
+
+We can also define a `run` with sequences of concrete (or abstract) steps, like a high-level integration test. Runs describe a specific scenario and assert it ends in a valid state, and are very useful for documenting scenarios we were worried about when designing a protocol or any kind of solution.
+
+```quint
+run concurrentConflictTest = {
+  val req1 = { account: "Alice", amount: 80, request_id: 0, requester: "ATM1" }
+  val req2 = { account: "Alice", amount: 80, request_id: 0, requester: "ATM2" }
+  val balance_to_write = { req: req1, new_balance: 20 }
+
+  init
+  // Both ATM1 and ATM2 initiate $80 withdrawals from Alice "simultaneously"
+  .then("ATM1".with_cue(listen_initiate_withdrawal, req1).perform(initiate_withdrawal))
+  .then("ATM2".with_cue(listen_initiate_withdrawal, req2).perform(initiate_withdrawal))
+
+  // ATM3 grants ATM1's lock first (Alice is free, ATM3 has no pending)
+  .then("ATM3".with_cue(listen_lock_request, req1).perform(respond_to_lock_request))
+  // ATM3 denies ATM2's lock (Alice already locked for ATM1)
+  .then("ATM3".with_cue(listen_lock_request, req2).perform(respond_to_lock_request))
+  // ATM1 also denies ATM2's lock: ATM1 is pending for Alice (fix: pending counts as locked)
+  .then("ATM1".with_cue(listen_lock_request, req2).perform(respond_to_lock_request))
+
+  // ATM2 receives denials from both ATM3 and ATM1 → aborts
+  .then("ATM2".with_cue(listen_abort_withdrawal, req2).perform(abort_withdrawal))
+
+  // ATM2's pending is now None → it can grant ATM1's lock request
+  .then("ATM2".with_cue(listen_lock_request, req1).perform(respond_to_lock_request))
+
+  // ATM1 has quorum (grants from ATM3 + ATM2) → commits
+  .then("ATM1".with_cue(listen_approval_quorum, req1).perform(commit_withdrawal))
+
+  // ATM2 and ATM3 apply the committed balance and release their lock for ATM1
+  .then("ATM2".with_cue(listen_commit_withdrawal, balance_to_write).perform(update_balance))
+  .then("ATM3".with_cue(listen_commit_withdrawal, balance_to_write).perform(update_balance))
+  // Only one $80 withdrawal occurred: Alice has $20, not -$60
+  .expect(no_negative_balance)
+  .expect(no_overdraft)
+  .expect(mutual_exclusion)
+  .expect(s.system.get("ATM1").balances.get("Alice") == 20)
+  .expect(s.system.get("ATM2").balances.get("Alice") == 20)
+  .expect(s.system.get("ATM2").pending_withdrawal == None)
+  .expect(s.system.get("ATM3").locks_granted_to_others == Map())
+}
+```
+
+```sh
+quint test atm_distributed.qnt
+```
+
+Example runs serve as executable documentation of the intended protocol behavior. They force the designer to think through concrete scenarios rather than relying on vague intuitions, and they keep that thinking alive: if a future change breaks a scenario, the test tells you exactly which assertion failed and in which state.
+
+## Looking Ahead
+
+Quint is not something you need to learn how to write. From your English requirements, protocol descriptions, legacy code, etc. today LLMs are already able to come up with Quint specifications using our [LLM toolkit](https://github.com/informalsystems/quint-llm-kit). But you will benefit from being able to read and understand Quint (which is intuitive), e.g., to be able to check that the LLM-generated properties are the formalization of what is meant by "Requirement K".
+
+This and other Quint-based workflows around design, code generation, etc. have the potential to substitute the trust-building from understand-while-coding in the LLM era. You don't need to trust the LLM's output. You can use the Quint tools to check the output in different ways (simulation, testing, scenario exploration). We are not claiming that we have figured out all details about the new design process yet. But it is the goal we are working towards and we are open to your input and ideas.
+
+To make all this work, we need a slight shift on how we think about design and specification. We are starting a series of blog posts that explicitly talks about design techniques. We will talk about understanding the actions of a protocol, combining them into traces to discuss scenarios, distinguish local state from global state, define what we mean by correctness of a protocol and how to convince ourselves that a protocol indeed is correct, and on how all these skills can be used to do design without using a programming language. Stay tuned.
+
+<Comments/>
