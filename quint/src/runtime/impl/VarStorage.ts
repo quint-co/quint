@@ -172,6 +172,15 @@ export class VarStorage {
     }
   }
 
+  clearMetadata() {
+    if (this.storeMetadata) {
+      this.actionTaken = undefined
+      this.nondetPicks.forEach((_, key) => {
+        this.nondetPicks.set(key, undefined)
+      })
+    }
+  }
+
   /**
    * Creates a snapshot of the current state of the VarStorage, with the relevant information to backtrack.
    * @returns A snapshot of the current state of the VarStorage.
