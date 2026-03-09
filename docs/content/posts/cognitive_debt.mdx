@@ -104,13 +104,46 @@ val canTrackWithdrawals: bool = not(anyWithdrawalTracked)
 quint run atm_distributed_witnesses.qnt --invariant=canTrackWithdrawals
 ```
 
-```ansi
+```ansi {10}
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m]
+...
+[[1mState 7[22m]
+{
+  atm_distributed::choreo::s[90m:[39m
+    {
+      ...
+      extensions[90m:[39m { total_withdrawn[90m:[39m [32mMap[39m([32m"Alice"[39m[90m ->[39m [33m0[39m, [32m"Bob"[39m[90m ->[39m [33m88[39m) },
+      system[90m:[39m
+        [32mMap[39m(
+          [32m"ATM1"[39m[90m ->[39m
+            {
+              balances[90m:[39m [32mMap[39m([32m"Alice"[39m[90m ->[39m [33m100[39m, [32m"Bob"[39m[90m ->[39m [33m100[39m),
+              locks_granted_to_others[90m:[39m [32mMap[39m([32m"Bob"[39m[90m ->[39m [33m0[39m),
+              next_request_id[90m:[39m [33m1[39m,
+              pending_withdrawal[90m:[39m [32mSome[39m({ account[90m:[39m [32m"Alice"[39m, amount[90m:[39m [33m12[39m, request_id[90m:[39m [33m0[39m, requester[90m:[39m [32m"ATM1"[39m }),
+              process_id[90m:[39m [32m"ATM1"[39m
+            },
+          [32m"ATM2"[39m[90m ->[39m
+            {
+              balances[90m:[39m [32mMap[39m([32m"Alice"[39m[90m ->[39m [33m100[39m, [32m"Bob"[39m[90m ->[39m [33m100[39m),
+              locks_granted_to_others[90m:[39m [32mMap[39m([32m"Bob"[39m[90m ->[39m [33m0[39m),
+              next_request_id[90m:[39m [33m1[39m,
+              pending_withdrawal[90m:[39m [32mSome[39m({ account[90m:[39m [32m"Alice"[39m, amount[90m:[39m [33m89[39m, request_id[90m:[39m [33m0[39m, requester[90m:[39m [32m"ATM2"[39m }),
+              process_id[90m:[39m [32m"ATM2"[39m
+            },
+          [32m"ATM3"[39m[90m ->[39m { balances[90m:[39m [32mMap[39m([32m"Alice"[39m[90m ->[39m [33m100[39m, [32m"Bob"[39m[90m ->[39m [33m12[39m), locks_granted_to_others[90m:[39m [32mMap[39m([32m"Alice"[39m[90m ->[39m [33m0[39m), next_request_id[90m:[39m [33m1[39m, pending_withdrawal[90m:[39m [32mNone[39m, process_id[90m:[39m [32m"ATM3"[39m }
+        )
+    }
+}
+
 [31m[violation][39m Found an issue [90m(12ms at 83 traces/second).[39m
 [90mUse --seed=0x3f1a2b8c to reproduce.[39m
 error: Invariant violated
 ```
 
-The violation proves that withdrawals can commit and make the global counter increment. If no violation were found, `no_overdraft` would be meaningless (the protocol would be stuck in a state where nothing ever happens).
+The violation proves that withdrawals can commit and make the global counter increment, and shows one example that illustrate how this happens (which we can also use for testing the application via [Quint Connect](/posts/quint_connect)). If no violation were found, `no_overdraft` would be meaningless (the protocol would be stuck in a state where nothing ever happens).
 
 We can also see how often this scenario happens with `--witnesses`:
 
