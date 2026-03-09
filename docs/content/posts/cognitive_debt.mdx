@@ -47,7 +47,7 @@ This is why we now need to make explicit the techniques and skills we need for p
 
 ## Why Natural Language Falls Short
 
-AI companies would have us believe that these artifacts can be prompts. For many systems, this may work. For most systems we at Informal have worked on over the past years, it won't. Requirements and solutions for problems that involve concurrency, asynchrony, partial failure, etc. are very badly captured in natural language. We found such problems in consensus engines, databases, ZK systems **(TODO: name examples everyone can connect to)** What's the problem with English? There are plenty. Some examples:
+AI companies would have us believe that these artifacts can be prompts. For many systems, this may work. For most systems we at Informal have worked on over the past years, it won't. Requirements and solutions for problems that involve concurrency, asynchrony, partial failure, etc. are very badly captured in natural language. Such problems arise in many systems including consensus engines, ZK systems, smart contracts, etc.. What's the problem with English? There are plenty. Some examples:
 
 * Figuring out whether a set of English requirements is free from contradictions is hard. An LLM may want to make you as happy as possible by targeting 8 out of 9 requirements, and figuring out that the 9th is not solved or achievable will be on you
 * English is ambiguous: very often when we go back to a client to tell them their system is not satisfying Requirement K, they tell us that this is not what they "mean" by the statement of Requirement K. Natural language is a bad design language because its meaning is ambiguous. So simple prompting alone is a bad design tool.
@@ -81,7 +81,9 @@ val no_overdraft = ACCOUNTS.forall(account =>
 quint run atm_distributed.qnt --invariant=no_overdraft
 ```
 
-If the protocol is correct, Quint reports no violation. If there's a bug (say, two ATMs both approve a withdrawal before either has seen the other's request) Quint produces a concrete step-by-step trace showing the exact interleaving that caused the overdraft. This means there are no false positives, and we have a reproducible scenario to feed back to LLMs and tell them to fix the design.
+If the protocol is correct, Quint reports no violation. If there's a bug (say, two ATMs both approve a withdrawal before either has seen the other's request) Quint produces a concrete step-by-step trace showing the exact interleaving that caused the overdraft. 
+Note carefully that Quint is a deterministic tool with well-understood behavior. There is no room for hallucination. Quint tools allow you to reliably check the specifications.
+This means there are no false positives, and we have a reproducible scenario to feed back to LLMs and tell them to fix the design.
 
 ### Witnesses
 
@@ -175,7 +177,7 @@ Example runs serve as executable documentation of the intended protocol behavior
 
 ## Looking Ahead
 
-Quint is not something you need to learn how to write. From your English requirements, protocol descriptions, legacy code, etc. today LLMs are already able to come up with Quint specifications using our [LLM toolkit](https://github.com/informalsystems/quint-llm-kit). But you will benefit from being able to read and understand Quint (which is intuitive), e.g., to be able to check that the LLM-generated properties are the formalization of what is meant by "Requirement K".
+Quint is not something you need to learn how to write. From your English requirements, protocol descriptions, legacy code, etc. today LLMs are already able to come up with Quint specifications (including properties, witnesses, runs from above) using our [LLM toolkit](https://github.com/informalsystems/quint-llm-kit). But you will benefit from being able to read and understand Quint (which is intuitive), e.g., to be able to check that the LLM-generated properties are the formalization of what is meant by "Requirement K".
 
 This and other Quint-based workflows around design, code generation, etc. have the potential to substitute the trust-building from understand-while-coding in the LLM era. You don't need to trust the LLM's output. You can use the Quint tools to check the output in different ways (simulation, testing, scenario exploration). We are not claiming that we have figured out all details about the new design process yet. But it is the goal we are working towards and we are open to your input and ideas.
 
