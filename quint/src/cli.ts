@@ -11,7 +11,7 @@
  */
 
 import os from 'os'
-import yargs from 'yargs/yargs'
+import yargs from 'yargs'
 
 import {
   CLIProcedure,

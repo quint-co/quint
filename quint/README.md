@@ -48,6 +48,18 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art type checking and
 development tooling.
 
+### Installation
+
+The quickest way to install Quint is using npm.
+
+Install [node/npm](https://nodejs.org/en/download/package-manager) if you don't have it already. Then, open your terminal and run:
+
+ ```sh
+ npm i @informalsystems/quint -g
+ ```
+
+For alternative installation methods or advanced setup, see the full [Getting Started](https://quint-lang.org/docs/getting-started) guide.
+
 ### Example code in Quint
 
 Here is a small specification for a bank:

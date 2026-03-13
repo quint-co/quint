@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed an import issue affecting yargs on node 27 (#1926)
+
 ### Security
 
 ## v0.31.0 -- 2026-02-27
