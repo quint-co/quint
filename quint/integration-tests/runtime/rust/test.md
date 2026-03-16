@@ -105,12 +105,12 @@ exit $exit_code
 
   1) bidWithdrawTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/SimpleAuction.qnt:66:25
-        66:     pure val MAX_UINT = 2^256 - 1
+        at HOME/SimpleAuction.qnt:72:25
+        72:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at isUInt(fromBal) (HOME/SimpleAuction.qnt:93:17)
-          at evmSend(evmState, sender, s.addressOfThis, value) (HOME/SimpleAuction.qnt:182:23)
-          at bid("alice", 5) (HOME/SimpleAuction.qnt:282:19)
+          at isUInt(fromBal) (HOME/SimpleAuction.qnt:99:17)
+          at evmSend(evmState, sender, s.addressOfThis, value) (HOME/SimpleAuction.qnt:188:23)
+          at bid("alice", 5) (HOME/SimpleAuction.qnt:288:19)
     Use --seed=0x1 --match=bidWithdrawTest to repeat.
 
 
@@ -141,11 +141,11 @@ exit $exit_code
 
   1) transferFromWhileApproveInFlightTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:28:25
-        28:     pure val MAX_UINT = 2^256 - 1
+        at HOME/erc20.qnt:34:25
+        34:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at transferFrom(erc20State, tx.sender, tx.fromAddr, tx.toAddr, tx.amount) (HOME/erc20.qnt:439:32)
-          at commit(TransferFromTx("bob", "alice", "eve", 54)) (HOME/erc20.qnt:516:15)
+          at transferFrom(erc20State, tx.sender, tx.fromAddr, tx.toAddr, tx.amount) (HOME/erc20.qnt:445:32)
+          at commit(TransferFromTx("bob", "alice", "eve", 54)) (HOME/erc20.qnt:522:15)
     Use --seed=0x1 --match=transferFromWhileApproveInFlightTest to repeat.
 
 
@@ -179,12 +179,12 @@ exit $exit_code
 
   1) transferTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:28:25
-        28:     pure val MAX_UINT = 2^256 - 1
+        at HOME/erc20.qnt:34:25
+        34:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at isUint(state.totalSupply) (HOME/erc20.qnt:226:9)
-          at isNoOverflows(s) (HOME/erc20.qnt:305:9)
-          at isValid(erc20State) (HOME/erc20.qnt:321:25)
+          at isUint(state.totalSupply) (HOME/erc20.qnt:232:9)
+          at isNoOverflows(s) (HOME/erc20.qnt:311:9)
+          at isValid(erc20State) (HOME/erc20.qnt:327:25)
     Use --seed=0x1 --match=transferTest to repeat.
 
 
@@ -219,8 +219,8 @@ exit $exit_code
 
   1) requireTest:
        Error [QNT600]: Integer literal 9223372036854775808 is outside i64 range and is not supported by the Rust evaluator.
-        at HOME/ics20.qnt:511:23
-        511:     pure val amount = 9223372036854775808
+        at HOME/ics20.qnt:517:23
+        517:     pure val amount = 9223372036854775808
                                    ^^^^^^^^^^^^^^^^^^^
     Use --seed=0x1 --match=requireTest to repeat.
 
@@ -325,11 +325,11 @@ exit $exit_code
 
   1) mintSendTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-      HOME/coin.qnt:35:25
-        35:     pure val MAX_UINT = 2^256 - 1
+      HOME/coin.qnt:41:25
+        41:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-      HOME/coin.qnt:83:21)
-      HOME/coin.qnt:161:19)
+      HOME/coin.qnt:89:21)
+      HOME/coin.qnt:167:19)
     Use --seed=SEED --match=mintSendTest to repeat.
 
 

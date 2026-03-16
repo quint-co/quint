@@ -65,6 +65,17 @@ result () {
         printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
       elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify" ]] ; then
         printf "<sup>https://github.com/informalsystems/quint/issues/1393</sup>"
+      elif [[ "$cmd" == "test" && (
+              "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
+              "$file" == "solidity/ERC20/erc20.qnt" ||
+              "$file" == "solidity/icse23-fig7/lottery.qnt" ||
+              "$file" == "cosmos/bank/bank.qnt" ||
+              "$file" == "cosmos/bank/bankTest.qnt" ||
+              "$file" == "tutorials/coin.qnt" ||
+              "$file" == "cosmos/ics20/ics20.qnt" ) ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/releases/tag/v0.31.0</sup>"
+      elif [[ "$file" == "language-features/counters.qnt" && "$cmd" == "test" ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1941</sup>"
       fi
     fi
 }

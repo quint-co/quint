@@ -1,4 +1,10 @@
 /**
+ * DISCLAIMER: This specification uses integers larger than 64 bits.
+ * Big integers are only supported by Apalache (`quint verify`) and the
+ * deprecated TypeScript evaluator (`quint run/test --backend=typescript`).
+ * See https://github.com/informalsystems/quint/releases/tag/v0.31.0
+ */
+/**
  * Coin contract from the Solidity examples [1]. It is a nice starting
  * example for Solidity. It is a nice starting example for Quint too.
  *
