@@ -324,8 +324,8 @@ exit $exit_code
 
   1) mintTwiceThenSendError:
        Error [QNT511]: Test mintTwiceThenSendError returned false
-      HOME/coin.qnt:176:9
-        176:     run mintTwiceThenSendError = {
+      HOME/coin.qnt:182:9
+        182:     run mintTwiceThenSendError = {
                      ^^^^^^^^^^^^^^^^^^^^^^
 
 [Frame 0]
