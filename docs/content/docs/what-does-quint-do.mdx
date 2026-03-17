@@ -88,7 +88,7 @@ There are two model checkers that can be used with Quint:
 
 For more details on these tools, their constraints and the type of guarantees they can provide, see [Model Checkers](./model-checkers.mdx)
 
-Quint ships with a built in simulator, which will run as many random simulations as requested. The simulator is invoked on `quint run` and can also be used for non-deterministic Quint tests that are runned with `quint test`.
+Quint ships with a built in simulator, which will run as many random simulations as requested. The simulator is invoked on `quint run` and can also be used for non-deterministic Quint tests that are run with `quint test`.
 
 Some differences between using a model checker (`quint verify`) and a simulator (`quint run`) for N steps are:
 - If there is a property violation in N steps or less, a model checker will find it, while a simulator may or may not find it.
