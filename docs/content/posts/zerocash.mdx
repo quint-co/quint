@@ -1,3 +1,20 @@
+---
+title: Modeling the Fairie-Gold vulnerability
+date: 2026-03-20
+excerpt: TODO
+authors:
+    - name: Manuel Bravo
+
+tags:
+    - intermediate
+---
+
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+import { HTMLPlot } from '../../components/HTMLPlot'
+import { Callout } from 'nextra/components'
+
 # Introduction
 
 Formally specifying cryptographic protocols is hard. Their security relies on complex cryptographic primitives that are not trivially translated into the discrete, deterministic world of formal specification languages. A specification that is too abstract will miss real attacks; one that is too concrete becomes intractable for verification. In this post, we walk through a [Quint specification of the Zerocash protocol](https://github.com/informalsystems/Zerocash-spec), exploring the design choices involved in modeling cryptographic primitives symbolically, and showing how the right level of abstraction allows the Quint simulator to automatically find a concrete attack trace demonstrating the faerie-gold vulnerability and verify that a Zcash-inspired fix closes it.
@@ -295,3 +312,5 @@ In the worst case, long pour chains can produce commitment lists of millions of 
 Modeling a cryptographic protocol like Zerocash in Quint requires making deliberate tradeoffs. The central challenge is representing cryptographic primitives symbolically: we cannot use real hash functions, so we must choose between injectivity and fixed-size output. The list-encoding approach we adopt prioritizes injectivity at the cost of unbounded output size, which can cause state space growth in long pour chains. Simulating zk-SNARKs as direct witness checks is another transferable idea: rather than modeling the cryptographic proof machinery, one checks the logical constraints the witness must satisfy, which is sufficient for finding protocol-level vulnerabilities.
 
 Despite these limitations, the approach proves effective. The spec captures enough of the protocol's structure for the Quint simulator to find a faerie-gold attack trace automatically. The same spec, with a single additional constraint on ρ derivation inside the SNARK check, is sufficient to demonstrate that the Zcash fix closes the attack. This suggests that lightweight symbolic modeling, with carefully chosen abstractions, can be a practical tool for finding and fixing subtle protocol vulnerabilities.
+
+<Comments/>

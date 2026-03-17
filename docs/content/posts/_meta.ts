@@ -1,4 +1,5 @@
 export default {
+  zerocash: '',
   cognitive_debt: '',
   quint_connect_emerald: '',
   quint_connect: '',
