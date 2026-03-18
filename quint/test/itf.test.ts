@@ -112,6 +112,23 @@ describe('toItf', () => {
       `round trip conversion of trace failed`
     )
   })
+
+  it('does not confuse records with a tag field for variants', () => {
+    const text = `{
+  ledger: [{ tag: "pay", amount: 100, dir: variant("D", { from_p: "A", to_p: "B" }) }]
+}`
+
+    const trace = [buildExpression(text)]
+    const itfTrace = toItf(['ledger'], trace)
+
+    assert(itfTrace.isRight(), `invalid ITF trace: ${JSON.stringify(itfTrace.unwrap)}`)
+
+    const roundTripTrace = ofItf(itfTrace.unwrap())
+    assert(
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
+      `round trip conversion of trace failed`
+    )
+  })
 })
 
 describe('ofItfNormalized', () => {
