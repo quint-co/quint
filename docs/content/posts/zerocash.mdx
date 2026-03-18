@@ -39,7 +39,7 @@ Formally specifying cryptographic protocols is hard. Their security relies on co
 
 Privacy-focused (anonymous) payment systems often rely on a construction known as a shielded pool. Instead of recording balances directly on-chain, the system tracks commitments to private coins. Users can create and spend coins while keeping the sender, receiver, and amount hidden.
 
-This approach was popularized by Zcash, whose design builds on the Zerocash protocol. Similar ideas appear in other systems, such as Namada and Penumbra. At a high level, Zerocash works as follows.
+This approach was popularized by Zcash, whose design builds on the Zerocash protocol. Similar ideas appear in other systems, such as Namada, Penumbra, or Cycles. At a high level, Zerocash works as follows.
 
 * Coins are represented as notes containing a value and some secret information.
 * Each note is converted into a commitment, which is published on the ledger via mint transactions; i.e., anyone can view the set of published commitments. Nevertheless, commitments do not reveal any information about the ownership or value of coins.
