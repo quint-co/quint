@@ -1,4 +1,10 @@
 // -*- mode: Bluespec; -*-
+/**
+ * DISCLAIMER: This specification uses integers larger than 64 bits.
+ * Big integers are only supported by Apalache (`quint verify`) and the
+ * deprecated TypeScript evaluator (`quint run/test --backend=typescript`).
+ * See https://github.com/informalsystems/quint/releases/tag/v0.31.0
+ */
 // Simple Auction from the Solidity examples [1].
 // We use this example to show how Quint could be used for explaining
 // Solidity contracts.

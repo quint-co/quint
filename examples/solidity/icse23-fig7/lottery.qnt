@@ -1,4 +1,10 @@
 // -*- mode: Bluespec; -*-
+/**
+ * DISCLAIMER: This specification uses integers larger than 64 bits.
+ * Big integers are only supported by Apalache (`quint verify`) and the
+ * deprecated TypeScript evaluator (`quint run/test --backend=typescript`).
+ * See https://github.com/informalsystems/quint/releases/tag/v0.31.0
+ */
 // A Quint version of the contract presented in Figure 7 of the paper:
 //
 // https://github.com/ZhangZhuoSJTU/Web3Bugs/blob/main/papers/icse23.pdf
