@@ -54,6 +54,7 @@ type ItfMap = { '#map': [ItfValue, ItfValue][] }
 type ItfUnserializable = { '#unserializable': string }
 type ItfRecord = { [index: string]: ItfValue }
 type ItfVariant = { tag: ItfValue; value: ItfValue }
+type ItfUnitVariant = { tag: ItfValue }
 
 // Type predicates to help with type narrowing
 function isBigint(v: ItfValue): v is ItfBigint {
@@ -73,7 +74,24 @@ function isMap(v: ItfValue): v is ItfMap {
 }
 
 function isVariant(v: ItfValue): v is ItfVariant {
-  return (v as ItfVariant)['tag'] !== undefined
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.keys(v).length === 2 &&
+    (v as ItfVariant)['tag'] !== undefined &&
+    (v as ItfVariant)['value'] !== undefined
+  )
+}
+
+function isUnitVariant(v: ItfValue): v is ItfUnitVariant {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.keys(v).length === 1 &&
+    (v as ItfUnitVariant)['tag'] !== undefined
+  )
 }
 
 function isUnserializable(v: ItfValue): v is ItfUnserializable {
@@ -240,13 +258,21 @@ export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {
       opcode: 'Map',
       args,
     }
-  } else if (isVariant(value)) {
+  } else if (isUnitVariant(value)) {
     const l = ofItfValue(value.tag, getId)
     if (l.kind === 'str' && l.value === 'UNIT') {
       // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
       // We need to convert it back to Quint's unit value, the empty tuple.
       return { id, kind: 'app', opcode: 'Tup', args: [] }
     }
+    return {
+      id,
+      kind: 'app',
+      opcode: 'Rec',
+      args: [{ id: getId(), kind: 'str', value: 'tag' }, l],
+    }
+  } else if (isVariant(value)) {
+    const l = ofItfValue(value.tag, getId)
     const v = ofItfValue(value.value, getId)
     return { id, kind: 'app', opcode: 'variant', args: [l, v] }
   } else if (typeof value === 'object') {
