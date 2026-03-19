@@ -176,7 +176,7 @@ function inferAssetAndExecutableNames(platform: string, arch: string): { assetNa
   } else if (platform === 'win32') {
     if (arch === 'x64') {
       assetName = 'quint_evaluator-x86_64-pc-windows-msvc.zip'
-      executable = 'quint-evaluator.exe'
+      executable = 'quint_evaluator.exe'
     }
   }
 
