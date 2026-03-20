@@ -1,0 +1,338 @@
+---
+title: Modeling the Faerie-Gold Vulnerability
+date: 2026-03-20
+excerpt: We wrote a Quint spec for the Faerie-Gold attack in the Zerocash protocol, plus a ZCash-like fix.
+authors:
+    - name: Manuel Bravo
+
+tags:
+    - advanced
+---
+
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+import { HTMLPlot } from '../../components/HTMLPlot'
+import { Callout, Cards } from 'nextra/components'
+
+# Modeling the Faerie-Gold Vulnerability
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+<Image
+  src="/blog-covers/zerocash.jpg"
+  alt="A faerie dumping gold in a Quint-themed bucket"
+  width={1000}
+  height={500}
+/>
+
+## Introduction
+
+Formally specifying cryptographic protocols is hard. Their security relies on complex cryptographic primitives that are not trivially translated into the discrete, deterministic world of formal specification languages. A specification that is too abstract will miss real attacks; one that is too concrete becomes intractable for verification. In this post, we walk through a [Quint specification of the Zerocash protocol](https://github.com/informalsystems/Zerocash-spec), exploring the design choices involved in modeling cryptographic primitives symbolically, and showing how the right level of abstraction allows the Quint simulator to automatically find a concrete attack trace demonstrating the faerie-gold vulnerability and verify that a Zcash-inspired fix closes it.
+
+<br />
+<Cards.Card
+  icon=""
+  title="Check out the spec"
+  href="https://github.com/informalsystems/Zerocash-spec"
+  target="_blank"
+  arrow
+/>
+
+## Zerocash and the Faerie-Gold Attack
+
+Privacy-focused (anonymous) payment systems often rely on a construction known as a shielded pool. Instead of recording balances directly on-chain, the system tracks commitments to private coins. Users can create and spend coins while keeping the sender, receiver, and amount hidden.
+
+This approach was popularized by Zcash, whose design builds on the Zerocash protocol. Similar ideas appear in other systems, such as Namada, Penumbra, or Cycles. At a high level, Zerocash works as follows.
+
+* Coins are represented as notes containing a value and some secret information.
+* Each note is converted into a commitment, which is published on the ledger via mint transactions; i.e., anyone can view the set of published commitments. Nevertheless, commitments do not reveal any information about the ownership or value of coins.
+* Users spend notes via pour transactions, which spend two notes and produce up to two new notes. When a note is spent, the user reveals a serial number (aka nullifier), a value derived from the note that prevents double-spending. Only the owner of the associated coin can compute the serial number, which guarantees that only the owner of a coin can spend it. Serial numbers are also published on the ledger.
+* A zero-knowledge proof convinces the network that the transaction is valid without revealing which note is being spent. Concretely, the proof establishes that the spent note exists as a commitment on the ledger, that the spender knows the secret information associated with it, and that the revealed serial number is correctly derived from that note.
+
+The ledger, therefore, contains commitments and serial numbers, while the actual ownership of coins remains private.
+
+Zerocash design aims to provide, among other properties, completeness and balance. The paper defines completeness as: if c1 and c2 are two coins whose commitments appear on the ledger but their serial numbers do not appear on the ledger, then c1 and c2 can be spent via a pour transaction. In other words, all valid coins that have not yet been spent should be spendable. Balance is defined as: no user can spend or hold more value than they minted or received from others via pour transactions.
+
+Nevertheless, the original Zerocash design fails to guarantee completeness. Informally, the property requires the uniqueness of serial numbers but the design fails to guarantee that. Adversaries can exploit this weakness by issuing a pour transaction that produces two new coins with the same serial number, such that the receiver of the coins can only spend one. This is known as the faerie-gold attack. In this post we will describe a Quint model that allows the random simulator to find the completeness violation of the original protocol, and check completeness on a fixed version of the protocol.
+
+Let us get slightly more technical and go through the computation of commitments and serial numbers.
+
+* A coin commitment is computed in two steps: first, the coin owner's public key, a random value (aka trapdoor) r, and a secret randomness ρ are combined into an intermediate value k, and then k is combined with the coin's value and another random trapdoor s to produce the final commitment.
+* The serial number of a coin is computed by applying a pseudorandom function to the coin's owner secret key and the secret randomness ρ (the same ρ that was used to compute its commitment).
+
+This design allows two or more coins to have different commitments but the same serial number: because the trapdoors r and s are chosen freshly and independently of ρ, two coins sharing the same ρ will produce different commitments. Nevertheless, their serial numbers will be identical.
+
+## Modeling Zerocash in Quint
+
+### Modeling Approach
+
+Specifying Zerocash in Quint might seem straightforward: describe the state of the ledger and the transitions corresponding to transactions. In practice, the main challenge lies in finding the right level of abstraction for representing the cryptographic primitives: specifications tend to either be too idealized to catch real cryptographic attacks, or too low-level to reason about at a useful level of abstraction.
+
+Zerocash uses the following cryptographic primitives:
+
+* Collision-resistant hash function (CRH), used to build the Merkle tree over coin commitments.
+* Pseudorandom functions (PRF), used to derive address public keys, serial numbers, and MAC values for non-malleability; all instantiated from a single PRF family with different prefixes.
+* Commitment scheme (COMM), used to compute coin commitments in two nested steps.
+* zk-SNARKs, used to prove validity of pour transactions without revealing private inputs.
+* Key-private public-key encryption (Enc), used to encrypt note details (including ρ) for the recipient inside the pour transaction.
+* One-time strongly-unforgeable digital signatures (Sig), used to prevent malleability attacks on pour transactions by binding all transaction fields together.
+
+Our Quint specification simulates PRF, COMM, and zk-SNARKS. In contrast, it omits CRH, ENC, and Sig. This is because our main focus is to showcase the faerie-gold attack, and none of these three primitives are relevant for that.
+
+In Zerocash, PRF and COMM are instantiated using the SHA-256 compression function, which provides fixed-size output and collision resistance, i.e., collisions are computationally infeasible to find. A symbolic model must choose between these two desirable properties. The spec uses a list-encoding approach. The core type is `Sym`:
+```quint
+/// Symbolic crypto value
+/// Two Sym values are equal iff their lists are equal (structural comparison).
+type Sym = List[int]
+```
+Every primitive is encoded as a flat integer list whose first element is a unique tag that identifies the function, followed by the arguments with length prefixes to ensure unambiguous parsing. For example, the pseudorandom function `PRF_sn(ask, rho)`:
+```quint
+/// PRF_sn(ask, rho) — derives serial number from secret key and coin nonce
+/// Paper: PRF_sn_x(z) = H(x || 01 || z)
+pure def PRF_sn(ask: int, rho: Sym): Sym =
+  [1, ask, rho.length()].concat(rho)
+```
+
+Equality between symbolic values is purely structural: two values are equal if and only if their lists are identical element-wise. This means injectivity is guaranteed by construction: distinct inputs produce structurally distinct outputs, with no arithmetics needed to check collisions. A reasonable alternative would be to use modular hashing (mapping outputs to integers mod M), which preserves fixed-size output but does not guarantee injectivity.
+
+The spec simulates zk-SNARKs by replacing the cryptographic proof with a direct witness check. In the real protocol, the prover generates a zk-SNARK proof to prove the validity of a pour transaction without revealing private inputs. In contrast, in the spec, `verify_pour_snark` simply takes the witness as an explicit argument and checks all the required conditions directly.
+```quint
+/// Verify a Pour transaction - SNARK checks (VULNERABLE version).
+/// VULNERABILITY: does NOT constrain how rho is derived.
+pure def verify_pour_snark(
+  tx: PourTx,
+  witness: PourWitness,
+): bool = {
+  val sn1 = compute_sn(witness.ask_old_1, witness.c_old_1)
+  val sn2 = compute_sn(witness.ask_old_2, witness.c_old_2)
+  val expected_k_new_1 = COMM(witness.c_new_1.r, sym_pair(witness.c_new_1.apk, witness.c_new_1.rho))
+  val expected_cm_new_1 = COMM(witness.c_new_1.s, sym_pair(sym_int(witness.c_new_1.value), witness.c_new_1.k))
+  val expected_k_new_2 = COMM(witness.c_new_2.r, sym_pair(witness.c_new_2.apk, witness.c_new_2.rho))
+  val expected_cm_new_2 = COMM(witness.c_new_2.s, sym_pair(sym_int(witness.c_new_2.value), witness.c_new_2.k))
+
+  all {
+    // 1. Witness consistency: old coins match public serial numbers
+    sn1 == tx.sn_old_1, sn2 == tx.sn_old_2, witness.c_old_1.cm == tx.cm_old_1, witness.c_old_2.cm == tx.cm_old_2,
+
+    // 1. Witness consistency: new coins match public commitments
+    witness.c_new_1.cm == tx.cm_new_1, witness.c_new_2.cm == tx.cm_new_2,
+
+    // 2. Ownership: secret keys match old coin public keys
+    PRF_addr(witness.ask_old_1, 0) == witness.c_old_1.apk, PRF_addr(witness.ask_old_2, 0) == witness.c_old_2.apk,
+
+    // 3. Value conservation
+    witness.c_old_1.value + witness.c_old_2.value == witness.c_new_1.value + witness.c_new_2.value + tx.v_pub,
+
+    // 4. Non-negative values
+    witness.c_old_1.value >= 0, witness.c_old_2.value >= 0, witness.c_new_1.value >= 0, witness.c_new_2.value >= 0,
+    tx.v_pub >= 0,
+
+    // 5. Commitment correctness for new coins
+    witness.c_new_1.k == expected_k_new_1, witness.c_new_1.cm == expected_cm_new_1,
+    witness.c_new_2.k == expected_k_new_2, witness.c_new_2.cm == expected_cm_new_2,
+
+    // NOTE: rho derivation is NOT checked here — this is the vulnerability.
+  }
+}
+```
+
+This encoding is sound for protocol verification because what matters is not the cryptographic machinery that hides the witness, but the logical constraints the witness must satisfy.
+
+Finally, the ledger representation is simplified in the spec. We model it as a centralized component instead of a distributed blockchain. Moreover, the original design maintains an append-only Merkle tree over the list of coin commitments published in the ledger. We instead maintain coin commitments in a set for simplicity.
+
+### Verification Structure
+
+The spec separates public verification (checks based on public transaction fields and ledger state) from SNARK verification (what the zk-SNARK proves using private witness data). Mint transactions only require public verification, which is performed via the `verify_mint` function. In our spec, this means that actions are guarded by verification predicates. E.g., the `mint` action has a [guard](https://github.com/informalsystems/Zerocash-spec/blob/934cdd6fe51ae1b54484aeb9cde7c874efac1052/zerocash.qnt#L423) that uses the following function:
+
+```quint
+/// Verify a Mint transaction.
+pure def verify_mint(
+  user: Node,
+  tx: MintTx,
+  commitments: Set[Sym],
+  public_balance: Node -> int,
+): bool = {
+  val user_balance = public_balance.get(user)
+  val expected_cm = COMM(tx.s, sym_pair(sym_int(tx.v), tx.k))
+  all {
+    tx.v > 0,
+    tx.v <= MAX_VALUE,
+    user_balance >= tx.v,
+    not(commitments.contains(tx.cm)),
+    tx.cm == expected_cm,
+  }
+}
+```
+The function checks five conditions: the coin value is positive and within the allowed maximum; the user has enough public balance to cover it; the commitment is fresh (not already on the ledger); and finally that the commitment in the transaction matches the expected commitment recomputed from the transaction's own fields.
+
+Pour transactions require public and SNARK verification. The public verification function ([`verify_pour_public`](https://github.com/informalsystems/Zerocash-spec/blob/934cdd6fe51ae1b54484aeb9cde7c874efac1052/zerocash.qnt#L207)) checks that the two input serial numbers are fresh and distinct, that the corresponding commitments exist on the ledger, and that the two output commitments are new. The private verification function (`verify_pour_snark`; see above) checks that the old and new coins are consistently formed and match the public transaction fields, that the prover knows the secret keys for the input coins, that values balance across inputs and outputs, and that all values are non-negative with correctly formed commitments.
+
+In the original version of the protocol, neither the public nor the private verification adds any constraint on how the output ρ values are derived, which is precisely the gap that enables the faerie gold attack.
+
+### Completeness and Balance
+
+The spec's invariants are organized around the completeness and balance properties of the Zerocash paper.
+
+The completeness invariant checks the preconditions of the property: for each user, all eligible coins (commitment on ledger, serial number not revealed) can be spent, i.e., have distinct serial numbers.
+```quint
+/// Invariant 3: Completeness (Definition III.1): all eligible coins have distinct serial numbers.
+/// Eligible means: cm on ledger, sn not on spent list.
+def user_completeness(u: Node): bool = {
+  val ask = SECRET_KEYS.get(u)
+  val elig = eligible_coins(
+    ask,
+    users.wallets.get(u),
+    ledger.commitments,
+    ledger.serial_numbers,
+  )
+  elig.forall(c1 =>
+    elig.forall(c2 =>
+      (c1 != c2) implies (compute_sn(ask, c1) != compute_sn(ask, c2))
+    )
+  )
+}
+
+/// All users satisfy per-user completeness.
+/// Cross-user sn collisions are impossible by PRF injectivity (distinct ask values).
+val completeness = NODES.forall(u => user_completeness(u))
+```
+Cross-user serial number collisions are impossible by PRF injectivity (distinct secret key values produce distinct serial numbers).
+
+Two invariants contribute to checking the balance property: `balance_conservation` and `no_negative_balances`. In our model, users are initialized with some initial public balance. The `balance_conservation` invariant checks that value is neither created nor destroyed by checking global conservation: the total value (sum of all public and private value across users) is always equal to the sum of all initial public balances at the start of the protocol. The `no_negative_balances` checks that no user has a negative public balance, bounding per-user value extraction.
+
+These two invariants do not capture balance accurately. The paper's balance is per-adversary and cumulative, requiring tracking one party's total inputs vs outputs across the full trace. Our state records only current snapshots (wallets, balances), not per-user transaction history. Nevertheless, the combination of `balance_conservation`, `no_negative_balances` and the fact that `verify_pour_snark` guarantees per-transaction conservation gives an indirect argument: if every transaction preserves value, the total is fixed, and nobody goes negative, then no party can end up with more than they started with plus what others sent them.
+
+## The Faerie-Gold Vulnerability
+
+### Zerocash is Vulnerable
+
+The specification includes mint and pour actions. Each of these actions includes logic for transaction creation and transaction validation, i.e., the validation checks what the ledger performs before accepting a transaction. These actions follow the design proposed by Zerocash. We therefore refer to them as honest actions. By calling
+```sh
+quint run zerocash.qnt --invariant=completeness
+```
+one finds no violation, which shows that any sequence of the honest actions `mint` and `pour` guarantee completeness.
+
+
+However, the spec also includes an extra action called [`faerie_gold_pour`](https://github.com/informalsystems/Zerocash-spec/blob/934cdd6fe51ae1b54484aeb9cde7c874efac1052/zerocash.qnt#L645). This is a malicious pour action: the attacker uses the same randomness (ρ) for the creation of the two output coins to produce two coins with different commitments but the same serial number.
+```quint
+action faerie_gold_pour(
+  user: Node,
+  victim: Node,
+  c1: Coin,
+  c2: Coin,
+  v1: CoinValue,
+  vpub: CoinValue,
+): bool = {
+
+  ... // some setup omitted here for brevity
+
+  // ATTACK: reuse the SAME rho for both output coins → same serial number
+  val attack_rho = derive_rho_vulnerable(ask, nc, 0)
+  val base = pair(ask, nc)
+  val r = pair(base, 1)
+  val s = pair(base, 2)
+
+  val victim_addr = KEY_PAIRS.get(victim)
+  val coin1 = mint_coin(victim_addr, v1, attack_rho, r, s)
+  val coin2 = mint_coin(victim_addr, v2, attack_rho, r, s)
+
+  val tx: PourTx = {
+    sn_old_1: sn1, sn_old_2: sn2, cm_old_1: c1.cm, cm_old_2: c2.cm,
+    cm_new_1: coin1.cm, cm_new_2: coin2.cm, // bad output coins used here
+    v_pub: vpub,
+  }
+
+  val witness: PourWitness = {
+    c_old_1: c1, c_old_2: c2, ask_old_1: ask, ask_old_2: ask,
+    c_new_1: coin1, c_new_2: coin2,  // bad output coins used here
+    phi: 0,
+  }
+
+  val is_valid = all {
+    verify_pour_public(tx, ledger.commitments, ledger.serial_numbers),
+    verify_pour_snark(tx, witness), // vulnerable verification passes based on bad output coins
+    my_wallet.contains(c1), my_wallet.contains(c2), c1 != c2,
+    v1 != v2,
+    user != victim,
+  }
+
+  all {
+    is_valid,
+
+    ledger' = {
+      ...ledger,
+      serial_numbers: ledger.serial_numbers.union(Set(sn1, sn2)),
+      commitments: ledger.commitments.union(Set(coin1.cm, coin2.cm)),
+      public_balance: ledger.public_balance.setBy(user, bal => bal + vpub),
+    },
+    users' = {
+      ...users,
+      wallets: users.wallets
+        .setBy(user, w => w.exclude(Set(c1, c2)))
+        .setBy(victim, w => w.union(Set(coin1, coin2))),
+      nonce_counters: users.nonce_counters.setBy(user, n => n + 1),
+    },
+  }
+}
+```
+The malicious action above goes through the same ledger validation as its honest version [`pour`](https://github.com/informalsystems/Zerocash-spec/blob/934cdd6fe51ae1b54484aeb9cde7c874efac1052/zerocash.qnt#L458). The only difference is how ρ is constructed before submitting the transaction to the ledger.
+
+To demonstrate the faerie-gold vulnerability, one simply needs to run the Quint simulator with the `faerie_gold_step` step, which interleaves honest actions (`mint` and `pour`) with the malicious one (`faerie_gold_pour`), and check the completeness invariant.
+```sh
+quint run zerocash.qnt --invariant=completeness --step=faerie_gold_step
+```
+As a result, the simulator finds a trace that violates the completeness invariant in no time.
+
+### A ZCash-like Fix
+
+Our specification includes a Zcash fix for the faerie-gold vulnerability. The fixed variant lives side by side with the vulnerable one to enable direct comparison through invariant checking and attack demonstrations.
+
+Following Zcash's mitigation, the fixed variant forces each output coin's ρ of a pour transaction to be derived deterministically in two steps. First, a transaction-unique identifier `hSig` is computed by pairing the two input serial numbers of the coins being spent by the pour transaction. Since serial numbers can never repeat on the ledger, `hSig` is guaranteed to be different for every transaction.
+
+Second, each output coin's ρ is derived from `hSig` together with a private seed phi and an index that distinguishes the two outputs. The index (0 for the first output coin and 1 for the second) ensures the two ρ values are always distinct, even if phi is the same. Crucially, this derivation is enforced inside the pour zk-SNARK: the prover must demonstrate that the ρ values of the output coins actually match what this two-step derivation produces, given the public serial numbers and the private seed phi.
+This is done by adding a sixth condition to the `verify_pour_snark` function from above:
+```quint
+/// Verify a Pour transaction - SNARK checks (FIXED version, Zcash Sapling).
+/// Same as verify_pour_snark plus check 6:
+/// 6. Rho derivation constraint (Zcash fix):
+///    rho = derive_rho_fixed(sn_old_1, sn_old_2, witness.phi, index)
+pure def verify_pour_snark_fixed(
+  tx: PourTx,
+  witness: PourWitness,
+): bool = {
+  ... // some computations as in original function
+
+  // 6. ZCASH FIX: Two-step rho derivation
+  val expected_rho_new_1 = derive_rho_fixed(tx.sn_old_1, tx.sn_old_2, witness.phi, 0)
+  val expected_rho_new_2 = derive_rho_fixed(tx.sn_old_1, tx.sn_old_2, witness.phi, 1)
+
+  all {
+    ... // checks 1. - 5. from original function
+
+    // 6. ZCASH FIX: rho derivation constraint
+    witness.c_new_1.rho == expected_rho_new_1,
+    witness.c_new_2.rho == expected_rho_new_2,
+  }
+}
+```
+
+This closes the attack because an adversary can no longer freely choose ρ, making the attack structurally impossible. The SNARK verification guarantees that the two coins have different serial numbers. Moreover, the fact that ρ is now pinned to the input serial numbers of the current transaction, which are unique by construction, guarantees that reusing ρ across different transactions is impossible since `hSig` would differ. One can check it for completeness with
+```sh
+quint run zerocash.qnt --invariant=completeness --step=faerie_gold_step_fixed
+```
+that uses a [step action](https://github.com/informalsystems/Zerocash-spec/blob/934cdd6fe51ae1b54484aeb9cde7c874efac1052/zerocash.qnt#L819) that allows `mint`, `pour_fixed`, and `faerie_gold_pour_fixed` (which is the logic of the pour attack action together with the fixed verificiation check. Effectively the action `faerie_gold_pour_fixed` is never enabled because verification always fails.)
+
+One practical limitation of the list encoding is that symbolic values grow with each successive pour in the fixed variant, because each output coin's ρ embeds the input serial numbers, which themselves embed previous ρ values. This creates an exponential doubling chain. This is purely an artifact of symbolic simulation, since in the real protocol every cryptographic function produces a fixed 256-bit output. In the simulations we see this as one a standard laptop approximately 70 traces/second are checked, while the non-fixed version handles more then 3500 traces/second.
+In the worst case, long pour chains can produce commitment lists of millions of elements, though in practice the random simulator rarely hits this because traces mix mints and pours across multiple users, and deshielding a coin resets the chain to generation zero.
+
+## Conclusion
+
+Modeling a cryptographic protocol like Zerocash in Quint requires making deliberate tradeoffs. The central challenge is representing cryptographic primitives symbolically: we cannot use real hash functions, so we must choose between injectivity and fixed-size output. The list-encoding approach we adopt prioritizes injectivity at the cost of unbounded output size, which can cause state space growth in long pour chains. Simulating zk-SNARKs as direct witness checks is another transferable idea: rather than modeling the cryptographic proof machinery, one checks the logical constraints the witness must satisfy, which is sufficient for finding protocol-level vulnerabilities.
+
+Despite these limitations, the approach proves effective. The spec captures enough of the protocol's structure for the Quint simulator to find a faerie-gold attack trace automatically. The same spec, with a single additional constraint on ρ derivation inside the SNARK check, is sufficient to demonstrate that the Zcash fix closes the attack. This suggests that lightweight symbolic modeling, with carefully chosen abstractions, can be a practical tool for finding and fixing subtle protocol vulnerabilities.
+
+<Comments/>
