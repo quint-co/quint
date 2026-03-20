@@ -22,6 +22,13 @@ import { Callout, Cards } from 'nextra/components'
   authors={metadata.authors}
 />
 
+<Image
+  src="/blog-covers/zerocash.jpg"
+  alt="A faerie dumping gold in a Quint-themed bucket"
+  width={1000}
+  height={500}
+/>
+
 ## Introduction
 
 Formally specifying cryptographic protocols is hard. Their security relies on complex cryptographic primitives that are not trivially translated into the discrete, deterministic world of formal specification languages. A specification that is too abstract will miss real attacks; one that is too concrete becomes intractable for verification. In this post, we walk through a [Quint specification of the Zerocash protocol](https://github.com/informalsystems/Zerocash-spec), exploring the design choices involved in modeling cryptographic primitives symbolically, and showing how the right level of abstraction allows the Quint simulator to automatically find a concrete attack trace demonstrating the faerie-gold vulnerability and verify that a Zcash-inspired fix closes it.
