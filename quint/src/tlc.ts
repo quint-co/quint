@@ -128,6 +128,8 @@ export async function verify(
       '-deadlock',
       '-workers',
       String(workers),
+      '-metadir',
+      tmpDir,
       tlaFile,
     ])
 
