@@ -18,7 +18,7 @@
 <p>
     <a href="https://github.com/informalsystems/quint/actions">
         <img
-            src="https://github.com/informalsystems/quint/actions/workflows/quint.yml/badge.svg"
+            src="https://github.com/informalsystems/quint/actions/workflows/integration-tests.yml/badge.svg"
             alt="build badge">
     </a>
     <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
