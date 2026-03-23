@@ -1,6 +1,6 @@
 /*
  If you do not know how to start this lesson, see:
- https://github.com/informalsystems/quint/tree/main/tutorials
+ https://github.com/informalsystems/quint/blob/main/docs/content/docs/lessons.md
  */
 module hello {
 
