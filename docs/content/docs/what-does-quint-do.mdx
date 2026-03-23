@@ -83,7 +83,7 @@ And that's it, this is the invariant! We can write more interesting invariants f
 Once you have a model and a property, you can use either the model checker or the simulator to check that property against the model. Model checkers explore *all* possible states of a model, guaranteeing that the property holds for that model, while a simulator will only check a certain number of samples and doesn't provide a guarantee. Even though, the simulator is a great tool to find bugs, and it often provides a faster feedback cycle than a model checker.
 
 There are two model checkers that can be used with Quint:
-- Apalache, the default model checker, seamlessy integrated on `quint verify` calls.
+- Apalache, the default model checker, seamlessly integrated on `quint verify` calls.
 - TLC, supported via the `--backend=tlc` flag on `quint verify`.
 
 For more details on these tools, their constraints and the type of guarantees they can provide, see [Model Checkers](./model-checkers.mdx)
