@@ -79,5 +79,6 @@ export class Context {
   shift() {
     this.varStorage.shiftVars()
     this.trace.extend(this.varStorage.asRecord())
+    this.varStorage.clearMetadata()
   }
 }
