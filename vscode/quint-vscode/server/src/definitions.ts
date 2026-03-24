@@ -1,7 +1,8 @@
 import { Loc, ParserPhase3 } from '@informalsystems/quint'
-import { findName, isPositionInLoc } from './reporting'
+import { findName } from './reporting'
 import { Position } from 'vscode-languageserver/node'
 import { URI } from 'vscode-uri'
+import { selectBestBindingMatch } from './symbolLookup'
 
 export interface QuintDefinitionLink {
   nameId: bigint
@@ -29,30 +30,14 @@ export function findDefinition(
   if (!def) {
     // Some positions (e.g., on app nodes) may not map directly by id.
     // Resolve by name, preferring refs that match the cursor position.
-    const candidates = [...table.entries()].filter(([_, binding]) => binding.name === name)
-    if (candidates.length === 0) {
+    const match = selectBestBindingMatch(table, sourceMap, name, source, position)
+    if (!match) {
       return { nameId: id, name }
     }
-
-    const localRef = candidates.find(([refId, _]) => {
-      const loc = sourceMap.get(refId)
-      return loc ? isPositionInLoc(loc, position, source) : false
-    })
-
-    if (localRef) {
-      return {
-        nameId: id,
-        name,
-        definitionId: localRef[1].id,
-      }
-    }
-
-    const declaration = candidates.find(([refId, binding]) => refId === binding.id)
-    const byName = declaration?.[1] ?? candidates[0][1]
     return {
       nameId: id,
       name,
-      definitionId: byName.id,
+      definitionId: match.binding.id,
     }
   }
 

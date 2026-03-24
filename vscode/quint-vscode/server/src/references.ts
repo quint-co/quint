@@ -2,7 +2,8 @@ import { Loc, ParserPhase3 } from '@informalsystems/quint'
 import { Location, Position } from 'vscode-languageserver/node'
 import { URI } from 'vscode-uri'
 import { findDefinition } from './definitions'
-import { findBestMatchingResult, isPositionInLoc, locToRange } from './reporting'
+import { findBestMatchingResult, locToRange } from './reporting'
+import { selectBestBindingMatch } from './symbolLookup'
 
 export function findReferencesAtPosition(
   parsedData: ParserPhase3,
@@ -88,18 +89,10 @@ function resolveDeclarationId(
   // Some operator applications are not directly indexed by id in `table`.
   // In that case, resolve by name and use the declaration target id.
   if (link?.name) {
-    const byName = [...table.entries()].filter(([_, binding]) => binding.name === link.name)
-    if (byName.length > 0) {
-      const source = URI.parse(uri).path
-      const localRef = byName.find(([refId, _binding]) => {
-        const loc = sourceMap.get(refId)
-        return loc ? isPositionInLoc(loc, position, source) : false
-      })
-      if (localRef) {
-        return localRef[1].id
-      }
-      const declarationEntry = byName.find(([id, binding]) => id === binding.id)
-      return declarationEntry?.[1].id ?? byName[0][1].id
+    const source = URI.parse(uri).path
+    const match = selectBestBindingMatch(table, sourceMap, link.name, source, position)
+    if (match) {
+      return match.binding.id
     }
   }
 
