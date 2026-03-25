@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       evaluator: ${{ steps.filter.outputs.evaluator }}
     steps:

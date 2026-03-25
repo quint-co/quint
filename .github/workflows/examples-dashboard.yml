@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       quint: ${{ steps.filter.outputs.quint }}
       evaluator: ${{ steps.filter.outputs.evaluator }}
@@ -29,6 +30,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             quint:
               - 'quint/**'
