@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       quint: ${{ steps.filter.outputs.quint }}
       evaluator: ${{ steps.filter.outputs.evaluator }}

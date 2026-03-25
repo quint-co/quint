@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       evaluator: ${{ steps.filter.outputs.evaluator }}
     steps:
@@ -32,6 +33,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             evaluator:
               - 'evaluator/**'
@@ -43,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      contents: read
     defaults:
       run:
         working-directory: ./evaluator
