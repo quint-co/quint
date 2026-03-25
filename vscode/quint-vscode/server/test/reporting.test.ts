@@ -6,6 +6,7 @@ import {
   diagnosticsFromErrors,
   findBestMatchingResult,
   findName,
+  isPositionInLoc,
   locToRange,
 } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
@@ -94,6 +95,25 @@ describe('findBestMatchingResult', () => {
     assert.deepEqual(matched?.result, 'result 3')
   })
 
+  it('matches multi-line ranges on middle lines without column constraints', () => {
+    const multilineSourceMap = new Map<bigint, Loc>([
+      [
+        10n,
+        {
+          start: { col: 10, index: 0, line: 1 },
+          end: { col: 2, index: 0, line: 3 },
+          source: sourceFile,
+        },
+      ],
+    ])
+    const multilineResults: [bigint, string][] = [[10n, 'multi']]
+    const middleLinePosition: Position = { line: 2, character: 0 }
+
+    const matched = findBestMatchingResult(multilineSourceMap, multilineResults, middleLinePosition, sourceFile)
+
+    assert.deepEqual(matched?.result, 'multi')
+  })
+
   describe('findName', () => {
     const [modules, sourceMap, _table] = parseOrThrow(
       'module test { type MY_TYPE = bool val foo: MY_TYPE = Nat.isFinite() }'
@@ -148,6 +168,33 @@ describe('findBestMatchingResult', () => {
         start: { character: 1, line: 1 },
         end: { character: 6, line: 1 },
       })
+    })
+  })
+
+  describe('isPositionInLoc', () => {
+    const loc: Loc = {
+      source: 'myFile.qnt',
+      start: { col: 10, index: 0, line: 1 },
+      end: { col: 2, index: 0, line: 3 },
+    }
+
+    it('accepts middle-line positions regardless of start/end columns', () => {
+      const position: Position = { line: 2, character: 0 }
+      assert.isTrue(isPositionInLoc(loc, position, 'myFile.qnt'))
+    })
+
+    it('applies start-column check only on start line', () => {
+      const beforeStart: Position = { line: 1, character: 5 }
+      const afterStart: Position = { line: 1, character: 10 }
+      assert.isFalse(isPositionInLoc(loc, beforeStart, 'myFile.qnt'))
+      assert.isTrue(isPositionInLoc(loc, afterStart, 'myFile.qnt'))
+    })
+
+    it('applies end-column check only on end line', () => {
+      const beforeEnd: Position = { line: 3, character: 2 }
+      const afterEnd: Position = { line: 3, character: 3 }
+      assert.isTrue(isPositionInLoc(loc, beforeEnd, 'myFile.qnt'))
+      assert.isFalse(isPositionInLoc(loc, afterEnd, 'myFile.qnt'))
     })
   })
 })
