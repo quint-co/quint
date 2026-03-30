@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- TLC backend now ensures Apalache distribution is available locally before running TLC
 - Improved error propagation when the Rust evaluator fails to start, now shows the actual error instead of `Error: write EPIPE` (#1958)
 
 ### Deprecated

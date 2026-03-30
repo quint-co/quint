@@ -409,7 +409,7 @@ function downloadAndUnpackApalache(apalacheVersion: string): Promise<ApalacheRes
  *    - a `right<string>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<ApalacheError>` indicating an error.
  */
-async function fetchApalache(apalacheVersion: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
+export async function fetchApalache(apalacheVersion: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
   const filename = process.platform === 'win32' ? 'apalache-mc.bat' : 'apalache-mc'
   const apalacheBinary = path.join(apalacheDistDir(apalacheVersion), 'apalache', 'bin', filename)
   if (fs.existsSync(apalacheBinary)) {

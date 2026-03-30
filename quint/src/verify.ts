@@ -14,7 +14,7 @@
 
 import chalk from 'chalk'
 import { QuintEx, QuintModule } from './ir/quintIr'
-import { ApalacheResult, ServerEndpoint, connect, createConfig } from './apalache'
+import { ApalacheResult, ServerEndpoint, connect, createConfig, fetchApalache } from './apalache'
 import { loadTlcConfig, verify as runTlc } from './tlc'
 import { compileToTlaplus } from './compileToTlaplus'
 import { convertInit } from './ir/initToPredicate'
@@ -67,6 +67,12 @@ export async function verifyWithTlcBackend(
 
   const [, invariantsList] = getInvariants(args)
   const tlcRuntimeConfig = loadTlcConfig(args.tlcConfig)
+
+  // Ensure the Apalache distribution is available locally (TLC needs the JAR)
+  const distResult = await fetchApalache(args.apalacheVersion, verbosityLevel)
+  if (distResult.isLeft()) {
+    return cliErr('error', { ...verifying, errors: distResult.value.errors })
+  }
 
   if (verbosity.hasProgress(verbosityLevel)) {
     console.log(chalk.green('[TLC]') + ' Running TLC model checker...\n')
