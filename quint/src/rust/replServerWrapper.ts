@@ -107,10 +107,26 @@ export class ReplServerWrapper {
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    // Handle process errors
+    // Capture spawn errors (e.g., binary not found) and route through the
+    // existing fatalError/pendingResponse mechanism instead of throwing
     this.process.on('error', (err: Error) => {
-      throw new Error(`Failed to spawn Rust REPL evaluator: ${err.message}`)
+      this.fatalError = `Failed to spawn Rust REPL evaluator: ${err.message}`
+      this.processExited = true
+      if (this.pendingResponse) {
+        this.pendingResponse({
+          response: 'FatalError',
+          message: this.fatalError,
+        })
+        this.pendingResponse = null
+      }
     })
+
+    // Register a no-op error handler on stdin to prevent Node.js from crashing
+    // on EPIPE errors. EPIPE occurs when the child process exits before we finish
+    // writing. We can't return an error from this event handler since it's outside
+    // the async control flow — the actual error is captured via sendCommand's
+    // write callback and the process close/error handlers above.
+    this.process.stdin!.on('error', () => {})
 
     // Handle process exit
     this.process.on('close', code => {

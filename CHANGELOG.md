@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
 ### Changed
+
+- Improved error propagation when the Rust evaluator fails to start, now shows the actual error instead of `Error: write EPIPE` (#1958)
+
 ### Deprecated
 ### Removed
 ### Fixed
