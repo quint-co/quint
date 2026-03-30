@@ -277,6 +277,7 @@ function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either
 const compatibleComponentKinds = [
   ['read', 'update'],
   ['read', 'temporal'],
+  ['update', 'temporal'],
 ]
 
 function canCoexist(c1: EffectComponent, c2: EffectComponent): boolean {

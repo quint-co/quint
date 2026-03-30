@@ -606,3 +606,129 @@ Test that TLC reports errors when given invalid configuration.
 ```
 quint verify --backend tlc --init=nonExistentInit ./testFixture/apalache/tlcConfigError.qnt 2>&1 | grep 'error:'
 ```
+
+### TLC: `leadsTo` holds with fairness on a deterministic counter
+
+On a counter cycling 0->1->2->0, `n==0 leadsTo n==2` holds with weak fairness.
+Without fairness, TLC finds an infinite stuttering path (n=1 then stutter forever).
+
+<!-- !test check TLC leadsTo holds -->
+```
+quint verify --backend tlc --temporal zeroLeadsToTwo ./testFixture/apalache/tlcLeadsTo.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `always(eventually(...))` holds with fairness on a counter
+
+<!-- !test check TLC alwaysEventuallyZero holds -->
+```
+quint verify --backend tlc --temporal alwaysEventuallyZero ./testFixture/apalache/tlcLeadsTo.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `leadsTo` is a violation when p never leads to q
+
+`n==0 leadsTo n==5` never holds since n is always in {0,1,2}.
+
+<!-- !test in TLC leadsTo violation -->
+```
+quint verify --backend tlc --temporal zeroLeadsToFive ./testFixture/apalache/tlcLeadsTo.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC leadsTo violation -->
+```
+error: found a counterexample
+```
+
+### TLC: `leadsTo` is a violation without fairness
+
+Without fairness, TLC finds an infinite stuttering path, violating even
+properties that would hold in fair executions.
+
+<!-- !test in TLC leadsTo no fairness violation -->
+```
+quint verify --backend tlc --temporal zeroLeadsToTwoNoFairness ./testFixture/apalache/tlcLeadsTo.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC leadsTo no fairness violation -->
+```
+error: found a counterexample
+```
+
+### `weakFair` implies `leadsTo` holds
+
+With weak fairness for `finish`, `not(done) leadsTo done` holds because
+`finish` is continuously enabled when `done=false` and must eventually fire.
+
+<!-- !test check weakFair leadsTo holds -->
+```
+quint verify --backend tlc --temporal notDoneLeadsToDone ../examples/language-features/weakFairness.qnt 2>&1 | grep '\[ok\]'
+```
+
+### `leadsTo` without fairness is a violation (non-deterministic spec)
+
+In a non-deterministic spec, the stuttering branch can be chosen forever.
+
+<!-- !test in leadsTo non-det no fairness violation -->
+```
+quint verify --backend tlc --temporal notDoneLeadsToDoneNoFairness ../examples/language-features/weakFairness.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err leadsTo non-det no fairness violation -->
+```
+error: found a counterexample
+```
+
+### TLC: `eventuallyHundredDegrees` holds with weak and strong fairness
+
+With weak fairness over `step` and strong fairness on `turnOffBySensor`, the kettle
+eventually reaches `HundredDegrees`. `turnOffBySensor` is infinitely often enabled,
+but not constantly, so it needs strong fairness.
+
+<!-- !test check TLC kettle eventuallyHundredDegrees holds -->
+```
+quint verify --backend tlc --temporal eventuallyHundredDegrees ../examples/language-features/strongFairness.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `eventuallyHundredDegrees` is a violation with weak fairness only
+
+With weak fairness alone, TLC can choose `turnOff` instead of `turnOffBySensor`
+every single time, so the kettle never reaches `HundredDegrees`.
+
+<!-- !test in TLC kettle eventuallyHundredDegrees weak only violation -->
+```
+quint verify --backend tlc --temporal eventuallyHundredDegreesWeakOnly ../examples/language-features/strongFairness.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC kettle eventuallyHundredDegrees weak only violation -->
+```
+error: found a counterexample
+```
+
+### TLC: ewd840 liveness holds with `weakFair` and `leadsTo`
+
+The main liveness property of ewd840: once all nodes are inactive, termination
+is eventually detected. Uses `System.weakFair(vars) implies (... leadsTo ...)`.
+
+<!-- !test check TLC ewd840 liveness -->
+```
+quint verify --backend tlc --temporal liveness --main ewd840_3 ../examples/classic/distributed/ewd840/ewd840.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: ewd840 `falseLiveness` is a violation
+
+`falseLiveness` does not hold: it requires each node to always eventually
+terminate, which the spec does not guarantee (a node may be re-activated).
+
+<!-- !test in TLC ewd840 falseLiveness violation -->
+```
+quint verify --backend tlc --temporal falseLiveness --main ewd840_3 ../examples/classic/distributed/ewd840/ewd840.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC ewd840 falseLiveness violation -->
+```
+error: found a counterexample
+```

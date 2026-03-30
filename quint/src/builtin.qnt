@@ -726,6 +726,21 @@ module builtin {
   /// ```
   temporal weakFair(a, b): (bool, a) => bool
 
+  /// `leadsTo(p, q)` is the TLA+ leads-to operator `p ~> q`.
+  ///
+  /// It is equivalent to `always(p implies eventually(q))`: whenever `p` holds,
+  /// `q` must eventually hold.
+  ///
+  /// ### Examples
+  ///
+  /// ```quint
+  /// var active: int -> bool
+  /// var terminationDetected: bool
+  ///
+  /// temporal Property = NODES.forall(i => not(active.get(i))) leadsTo terminationDetected
+  /// ```
+  temporal leadsTo(p, q): (bool, bool) => bool
+
   /// `strongFair(a, v)` is true when
   /// `always(eventually(a.mustChange(v).enabled())).implies(always(eventually(a.mustChange(v))))`
   ///  is true.

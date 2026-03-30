@@ -14,12 +14,13 @@ read: 'Read' '[' entity ']' ;
 update: 'Update' '[' entity ']' ;
 temporal: 'Temporal' '[' entity ']' ;
 
-concrete:   read                                        # readOnly
-          | update                                      # updateOnly
-          | temporal                                    # temporalOnly
-          | (read '&' update | update '&' read)         # readAndUpdate
-          | (read '&' temporal | update '&' temporal)   # readAndTemporal
+concrete:   component ('&' component)*                  # concreteComponents
           | 'Pure'                                      # pure
+          ;
+
+component:  read     # readComponent
+          | update   # updateComponent
+          | temporal # temporalComponent
           ;
 
 entity : ((stateVarRef | IDENTIFIER) (',' (stateVarRef | IDENTIFIER))*)? ;

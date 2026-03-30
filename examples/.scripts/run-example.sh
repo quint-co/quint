@@ -165,6 +165,10 @@ get_verify_args () {
     args='--invariant TerminationDetection --inductive-invariant "TypeOK and Inv"'
   elif [[ "$file" == "classic/distributed/Bakery/bakery.qnt" ]] ; then
     args='--invariant correctness --inductive-invariant IndInv'
+  elif [[ "$file" == "language-features/weakFairness.qnt" ]] ; then
+    args='--backend tlc --temporal notDoneLeadsToDone'
+  elif [[ "$file" == "language-features/strongFairness.qnt" ]] ; then
+    args='--backend tlc --temporal eventuallyHundredDegrees'
   fi
   echo "${args}"
 

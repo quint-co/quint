@@ -188,6 +188,7 @@ expr:           // apply a built-in operator via the dot notation
         |       'or'  '{' expr (',' expr)* ','? '}'                 # orExpr
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
+        |       expr LEADS_TO expr                                 # leadsTo
         |       expr IMPLIES expr                                   # implies
         |       matchSumExpr                                        # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
@@ -265,18 +266,18 @@ recElem : simpleId["record"] ':' expr
 
 // operators in the normal call may use a few reserved names,
 // which are not recognized as identifiers.
-normalCallName : op=(AND | OR | IFF | IMPLIES | SET | LIST)
+normalCallName : op=(AND | OR | IFF | IMPLIES | LEADS_TO | SET | LIST)
         | qualId
         ;
 
 // A few infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-nameAfterDot : op=(AND | OR | IFF | IMPLIES)
+nameAfterDot : op=(AND | OR | IFF | IMPLIES | LEADS_TO)
         | qualId
         ;
 
 // special operators
-operator: (AND | OR | IFF | IMPLIES |
+operator: (AND | OR | IFF | IMPLIES | LEADS_TO |
            GT  | LT  | GE  | LE | NE | EQ |
            MUL | DIV | MOD | PLUS | MINUS | '^')
         ;
@@ -318,6 +319,7 @@ reserved: AND
     | OR
     | IFF
     | IMPLIES
+    | LEADS_TO
     | MATCH
     | IMPORT
     | EXPORT;
@@ -339,6 +341,7 @@ AND             :   'and' ;
 OR              :   'or'  ;
 IFF             :   'iff' ;
 IMPLIES         :   'implies' ;
+LEADS_TO        :   'leadsTo' ;
 MATCH           :   'match' ;
 PLUS            :   '+' ;
 MINUS           :   '-' ;

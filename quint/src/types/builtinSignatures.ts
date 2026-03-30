@@ -119,6 +119,7 @@ const temporalOperators = [
   { name: 'enabled', type: '(bool) => bool' },
   { name: 'weakFair', type: '(bool, a) => bool' },
   { name: 'strongFair', type: '(bool, a) => bool' },
+  { name: 'leadsTo', type: '(bool, bool) => bool' },
 ]
 
 const otherOperators = [

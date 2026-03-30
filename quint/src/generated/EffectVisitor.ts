@@ -3,12 +3,11 @@
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
-import { ReadOnlyContext } from "./EffectParser";
-import { UpdateOnlyContext } from "./EffectParser";
-import { TemporalOnlyContext } from "./EffectParser";
-import { ReadAndUpdateContext } from "./EffectParser";
-import { ReadAndTemporalContext } from "./EffectParser";
+import { ConcreteComponentsContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
+import { ReadComponentContext } from "./EffectParser";
+import { UpdateComponentContext } from "./EffectParser";
+import { TemporalComponentContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { VariableEffectContext } from "./EffectParser";
@@ -17,6 +16,7 @@ import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
 import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
+import { ComponentContext } from "./EffectParser";
 import { EntityContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
 
@@ -30,44 +30,12 @@ import { StateVarRefContext } from "./EffectParser";
  */
 export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	/**
-	 * Visit a parse tree produced by the `readOnly`
+	 * Visit a parse tree produced by the `concreteComponents`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitReadOnly?: (ctx: ReadOnlyContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `updateOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUpdateOnly?: (ctx: UpdateOnlyContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `temporalOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTemporalOnly?: (ctx: TemporalOnlyContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `readAndUpdate`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitReadAndUpdate?: (ctx: ReadAndUpdateContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `readAndTemporal`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitReadAndTemporal?: (ctx: ReadAndTemporalContext) => Result;
+	visitConcreteComponents?: (ctx: ConcreteComponentsContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `pure`
@@ -76,6 +44,30 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitPure?: (ctx: PureContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `readComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReadComponent?: (ctx: ReadComponentContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `updateComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUpdateComponent?: (ctx: UpdateComponentContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `temporalComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTemporalComponent?: (ctx: TemporalComponentContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `concreteEffect`
@@ -135,6 +127,13 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitConcrete?: (ctx: ConcreteContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `EffectParser.component`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitComponent?: (ctx: ComponentContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.entity`.

@@ -118,14 +118,17 @@ function propagationWithLambda(kinds: ComponentKind[]): (arity: number) => Effec
 }
 
 export const standardPropagation = propagateComponents(['read', 'temporal'])
+// Propagation for boolean connectives that may combine actions with temporal formulas,
+// e.g., `init and always(...)` in a spec formula.
+const actionTemporalPropagation = propagateComponents(['read', 'temporal', 'update'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 export const booleanOperators = [
   { name: 'eq', effect: standardPropagation(2) },
   { name: 'neq', effect: standardPropagation(2) },
   { name: 'not', effect: standardPropagation(1) },
-  { name: 'iff', effect: standardPropagation(2) },
-  { name: 'implies', effect: standardPropagation(2) },
+  { name: 'iff', effect: actionTemporalPropagation(2) },
+  { name: 'implies', effect: actionTemporalPropagation(2) },
 ]
 
 export const setOperators = [
@@ -214,8 +217,25 @@ const temporalOperators = [
   // Enabled: Should we do this? https://github.com/informalsystems/quint/discussions/109
   // Or should the result be temporal?
   { name: 'enabled', effect: parseAndQuantify('(Read[r1] & Update[u1]) => Read[r1]') },
-  { name: 'weakFair', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
-  { name: 'strongFair', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  // weakFair and strongFair accept temporal expressions in both arguments (more permissive than
+  // requiring only actions), to support patterns like `forall(i, step(i)).weakFair(vars)` where
+  // the first argument has a temporal effect from a higher-order operator.
+  {
+    name: 'weakFair',
+    effect: parseAndQuantify(
+      '(Read[r] & Update[u] & Temporal[t1], Read[v] & Temporal[t2]) => Temporal[r, u, v, t1, t2]'
+    ),
+  },
+  {
+    name: 'strongFair',
+    effect: parseAndQuantify(
+      '(Read[r] & Update[u] & Temporal[t1], Read[v] & Temporal[t2]) => Temporal[r, u, v, t1, t2]'
+    ),
+  },
+  {
+    name: 'leadsTo',
+    effect: parseAndQuantify('(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Temporal[r1, t1, r2, t2]'),
+  },
 ]
 
 const otherOperators = [
@@ -257,8 +277,8 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['Rec', standardPropagation],
   ['Tup', standardPropagation],
   ['tuples', standardPropagation],
-  ['and', standardPropagation],
-  ['or', standardPropagation],
+  ['and', actionTemporalPropagation],
+  ['or', actionTemporalPropagation],
   [
     // A match operator that looks like
     //

@@ -934,7 +934,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // These are not supported in the REPL
         "chooseSome" | "always" | "eventually" | "enabled" | "orKeep" | "mustChange"
-        | "weakFair" | "strongFair" => |_env, _args| {
+        | "weakFair" | "strongFair" | "leadsTo" => |_env, _args| {
             Err(QuintError::new(
                 "QNT501",
                 "Runtime does not support this built-in operator",

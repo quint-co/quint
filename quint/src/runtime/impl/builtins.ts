@@ -760,6 +760,7 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
     case 'mustChange':
     case 'weakFair':
     case 'strongFair':
+    case 'leadsTo':
       return _ => left({ code: 'QNT501', message: `Runtime does not support the built -in operator '${op}'` })
 
     default:

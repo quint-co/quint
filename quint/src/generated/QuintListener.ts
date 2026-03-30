@@ -43,6 +43,7 @@ import { AndContext } from "./QuintParser";
 import { OrExprContext } from "./QuintParser";
 import { OrContext } from "./QuintParser";
 import { IffContext } from "./QuintParser";
+import { LeadsToContext } from "./QuintParser";
 import { ImpliesContext } from "./QuintParser";
 import { MatchContext } from "./QuintParser";
 import { ActionAllContext } from "./QuintParser";
@@ -567,6 +568,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIff?: (ctx: IffContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `leadsTo`
+	 * labeled alternative in `QuintParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterLeadsTo?: (ctx: LeadsToContext) => void;
+	/**
+	 * Exit a parse tree produced by the `leadsTo`
+	 * labeled alternative in `QuintParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitLeadsTo?: (ctx: LeadsToContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `implies`

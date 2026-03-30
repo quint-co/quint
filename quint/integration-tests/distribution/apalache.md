@@ -32,7 +32,7 @@ QUINT_HOME="$quint_home" quint verify --verbosity=1 ../examples/language-feature
 
 <!-- !test out server not running -->
 ```
-Downloading Apalache distribution 0.51.1... done.
+Downloading Apalache distribution 0.56.1... done.
 [ok] No violation found (duration).
 [ok] No violation found (duration).
 ```

@@ -984,6 +984,12 @@ export class ToIrListener implements QuintListener {
     this.pushApplication(ctx, 'implies', args)
   }
 
+  // p leadsTo q
+  exitLeadsTo(ctx: any) {
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
+    this.pushApplication(ctx, 'leadsTo', args)
+  }
+
   // p iff q
   exitIff(ctx: any) {
     const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
