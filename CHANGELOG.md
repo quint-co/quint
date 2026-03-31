@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.32.0 -- 2026-03-31
+
+### Added
 
 - Added `leadsTo` temporal operator (#1932)
 
@@ -26,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an import issue affecting yargs on node 27 (#1926)
 
 ### Security
+
+- Updated `tar` 6→7 to fix critical path traversal and symlink poisoning vulnerabilities (#1957)
+- Updated `mocha` 7→11 to fix vulnerabilities in `debug`, `js-yaml`, and `minimatch` (#1957)
+- Patched vulnerabilities in `braces`, `cross-spawn`, `ajv`, `ejs`, and others (#1957)
 
 ## v0.31.0 -- 2026-02-27
 
