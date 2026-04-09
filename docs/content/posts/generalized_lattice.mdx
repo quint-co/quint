@@ -1,0 +1,315 @@
+---
+title: "Two Bugs in the SAFE Predicate: Finding and Formally Verifying Liveness Failures in Byzantine Lattice Agreement"
+date: 2026-04-09
+excerpt: "We have modeled the Byzantine Generalized Lattice Agreement algorithm in Quint and found two bugs in the SAFE predicate"
+authors:
+    - name: Carlos Rodriguez
+tags:
+    - advanced
+---
+
+import Image from 'next/image'
+import { Comments } from '../../components/blog/Comments'
+import { PostMeta } from '../../components/blog/PostMeta'
+
+# {metadata.title}
+
+<PostMeta
+  date={metadata.date}
+  authors={metadata.authors}
+/>
+
+<Image
+  src="/blog-covers/generalized_lattice.jpg"
+  alt="A purple box with a fading grid containing the blog post's title"
+  width={1000}
+  height={500}
+/>
+
+## Introduction
+
+Distributed consensus algorithms are notoriously difficult to get right. Even published, peer-reviewed pseudocode can harbour subtle errors that only surface under specific execution interleavings -- the kind of scenarios that are hard to construct by hand but easy to stumble into during automated exploration.
+
+This post tells the story of two such bugs. We were modelling the Generalized Wait Till Safe (GWTS) algorithm from the paper [*"Byzantine Generalized Lattice Agreement"*](https://arxiv.org/abs/1910.05768) (Di Luna, Anceaume, Querzoni, 2020) using Quint and our new [Choreo](https://github.com/informalsystems/choreo) framework for choreographing distributed protocols (repository available [here](https://github.com/informalsystems/generalised-byzantine-lattice-agreement/settings)). While encoding the algorithm in Quint, we found errors in both the `SAFE` function in Algorithm 3 (the proposer) and the `SAFE_A` function in Algorithm 4 (the acceptor), both inherited from the single-round WTS predecessor and both wrong for the multi-round GWTS setting, but in different ways and with different consequences.
+
+We will walk through: what the algorithm does, what each bug is and why it matters, how simulation traces make the bugs concrete, how temporal model checking with TLC formally verified the first bug by finding a lasso counterexample in the full reachable state space, and what the fix looks like.
+
+## The Problem: Byzantine Generalized Lattice Agreement
+
+### A brief note on lattices
+
+A **lattice** is a partially-ordered set where any two elements have a *least upper bound* (join, written `∨`) and a *greatest lower bound* (meet, written `∧`). The canonical example is the powerset of some universe of values, ordered by set inclusion: `A ≤ B` iff `A ⊆ B`, and `A ∨ B = A ∪ B`.
+
+The Hasse diagram below shows the powerset lattice of `{1, 2, 3}`. Edges go upward, and a lower node is a subset of every node above it that it is connected to:
+
+```ascii
+      {1,2,3}
+     /   |   \
+  {1,2} {1,3} {2,3}
+  / \ \/ / \/ /
+{1}  {2}  {3}
+      \  |  /
+        {}
+```
+
+Two elements are **comparable** if one sits above the other on some path -- `{1}` and `{1,2}` are comparable (`{1} ⊆ {1,2}`), while `{1,2}` and `{2,3}` are not (neither is a subset of the other).
+
+Lattice Agreement is a distributed agreement problem where processes propose elements of a partially-ordered lattice and must decide on comparable elements. Unlike consensus, different processes may decide on different values -- as long as those values are lattice-comparable. This makes lattice agreement weaker than consensus and more efficient: it is the right abstraction for systems where you want to converge on a growing set of facts (e.g. key-value stores, ledgers, or CRDTs).
+
+Byzantine Lattice Agreement strengthens the problem to tolerate `f` Byzantine nodes -- nodes that may behave arbitrarily, send fabricated messages, or go silent -- as long as there are at least `n ≥ 3f + 1` nodes total.
+
+Generalized Byzantine Lattice Agreement runs this process in an infinite sequence of rounds, accumulating a monotonically growing decision set across rounds. The key properties are:
+
+- **Comparability**: Any two nodes' decided sets are lattice-comparable.
+- **Local stability**: A node's decided set never shrinks across rounds.
+- **Inclusivity**: Every value submitted by a correct node eventually appears in its decision.
+- **Non-triviality**: Byzantine nodes cannot inject arbitrary fabricated values into decisions.
+
+The GWTS algorithm (Algorithms 3 and 4 in the paper) achieves this through two phases per round:
+
+**Phase 1  --  Value Disclosure**: Each node broadcasts its new values for the round using Reliable Broadcast (RB). After receiving at least `n − f` RB-delivered disclosures, a node builds its `proposed_set` (the union of all received values). Crucially, `proposed_set` *accumulates across all rounds and is never reset*. The set of values safely disclosed by any node in round `r` is recorded in `svs[r]`. SvS is the *Safe Values Set* for any round `r`, a per-round registry of every value that arrived via a legitimate RB disclosure.
+
+**Phase 2  --  Proposal / Acceptance**: The node broadcasts an `AckReq` carrying its full `proposed_set` and a timestamp `ts`. Other nodes respond:
+
+- `ACK` (via RB, so everyone sees it) if their `accepted_set ⊆ proposed_set`, they raise their `accepted_set` to `proposed_set`.
+- `NACK` (point-to-point) if `accepted_set ⊄ proposed_set`, they send their old `accepted_set` back; the proposer joins it in and retries with an incremented `ts`.
+
+A node decides when it observes a Byzantine quorum (`⌊(n+f)/2⌋ + 1`) of RB-delivered `ACK`s for the same `(accepted_set, req_sender, ts, round)` tuple. Importantly, a node can decide on *any* proposer's quorum (not just its own), enabling faster progress (this is called piggybacking).
+
+The `SAFE` check is the key defence against Byzantine nodes injecting fabricated values into decisions. Before an acceptor processes an `AckReq`, and before a proposer absorbs a `NACK`, both verify that every value in the message was legitimately disclosed during Phase 1.
+
+## Modelling GWTS in Quint with Choreo
+
+We built this spec using [Choreo](https://quint-lang.org/choreo), a Quint framework for modelling distributed protocols. What matters for understanding our model is one design decision it enforces: each protocol action is expressed as a pair of pure local functions -- a `listen_*` that returns which inputs currently enable the action, and a `handle_*` that produces the resulting state and effects. A handler sees only its own state and its own message bag; Choreo handles message routing and global state composition.
+
+This structure maps directly onto the `upon` pattern in distributed algorithms pseudocode: `upon condition do action`. For GWTS that means nine separate listen/handle pairs for correct-node transitions (one per algorithm step) plus four for Byzantine actions. Each pair is independently readable and testable, which made it straightforward to audit exactly what `SAFE` was checking in each role.
+
+### The GWTS Quint Spec
+
+The GWTS spec defines:
+
+- **Message types**: `ValMsg` (Phase 1 RB disclosure), `AckReqMsg` (Phase 2 proposal), `AckMsg` (`ACK`, RB-broadcast), `NackMsg` (`NACK`, point-to-point).
+- **Per-process state**: `proposed_set`, `accepted_set`, `decided_set` (monotone accumulators), `svs` (safe values per round), `ts`, `safe_round`, `responded_to`, and bookkeeping fields.
+- **Nine correct-node transitions**: `BroadcastVal`, `UpdateSvs`, `CollectVals`, `SendAckReq`, `RespondAckReq`, `ProcessNack`, `Decide`, `AdvanceRound`, `AdvanceSafeRound`.
+- **Four Byzantine actions**: `ByzDisclose`, `ByzAckReq`, `ByzNack`, `ByzAck` -- injecting arbitrary messages within bounds.
+- **Safety invariants**: Comparability, Validity, SVS E-validity (every value in any node's `svs[r]` must belong to the valid input domain `E`), phase ordering (the protocol phases occur in order within each round) -- all encoded as Quint values that the simulator checks at every step.
+- **Two module instances**: `gwts_standard` (N=4, F=1, all correct nodes) for happy-path tests and simulation; `gwts_byzantine` (N=4, F=1, one Byzantine node `n4` injecting values outside `[1, 2^31−1]`) to verify Byzantine strategies are neutralised.
+
+The spec uses a single `SAFE` predicate for both roles: the acceptor gate and the proposer `NACK` filter. Getting this predicate right is exactly where the bugs live, as described in the next section.
+
+## Two Bugs in SAFE
+
+This is where the bugs live. The paper defines two related predicates (one for each role) and both are subtly wrong in the multi-round setting. We number the bugs in the order they manifest at runtime: the acceptor gate fires first, before any proposer ever processes a `NACK`.
+
+### Bug 1: Algorithm 4's `SAFE_A` (Acceptor `AckReq` Gate)
+
+The acceptor uses `SAFE_A` to decide whether to respond to an incoming `AckReq`. The paper's formulation is:
+
+```
+SAFE_A(m): ∃r. m.proposed_set ⊆ svs[r]
+```
+
+The entire proposed set must fit inside a *single* round's SvS -- any round, but one round.
+
+Why this breaks from round 1 onwards? From round 1 onwards, every `AckReq` carries a `proposed_set` that includes values from `svs[0]`, `svs[1]`, and any subsequent rounds. By construction, no single `svs[r]` can cover all of them (the values are spread across multiple rounds' SvS entries). So the existential check (`∃r. proposed_set ⊆ svs[r]`) fails for every `AckReq` sent after round 0, no matter which `r` you try. This rejection is permanent: each `svs[r]` is sealed after round `r`'s Phase 1 completes and never grows again, so no future execution step can make a cross-round `proposed_set` pass the check.
+
+The consequence is that every acceptor silently ignores every `AckReq` sent after round 0. No `ACK`s are ever produced, no quorum ever forms, and no node ever decides any values beyond what was decided in round 0. This is a catastrophic liveness failure -- and a silent one: acceptors never error or time out, they simply receive `AckReq`s and quietly do not process them. The algorithm makes no progress whatsoever beyond the first round.
+
+### Bug 2: Algorithm 3's `SAFE` (Proposer `NACK` Filter)
+
+The proposer uses `SAFE` to decide whether to absorb an incoming `NACK`. The paper's formulation is:
+
+```
+SAFE(m): m.accepted_set ⊆ svs[current_round]
+```
+
+The entire accepted set must fit inside the current round's SvS.
+
+Why this breaks in round 1? By the time the algorithm reaches round 1, a node's `accepted_set` has accumulated values from round 0 disclosures as well as round 1. But `svs[1]` only contains values disclosed during round 1's Phase 1 (round-0 values live in `svs[0]` and will never migrate to `svs[1]`). Each `svs[r]` is populated solely from RB deliveries during that round's Phase 1 and is fixed once Phase 1 completes. So a perfectly legitimate `NACK` whose `accepted_set` spans both rounds will fail the check (`{v₀, v₁} ⊄ svs[1]` because `v₀ ∈ svs[0]`). The `NACK` is buffered, but the `upon receive NACK where SAFE(m)` condition is never satisfied, so it is never processed. Crucially, this is not a transient timing issue that resolves itself: no future event can move `v₀` into `svs[1]`, so the `NACK` will be rejected every time it arrives.
+
+The consequence is that the proposer cannot grow its `proposed_set` via the `NACK` feedback path once values span multiple rounds. It keeps broadcasting the same `AckReq` with an unchanged `proposed_set`, accumulating `NACK`s it cannot absorb, and never reaching the `ACK` quorum it needs to decide. This is a violation of **Inclusivity**: values submitted by a correct node may never appear in its decision. Piggybacking can rescue the node in some interleavings -- if another proposer happens to have a large enough `proposed_set` to gather a quorum, the stuck node can decide on that -- but this is not guaranteed. If multiple nodes are in the same situation, no proposer may be able to gather the required `ACK`s at all.
+
+### The Correct Formulation
+
+Both bugs share the same root cause: they apply a whole-set containment check where an element-wise check is needed. Bug 1 applies it to the whole `proposed_set` against a single `svs[r]`; Bug 2 applies it to the whole `accepted_set` against the current round's SvS. The correct predicate, which the Quint spec uses as a single unified `SAFE` function for both roles, is:
+
+```
+SAFE(m): ∀v ∈ m.values. ∃r. v ∈ svs[r]
+```
+
+Each value just needs to appear in *some* round's SvS. Different values may come from different rounds; only per-element coverage is required, not containment in a single round's SvS entry. In the Quint spec, this is a single function used in both roles:
+
+```quint
+// SAFE condition: every value in the message's value set is covered by some
+// round's SvS. Used for both the acceptor `AckReq` gate (checking proposed_set)
+// and the proposer `NACK` filter (checking accepted_set).
+// ∀v ∈ values. ∃r ∈ [0, MAX_ROUND]. v ∈ svs[r].
+// Different values may come from different rounds - only per-element coverage
+// is required, not containment in a single round's SvS.
+pure def SAFE(
+  proposed: Set[InputValue], 
+  svs: int -> Set[InputValue], 
+  max_round: int
+): bool = 
+	proposed.forall(v => 0.to(max_round).exists(r => svs.get(r).contains(v)))
+```
+
+In the single-round WTS predecessor these three formulations are equivalent (there is only one round), so `svs[current_round]` contains everything. The bugs are invisible in the single-round setting. They only appear when `proposed_set` accumulates values across multiple rounds.
+
+## Illustrating Both Bugs with Targeted Invariants
+
+Liveness failures are generally harder to detect with automated tools than safety violations; a liveness failure requires showing that progress is *never* made, while a safety violation requires only finding a single bad state. However, once the bugs were found by reasoning, we had clear hypotheses about what the stuck state should look like -- and those hypotheses can be encoded directly as invariants for the simulator to falsify.
+
+### The invariants
+
+For Bug 1, the hypothesis was: once a node has completed RB for round 1 (it has broadcast its values and collected enough deliveries), it should eventually decide on round-1 values -- but under `SAFE_A`, it never will. This translates directly to an invariant:
+
+```quint
+// Violated when a node has completed round-1 RB but round-1 values
+// are not yet in its decided_set - the stuck state predicted by Bug 1.
+val no_round1_undecided =
+  NODES.forall(n => {
+    val st = s.system.get(n)
+    not(st.brb_ready.contains(1) and
+        not(lat_le(BATCH_VALUES.get(n).get(1), st.decided_set)))
+  })
+```
+
+For Bug 2, the hypothesis was: after a node advances past round 0, the `NACK` repair loop should keep `proposed_set` in sync with `decided_set` -- but under `SAFE`, it cannot. The stuck state is a gap between the two:
+
+```quint
+// Violated when a node past round 0 has decided values not covered
+// by its proposed_set - the structural gap predicted by Bug 2.
+val no_decided_proposed_gap =
+  NODES.forall(n => {
+    val st = s.system.get(n)
+    st.proposer_round > 0 implies lat_le(st.decided_set, st.proposed_set)
+  })
+```
+
+These are not safety invariants that must hold at all times -- they are diagnostic probes designed to detect a structural condition that is *transient* in a correct execution and *permanent* under the bugs. What matters is not whether the condition appears, but whether the protocol can repair it.
+
+In a correct execution the repair unfolds in round 1:
+
+1. The node broadcasts an `AckReq` with its current (incomplete) `proposed_set`.
+2. Any acceptor whose `accepted_set` contains a missing value sends a `NACK` carrying its full `accepted_set`.
+3. The element-wise `NACK` filter passes (`∀v ∈ accepted_set. ∃r. v ∈ svs[r]`), the `NACK` is absorbed, and `proposed_set` grows to cover the gap.
+4. The node re-broadcasts with the updated `proposed_set`.
+5. The `AckReq` gate passes, `ACK`s are produced, and the round completes.
+
+Bug 1 breaks step 2: `SAFE_A` checks `∃r. proposed_set ⊆ svs[r]` before responding at all. A cross-round `proposed_set` fails this unconditionally, so the acceptor silently ignores the `AckReq`, sending neither a `NACK` nor an `ACK`. Bug 2 breaks step 3: the `NACK` filter checks `accepted_set ⊆ svs[current_round]`. Round-0 values are not in `svs[1]`, so the `NACK` is never absorbed and `proposed_set` never grows.
+
+### What the simulator found
+
+Running the simulator on the Bug 2 variant with the `no_decided_proposed_gap` invariant produces the following trace (simplified to the key moments):
+
+**Round 0 setup**: n2 broadcasts its value `{3}` first, then n1 broadcasts `{1}`. In the Choreo model, each node collects only the disclosures from nodes that had *not yet* sent when the collecting node first sent its own value -- this prevents double-counting messages that were already in flight. n2 sent before n1, so n2 collects both values: `proposed_set = {1,3}`. n1 sent before receiving n2's disclosure, so n1 collects only its own value: `proposed_set = {1}`, even though `svs[0] = {1,3}`.
+
+**Piggybacking decision**: n2 sends an `AckReq` with `proposed_set = {1,3}`. Both nodes act as acceptors: each raises its `accepted_set` to `{1,3}` and sends an `ACK` carrying `accepted_set = {1,3}`. A quorum of `ACK`s forms, and n1 observes it -- deciding `decided_set = {1,3}` via piggybacking on n2's quorum. At this point n1 has `proposed_set = {1}` and `decided_set = {1,3}`. The invariant does not fire yet because n1 is still in round 0 (`proposer_round = 0`).
+
+**Round advance triggers the violation**: n1 calls `AdvanceRound`, setting `proposer_round = 1`. Now the invariant's guard is true: `proposer_round > 0`. The check is `lat_le({1,3}, {1})` -- is `{1,3} ⊆ {1}`? **No.** The invariant fires.
+
+Why this reveals the bug? n1 enters round 1 with `decided_set = {1,3}` but `proposed_set = {1}`. In round 1, n1 will broadcast its round-1 values and eventually send an `AckReq` carrying a `proposed_set` that includes those values, but still missing `{3}`. Any acceptor whose `accepted_set` contains `{3}` will `NACK` rather than `ACK`, because `{3} ⊄ proposed_set`. n1 needs to absorb that `NACK` to grow `proposed_set` to include `{3}`, and then retry (only then can those acceptors `ACK` and the round-1 quorum form). But Bug 2 prevents absorption: the `NACK`'s `accepted_set` contains a value from `svs[0]` (a prior round), and the check asks `{3} ⊆ svs[1]` (which is false because `svs[1]` only contains round-1 values). The `NACK` sits in the buffer but the `upon receive NACK where SAFE(m)` condition is never satisfied. n1 can never absorb it, never grow `proposed_set` to include `{3}`, and never reach the quorum it needs to decide round-1 values.
+
+The invariant catches this not by observing the dropped `NACK` directly, but by detecting the structural consequence it leaves behind: a permanently mismatched pair of `decided_set` and `proposed_set`. The same invariant fires for Bug 1 as well -- the piggybacking scenario is identical, and Bug 1 prevents the repair just as surely as Bug 2 does, only via a different mechanism (blocking `AckReq`s rather than `NACK`s).
+
+## How the Bugs Were Found
+
+Both bugs were found by reasoning about what happens when `proposed_set` accumulates values across rounds. The generic `safety` invariant in the Quint spec does not fire for either bug, since both are liveness failures with no explicitly bad state. Once we had the hypothesis, we encoded it as an invariant and ran the simulator to get a concrete trace. Both invariants also fire for correct executions, so neither is a definitive bug detector on its own. What actually identifies the bugs is inspecting the trace alongside the `SAFE` definition and asking: can this gap ever be repaired? With the buggy variants the answer is no: Bug 1's `AckReq` gate blocks all round-1 responses; Bug 2's `NACK` filter will never process the `NACK` that would grow `proposed_set`. With the correct `SAFE` the gap is self-repairing.
+
+What simulation cannot do is formally verify that the liveness failure is *permanent and unavoidable* across all possible executions. That required a temporal model checker, which we cover next.
+
+## Formally Disproving Bug 1: A Temporal Counterexample from TLC
+
+Simulation showed us that Bug 1 exists, and reasoning told us why it is permanent. But we wanted a machine-checked witness, a fully explored execution where the model checker exhausts all behaviours and confirms the liveness failure is unavoidable. We expressed the failure as a temporal liveness property: once a node has broadcast its round-1 value, it must eventually decide on the round-1 values. Under Bug 1, this is violated unconditionally:
+
+```quint
+temporal inclusivity_liveness_alg4 =
+  leadsTo(n1.val_sent.contains(1), lat_le(R1_VALS, n1.decided_set))
+  and leadsTo(n2.val_sent.contains(1), lat_le(R1_VALS, n2.decided_set))
+```
+
+Here `val_sent_n1.contains(1)` means "n1 has broadcast its round-1 values" (1 is a round index, not a data value). `R1_VALS` is the set of values in the round-1 batch. No fairness assumption is needed: Bug 1's block is structural, independent of scheduling.
+
+The Choreo-based spec is a full-fidelity model of the protocol (it stores the complete message history to support rich simulation and state comparison). For exhaustive model checking we wanted a leaner target, so we wrote a minimal flat two-node spec that captures only the variables needed to express the property. TLC found a 27-step counterexample in 1.2 seconds, exhausting 4238 distinct states.
+
+### The counterexample
+
+TLC produces a lasso-shaped trace: a stem leading to a loop state that repeats forever without making progress. Here is the execution:
+
+**States 1–21: Round 0 completes correctly.**
+Both nodes RB-broadcast their round-0 value `{1}`, collect deliveries (`svs[r0] = {1}`, `proposed_set = {1}`), exchange `AckReq`s and `ACK`s, and decide `decided_set = {1}`. Both advance to `proposer_round = 1`, `safe_round = 1`. Round-0 work is complete.
+
+**States 22–27: Round 1  --  the bug triggers.**
+Both nodes RB-broadcast their round-1 value `{2}` and collect deliveries:
+
+- `val_sent = {0, 1}` (sent both rounds)
+- `svs[r1] = {2}`, `proposed_set = {1, 2}` (accumulated across rounds)
+- `brb_ready = {0, 1}`-both nodes are ready to send an `AckReq`
+
+Both nodes send an `AckReq` for round 1 carrying `proposed_set = {1, 2}`. For any acceptor to respond, the incoming `AckReq` must pass the `SAFE_A` gate. With `proposed_set = {1, 2}`, `svs[r0] = {1}`, `svs[r1] = {2}`:
+
+```
+SAFE_A({1,2}, svs[r0]={1}, svs[r1]={2})
+  = lat_le({1,2}, {1})  or  lat_le({1,2}, {2})
+  = ({1,2} ⊆ {1})       or  ({1,2} ⊆ {2})
+  = false               or  false
+  = false
+```
+
+**No acceptor responds to either `AckReq`. The system deadlocks.**
+
+**State 28: Stuttering**  --  no enabled transition leads to a decision. TLC represents this as a stutter loop (the system takes a self-loop step, repeating state 28 forever). The property `n1.val_sent.contains(1)` is true (nodes have broadcast their round-1 values), but `lat_le(R1_VALS, n1.decided_set)` never becomes true. The liveness property is violated.
+
+The bug's permanence is visible in the trace: `svs[r0]` and `svs[r1]` are sealed the moment RB completes and can never grow. No future event can make `SAFE_A({1,2}, {1}, {2})` return true. The system is frozen forever.
+
+### Confirming the fix: checking the correct `SAFE`
+
+A natural follow-up question: does TLC *fail* to find a counterexample when we use the correct `SAFE`? If Bug 1's block is the culprit, then replacing `SAFE_A` with the correct element-wise check should make the liveness property hold (and TLC should find no violation).
+
+We added a second variant identical to the original except that the acceptor's `RespondAckReq` gate uses the correct `SAFE` predicate instead of `SAFE_A`. We then wrote a companion property:
+
+```quint
+temporal inclusivity_liveness_correct =
+  (strongFair(step_n1, n1) and strongFair(step_n2, n2)) implies
+  (leadsTo(n1.val_sent.contains(1), lat_le(R1_VALS, n1.decided_set))
+   and leadsTo(n2.val_sent.contains(1), lat_le(R1_VALS, n2.decided_set)))
+```
+
+Unlike `inclusivity_liveness_alg4`, this property needs a fairness assumption: under the correct `SAFE`, liveness depends on fair scheduling, not structural necessity. Strong fairness is needed here rather than weak fairness because TLC's state space includes executions where other variables keep changing while a given node's step remains enabled but is never taken (weak fairness's obligation only fires when an action is *continuously* enabled, so a scheduler that briefly disables an action by modifying an unrelated variable can dodge the obligation indefinitely). Strong fairness closes this gap.
+
+TLC exhausted the full reachable state space -- 15,833 states generated, 3,381 distinct states, depth 33 -- and reported no violation in 2 seconds.
+
+The contrast with Bug 1 is telling: under `SAFE_A`, TLC's counterexample is a genuine structural deadlock (no enabled transition leads to a decision, regardless of scheduling). Under the correct `SAFE` with strong fairness, TLC finds no violation at all. That is the confirmation we were looking for.
+
+## The Fix
+
+The fix is straightforward: replace both single-round checks with the element-wise cross-round check, making `SAFE` and `SAFE_A` identical:
+
+```
+FUNCTION SAFE(m):
+  // A message is safe if every individual value it contains was disclosed
+  // in SOME round's svs. Proposed/accepted sets accumulate across rounds,
+  // so no single svs[r] can cover all values in a multi-round proposal.
+  if for every value v in lattice_element_in(m),
+      there EXISTS some round r such that v belongs to svs[r]:
+    return true
+  else:
+    return false
+```
+
+The conceptual shift is worth spelling out explicitly:
+
+**`SAFE` and `SAFE_A` are equivalent in GWTS.** In single-shot WTS there is only one round, so "subset of `svs[current_round]`" and "element exists in some round's SvS" are the same check. In GWTS, proposed/accepted sets accumulate values across multiple rounds. The correct check for both `SAFE` and `SAFE_A` is element-wise: `∀v ∈ lattice_element(m). ∃r. v ∈ svs[r]`. The apparent asymmetry in the original pseudocode is an artifact of the WTS single-round origin.
+
+## Conclusion
+
+Formal modelling tools like Quint are most valuable not as theorem provers but as *exploration engines*. You don't need to write a full safety proof to benefit from them. Running a few dozen random traces of a protocol specification (with safety invariants encoded as assertions) is often enough to surface the kinds of subtle corner cases that slip through manual review.
+
+In this case, two bugs in the `SAFE` predicates were present in the original paper's pseudocode, both invisible in the single-round setting but breaking the protocol in different ways in round 1 and beyond. The first bug (in the acceptor's `AckReq` gate) caused a catastrophic liveness failure: every `AckReq` sent after round 0 is silently discarded, no quorum ever forms, and the algorithm makes no further progress. The second bug (in the proposer's `NACK` filter) is less severe but still causes nodes to stall in specific interleavings. Both were identified by reasoning: encoding the expected stuck state as a hypothesis invariant and running the simulator quickly produces a confirming trace, but both invariants also fire in correct executions: the real insight comes from reasoning about whether the `SAFE` check allows the stuck state to resolve. Formally proving Bug 1's liveness failure required a model checker: once we stripped away the Choreo framework overhead into a minimal flat spec, TLC exhausted the full reachable state space in 1.2 seconds and produced a clean 27-step lasso counterexample -- round 0 completes, both nodes advance and broadcast their round-1 values, and then the system freezes permanently. Swapping in the correct `SAFE` and re-running with a strong-fairness assumption confirmed the fix: TLC found no violation.
+
+The fix was the same in both cases: replace the whole-set containment check with the element-wise cross-round check. One predicate, used in both roles.
+
+Two broader lessons stand out. First, multi-round protocols break single-round intuitions: accumulated state creates scenarios that simply cannot occur in single-shot algorithms, and any predicate ported from a single-round predecessor needs to be re-examined for whether it still holds element-wise across rounds. Second, two superficially similar bugs can have very different operational impact: the surface difference between `∃r. proposed_set ⊆ svs[r]` and `accepted_set ⊆ svs[current_round]` is small, but one causes total protocol failure after round 0 while the other degrades liveness only in specific interleavings.
+
+<Comments/>
