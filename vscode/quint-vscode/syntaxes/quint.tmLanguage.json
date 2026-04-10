@@ -44,7 +44,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.quint",
-					"match": "\\b(module|import|from|export|as|if|else|not|or|and|implies|iff|all|any|leadsTo)\\b"
+					"match": "\\b(module|import|from|export|as|if|else|not|or|and|implies|iff|all|any|leadsTo|strongFair|weakFair)\\b"
 				}
 			]
 		},
