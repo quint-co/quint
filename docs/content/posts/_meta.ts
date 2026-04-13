@@ -1,4 +1,5 @@
 export default {
+  generalized_lattice: '',
   zerocash: '',
   cognitive_debt: '',
   quint_connect_emerald: '',
