@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
+
 ### Security
 
 ## v0.32.0 -- 2026-03-31
