@@ -30,7 +30,7 @@ quint verify --init=invalidInit ../examples/language-features/booleans.qnt
 <!-- !test err invalid init -->
 ```
 error: [QNT404] Name 'invalidInit' not found
-error: name resolution failed
+error: Argument error
 ```
 
 

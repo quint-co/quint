@@ -398,9 +398,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-  const argsParsingResult = mergeInMany(
-    [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e))
-  )
+  const argsParsingResult = mergeInMany([
+    toExpr(prev, prev.args.init, { kind: 'action', flag: 'init' }),
+    toExpr(prev, prev.args.step, { kind: 'action', flag: 'step' }),
+    ...[invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e)),
+  ])
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
@@ -547,6 +549,20 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   const main = typechecked.modules.find(m => m.name === mainName)
   if (!main) {
     return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
+  }
+
+  // Validate that --init and --step don't resolve to state variables (same check as runSimulator)
+  for (const [name, flag] of [
+    [args.init, 'init'],
+    [args.step, 'step'],
+  ] as const) {
+    const checkResult = toExpr(typechecked, name, { kind: 'action', flag })
+    if (checkResult.isLeft()) {
+      return cliErr('Argument error', {
+        ...typechecked,
+        errors: [checkResult.value].map(mkErrorMessage(new Map())),
+      })
+    }
   }
 
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
