@@ -1,7 +1,7 @@
 ---
 title: "Two Bugs in the SAFE Predicate: Finding and Formally Verifying Liveness Failures in Byzantine Lattice Agreement"
-date: 2026-04-09
-excerpt: "We have modeled the Byzantine Generalized Lattice Agreement algorithm in Quint and found two bugs in the SAFE predicate"
+date: 2026-04-13
+excerpt: "Proving liveness failures in Byzantine Generalized Lattice Agreement algorithm with Quint."
 authors:
     - name: Carlos Rodriguez
 tags:
@@ -30,7 +30,7 @@ import { PostMeta } from '../../components/blog/PostMeta'
 
 Distributed consensus algorithms are notoriously difficult to get right. Even published, peer-reviewed pseudocode can harbour subtle errors that only surface under specific execution interleavings -- the kind of scenarios that are hard to construct by hand but easy to stumble into during automated exploration.
 
-This post tells the story of two such bugs. We were modelling the Generalized Wait Till Safe (GWTS) algorithm from the paper [*"Byzantine Generalized Lattice Agreement"*](https://arxiv.org/abs/1910.05768) (Di Luna, Anceaume, Querzoni, 2020) using Quint and our new [Choreo](https://github.com/informalsystems/choreo) framework for choreographing distributed protocols (repository available [here](https://github.com/informalsystems/generalised-byzantine-lattice-agreement/settings)). While encoding the algorithm in Quint, we found errors in both the `SAFE` function in Algorithm 3 (the proposer) and the `SAFE_A` function in Algorithm 4 (the acceptor), both inherited from the single-round WTS predecessor and both wrong for the multi-round GWTS setting, but in different ways and with different consequences.
+This post tells the story of two such bugs. We were modelling the Generalized Wait Till Safe (GWTS) algorithm from the paper [*"Byzantine Generalized Lattice Agreement"*](https://arxiv.org/abs/1910.05768) (Di Luna, Anceaume, Querzoni, 2020) using Quint and our new [Choreo](https://github.com/informalsystems/choreo) framework for choreographing distributed protocols (repository available [here](https://github.com/informalsystems/generalised-byzantine-lattice-agreement)). While encoding the algorithm in Quint, we found errors in both the `SAFE` function in Algorithm 3 (the proposer) and the `SAFE_A` function in Algorithm 4 (the acceptor), both inherited from the single-round WTS predecessor and both wrong for the multi-round GWTS setting, but in different ways and with different consequences.
 
 We will walk through: what the algorithm does, what each bug is and why it matters, how simulation traces make the bugs concrete, how temporal model checking with TLC formally verified the first bug by finding a lasso counterexample in the full reachable state space, and what the fix looks like.
 
@@ -221,31 +221,31 @@ What simulation cannot do is formally verify that the liveness failure is *perma
 
 ## Formally Disproving Bug 1: A Temporal Counterexample from TLC
 
-Simulation showed us that Bug 1 exists, and reasoning told us why it is permanent. But we wanted a machine-checked witness, a fully explored execution where the model checker exhausts all behaviours and confirms the liveness failure is unavoidable. We expressed the failure as a temporal liveness property: once a node has broadcast its round-1 value, it must eventually decide on the round-1 values. Under Bug 1, this is violated unconditionally:
+Simulation showed us that Bug 1 exists, and reasoning told us why it is permanent. But we wanted a machine-checked witness, a fully explored execution where the model checker exhausts all behaviours and confirms the liveness failure is unavoidable. We expressed the failure as a temporal liveness property: once a node has broadcast its round-1 value, it must eventually decide on the round-1 values. Both the buggy and correct specs use the same property:
 
 ```quint
 temporal inclusivity_liveness_alg4 =
-  leadsTo(n1.val_sent.contains(1), lat_le(R1_VALS, n1.decided_set))
-  and leadsTo(n2.val_sent.contains(1), lat_le(R1_VALS, n2.decided_set))
+  (strongFair(step_n1, n1) and strongFair(step_n2, n2)) implies
+  ((n1.val_sent.contains(1) leadsTo lat_le(R1_VALS, n1.decided_set))
+    and (n2.val_sent.contains(1) leadsTo lat_le(R1_VALS, n2.decided_set)))
 ```
 
-Here `val_sent_n1.contains(1)` means "n1 has broadcast its round-1 values" (1 is a round index, not a data value). `R1_VALS` is the set of values in the round-1 batch. No fairness assumption is needed: Bug 1's block is structural, independent of scheduling.
+Here `val_sent.contains(1)` means "the node has broadcast its round-1 values" (1 is a round index, not a data value). `R1_VALS` is the set of values in the round-1 batch. Strong fairness is the right assumption for a liveness property like this: weak fairness is not enough, because a scheduler that briefly disables an action by modifying an unrelated variable can dodge the weak-fairness obligation indefinitely. The assumption does not hide Bug 1: by the time the deadlock takes hold, both nodes have already broadcast their round-1 values, so `val_sent.contains(1)` is genuinely true. In the deadlock state all actions are permanently disabled, so the strong fairness condition is satisfied vacuously, but the liveness goal (deciding `R1_VALS`) is never met. TLC sees this as a genuine counterexample and reports the violation.
 
-The Choreo-based spec is a full-fidelity model of the protocol (it stores the complete message history to support rich simulation and state comparison). For exhaustive model checking we wanted a leaner target, so we wrote a minimal flat two-node spec that captures only the variables needed to express the property. TLC found a 27-step counterexample in 1.2 seconds, exhausting 4238 distinct states.
+The Choreo-based spec is a full-fidelity model of the protocol (it stores the complete message history to support rich simulation and state comparison). For exhaustive model checking we wanted a leaner target, so we wrote a minimal flat two-node spec that captures only the variables needed to express the property. TLC found a 27-step counterexample in 1 second, across 2119 distinct states checked in 2 fairness branches.
 
 ### The counterexample
 
 TLC produces a lasso-shaped trace: a stem leading to a loop state that repeats forever without making progress. Here is the execution:
 
-**States 1–21: Round 0 completes correctly.**
-Both nodes RB-broadcast their round-0 value `{1}`, collect deliveries (`svs[r0] = {1}`, `proposed_set = {1}`), exchange `AckReq`s and `ACK`s, and decide `decided_set = {1}`. Both advance to `proposer_round = 1`, `safe_round = 1`. Round-0 work is complete.
+**States 1–17: Round 0 completes correctly.**
+Both nodes RB-broadcast their round-0 value `{1}`, collect deliveries (`svs[r0] = {1}`, `proposed_set = {1}`), exchange `AckReq`s and `ACK`s, and decide `decided_set = {1}`. Both advance `safe_round` to 1. Round-0 work is complete.
 
-**States 22–27: Round 1  --  the bug triggers.**
-Both nodes RB-broadcast their round-1 value `{2}` and collect deliveries:
-
+**States 18–27: Round 1 —- the bug triggers.**
+Both nodes advance to `proposer_round = 1` and RB-broadcast their round-1 value `{2}`. After collecting deliveries:
 - `val_sent = {0, 1}` (sent both rounds)
 - `svs[r1] = {2}`, `proposed_set = {1, 2}` (accumulated across rounds)
-- `brb_ready = {0, 1}`-both nodes are ready to send an `AckReq`
+- `brb_ready = {0, 1}`—-both nodes are ready to send an `AckReq`
 
 Both nodes send an `AckReq` for round 1 carrying `proposed_set = {1, 2}`. For any acceptor to respond, the incoming `AckReq` must pass the `SAFE_A` gate. With `proposed_set = {1, 2}`, `svs[r0] = {1}`, `svs[r1] = {2}`:
 
@@ -259,7 +259,7 @@ SAFE_A({1,2}, svs[r0]={1}, svs[r1]={2})
 
 **No acceptor responds to either `AckReq`. The system deadlocks.**
 
-**State 28: Stuttering**  --  no enabled transition leads to a decision. TLC represents this as a stutter loop (the system takes a self-loop step, repeating state 28 forever). The property `n1.val_sent.contains(1)` is true (nodes have broadcast their round-1 values), but `lat_le(R1_VALS, n1.decided_set)` never becomes true. The liveness property is violated.
+**State 28: Stuttering** —- no enabled transition leads to a decision. TLC represents this as a stutter loop (the system takes a self-loop step, repeating state 28 forever). The property `n1.val_sent.contains(1)` is true (nodes have broadcast their round-1 values), but `lat_le(R1_VALS, n1.decided_set)` never becomes true. The liveness property is violated.
 
 The bug's permanence is visible in the trace: `svs[r0]` and `svs[r1]` are sealed the moment RB completes and can never grow. No future event can make `SAFE_A({1,2}, {1}, {2})` return true. The system is frozen forever.
 
@@ -267,20 +267,11 @@ The bug's permanence is visible in the trace: `svs[r0]` and `svs[r1]` are sealed
 
 A natural follow-up question: does TLC *fail* to find a counterexample when we use the correct `SAFE`? If Bug 1's block is the culprit, then replacing `SAFE_A` with the correct element-wise check should make the liveness property hold (and TLC should find no violation).
 
-We added a second variant identical to the original except that the acceptor's `RespondAckReq` gate uses the correct `SAFE` predicate instead of `SAFE_A`. We then wrote a companion property:
+We added a second variant specification identical to the original except that the acceptor's `RespondAckReq` gate uses the correct `SAFE` predicate instead of `SAFE_A`. It uses the same temporal property.
 
-```quint
-temporal inclusivity_liveness_correct =
-  (strongFair(step_n1, n1) and strongFair(step_n2, n2)) implies
-  (leadsTo(n1.val_sent.contains(1), lat_le(R1_VALS, n1.decided_set))
-   and leadsTo(n2.val_sent.contains(1), lat_le(R1_VALS, n2.decided_set)))
-```
+TLC exhausted the full reachable state space--15,833 states generated, 3,381 distinct states, depth 33--and reported no violation in 2 seconds.
 
-Unlike `inclusivity_liveness_alg4`, this property needs a fairness assumption: under the correct `SAFE`, liveness depends on fair scheduling, not structural necessity. Strong fairness is needed here rather than weak fairness because TLC's state space includes executions where other variables keep changing while a given node's step remains enabled but is never taken (weak fairness's obligation only fires when an action is *continuously* enabled, so a scheduler that briefly disables an action by modifying an unrelated variable can dodge the obligation indefinitely). Strong fairness closes this gap.
-
-TLC exhausted the full reachable state space -- 15,833 states generated, 3,381 distinct states, depth 33 -- and reported no violation in 2 seconds.
-
-The contrast with Bug 1 is telling: under `SAFE_A`, TLC's counterexample is a genuine structural deadlock (no enabled transition leads to a decision, regardless of scheduling). Under the correct `SAFE` with strong fairness, TLC finds no violation at all. That is the confirmation we were looking for.
+The contrast is telling: under `SAFE_A`, TLC finds a genuine structural deadlock regardless of scheduling. Under the correct `SAFE`, TLC finds no violation at all. That is the confirmation we were looking for.
 
 ## The Fix
 
@@ -306,7 +297,7 @@ The conceptual shift is worth spelling out explicitly:
 
 Formal modelling tools like Quint are most valuable not as theorem provers but as *exploration engines*. You don't need to write a full safety proof to benefit from them. Running a few dozen random traces of a protocol specification (with safety invariants encoded as assertions) is often enough to surface the kinds of subtle corner cases that slip through manual review.
 
-In this case, two bugs in the `SAFE` predicates were present in the original paper's pseudocode, both invisible in the single-round setting but breaking the protocol in different ways in round 1 and beyond. The first bug (in the acceptor's `AckReq` gate) caused a catastrophic liveness failure: every `AckReq` sent after round 0 is silently discarded, no quorum ever forms, and the algorithm makes no further progress. The second bug (in the proposer's `NACK` filter) is less severe but still causes nodes to stall in specific interleavings. Both were identified by reasoning: encoding the expected stuck state as a hypothesis invariant and running the simulator quickly produces a confirming trace, but both invariants also fire in correct executions: the real insight comes from reasoning about whether the `SAFE` check allows the stuck state to resolve. Formally proving Bug 1's liveness failure required a model checker: once we stripped away the Choreo framework overhead into a minimal flat spec, TLC exhausted the full reachable state space in 1.2 seconds and produced a clean 27-step lasso counterexample -- round 0 completes, both nodes advance and broadcast their round-1 values, and then the system freezes permanently. Swapping in the correct `SAFE` and re-running with a strong-fairness assumption confirmed the fix: TLC found no violation.
+In this case, two bugs in the `SAFE` predicates were present in the original paper's pseudocode, both invisible in the single-round setting but breaking the protocol in different ways in round 1 and beyond. The first bug (in the acceptor's `AckReq` gate) caused a catastrophic liveness failure: every `AckReq` sent after round 0 is silently discarded, no quorum ever forms, and the algorithm makes no further progress. The second bug (in the proposer's `NACK` filter) is less severe but still causes nodes to stall in specific interleavings. Both were identified by reasoning: encoding the expected stuck state as a hypothesis invariant and running the simulator quickly produces a confirming trace, but both invariants also fire in correct executions: the real insight comes from reasoning about whether the `SAFE` check allows the stuck state to resolve. Formally proving Bug 1's liveness failure required a model checker: once we stripped away the Choreo framework overhead into a minimal flat spec, TLC exhausted the full reachable state space and produced a lasso counterexample: round 0 completes, both nodes advance and broadcast their round-1 values, and then the system freezes permanently. Both specs use the same temporal property with a strong-fairness assumption; the bug is still caught because by the time the deadlock takes hold, both nodes have already broadcast their round-1 values, making the liveness antecedent genuinely true. Swapping in the correct `SAFE` and re-running confirmed the fix: TLC exhausted the state space and found no violation.
 
 The fix was the same in both cases: replace the whole-set containment check with the element-wise cross-round check. One predicate, used in both roles.
 
