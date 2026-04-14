@@ -233,7 +233,7 @@ quint compile --target json --flatten ../examples/language-features/instances.qn
 
 <!-- !test out compile flatten=true -->
 ```
-51
+47
 ```
 
 ### Does not flatten modules on compile with `--flatten=false`
@@ -245,7 +245,7 @@ quint compile --target json --flatten=false ../examples/language-features/instan
 
 <!-- !test out compile flatten=false -->
 ```
-39
+35
 ```
 
 ### Errors are reported in the right file
