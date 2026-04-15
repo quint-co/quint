@@ -553,21 +553,26 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 
   const extraDefsAsText: string[] = []
 
-  // init/step are only needed for TLA+ output and verification, not for JSON compilation (#1584)
+  // init/step are required for TLA+ and verification (default to 'init'/'step'),
+  // but optional for JSON compilation (#1584).
   if (args.target !== 'json') {
-    for (const [name, flag] of [
-      [args.init, 'init'],
-      [args.step, 'step'],
-    ] as const) {
-      const checkResult = toExpr(typechecked, name, { kind: 'action', flag })
-      if (checkResult.isLeft()) {
-        return cliErr('Argument error', {
-          ...typechecked,
-          errors: [checkResult.value].map(mkErrorMessage(new Map())),
-        })
-      }
+    args.init = args.init ?? 'init'
+    args.step = args.step ?? 'step'
+  }
+
+  for (const [name, flag] of [
+    [args.init, 'init'],
+    [args.step, 'step'],
+  ] as const) {
+    if (name === undefined) continue
+    const checkResult = toExpr(typechecked, name, { kind: 'action', flag })
+    if (checkResult.isLeft()) {
+      return cliErr('Argument error', {
+        ...typechecked,
+        errors: [checkResult.value].map(mkErrorMessage(new Map())),
+      })
     }
-    extraDefsAsText.push(`action q::init = ${args.init}`, `action q::step = ${args.step}`)
+    extraDefsAsText.push(`action q::${flag} = ${name}`)
   }
 
   const [invariantString, invariantsList] = getInvariants(typechecked.args)

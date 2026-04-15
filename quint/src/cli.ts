@@ -49,12 +49,10 @@ const compileOpts = (yargs: any) =>
     .option('init', {
       desc: 'name of the initializer action',
       type: 'string',
-      default: 'init',
     })
     .option('step', {
       desc: 'name of the step action',
       type: 'string',
-      default: 'step',
     })
     .option('invariant', {
       desc: 'the invariants to check, separated by commas',
@@ -346,6 +344,8 @@ const verifyCmd = {
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     compileOpts(yargs)
+      .option('init', { default: 'init' })
+      .option('step', { default: 'step' })
       .option('invariants', {
         desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
