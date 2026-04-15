@@ -19,7 +19,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         )
     };
 
-    let parsed = helpers::parse(&quint_content(input), "init", "step", None)?;
+    let parsed = helpers::parse(&quint_content(input), None)?;
     let input_def = parsed.find_definition_by_name("expr")?;
     let value = run(&parsed.table, &input_def.expr);
 
@@ -28,7 +28,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         return Ok(());
     }
 
-    let parsed_expected = helpers::parse(&quint_content(expected), "init", "step", None)?;
+    let parsed_expected = helpers::parse(&quint_content(expected), None)?;
     let expected_def = parsed_expected.find_definition_by_name("expr")?;
     let expected_value = run(&parsed_expected.table, &expected_def.expr).map(|v| v.normalize());
 
@@ -52,7 +52,7 @@ fn eval_expr(input: &str) -> EvalResult {
         }}"
     );
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
+    let parsed = helpers::parse(&quint_content, None).unwrap();
     let input_def = parsed.find_definition_by_name("expr").unwrap();
     run(&parsed.table, &input_def.expr)
 }
@@ -68,7 +68,7 @@ fn eval_run(callee: &str, input: &str) -> EvalResult {
         )
     };
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
+    let parsed = helpers::parse(&quint_content, None).unwrap();
     let run_def = parsed.find_definition_by_name(callee).unwrap();
     let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
@@ -94,7 +94,7 @@ fn assert_var_after_run(
         )
     };
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(&quint_content, None)?;
     let run_def = parsed.find_definition_by_name(callee)?;
     let mut interpreter = Interpreter::new(parsed.table.clone());
     let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
@@ -112,7 +112,7 @@ fn assert_var_after_run(
         .borrow();
     let var_value = var_value.clone().value.unwrap().normalize();
 
-    let parsed_expected = helpers::parse(&quint_content, "init", "step", None)?;
+    let parsed_expected = helpers::parse(&quint_content, None)?;
     let expected_def = parsed_expected.find_definition_by_name("expected")?;
     let expected_value = run(&parsed_expected.table, &expected_def.expr)?.normalize();
 

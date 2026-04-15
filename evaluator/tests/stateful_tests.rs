@@ -7,7 +7,7 @@ use quint_evaluator::{
 
 macro_rules! run_test {
     ($content:expr, $expected_values:expr) => {{
-        let parsed = helpers::parse($content, "init", "step", None)?;
+        let parsed = helpers::parse($content, None)?;
         let init_def = parsed.find_definition_by_name("init")?;
 
         let mut interpreter = Interpreter::new(parsed.table.clone());

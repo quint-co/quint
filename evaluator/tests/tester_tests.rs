@@ -6,7 +6,7 @@ use std::path::Path;
 /// Helper to parse a test definition from a Quint file
 fn parse_test_from_path(file_path: &Path, test_name: &str) -> Result<TestCase, Box<dyn Error>> {
     // Use helpers to compile the file
-    let output = helpers::parse(&std::fs::read_to_string(file_path)?, "init", "step", None)?;
+    let output = helpers::parse(&std::fs::read_to_string(file_path)?, None)?;
 
     // Find the test definition
     let test_op_def = output.find_definition_by_name(test_name)?;
