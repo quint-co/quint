@@ -555,7 +555,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 
   // init/step are required for TLA+ and verification (default to 'init'/'step'),
   // but optional for JSON compilation (#1584).
-  if (args.target !== 'json') {
+  // When flattening, init/step are needed: imported definitions
+  // are only included if referenced, so without q::init/q::step,
+  // definitions from imported modules would be silently dropped.
+  if (args.target !== 'json' || args.flatten !== false) {
     args.init = args.init ?? 'init'
     args.step = args.step ?? 'step'
   }
