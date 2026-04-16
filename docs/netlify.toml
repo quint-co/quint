@@ -1,6 +1,5 @@
 [build]
-  publish = "public"
-  command = "echo 'No build needed — all traffic is redirected to quint.sh'"
+  command = "npm install && next build"
 
 [[redirects]]
   from = "/choreo"
