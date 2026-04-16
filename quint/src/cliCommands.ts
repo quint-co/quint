@@ -551,11 +551,23 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
   }
 
-  // Validate that --init and --step don't resolve to state variables (same check as runSimulator)
+  const extraDefsAsText: string[] = []
+
+  // init/step are required for TLA+ and verification (default to 'init'/'step'),
+  // but optional for JSON compilation (#1584).
+  // When flattening, init/step are needed: imported definitions
+  // are only included if referenced, so without q::init/q::step,
+  // definitions from imported modules would be silently dropped.
+  if (args.target !== 'json' || args.flatten !== false) {
+    args.init = args.init ?? 'init'
+    args.step = args.step ?? 'step'
+  }
+
   for (const [name, flag] of [
     [args.init, 'init'],
     [args.step, 'step'],
   ] as const) {
+    if (name === undefined) continue
     const checkResult = toExpr(typechecked, name, { kind: 'action', flag })
     if (checkResult.isLeft()) {
       return cliErr('Argument error', {
@@ -563,9 +575,8 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
         errors: [checkResult.value].map(mkErrorMessage(new Map())),
       })
     }
+    extraDefsAsText.push(`action q::${flag} = ${name}`)
   }
-
-  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
 
   const [invariantString, invariantsList] = getInvariants(typechecked.args)
   if (invariantsList.length > 0) {

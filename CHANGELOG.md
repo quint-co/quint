@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
+- `quint compile --target=json` no longer requires `init` and `step` to exist in the module (#1971)
 
 ### Security
 

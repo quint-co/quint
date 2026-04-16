@@ -245,7 +245,7 @@ quint compile --target json --flatten=false ../examples/language-features/instan
 
 <!-- !test out compile flatten=false -->
 ```
-39
+35
 ```
 
 ### Errors are reported in the right file

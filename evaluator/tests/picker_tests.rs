@@ -7,7 +7,7 @@ use quint_evaluator::{
 
 macro_rules! run_test {
     ($content:expr, $expected_value:expr) => {{
-        let parsed = helpers::parse($content, "init", "step", None)?;
+        let parsed = helpers::parse($content, None)?;
         let init_def = parsed.find_definition_by_name("init")?;
 
         let mut interpreter = Interpreter::new(parsed.table.clone());
@@ -98,7 +98,7 @@ fn powerset_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = subset' = subset
         }";
 
-    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(quint_content, None)?;
     let init_def = parsed.find_definition_by_name("init")?;
 
     let mut interpreter = Interpreter::new(parsed.table.clone());
@@ -130,7 +130,7 @@ fn powerset_very_large_set_pick_test() -> Result<(), Box<dyn std::error::Error>>
           action step = subset' = subset
         }";
 
-    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(quint_content, None)?;
     let init_def = parsed.find_definition_by_name("init")?;
 
     let mut interpreter = Interpreter::new(parsed.table.clone());
@@ -157,7 +157,7 @@ fn int_pick_can_be_negative() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x
         }";
 
-    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(quint_content, None)?;
     let init_def = parsed.find_definition_by_name("init")?;
     let mut interpreter = Interpreter::new(parsed.table.clone());
 
@@ -213,7 +213,7 @@ fn nat_pick_is_non_negative() -> Result<(), Box<dyn std::error::Error>> {
           action step = x' = x
         }";
 
-    let parsed = helpers::parse(quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(quint_content, None)?;
     let init_def = parsed.find_definition_by_name("init")?;
     let mut interpreter = Interpreter::new(parsed.table.clone());
 

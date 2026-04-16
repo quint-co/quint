@@ -10,8 +10,6 @@ fn run_in_rust(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
-          val init = true
-          val step = true
         }}"
     );
 
@@ -46,8 +44,6 @@ fn run_in_quint_repl(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
-          val init = true
-          val step = true
         }}"
     );
 
