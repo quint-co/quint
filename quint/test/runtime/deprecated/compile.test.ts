@@ -961,7 +961,7 @@ describe('compiling specs to runtime values', () => {
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
         .mapLeft(m =>
-          assert.equal(m, '[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false')
+          assert.equal(m, 'QNT513: Cannot continue in `then` because the highlighted expression evaluated to false')
         )
     })
 
@@ -1001,7 +1001,7 @@ describe('compiling specs to runtime values', () => {
 
       evalRun('run1', input)
         .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
-        .mapLeft(m => assert.equal(m, '[QNT513] Reps loop could not continue after iteration #6 evaluated to false'))
+        .mapLeft(m => assert.equal(m, 'QNT513: Reps loop could not continue after iteration #6 evaluated to false'))
     })
 
     it('fail', () => {

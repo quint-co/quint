@@ -13,7 +13,7 @@ describe('errorReporter', () => {
 
   it('highlights the middle line', () => {
     const message: ErrorMessage = {
-      explanation: '[QNT000] error explanation',
+      explanation: 'QNT000: error explanation',
       locs: [
         {
           source: 'file',
@@ -35,7 +35,7 @@ describe('errorReporter', () => {
 
   it('highlights the first 2 lines', () => {
     const message: ErrorMessage = {
-      explanation: '[QNT000] error explanation',
+      explanation: 'QNT000: error explanation',
       locs: [
         {
           source: 'file',
@@ -59,7 +59,7 @@ describe('errorReporter', () => {
 
   it('highlights a single char when loc has no end', () => {
     const message: ErrorMessage = {
-      explanation: '[QNT000] error explanation',
+      explanation: 'QNT000: error explanation',
       locs: [
         {
           source: 'file',
@@ -80,7 +80,7 @@ describe('errorReporter', () => {
 
   it('uses column information when index is 0', () => {
     const message: ErrorMessage = {
-      explanation: '[QNT000] error explanation',
+      explanation: 'QNT000: error explanation',
       locs: [
         {
           source: 'file',

@@ -23,13 +23,13 @@ import lineColumn from 'line-column'
 
 /**
  * Extract error code from error explanation string.
- * Error explanations follow the format: "[CODE] message"
+ * Error explanations follow the format: "CODE: message"
  *
  * @param explanation - the error explanation string
  * @returns the error code, or 'QNT000' if not found
  */
 function extractErrorCode(explanation: string): string {
-  const match = explanation.match(/\[([^\]]+)\]/)
+  const match = explanation.match(/^(QNT[0-9]{3}):/)
   return match?.[1] || 'QNT000'
 }
 
@@ -40,7 +40,7 @@ function extractErrorCode(explanation: string): string {
  * @returns the explanation without the error code prefix
  */
 function stripErrorCode(explanation: string): string {
-  return explanation.replace(/\[[^\]]+\]\s*/, '')
+  return explanation.replace(/^QNT[0-9]{3}:\s*/, '')
 }
 
 /**

@@ -444,7 +444,7 @@ function setupParser(
 
       const code = (msg.match(/QNT\d\d\d/)?.[0] as ErrorCode) ?? 'QNT000'
 
-      errors.push({ code, message: msg.replace(`[${code}] `, ''), reference: id })
+      errors.push({ code, message: msg.replace(`${code}: `, '').replace(`[${code}] `, ''), reference: id })
     },
   }
 

@@ -121,7 +121,7 @@ describe('parseType', () => {
     type.mapLeft(error =>
       assert.deepEqual(
         error[0].explanation,
-        '[QNT009] Use square brackets instead of parenthesis for type application: Set[int, bool]'
+        'QNT009: Use square brackets instead of parenthesis for type application: Set[int, bool]'
       )
     )
   })
