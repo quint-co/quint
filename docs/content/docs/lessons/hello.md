@@ -68,7 +68,7 @@ All state variables require a type. We use `str`, that is, the string type.
 
 ```quint
 
-    // the state variable to keep the out read by the user
+    // the state variable to keep the output read by the user
     var readByUser: str
 ```
 
