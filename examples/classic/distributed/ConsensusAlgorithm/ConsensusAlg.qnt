@@ -99,11 +99,9 @@ module ConsensusAlg {
     val allProposalValues = Procs.map(process => procState.get(process).proposalValue)
 
     allProposalValues.size() == 1 implies
-      val decisionValue = allProposalValues.getOnlyElement()
-
       Procs.exclude(crashed).forall(process => {
         match procState.get(process).decision {
-          | Some(decidedValue) => decidedValue == decisionValue
+          | Some(decidedValue) => allProposalValues.contains(decidedValue)
           | None => true
         }
       })
