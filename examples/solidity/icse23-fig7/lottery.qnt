@@ -1,4 +1,10 @@
 // -*- mode: Bluespec; -*-
+/**
+ * DISCLAIMER: This specification uses integers larger than 64 bits.
+ * Big integers are only supported by Apalache (`quint verify`) and the
+ * deprecated TypeScript evaluator (`quint run/test --backend=typescript`).
+ * See https://github.com/informalsystems/quint/releases/tag/v0.31.0
+ */
 // A Quint version of the contract presented in Figure 7 of the paper:
 //
 // https://github.com/ZhangZhuoSJTU/Web3Bugs/blob/main/papers/icse23.pdf
@@ -234,10 +240,13 @@ module lotteryMempool {
     }
 
     // an auxiliary action that assigns variables from a method execution result
-    action fromResult(tx: Transaction, r: LotteryResult): bool = all {
-        val status = if (r._1 != "") r._1 else "success"
-        lastTx' = tx.with("status", status),
-        lotteryState' = r._2,
+    action fromResult(tx: Transaction, r: LotteryResult): bool = {
+        val (errorMsg, newState) = r
+        val status = if (errorMsg != "") errorMsg else "success"
+        all {
+          lastTx' = tx.with("status", status),
+          lotteryState' = newState,
+        }
     }
 
     // commit a transaction from the memory pool

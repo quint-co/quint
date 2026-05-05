@@ -50,7 +50,7 @@ syn keyword quintDecl module import from export const var val def pure nondet ac
 
 " standard operators
 syn keyword quintStd Set List Map Rec Tup
-syn keyword quintStd not and or iff implies all any as
+syn keyword quintStd not and or iff implies all any as leadsTo
 
 " curly braces
 syn region quintBlock start="{" end="}" fold transparent contains=ALLBUT,quintCurlyError

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, Entity } from './base'
+import { Effect, EffectComponent, Entity } from './base'
 import { EffectListener } from '../generated/EffectListener'
 import * as p from '../generated/EffectParser'
 
@@ -26,6 +26,8 @@ export class ToEffectVisitor implements EffectListener {
 
   // Stack of lists of effects, each list will hold the effects of an arrow effect
   private arrowEffectsStack: Effect[][] = []
+  // Stack of component lists, one per nested concreteComponents rule
+  private componentsStack: EffectComponent[][] = []
   private entitiesStack: Entity[] = []
   private stateVars: string[] = []
   private idCounter: bigint = 0n
@@ -38,50 +40,28 @@ export class ToEffectVisitor implements EffectListener {
     }
   }
 
-  exitReadOnly() {
+  enterConcreteComponents() {
+    this.componentsStack.push([])
+  }
+
+  exitConcreteComponents() {
+    const components = this.componentsStack.pop()!
+    this.pushEffect({ kind: 'concrete', components })
+  }
+
+  exitReadComponent() {
     const entity = this.entitiesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'read', entity: entity }] }
-    this.pushEffect(effect)
+    this.componentsStack[this.componentsStack.length - 1].push({ kind: 'read', entity })
   }
 
-  exitUpdateOnly() {
+  exitUpdateComponent() {
     const entity = this.entitiesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'update', entity: entity }] }
-    this.pushEffect(effect)
+    this.componentsStack[this.componentsStack.length - 1].push({ kind: 'update', entity })
   }
 
-  exitTemporalOnly() {
+  exitTemporalComponent() {
     const entity = this.entitiesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'temporal', entity: entity }] }
-    this.pushEffect(effect)
-  }
-
-  exitReadAndUpdate() {
-    const update = this.entitiesStack.pop()!
-    const read = this.entitiesStack.pop()!
-
-    const effect: Effect = {
-      kind: 'concrete',
-      components: [
-        { kind: 'read', entity: read },
-        { kind: 'update', entity: update },
-      ],
-    }
-    this.pushEffect(effect)
-  }
-
-  exitReadAndTemporal() {
-    const temporal = this.entitiesStack.pop()!
-    const read = this.entitiesStack.pop()!
-
-    const effect: Effect = {
-      kind: 'concrete',
-      components: [
-        { kind: 'read', entity: read },
-        { kind: 'temporal', entity: temporal },
-      ],
-    }
-    this.pushEffect(effect)
+    this.componentsStack[this.componentsStack.length - 1].push({ kind: 'temporal', entity })
   }
 
   exitPure() {

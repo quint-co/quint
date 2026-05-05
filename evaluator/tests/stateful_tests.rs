@@ -2,16 +2,21 @@ use quint_evaluator::{
     evaluator::{Env, Interpreter},
     helpers,
     value::Value,
+    Verbosity,
 };
 
 macro_rules! run_test {
     ($content:expr, $expected_values:expr) => {{
-        let parsed = helpers::parse($content, "init", "step", None)?;
+        let parsed = helpers::parse($content, None)?;
         let init_def = parsed.find_definition_by_name("init")?;
 
-        let mut interpreter = Interpreter::new(&parsed.table);
+        let mut interpreter = Interpreter::new(parsed.table.clone());
         // Set a specific seed so different runs generate the same result
-        let mut env = Env::with_rand_state(interpreter.var_storage.clone(), 123_456);
+        let mut env = Env::with_rand_state(
+            interpreter.var_storage.clone(),
+            123_456,
+            Verbosity::default(),
+        );
 
         let init = interpreter.eval(&mut env, init_def.expr.clone());
         assert_eq!(init.unwrap(), Value::bool(true));

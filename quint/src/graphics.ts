@@ -22,6 +22,7 @@ import {
   nest,
   parens,
   richtext,
+  space,
   text,
   textify,
 } from './prettierimp'
@@ -34,6 +35,7 @@ import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'
 import { simplifyRow } from './types/simplification'
+import { DebugMessage } from './itf'
 
 /**
  * An abstraction of a Console of bounded text width.
@@ -302,8 +304,10 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
 export function printTrace(
   console: ConsoleBox,
   states: QuintEx[],
+  diagnostics: DebugMessage[][],
   frames: ExecutionFrame[],
-  hideVars: string[] = []
+  hideVars: string[] = [],
+  pendingDiagnostics?: DebugMessage[]
 ): void {
   const b = chalk.bold
 
@@ -334,10 +338,34 @@ export function printTrace(
       filteredState = { ...state, args: filteredArgs }
     }
 
+    if (index < diagnostics.length && diagnostics[index].length > 0) {
+      for (const msg of diagnostics[index]) {
+        const doc: Doc = group([brackets(text('DEBUG')), space, text(msg.label), line(), prettyQuintEx(msg.value)])
+        console.out(format(console.width, 0, doc))
+        console.out('\n')
+      }
+      console.out('\n')
+    }
+
     const stateDoc: Doc = [group([brackets(richtext(b, `State ${index}`)), line()]), prettyQuintEx(filteredState)]
     console.out(format(console.width, 0, stateDoc))
     console.out('\n\n')
   })
+
+  if (pendingDiagnostics && pendingDiagnostics.length > 0) {
+    for (const msg of pendingDiagnostics) {
+      const doc: Doc = group([
+        richtext(chalk.yellow, '[DEBUG]'),
+        space,
+        richtext(chalk.yellow, msg.label),
+        line(),
+        prettyQuintEx(msg.value),
+      ])
+      console.out(format(console.width, 0, doc))
+      console.out('\n')
+    }
+    console.out('\n')
+  }
 }
 
 // a helper function to produce specific indentation

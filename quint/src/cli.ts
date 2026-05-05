@@ -11,7 +11,7 @@
  */
 
 import os from 'os'
-import yargs from 'yargs/yargs'
+import yargs from 'yargs'
 
 import {
   CLIProcedure,
@@ -49,12 +49,10 @@ const compileOpts = (yargs: any) =>
     .option('init', {
       desc: 'name of the initializer action',
       type: 'string',
-      default: 'init',
     })
     .option('step', {
       desc: 'name of the step action',
       type: 'string',
-      default: 'step',
     })
     .option('invariant', {
       desc: 'the invariants to check, separated by commas',
@@ -170,6 +168,17 @@ const replCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
         default: verbosity.defaultLevel,
+      })
+      .option('seed', {
+        desc: 'random seed to use for non-deterministic choice',
+        type: 'string',
+      })
+      .coerce('seed', coerceSeed)
+      .option('backend', {
+        desc: 'the backend to use for evaluation',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'rust',
       }),
   handler: runRepl,
 }
@@ -194,9 +203,8 @@ const testCmd = {
       })
       .hide('output')
       .option('max-samples', {
-        desc: 'the maximum number of successful runs to try for every randomized test',
+        desc: 'the maximum number of successful runs to try for every randomized test (default: 1 when --seed is set, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
@@ -218,13 +226,18 @@ const testCmd = {
       .option('match', {
         desc: 'a string or regex that selects names to use as tests',
         type: 'string',
+      })
+      .option('backend', {
+        desc: 'the backend to use for tests',
+        type: 'string',
+        choices: ['typescript', 'rust'],
+        default: 'rust',
       }),
   handler: (args: any) => {
     if (args.output != null) {
       args.outItf = args['out-itf'] = args.output
       delete args.output
     }
-
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult)
   },
 }
@@ -244,9 +257,8 @@ const runCmd = {
         type: 'string',
       })
       .option('max-samples', {
-        desc: 'the maximum number of runs to attempt before giving up',
+        desc: 'the maximum number of runs to attempt before giving up (default: 1 if --seed is supplied, 10000 otherwise)',
         type: 'number',
-        default: 10000,
       })
       .option('n-traces', {
         desc: 'how many traces to generate (only affects output to out-itf)',
@@ -312,7 +324,7 @@ const runCmd = {
         desc: 'the backend to use for simulation',
         type: 'string',
         choices: ['typescript', 'rust'],
-        default: 'typescript',
+        default: 'rust',
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
@@ -321,8 +333,9 @@ const runCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
-    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult),
+  handler: (args: any) => {
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult)
+  },
 }
 
 // construct verify commands with yargs
@@ -331,6 +344,8 @@ const verifyCmd = {
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     compileOpts(yargs)
+      .option('init', { default: 'init' })
+      .option('step', { default: 'step' })
       .option('invariants', {
         desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
@@ -361,7 +376,6 @@ const verifyCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-        default: verbosity.defaultLevel,
       })
       .option('apalache-version', {
         desc: 'The version of Apalache to use, if no running server is found (using this option may result in incompatibility)',
@@ -372,6 +386,16 @@ const verifyCmd = {
         desc: 'Apalache server endpoint hostname:port',
         type: 'string',
         default: 'localhost:8822',
+      })
+      .option('backend', {
+        desc: 'the backend to use for verification',
+        type: 'string',
+        choices: ['apalache', 'tlc'],
+        default: 'apalache',
+      })
+      .option('tlc-config', {
+        desc: 'path to a TLC configuration file (in JSON)',
+        type: 'string',
       })
       .coerce('server-endpoint', (arg: string) => {
         const errorOrEndpoint = parseServerEndpoint(arg)
@@ -388,13 +412,17 @@ const verifyCmd = {
   //        desc: 'timeout in seconds',
   //        type: 'number',
   //      })
-  handler: (args: any) =>
+  handler: (args: any) => {
+    if (args.verbosity === undefined) {
+      args.verbosity = args.backend === 'tlc' ? 3 : verbosity.defaultLevel
+    }
     load(args)
       .then(chainCmd(parse))
       .then(chainCmd(typecheck))
       .then(chainCmd(compile))
       .then(chainCmd(verifySpec))
-      .then(outputResult),
+      .then(outputResult)
+  },
 }
 
 // construct documenting commands with yargs
@@ -418,6 +446,10 @@ const validate = (argv: any, opts: any) => {
     if (key !== '_' && !opts.array.includes(key) && Array.isArray(argv[key])) {
       throw new Error(`--${key} can not be specified more than once`)
     }
+  }
+  // Apply the effective default for --max-samples (for run and test commands).
+  if ((argv['_'][0] === 'run' || argv['_'][0] === 'test') && argv['max-samples'] === undefined) {
+    argv['max-samples'] = argv.maxSamples = argv.seed !== undefined ? 1 : 10000
   }
   // Validate that --n-traces is not greater than --max-samples.
   if (argv['n-traces'] !== undefined && argv['max-samples'] !== undefined) {

@@ -57,6 +57,25 @@ dd {
   font-size: 1rem;
 }
 
+/* Purple callouts */
+.nextra-callout.x\:border-orange-100 {
+  border-color: #ddd6fe;
+  background-color: #ede9fe;
+  color: #4c1d95;
+}
+
+:is(html[class~="dark"] .nextra-callout.x\:dark\:border-orange-400\/30) {
+  border-color: rgba(157, 108, 229, 0.3);
+  background-color: rgba(157, 108, 229, 0.2);
+  color: #c4b5fd;
+}
+
+/* Nextra Tabs generates hidden h3 elements for each tab panel, which
+   incorrectly increment the Steps component's counter. Prevent that. */
+.nextra-steps h3[style*="visibility:hidden"] {
+  counter-increment: var(--counter-id) 0;
+}
+
 /* Nextra component is adding the margin twice, so I cancel it here */
 [role="tabpanel"].x\:mt-6 {
   margin-top: -1.5rem !important;

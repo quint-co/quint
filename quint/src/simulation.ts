@@ -12,6 +12,7 @@ import { QuintEx } from './ir/quintIr'
 import { Rng } from './rng'
 import { QuintError } from './quintError'
 import { TraceHook } from './cliReporting'
+import { DebugMessage } from './itf'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -33,6 +34,8 @@ export interface SimulatorOptions {
 
 export interface SimulationTrace {
   states: QuintEx[]
+  diagnostics?: DebugMessage[][]
+  pendingDiagnostics?: DebugMessage[]
   result: boolean
   seed: bigint
 }
@@ -48,16 +51,7 @@ export interface Outcome {
   witnessingTraces: number[]
   samples: number
   traceStatistics: TraceStatistics
-}
-
-/**
- * A result returned by the simulator.
- */
-export interface SimulationResult {
-  result: QuintEx
-  witnessingTraces: number[]
-  samples: number
-  traceStatistics: TraceStatistics
+  violatedInvariants: number[]
 }
 
 export interface TraceStatistics {

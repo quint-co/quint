@@ -1,7 +1,7 @@
 import { basename } from 'path'
 
 import { SourceMap, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
-import { ErrorMessage } from './ErrorMessage'
+import { ErrorMessage, resolveErrorLocation, resolveTraceLocations } from './ErrorMessage'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintEx } from './ir/quintIr'
@@ -15,15 +15,21 @@ import { cliErr } from './cliReporting'
 
 export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
   return error => {
-    const loc = error.reference ? sourceMap.get(error.reference) : undefined
+    const loc = resolveErrorLocation(sourceMap, error)
+    const traceLocs = resolveTraceLocations(sourceMap, error)
     return {
       explanation: quintErrorToString(error),
       locs: loc ? [loc] : [],
+      traceLocs,
     }
   }
 }
 
-export function toExpr(prev: TypecheckedStage, input: string): Either<QuintError, QuintEx> {
+export function toExpr(
+  prev: TypecheckedStage,
+  input: string,
+  expectedRole?: { kind: 'action'; flag: string }
+): Either<QuintError, QuintEx> {
   const mainName = guessMainModule(prev)
   const parseResult = parseExpressionOrDeclaration(input, '<input>', prev.idGen, prev.sourceMap)
   if (parseResult.kind !== 'expr') {
@@ -34,6 +40,20 @@ export function toExpr(prev: TypecheckedStage, input: string): Either<QuintError
   walkExpression(prev.resolver, parseResult.expr)
   if (prev.resolver.errors.length > 0) {
     return left(prev.resolver.errors[0])
+  }
+
+  // When used as --init or --step, the resolved name must be an action.
+  // A non-action definition (var, val, const, etc.) with the same name causes confusing
+  // runtime errors or silently wrong results.
+  if (expectedRole?.kind === 'action' && parseResult.expr.kind === 'name') {
+    const def = prev.resolver.table.get(parseResult.expr.id)
+    if (def && (def.kind !== 'def' || def.qualifier !== 'action')) {
+      const defKind = def.kind === 'def' ? def.qualifier : def.kind
+      return left({
+        code: 'QNT501',
+        message: `default --${expectedRole.flag} action name '${input}' is used by a ${defKind} declaration`,
+      })
+    }
   }
 
   return right(parseResult.expr)

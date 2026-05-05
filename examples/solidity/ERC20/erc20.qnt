@@ -1,4 +1,10 @@
 // -*- mode: Bluespec; -*-
+/**
+ * DISCLAIMER: This specification uses integers larger than 64 bits.
+ * Big integers are only supported by Apalache (`quint verify`) and the
+ * deprecated TypeScript evaluator (`quint run/test --backend=typescript`).
+ * See https://github.com/informalsystems/quint/releases/tag/v0.31.0
+ */
 
 /**
  * A specification of simple ERC20 that should be easy to use in other specs.
@@ -312,16 +318,16 @@ module erc20Tests {
         nondet toAddr = oneOf(ADDR)
         initArbitrary.then(
             val result = erc20State.transfer(sender, toAddr, amount)
-            val newState = result.state
+            val { state, returnedTrue, error } = result
             val ob = erc20State.balanceOf
-            val nb = newState.balanceOf
+            val nb = state.balanceOf
             all {
                 assert(or {
                     // if we started in an invalid state, no guarantees
                     not(isValid(erc20State)),
                     // if there were errors or transfer returned false, no guarantees
-                    not(result.returnedTrue),
-                    result.error != "",
+                    not(returnedTrue),
+                    error != "",
                     // otherwise, the transfer should have happened
                     if (sender != toAddr) and {
                         nb.get(sender) == ob.get(sender) - amount,
@@ -333,12 +339,12 @@ module erc20Tests {
                         nb == ob
                     },
                 }),
-                assert(newState.allowance == erc20State.allowance),
-                assert(newState.owner == erc20State.owner),
-                assert(newState.totalSupply == erc20State.totalSupply),
+                assert(state.allowance == erc20State.allowance),
+                assert(state.owner == erc20State.owner),
+                assert(state.totalSupply == erc20State.totalSupply),
                 // the new state has to be valid only if the old one was valid
-                assert(newState.isValid() or not(erc20State.isValid())),
-                erc20State' = newState
+                assert(state.isValid() or not(erc20State.isValid())),
+                erc20State' = state
             }
         )
     }

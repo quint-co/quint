@@ -3,12 +3,11 @@
 
 import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
-import { ReadOnlyContext } from "./EffectParser";
-import { UpdateOnlyContext } from "./EffectParser";
-import { TemporalOnlyContext } from "./EffectParser";
-import { ReadAndUpdateContext } from "./EffectParser";
-import { ReadAndTemporalContext } from "./EffectParser";
+import { ConcreteComponentsContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
+import { ReadComponentContext } from "./EffectParser";
+import { UpdateComponentContext } from "./EffectParser";
+import { TemporalComponentContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { VariableEffectContext } from "./EffectParser";
@@ -17,6 +16,7 @@ import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
 import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
+import { ComponentContext } from "./EffectParser";
 import { EntityContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
 
@@ -27,69 +27,17 @@ import { StateVarRefContext } from "./EffectParser";
  */
 export interface EffectListener extends ParseTreeListener {
 	/**
-	 * Enter a parse tree produced by the `readOnly`
+	 * Enter a parse tree produced by the `concreteComponents`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
 	 */
-	enterReadOnly?: (ctx: ReadOnlyContext) => void;
+	enterConcreteComponents?: (ctx: ConcreteComponentsContext) => void;
 	/**
-	 * Exit a parse tree produced by the `readOnly`
+	 * Exit a parse tree produced by the `concreteComponents`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
 	 */
-	exitReadOnly?: (ctx: ReadOnlyContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `updateOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	enterUpdateOnly?: (ctx: UpdateOnlyContext) => void;
-	/**
-	 * Exit a parse tree produced by the `updateOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	exitUpdateOnly?: (ctx: UpdateOnlyContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `temporalOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	enterTemporalOnly?: (ctx: TemporalOnlyContext) => void;
-	/**
-	 * Exit a parse tree produced by the `temporalOnly`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	exitTemporalOnly?: (ctx: TemporalOnlyContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `readAndUpdate`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	enterReadAndUpdate?: (ctx: ReadAndUpdateContext) => void;
-	/**
-	 * Exit a parse tree produced by the `readAndUpdate`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	exitReadAndUpdate?: (ctx: ReadAndUpdateContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `readAndTemporal`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	enterReadAndTemporal?: (ctx: ReadAndTemporalContext) => void;
-	/**
-	 * Exit a parse tree produced by the `readAndTemporal`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 */
-	exitReadAndTemporal?: (ctx: ReadAndTemporalContext) => void;
+	exitConcreteComponents?: (ctx: ConcreteComponentsContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `pure`
@@ -103,6 +51,45 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitPure?: (ctx: PureContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `readComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	enterReadComponent?: (ctx: ReadComponentContext) => void;
+	/**
+	 * Exit a parse tree produced by the `readComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	exitReadComponent?: (ctx: ReadComponentContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `updateComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	enterUpdateComponent?: (ctx: UpdateComponentContext) => void;
+	/**
+	 * Exit a parse tree produced by the `updateComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	exitUpdateComponent?: (ctx: UpdateComponentContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `temporalComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	enterTemporalComponent?: (ctx: TemporalComponentContext) => void;
+	/**
+	 * Exit a parse tree produced by the `temporalComponent`
+	 * labeled alternative in `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	exitTemporalComponent?: (ctx: TemporalComponentContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `concreteEffect`
@@ -197,6 +184,17 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitConcrete?: (ctx: ConcreteContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	enterComponent?: (ctx: ComponentContext) => void;
+	/**
+	 * Exit a parse tree produced by `EffectParser.component`.
+	 * @param ctx the parse tree
+	 */
+	exitComponent?: (ctx: ComponentContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.entity`.

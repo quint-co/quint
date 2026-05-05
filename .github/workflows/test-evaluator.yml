@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       evaluator: ${{ steps.filter.outputs.evaluator }}
     steps:
@@ -38,11 +39,12 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             evaluator:
               - 'evaluator/**'
 
-  unit:
+  unit-tests:
     name: Unit Tests
     needs: changes
     if: ${{ needs.changes.outputs.evaluator == 'true' || github.ref == 'refs/heads/main' }}

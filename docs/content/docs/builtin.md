@@ -928,6 +928,24 @@ action Next = any {
 temporal Property = Next.weakFair(Set(x)).implies(eventually(x == 10))
 ```
 
+## leadsTo
+
+Signature: `temporal leadsTo: (bool, bool) => bool`
+
+`leadsTo(p, q)` is the TLA+ leads-to operator `p ~> q`.
+
+It is equivalent to `always(p implies eventually(q))`: whenever `p` holds,
+`q` must eventually hold.
+
+### Examples
+
+```quint
+var active: int -> bool
+var terminationDetected: bool
+
+temporal Property = NODES.forall(i => not(active.get(i))) leadsTo terminationDetected
+```
+
 ## strongFair
 
 Signature: `temporal strongFair: (bool, a) => bool`

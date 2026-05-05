@@ -1,6 +1,6 @@
 /*
  If you do not know how to start this lesson, see:
- https://github.com/informalsystems/quint/tree/main/tutorials
+ https://github.com/informalsystems/quint/blob/main/docs/content/docs/lessons.md
  */
 /*!
   <tutorial>
@@ -27,7 +27,7 @@ that we have to describe two important aspects of the protocol:
           <!-- The following reference is useless in CodeTour, as it already positioned on the file -->
           <block target="markdown">
 If you would like to see the complete code before diving into
-the details, check [hello.qnt](https://github.com/informalsystems/quint/tree/main/examples/tutorials/hello.qnt).
+the details, check [hello.qnt](https://github.com/informalsystems/quint/blob/main/examples/tutorials/hello.qnt).
           </block>
 
         </description>

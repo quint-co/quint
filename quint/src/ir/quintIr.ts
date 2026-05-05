@@ -179,6 +179,7 @@ export const builtinOpCodes = [
   'item',
   'iuminus',
   'keys',
+  'leadsTo',
   'length',
   'map',
   'mapBy',

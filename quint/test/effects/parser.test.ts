@@ -280,18 +280,42 @@ describe('parseEffect', () => {
     }
   })
 
-  it('throws error when effect is invalid', () => {
+  it('parses two components of the same kind', () => {
+    // Previously rejected by the hardcoded two-way grammar; now valid.
     const effect = parseEffect('Read[v] & Read[w]')
 
-    assert.isTrue(effect.isLeft())
-    if (effect.isLeft()) {
-      const { value } = effect
-      assert.sameDeepMembers(value, [
-        {
-          explanation: "no viable alternative at input 'Read[v]&Read'",
-          locs: [{ start: { line: 0, col: 10, index: 10 }, end: { line: 0, col: 13, index: 13 } }],
-        },
-      ])
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      assert.deepEqual(effect.value, {
+        kind: 'concrete',
+        components: [
+          { kind: 'read', entity: { kind: 'variable', name: 'v' } },
+          { kind: 'read', entity: { kind: 'variable', name: 'w' } },
+        ],
+      })
     }
+  })
+
+  it('parses three-way Read & Update & Temporal combination', () => {
+    const effect = parseEffect('Read[r] & Update[u] & Temporal[t]')
+
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      assert.deepEqual(effect.value, {
+        kind: 'concrete',
+        components: [
+          { kind: 'read', entity: { kind: 'variable', name: 'r' } },
+          { kind: 'update', entity: { kind: 'variable', name: 'u' } },
+          { kind: 'temporal', entity: { kind: 'variable', name: 't' } },
+        ],
+      })
+    }
+  })
+
+  it('throws error when effect is invalid', () => {
+    // Trailing & with no following component is a parse error
+    const effect = parseEffect('Read[v] &')
+
+    assert.isTrue(effect.isLeft())
   })
 })

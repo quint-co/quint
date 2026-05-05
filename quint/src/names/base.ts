@@ -218,6 +218,7 @@ export const builtinNames = [
   'enabled',
   'weakFair',
   'strongFair',
+  'leadsTo',
   'Bool',
   'Int',
   'Nat',

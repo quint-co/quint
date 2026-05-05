@@ -13,6 +13,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
 import { QuintApp, QuintEx, QuintStr } from './ir/quintIr'
 import rv from './runtime/impl/runtimeValue'
+import { zerog } from './idGenerator'
 
 /** The type of IFT traces.
  * See https://github.com/apalache-mc/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -53,6 +54,7 @@ type ItfMap = { '#map': [ItfValue, ItfValue][] }
 type ItfUnserializable = { '#unserializable': string }
 type ItfRecord = { [index: string]: ItfValue }
 type ItfVariant = { tag: ItfValue; value: ItfValue }
+type ItfUnitVariant = { tag: ItfValue }
 
 // Type predicates to help with type narrowing
 function isBigint(v: ItfValue): v is ItfBigint {
@@ -72,7 +74,24 @@ function isMap(v: ItfValue): v is ItfMap {
 }
 
 function isVariant(v: ItfValue): v is ItfVariant {
-  return (v as ItfVariant)['tag'] !== undefined
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.keys(v).length === 2 &&
+    (v as ItfVariant)['tag'] !== undefined &&
+    (v as ItfVariant)['value'] !== undefined
+  )
+}
+
+function isUnitVariant(v: ItfValue): v is ItfUnitVariant {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    !Array.isArray(v) &&
+    Object.keys(v).length === 1 &&
+    (v as ItfUnitVariant)['tag'] !== undefined
+  )
 }
 
 function isUnserializable(v: ItfValue): v is ItfUnserializable {
@@ -189,65 +208,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
     return id
   }
 
-  const ofItfValue = (value: ItfValue): QuintEx => {
-    const id = getId()
-    if (typeof value === 'boolean') {
-      return { id, kind: 'bool', value }
-    } else if (typeof value === 'string') {
-      return { id, kind: 'str', value }
-    } else if (isBigint(value)) {
-      // this is the standard way of encoding an integer in ITF.
-      return { id, kind: 'int', value: BigInt(value['#bigint']) }
-    } else if (typeof value === 'number') {
-      // We never encode an integer as a JS number,
-      // but we consume it for backwards compatibility with older ITF traces.
-      // See: https://apalache-mc.org/docs/adr/015adr-trace.html
-      return { id, kind: 'int', value: BigInt(value) }
-    } else if (Array.isArray(value)) {
-      return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
-    } else if (isTup(value)) {
-      return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
-    } else if (isSet(value)) {
-      return { id, kind: 'app', opcode: 'Set', args: value['#set'].map(ofItfValue) }
-    } else if (isUnserializable(value)) {
-      return { id, kind: 'name', name: value['#unserializable'] }
-    } else if (isMap(value)) {
-      const args = value['#map'].map(([key, value]) => {
-        const k = ofItfValue(key)
-        const v = ofItfValue(value)
-        return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
-      })
-      return {
-        id,
-        kind: 'app',
-        opcode: 'Map',
-        args,
-      }
-    } else if (isVariant(value)) {
-      const l = ofItfValue(value.tag)
-      if (l.kind === 'str' && l.value === 'UNIT') {
-        // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
-        // We need to convert it back to Quint's unit value, the empty tuple.
-        return { id, kind: 'app', opcode: 'Tup', args: [] }
-      }
-      const v = ofItfValue(value.value)
-      return { id, kind: 'app', opcode: 'variant', args: [l, v] }
-    } else if (typeof value === 'object') {
-      // Any other object must represent a record
-      // For each key/value pair in the object, form the quint expressions representing
-      // the record field and value
-      const args = Object.keys(value)
-        .filter(key => key !== '#meta' && !key.startsWith('__')) // Must be removed from top-level objects representing states
-        .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
-        .flat() // flatten the converted pairs of fields into a single array
-      return { id, kind: 'app', opcode: 'Rec', args }
-    } else {
-      // This should be impossible, but TypeScript can't tell we've handled all cases
-      throw new Error(`internal error: unhandled ITF value ${value}`)
-    }
-  }
-
-  return itf.states.map(ofItfValue)
+  return itf.states.map(s => ofItfValue(s, getId))
 }
 
 /**
@@ -261,4 +222,103 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
  */
 export function ofItfNormalized(itf: ItfTrace): QuintEx[] {
   return ofItf(itf).map(rv.fromQuintEx).map(rv.toQuintEx)
+}
+
+export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {
+  const id = getId()
+  if (typeof value === 'boolean') {
+    return { id, kind: 'bool', value }
+  } else if (typeof value === 'string') {
+    return { id, kind: 'str', value }
+  } else if (isBigint(value)) {
+    // this is the standard way of encoding an integer in ITF.
+    return { id, kind: 'int', value: BigInt(value['#bigint']) }
+  } else if (typeof value === 'number') {
+    // We never encode an integer as a JS number,
+    // but we consume it for backwards compatibility with older ITF traces.
+    // See: https://apalache-mc.org/docs/adr/015adr-trace.html
+    return { id, kind: 'int', value: BigInt(value) }
+  } else if (Array.isArray(value)) {
+    return { id, kind: 'app', opcode: 'List', args: value.map(s => ofItfValue(s, getId)) }
+  } else if (isTup(value)) {
+    return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(s => ofItfValue(s, getId)) }
+  } else if (isSet(value)) {
+    return { id, kind: 'app', opcode: 'Set', args: value['#set'].map(s => ofItfValue(s, getId)) }
+  } else if (isUnserializable(value)) {
+    return { id, kind: 'name', name: value['#unserializable'] }
+  } else if (isMap(value)) {
+    const args = value['#map'].map(([key, value]) => {
+      const k = ofItfValue(key, getId)
+      const v = ofItfValue(value, getId)
+      return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
+    })
+    return {
+      id,
+      kind: 'app',
+      opcode: 'Map',
+      args,
+    }
+  } else if (isUnitVariant(value)) {
+    const l = ofItfValue(value.tag, getId)
+    if (l.kind === 'str' && l.value === 'UNIT') {
+      // Apalache converts empty tuples to its unit value, { tag: "UNIT" }.
+      // We need to convert it back to Quint's unit value, the empty tuple.
+      return { id, kind: 'app', opcode: 'Tup', args: [] }
+    }
+    return {
+      id,
+      kind: 'app',
+      opcode: 'Rec',
+      args: [{ id: getId(), kind: 'str', value: 'tag' }, l],
+    }
+  } else if (isVariant(value)) {
+    const l = ofItfValue(value.tag, getId)
+    const v = ofItfValue(value.value, getId)
+    return { id, kind: 'app', opcode: 'variant', args: [l, v] }
+  } else if (typeof value === 'object') {
+    // Any other object must represent a record
+    // For each key/value pair in the object, form the quint expressions representing
+    // the record field and value
+    const args = Object.keys(value)
+      .filter(key => key !== '#meta' && !key.startsWith('__')) // Must be removed from top-level objects representing states
+      .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f], getId)] as [QuintStr, QuintEx])
+      .flat() // flatten the converted pairs of fields into a single array
+    return { id, kind: 'app', opcode: 'Rec', args }
+  } else {
+    // This should be impossible, but TypeScript can't tell we've handled all cases
+    throw new Error(`internal error: unhandled ITF value ${value}`)
+  }
+}
+
+/** An debug message embedded into trace's metadata */
+export interface DebugMessage {
+  label: string
+  value: QuintEx
+}
+
+/** Extracts pending diagnostics from the ITF trace-level metadata.
+ * These are diagnostics from a failing step that never produced a new state. */
+export function pendingDiagnosticsOfItf(itf: ItfTrace): DebugMessage[] {
+  if (itf['#meta']?.pending_diagnostics) {
+    const msgs: { label: string; value: any }[] = JSON.parse(itf['#meta'].pending_diagnostics)
+    msgs.forEach(msg => (msg.value = ofItfValue(msg.value, zerog.nextId)))
+    return msgs
+  }
+  return []
+}
+
+/** Extracts diagnostics embedded into ITF's metadata. Returns a matrics of
+ * diagnostics per state in the ITF trace. */
+export function diagnosticsOfItf(itf: ItfTrace): DebugMessage[][] {
+  var diagnostics = []
+
+  for (const state of itf.states) {
+    if ('#meta' in state && 'diagnostics' in state['#meta']) {
+      const msgs: { label: string; value: any }[] = JSON.parse(state['#meta'].diagnostics)
+      msgs.forEach(msg => (msg.value = ofItfValue(msg.value, zerog.nextId)))
+      diagnostics.push(msgs)
+    }
+  }
+
+  return diagnostics
 }

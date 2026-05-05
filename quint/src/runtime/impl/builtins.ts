@@ -302,6 +302,7 @@ export function lazyBuiltinLambda(
           ctx.shift()
           return args[1](ctx).chain(expectation => {
             ctx.varStorage.recoverSnapshot(nextVarsSnapshot)
+            ctx.trace.dropLast()
 
             if (!expectation.toBool()) {
               return left({ code: 'QNT508', message: 'Expect condition does not hold true' })
@@ -759,6 +760,7 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
     case 'mustChange':
     case 'weakFair':
     case 'strongFair':
+    case 'leadsTo':
       return _ => left({ code: 'QNT501', message: `Runtime does not support the built -in operator '${op}'` })
 
     default:

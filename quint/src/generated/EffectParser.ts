@@ -47,11 +47,13 @@ export class EffectParser extends Parser {
 	public static readonly RULE_update = 2;
 	public static readonly RULE_temporal = 3;
 	public static readonly RULE_concrete = 4;
-	public static readonly RULE_entity = 5;
-	public static readonly RULE_stateVarRef = 6;
+	public static readonly RULE_component = 5;
+	public static readonly RULE_entity = 6;
+	public static readonly RULE_stateVarRef = 7;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"effect", "read", "update", "temporal", "concrete", "entity", "stateVarRef",
+		"effect", "read", "update", "temporal", "concrete", "component", "entity", 
+		"stateVarRef",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -95,7 +97,7 @@ export class EffectParser extends Parser {
 		this.enterRule(_localctx, 0, EffectParser.RULE_effect);
 		let _la: number;
 		try {
-			this.state = 30;
+			this.state = 32;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case EffectParser.T__4:
@@ -105,7 +107,7 @@ export class EffectParser extends Parser {
 				_localctx = new ConcreteEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 14;
+				this.state = 16;
 				this.concrete();
 				}
 				break;
@@ -113,39 +115,39 @@ export class EffectParser extends Parser {
 				_localctx = new ArrowEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 15;
+				this.state = 17;
 				this.match(EffectParser.T__0);
-				this.state = 24;
+				this.state = 26;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << EffectParser.T__0) | (1 << EffectParser.T__4) | (1 << EffectParser.T__7) | (1 << EffectParser.T__8) | (1 << EffectParser.T__10) | (1 << EffectParser.IDENTIFIER))) !== 0)) {
 					{
-					this.state = 16;
+					this.state = 18;
 					this.effect();
-					this.state = 21;
+					this.state = 23;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 					while (_la === EffectParser.T__1) {
 						{
 						{
-						this.state = 17;
+						this.state = 19;
 						this.match(EffectParser.T__1);
-						this.state = 18;
+						this.state = 20;
 						this.effect();
 						}
 						}
-						this.state = 23;
+						this.state = 25;
 						this._errHandler.sync(this);
 						_la = this._input.LA(1);
 					}
 					}
 				}
 
-				this.state = 26;
-				this.match(EffectParser.T__2);
-				this.state = 27;
-				this.match(EffectParser.T__3);
 				this.state = 28;
+				this.match(EffectParser.T__2);
+				this.state = 29;
+				this.match(EffectParser.T__3);
+				this.state = 30;
 				this.effect();
 				}
 				break;
@@ -153,7 +155,7 @@ export class EffectParser extends Parser {
 				_localctx = new VariableEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 29;
+				this.state = 31;
 				this.match(EffectParser.IDENTIFIER);
 				}
 				break;
@@ -182,13 +184,13 @@ export class EffectParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 32;
-			this.match(EffectParser.T__4);
-			this.state = 33;
-			this.match(EffectParser.T__5);
 			this.state = 34;
-			this.entity();
+			this.match(EffectParser.T__4);
 			this.state = 35;
+			this.match(EffectParser.T__5);
+			this.state = 36;
+			this.entity();
+			this.state = 37;
 			this.match(EffectParser.T__6);
 			}
 		}
@@ -213,13 +215,13 @@ export class EffectParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 37;
-			this.match(EffectParser.T__7);
-			this.state = 38;
-			this.match(EffectParser.T__5);
 			this.state = 39;
-			this.entity();
+			this.match(EffectParser.T__7);
 			this.state = 40;
+			this.match(EffectParser.T__5);
+			this.state = 41;
+			this.entity();
+			this.state = 42;
 			this.match(EffectParser.T__6);
 			}
 		}
@@ -244,13 +246,13 @@ export class EffectParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 42;
-			this.match(EffectParser.T__8);
-			this.state = 43;
-			this.match(EffectParser.T__5);
 			this.state = 44;
-			this.entity();
+			this.match(EffectParser.T__8);
 			this.state = 45;
+			this.match(EffectParser.T__5);
+			this.state = 46;
+			this.entity();
+			this.state = 47;
 			this.match(EffectParser.T__6);
 			}
 		}
@@ -272,111 +274,97 @@ export class EffectParser extends Parser {
 	public concrete(): ConcreteContext {
 		let _localctx: ConcreteContext = new ConcreteContext(this._ctx, this.state);
 		this.enterRule(_localctx, 8, EffectParser.RULE_concrete);
+		let _la: number;
 		try {
-			this.state = 71;
+			this.state = 58;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 5, this._ctx) ) {
-			case 1:
-				_localctx = new ReadOnlyContext(_localctx);
+			switch (this._input.LA(1)) {
+			case EffectParser.T__4:
+			case EffectParser.T__7:
+			case EffectParser.T__8:
+				_localctx = new ConcreteComponentsContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 47;
-				this.read();
-				}
-				break;
-
-			case 2:
-				_localctx = new UpdateOnlyContext(_localctx);
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 48;
-				this.update();
-				}
-				break;
-
-			case 3:
-				_localctx = new TemporalOnlyContext(_localctx);
-				this.enterOuterAlt(_localctx, 3);
-				{
 				this.state = 49;
-				this.temporal();
-				}
-				break;
-
-			case 4:
-				_localctx = new ReadAndUpdateContext(_localctx);
-				this.enterOuterAlt(_localctx, 4);
-				{
-				this.state = 58;
+				this.component();
+				this.state = 54;
 				this._errHandler.sync(this);
-				switch (this._input.LA(1)) {
-				case EffectParser.T__4:
+				_la = this._input.LA(1);
+				while (_la === EffectParser.T__9) {
+					{
 					{
 					this.state = 50;
-					this.read();
+					this.match(EffectParser.T__9);
 					this.state = 51;
-					this.match(EffectParser.T__9);
-					this.state = 52;
-					this.update();
+					this.component();
 					}
-					break;
-				case EffectParser.T__7:
-					{
-					this.state = 54;
-					this.update();
-					this.state = 55;
-					this.match(EffectParser.T__9);
+					}
 					this.state = 56;
-					this.read();
-					}
-					break;
-				default:
-					throw new NoViableAltException(this);
+					this._errHandler.sync(this);
+					_la = this._input.LA(1);
 				}
 				}
 				break;
-
-			case 5:
-				_localctx = new ReadAndTemporalContext(_localctx);
-				this.enterOuterAlt(_localctx, 5);
-				{
-				this.state = 68;
-				this._errHandler.sync(this);
-				switch (this._input.LA(1)) {
-				case EffectParser.T__4:
-					{
-					this.state = 60;
-					this.read();
-					this.state = 61;
-					this.match(EffectParser.T__9);
-					this.state = 62;
-					this.temporal();
-					}
-					break;
-				case EffectParser.T__7:
-					{
-					this.state = 64;
-					this.update();
-					this.state = 65;
-					this.match(EffectParser.T__9);
-					this.state = 66;
-					this.temporal();
-					}
-					break;
-				default:
-					throw new NoViableAltException(this);
-				}
-				}
-				break;
-
-			case 6:
+			case EffectParser.T__10:
 				_localctx = new PureContext(_localctx);
-				this.enterOuterAlt(_localctx, 6);
+				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 70;
+				this.state = 57;
 				this.match(EffectParser.T__10);
 				}
 				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public component(): ComponentContext {
+		let _localctx: ComponentContext = new ComponentContext(this._ctx, this.state);
+		this.enterRule(_localctx, 10, EffectParser.RULE_component);
+		try {
+			this.state = 63;
+			this._errHandler.sync(this);
+			switch (this._input.LA(1)) {
+			case EffectParser.T__4:
+				_localctx = new ReadComponentContext(_localctx);
+				this.enterOuterAlt(_localctx, 1);
+				{
+				this.state = 60;
+				this.read();
+				}
+				break;
+			case EffectParser.T__7:
+				_localctx = new UpdateComponentContext(_localctx);
+				this.enterOuterAlt(_localctx, 2);
+				{
+				this.state = 61;
+				this.update();
+				}
+				break;
+			case EffectParser.T__8:
+				_localctx = new TemporalComponentContext(_localctx);
+				this.enterOuterAlt(_localctx, 3);
+				{
+				this.state = 62;
+				this.temporal();
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
 			}
 		}
 		catch (re) {
@@ -396,54 +384,54 @@ export class EffectParser extends Parser {
 	// @RuleVersion(0)
 	public entity(): EntityContext {
 		let _localctx: EntityContext = new EntityContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, EffectParser.RULE_entity);
+		this.enterRule(_localctx, 12, EffectParser.RULE_entity);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 87;
+			this.state = 79;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la === EffectParser.T__11 || _la === EffectParser.IDENTIFIER) {
 				{
-				this.state = 75;
+				this.state = 67;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case EffectParser.T__11:
 					{
-					this.state = 73;
+					this.state = 65;
 					this.stateVarRef();
 					}
 					break;
 				case EffectParser.IDENTIFIER:
 					{
-					this.state = 74;
+					this.state = 66;
 					this.match(EffectParser.IDENTIFIER);
 					}
 					break;
 				default:
 					throw new NoViableAltException(this);
 				}
-				this.state = 84;
+				this.state = 76;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la === EffectParser.T__1) {
 					{
 					{
-					this.state = 77;
+					this.state = 69;
 					this.match(EffectParser.T__1);
-					this.state = 80;
+					this.state = 72;
 					this._errHandler.sync(this);
 					switch (this._input.LA(1)) {
 					case EffectParser.T__11:
 						{
-						this.state = 78;
+						this.state = 70;
 						this.stateVarRef();
 						}
 						break;
 					case EffectParser.IDENTIFIER:
 						{
-						this.state = 79;
+						this.state = 71;
 						this.match(EffectParser.IDENTIFIER);
 						}
 						break;
@@ -452,7 +440,7 @@ export class EffectParser extends Parser {
 					}
 					}
 					}
-					this.state = 86;
+					this.state = 78;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
@@ -478,15 +466,15 @@ export class EffectParser extends Parser {
 	// @RuleVersion(0)
 	public stateVarRef(): StateVarRefContext {
 		let _localctx: StateVarRefContext = new StateVarRefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 12, EffectParser.RULE_stateVarRef);
+		this.enterRule(_localctx, 14, EffectParser.RULE_stateVarRef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 89;
+			this.state = 81;
 			this.match(EffectParser.T__11);
-			this.state = 90;
+			this.state = 82;
 			this.match(EffectParser.IDENTIFIER);
-			this.state = 91;
+			this.state = 83;
 			this.match(EffectParser.T__11);
 			}
 		}
@@ -506,46 +494,42 @@ export class EffectParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x10`\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x10X\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
-		"\t\x07\x04\b\t\b\x03\x02\x03\x02\x03\x02\x03\x02\x03\x02\x07\x02\x16\n" +
-		"\x02\f\x02\x0E\x02\x19\v\x02\x05\x02\x1B\n\x02\x03\x02\x03\x02\x03\x02" +
-		"\x03\x02\x05\x02!\n\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x04" +
-		"\x03\x04\x03\x04\x03\x04\x03\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
-		"\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06" +
-		"\x03\x06\x03\x06\x05\x06=\n\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06" +
-		"\x03\x06\x03\x06\x03\x06\x05\x06G\n\x06\x03\x06\x05\x06J\n\x06\x03\x07" +
-		"\x03\x07\x05\x07N\n\x07\x03\x07\x03\x07\x03\x07\x05\x07S\n\x07\x07\x07" +
-		"U\n\x07\f\x07\x0E\x07X\v\x07\x05\x07Z\n\x07\x03\b\x03\b\x03\b\x03\b\x03" +
-		"\b\x02\x02\x02\t\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x02" +
-		"\x02\x02g\x02 \x03\x02\x02\x02\x04\"\x03\x02\x02\x02\x06\'\x03\x02\x02" +
-		"\x02\b,\x03\x02\x02\x02\nI\x03\x02\x02\x02\fY\x03\x02\x02\x02\x0E[\x03" +
-		"\x02\x02\x02\x10!\x05\n\x06\x02\x11\x1A\x07\x03\x02\x02\x12\x17\x05\x02" +
-		"\x02\x02\x13\x14\x07\x04\x02\x02\x14\x16\x05\x02\x02\x02\x15\x13\x03\x02" +
-		"\x02\x02\x16\x19\x03\x02\x02\x02\x17\x15\x03\x02\x02\x02\x17\x18\x03\x02" +
-		"\x02\x02\x18\x1B\x03\x02\x02\x02\x19\x17\x03\x02\x02\x02\x1A\x12\x03\x02" +
-		"\x02\x02\x1A\x1B\x03\x02\x02\x02\x1B\x1C\x03\x02\x02\x02\x1C\x1D\x07\x05" +
-		"\x02\x02\x1D\x1E\x07\x06\x02\x02\x1E!\x05\x02\x02\x02\x1F!\x07\x0F\x02" +
-		"\x02 \x10\x03\x02\x02\x02 \x11\x03\x02\x02\x02 \x1F\x03\x02\x02\x02!\x03" +
-		"\x03\x02\x02\x02\"#\x07\x07\x02\x02#$\x07\b\x02\x02$%\x05\f\x07\x02%&" +
-		"\x07\t\x02\x02&\x05\x03\x02\x02\x02\'(\x07\n\x02\x02()\x07\b\x02\x02)" +
-		"*\x05\f\x07\x02*+\x07\t\x02\x02+\x07\x03\x02\x02\x02,-\x07\v\x02\x02-" +
-		".\x07\b\x02\x02./\x05\f\x07\x02/0\x07\t\x02\x020\t\x03\x02\x02\x021J\x05" +
-		"\x04\x03\x022J\x05\x06\x04\x023J\x05\b\x05\x0245\x05\x04\x03\x0256\x07" +
-		"\f\x02\x0267\x05\x06\x04\x027=\x03\x02\x02\x0289\x05\x06\x04\x029:\x07" +
-		"\f\x02\x02:;\x05\x04\x03\x02;=\x03\x02\x02\x02<4\x03\x02\x02\x02<8\x03" +
-		"\x02\x02\x02=J\x03\x02\x02\x02>?\x05\x04\x03\x02?@\x07\f\x02\x02@A\x05" +
-		"\b\x05\x02AG\x03\x02\x02\x02BC\x05\x06\x04\x02CD\x07\f\x02\x02DE\x05\b" +
-		"\x05\x02EG\x03\x02\x02\x02F>\x03\x02\x02\x02FB\x03\x02\x02\x02GJ\x03\x02" +
-		"\x02\x02HJ\x07\r\x02\x02I1\x03\x02\x02\x02I2\x03\x02\x02\x02I3\x03\x02" +
-		"\x02\x02I<\x03\x02\x02\x02IF\x03\x02\x02\x02IH\x03\x02\x02\x02J\v\x03" +
-		"\x02\x02\x02KN\x05\x0E\b\x02LN\x07\x0F\x02\x02MK\x03\x02\x02\x02ML\x03" +
-		"\x02\x02\x02NV\x03\x02\x02\x02OR\x07\x04\x02\x02PS\x05\x0E\b\x02QS\x07" +
-		"\x0F\x02\x02RP\x03\x02\x02\x02RQ\x03\x02\x02\x02SU\x03\x02\x02\x02TO\x03" +
-		"\x02\x02\x02UX\x03\x02\x02\x02VT\x03\x02\x02\x02VW\x03\x02\x02\x02WZ\x03" +
-		"\x02\x02\x02XV\x03\x02\x02\x02YM\x03\x02\x02\x02YZ\x03\x02\x02\x02Z\r" +
-		"\x03\x02\x02\x02[\\\x07\x0E\x02\x02\\]\x07\x0F\x02\x02]^\x07\x0E\x02\x02" +
-		"^\x0F\x03\x02\x02\x02\f\x17\x1A <FIMRVY";
+		"\t\x07\x04\b\t\b\x04\t\t\t\x03\x02\x03\x02\x03\x02\x03\x02\x03\x02\x07" +
+		"\x02\x18\n\x02\f\x02\x0E\x02\x1B\v\x02\x05\x02\x1D\n\x02\x03\x02\x03\x02" +
+		"\x03\x02\x03\x02\x05\x02#\n\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03" +
+		"\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x05\x03\x05\x03\x05\x03\x05" +
+		"\x03\x05\x03\x06\x03\x06\x03\x06\x07\x067\n\x06\f\x06\x0E\x06:\v\x06\x03" +
+		"\x06\x05\x06=\n\x06\x03\x07\x03\x07\x03\x07\x05\x07B\n\x07\x03\b\x03\b" +
+		"\x05\bF\n\b\x03\b\x03\b\x03\b\x05\bK\n\b\x07\bM\n\b\f\b\x0E\bP\v\b\x05" +
+		"\bR\n\b\x03\t\x03\t\x03\t\x03\t\x03\t\x02\x02\x02\n\x02\x02\x04\x02\x06" +
+		"\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x02\x02\x02[\x02\"\x03\x02\x02" +
+		"\x02\x04$\x03\x02\x02\x02\x06)\x03\x02\x02\x02\b.\x03\x02\x02\x02\n<\x03" +
+		"\x02\x02\x02\fA\x03\x02\x02\x02\x0EQ\x03\x02\x02\x02\x10S\x03\x02\x02" +
+		"\x02\x12#\x05\n\x06\x02\x13\x1C\x07\x03\x02\x02\x14\x19\x05\x02\x02\x02" +
+		"\x15\x16\x07\x04\x02\x02\x16\x18\x05\x02\x02\x02\x17\x15\x03\x02\x02\x02" +
+		"\x18\x1B\x03\x02\x02\x02\x19\x17\x03\x02\x02\x02\x19\x1A\x03\x02\x02\x02" +
+		"\x1A\x1D\x03\x02\x02\x02\x1B\x19\x03\x02\x02\x02\x1C\x14\x03\x02\x02\x02" +
+		"\x1C\x1D\x03\x02\x02\x02\x1D\x1E\x03\x02\x02\x02\x1E\x1F\x07\x05\x02\x02" +
+		"\x1F \x07\x06\x02\x02 #\x05\x02\x02\x02!#\x07\x0F\x02\x02\"\x12\x03\x02" +
+		"\x02\x02\"\x13\x03\x02\x02\x02\"!\x03\x02\x02\x02#\x03\x03\x02\x02\x02" +
+		"$%\x07\x07\x02\x02%&\x07\b\x02\x02&\'\x05\x0E\b\x02\'(\x07\t\x02\x02(" +
+		"\x05\x03\x02\x02\x02)*\x07\n\x02\x02*+\x07\b\x02\x02+,\x05\x0E\b\x02," +
+		"-\x07\t\x02\x02-\x07\x03\x02\x02\x02./\x07\v\x02\x02/0\x07\b\x02\x020" +
+		"1\x05\x0E\b\x0212\x07\t\x02\x022\t\x03\x02\x02\x0238\x05\f\x07\x0245\x07" +
+		"\f\x02\x0257\x05\f\x07\x0264\x03\x02\x02\x027:\x03\x02\x02\x0286\x03\x02" +
+		"\x02\x0289\x03\x02\x02\x029=\x03\x02\x02\x02:8\x03\x02\x02\x02;=\x07\r" +
+		"\x02\x02<3\x03\x02\x02\x02<;\x03\x02\x02\x02=\v\x03\x02\x02\x02>B\x05" +
+		"\x04\x03\x02?B\x05\x06\x04\x02@B\x05\b\x05\x02A>\x03\x02\x02\x02A?\x03" +
+		"\x02\x02\x02A@\x03\x02\x02\x02B\r\x03\x02\x02\x02CF\x05\x10\t\x02DF\x07" +
+		"\x0F\x02\x02EC\x03\x02\x02\x02ED\x03\x02\x02\x02FN\x03\x02\x02\x02GJ\x07" +
+		"\x04\x02\x02HK\x05\x10\t\x02IK\x07\x0F\x02\x02JH\x03\x02\x02\x02JI\x03" +
+		"\x02\x02\x02KM\x03\x02\x02\x02LG\x03\x02\x02\x02MP\x03\x02\x02\x02NL\x03" +
+		"\x02\x02\x02NO\x03\x02\x02\x02OR\x03\x02\x02\x02PN\x03\x02\x02\x02QE\x03" +
+		"\x02\x02\x02QR\x03\x02\x02\x02R\x0F\x03\x02\x02\x02ST\x07\x0E\x02\x02" +
+		"TU\x07\x0F\x02\x02UV\x07\x0E\x02\x02V\x11\x03\x02\x02\x02\f\x19\x1C\"" +
+		"8<AEJNQ";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!EffectParser.__ATN) {
@@ -766,38 +750,15 @@ export class ConcreteContext extends ParserRuleContext {
 		super.copyFrom(ctx);
 	}
 }
-export class ReadOnlyContext extends ConcreteContext {
-	public read(): ReadContext {
-		return this.getRuleContext(0, ReadContext);
-	}
-	constructor(ctx: ConcreteContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: EffectListener): void {
-		if (listener.enterReadOnly) {
-			listener.enterReadOnly(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: EffectListener): void {
-		if (listener.exitReadOnly) {
-			listener.exitReadOnly(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitReadOnly) {
-			return visitor.visitReadOnly(this);
+export class ConcreteComponentsContext extends ConcreteContext {
+	public component(): ComponentContext[];
+	public component(i: number): ComponentContext;
+	public component(i?: number): ComponentContext | ComponentContext[] {
+		if (i === undefined) {
+			return this.getRuleContexts(ComponentContext);
 		} else {
-			return visitor.visitChildren(this);
+			return this.getRuleContext(i, ComponentContext);
 		}
-	}
-}
-export class UpdateOnlyContext extends ConcreteContext {
-	public update(): UpdateContext {
-		return this.getRuleContext(0, UpdateContext);
 	}
 	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -805,116 +766,20 @@ export class UpdateOnlyContext extends ConcreteContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterUpdateOnly) {
-			listener.enterUpdateOnly(this);
+		if (listener.enterConcreteComponents) {
+			listener.enterConcreteComponents(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitUpdateOnly) {
-			listener.exitUpdateOnly(this);
+		if (listener.exitConcreteComponents) {
+			listener.exitConcreteComponents(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitUpdateOnly) {
-			return visitor.visitUpdateOnly(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-export class TemporalOnlyContext extends ConcreteContext {
-	public temporal(): TemporalContext {
-		return this.getRuleContext(0, TemporalContext);
-	}
-	constructor(ctx: ConcreteContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: EffectListener): void {
-		if (listener.enterTemporalOnly) {
-			listener.enterTemporalOnly(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: EffectListener): void {
-		if (listener.exitTemporalOnly) {
-			listener.exitTemporalOnly(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitTemporalOnly) {
-			return visitor.visitTemporalOnly(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-export class ReadAndUpdateContext extends ConcreteContext {
-	public read(): ReadContext | undefined {
-		return this.tryGetRuleContext(0, ReadContext);
-	}
-	public update(): UpdateContext | undefined {
-		return this.tryGetRuleContext(0, UpdateContext);
-	}
-	constructor(ctx: ConcreteContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: EffectListener): void {
-		if (listener.enterReadAndUpdate) {
-			listener.enterReadAndUpdate(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: EffectListener): void {
-		if (listener.exitReadAndUpdate) {
-			listener.exitReadAndUpdate(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitReadAndUpdate) {
-			return visitor.visitReadAndUpdate(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-export class ReadAndTemporalContext extends ConcreteContext {
-	public read(): ReadContext | undefined {
-		return this.tryGetRuleContext(0, ReadContext);
-	}
-	public temporal(): TemporalContext | undefined {
-		return this.tryGetRuleContext(0, TemporalContext);
-	}
-	public update(): UpdateContext | undefined {
-		return this.tryGetRuleContext(0, UpdateContext);
-	}
-	constructor(ctx: ConcreteContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: EffectListener): void {
-		if (listener.enterReadAndTemporal) {
-			listener.enterReadAndTemporal(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: EffectListener): void {
-		if (listener.exitReadAndTemporal) {
-			listener.exitReadAndTemporal(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitReadAndTemporal) {
-			return visitor.visitReadAndTemporal(this);
+		if (visitor.visitConcreteComponents) {
+			return visitor.visitConcreteComponents(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -941,6 +806,105 @@ export class PureContext extends ConcreteContext {
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
 		if (visitor.visitPure) {
 			return visitor.visitPure(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class ComponentContext extends ParserRuleContext {
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return EffectParser.RULE_component; }
+	public copyFrom(ctx: ComponentContext): void {
+		super.copyFrom(ctx);
+	}
+}
+export class ReadComponentContext extends ComponentContext {
+	public read(): ReadContext {
+		return this.getRuleContext(0, ReadContext);
+	}
+	constructor(ctx: ComponentContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
+	}
+	// @Override
+	public enterRule(listener: EffectListener): void {
+		if (listener.enterReadComponent) {
+			listener.enterReadComponent(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: EffectListener): void {
+		if (listener.exitReadComponent) {
+			listener.exitReadComponent(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: EffectVisitor<Result>): Result {
+		if (visitor.visitReadComponent) {
+			return visitor.visitReadComponent(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class UpdateComponentContext extends ComponentContext {
+	public update(): UpdateContext {
+		return this.getRuleContext(0, UpdateContext);
+	}
+	constructor(ctx: ComponentContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
+	}
+	// @Override
+	public enterRule(listener: EffectListener): void {
+		if (listener.enterUpdateComponent) {
+			listener.enterUpdateComponent(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: EffectListener): void {
+		if (listener.exitUpdateComponent) {
+			listener.exitUpdateComponent(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: EffectVisitor<Result>): Result {
+		if (visitor.visitUpdateComponent) {
+			return visitor.visitUpdateComponent(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class TemporalComponentContext extends ComponentContext {
+	public temporal(): TemporalContext {
+		return this.getRuleContext(0, TemporalContext);
+	}
+	constructor(ctx: ComponentContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
+	}
+	// @Override
+	public enterRule(listener: EffectListener): void {
+		if (listener.enterTemporalComponent) {
+			listener.enterTemporalComponent(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: EffectListener): void {
+		if (listener.exitTemporalComponent) {
+			listener.exitTemporalComponent(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: EffectVisitor<Result>): Result {
+		if (visitor.visitTemporalComponent) {
+			return visitor.visitTemporalComponent(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

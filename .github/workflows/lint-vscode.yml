@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+      contents: read
     outputs:
       vscode: ${{ steps.filter.outputs.vscode }}
     steps:
@@ -27,11 +28,13 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             vscode:
               - 'vscode/**'
 
   format-check:
+    name: Format Check
     needs: changes
     if: ${{ needs.changes.outputs.vscode == 'true' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest

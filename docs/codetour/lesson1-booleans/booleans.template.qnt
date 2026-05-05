@@ -1,6 +1,6 @@
 /*
  If you do not know how to start this lesson, see:
- https://github.com/informalsystems/quint/tree/main/tutorials
+ https://github.com/informalsystems/quint/blob/main/docs/content/docs/lessons.md
  */
 /*!
   <tutorial>
@@ -17,7 +17,7 @@ In this lesson, you will learn how to use Booleans. It should take you real quic
 **Do not skip this lesson.** It introduces a few important language concepts, not just the Booleans.
 
 If you would like to see the complete code before diving into
-the details, check [booleans.qnt](./booleans.qnt).
+the details, check [booleans.qnt](https://github.com/informalsystems/quint/blob/main/examples/tutorials/booleans.qnt).
 
         </description>
         <file>$file</file>

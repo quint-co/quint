@@ -108,7 +108,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.51.1'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.56.1'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -257,6 +257,8 @@ const grpcStubOptions = {
 }
 
 const GRPC_TIMEOUT_MS = 5000
+// Maximum number of retries when waiting for gRPC channel to become ready (1 retry = 1 second)
+const GRPC_MAX_CONNECT_RETRIES = 60
 
 async function loadProtoDefViaReflection(
   serverEndpoint: ServerEndpoint,
@@ -297,10 +299,16 @@ async function loadProtoDefViaReflection(
 
   // Wait for gRPC channel to come up, with 1sec pauses
   if (retry) {
-    for (;;) {
+    for (let attempt = 0; attempt < GRPC_MAX_CONNECT_RETRIES; attempt++) {
       const grpcChannelState = reflectionClient.getChannel().getConnectivityState(true)
       if (grpcChannelState == grpc.connectivityState.READY) {
         break
+      } else if (attempt === GRPC_MAX_CONNECT_RETRIES - 1) {
+        // Exceeded maximum retries
+        return err(
+          `Timed out waiting for Apalache server to become ready after ${GRPC_MAX_CONNECT_RETRIES} seconds. ` +
+            `Channel state: ${grpcChannelState}`
+        )
       } else {
         /* I suspect that there is a race with async gRPC code that actually
          * brings the connection up, so we need to yield control here. In
@@ -401,7 +409,7 @@ function downloadAndUnpackApalache(apalacheVersion: string): Promise<ApalacheRes
  *    - a `right<string>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<ApalacheError>` indicating an error.
  */
-async function fetchApalache(apalacheVersion: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
+export async function fetchApalache(apalacheVersion: string, verbosityLevel: number): Promise<ApalacheResult<string>> {
   const filename = process.platform === 'win32' ? 'apalache-mc.bat' : 'apalache-mc'
   const apalacheBinary = path.join(apalacheDistDir(apalacheVersion), 'apalache', 'bin', filename)
   if (fs.existsSync(apalacheBinary)) {

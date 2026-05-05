@@ -8,8 +8,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
+- `quint compile --target=json` no longer requires `init` and `step` to exist in the module (#1971)
+
+### Security
+
+## v0.32.0 -- 2026-03-31
+
+### Added
+
+- Added `leadsTo` temporal operator (#1932)
+
+### Changed
+
+- TLC backend now ensures Apalache distribution is available locally before running TLC
+- Improved error propagation when the Rust evaluator fails to start, now shows the actual error instead of `Error: write EPIPE` (#1958)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a bug in fairness operators where the effect system would report an error (#1932)
+- Fixed TLC backend failing when multiple instances run in parallel (#1949)
+- Fixed an issue where the rust evaluator failed to launch on Windows (#1945) 
+- Fixed an import issue affecting yargs on node 27 (#1926)
+
+### Security
+
+- Updated `tar` 6→7 to fix critical path traversal and symlink poisoning vulnerabilities (#1957)
+- Updated `mocha` 7→11 to fix vulnerabilities in `debug`, `js-yaml`, and `minimatch` (#1957)
+- Patched vulnerabilities in `braces`, `cross-spawn`, `ajv`, `ejs`, and others (#1957)
+
+## v0.31.0 -- 2026-02-27
+
+### Added
+
+- Added TLC as an alternative backend to `quint verify` via `--backend=tlc`(#1844)
+- Added support for `quint test --backend=rust` to run tests using the Rust backend (#1862)
+- Add error handling for rust process termination via signal (#1880)
+- The rust backend will now print the seed and trace even on runtime errors and panics (#1879)
+- Added support for `quint repl --backend=rust` to use the REPL with the Rust backend (#1891)
+- Added out of bounds integer literal detection when serializing input to the Rust backend (#1890)
+- Added support for the `--witnesses` flag in the Rust backend (#1889)
+- Added support for the `--mbt` flag in the Rust backend (#1896)
+- The rust backend will now report per step diagnostics via `q::debug` (#1893)
+- Added support for `Nat` and `Int` to rust backend (#1894)
+- Added support for the `--n-traces` flag in the Rust backend (#1898)
+- Added support for `--invariants` flag in the Rust backend (#1902)
+- The rust backend will report diagnostics for the REPL (#1909)
+- The rust backend now displays a stack trace on runtime errors (#1910)
+- Added support for `--seed` int the REPL CLI (#1912)
+
+### Changed
+
+- Moved LSP-server compilation and analysis to its own worker thread (1876)
+- Improved memory allocation profile of LSP-server log messages (#1877)
+- Stream JSON in and out or rust evaluator to reduce memory allocations (#1882)
+- Improved power set sampling coverage in the Rust backend (#1888)
+- Changed default Rust allocator to MiMalloc (#1914)
+- Switched the default backend for `quint run` and `quint test` to Rust (#1919)
+- Changed the Rust simulator to support only i64 integers instead of BigInts, which remain supported by the TypeScript simulator (#1887)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed LSP-server stopping if `LOG_LEVEL` is not `NONE` (#1874)
+- Fixed LSP-server crashing upon console.{log, error} messages (#1875)
+- Fixed integer overflow errors not being reported properly in the Rust backend (#1887)
+- Added a warning when checking temporal formulas with Apalache (#1908)
+- Fixed a bug related to the progress bar display in single threaded Rust (#1911)
+
+### Security
+
+## v0.30.0 -- 2026-01-19
+
+### Added
 
 - Added support for passing `--seed` to the Rust backend for reproducible simulations (#1827)
+- Added simple destructuring of records and tuples, i.e. `val (foo, bar) = my_value` (#1837)
 
 ### Changed
 
@@ -23,6 +105,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ITF trace output when using the Rust backend with `--out-itf` (#1823)
 - Fixed a crash in the Rust backend when `--nthreads` exceeds `--max-samples` (#1825)
 - Fixed a problem where the REPL error reporting showed an incorrect location (#1835)
+- Fixed a problem where `expect` would add a stuttering state to the trace (#1846)
+- Fixed a problem where tests without and `expect` at the end would be missing
+  the last state in the ITF trace (#1846)
+- Fixed an edge case with nested operators that had operators as arguments could cause a runtime issue (#1843)
+- Fixed a problem in the rust backend where `then` would not record a state to the trace (#1847)
 
 ### Security
 

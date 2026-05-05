@@ -8,6 +8,7 @@
  */
 
 import { existsSync, readFileSync } from 'fs'
+import * as readline from 'readline'
 import { basename, dirname, resolve } from 'path'
 import { cwd } from 'process'
 import chalk from 'chalk'
@@ -35,17 +36,18 @@ import { IdGenerator, newIdGenerator } from './idGenerator'
 import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
-import { verify } from './quintVerifier'
+import { verifyWithApalacheBackend, verifyWithTlcBackend } from './verify'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { newTraceRecorder } from './runtime/trace'
-import { flow, isEqual, uniqWith } from 'lodash'
+import { flow, uniqWith } from 'lodash'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { compileToTlaplus } from './compileToTlaplus'
 import { Evaluator } from './runtime/impl/evaluator'
 import { NameResolver } from './names/resolver'
 import { convertInit } from './ir/initToPredicate'
-import { QuintRustWrapper } from './quintRustWrapper'
+import { CommandWrapper } from './rust/commandWrapper'
 import {
   cliErr,
   findMainModule,
@@ -56,26 +58,15 @@ import {
   outputTestErrors,
   outputTestResults,
   prepareOnTrace,
-  printInductiveInvariantProgress,
   printViolatedInvariants,
-  processVerifyResult,
+  printViolatedInvariantsByIndex,
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import {
-  PLACEHOLDERS,
-  deriveVerbosity,
-  getInvariants,
-  guessMainModule,
-  isMatchingTest,
-  loadApalacheConfig,
-  mkErrorMessage,
-  toExpr,
-} from './cliHelpers'
+import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
-import { TestOptions } from './runtime/testing'
-import { createConfig } from './apalache'
+import { TestOptions, TestResult } from './runtime/testing'
 
 export type stage =
   | 'loading'
@@ -279,6 +270,8 @@ export async function runRepl(argv: any) {
     importModule: moduleName,
     replInput: argv.commands,
     verbosity: argv.quiet ? 0 : argv.verbosity,
+    seed: argv.seed,
+    backend: argv.backend,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
@@ -319,8 +312,26 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     .flat()
     .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
-  const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
-  const results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  let results: TestResult[]
+
+  if (prev.args.backend === 'rust') {
+    const commandWrapper = new CommandWrapper(verbosityLevel)
+    results = []
+    for (const [index, def] of testDefs.entries()) {
+      const result = await commandWrapper.test(
+        def,
+        prev.table,
+        prev.args.seed,
+        options.maxSamples,
+        index,
+        options.onTrace
+      )
+      results.push(result)
+    }
+  } else {
+    const evaluator = new Evaluator(prev.table, newTraceRecorder(verbosityLevel, options.rng, 1), options.rng)
+    results = testDefs.map((def, index) => evaluator.test(def, options.maxSamples, index, options.onTrace))
+  }
 
   const elapsedMs = Date.now() - startMs
   outputTestResults(results, verbosityLevel, elapsedMs)
@@ -387,9 +398,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-  const argsParsingResult = mergeInMany(
-    [prev.args.init, prev.args.step, invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e))
-  )
+  const argsParsingResult = mergeInMany([
+    toExpr(prev, prev.args.init, { kind: 'action', flag: 'init' }),
+    toExpr(prev, prev.args.step, { kind: 'action', flag: 'step' }),
+    ...[invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e)),
+  ])
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
@@ -400,33 +413,33 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
-    if (prev.args.mbt || prev.args.witnesses.length > 0) {
-      console.warn(
-        chalk.yellow('Warning: --mbt and --witnesses are ignored when using the Rust backend (at this time).')
-      )
-      console.warn(chalk.yellow('Use the typescript backend if you need that functionality.'))
-    }
-
-    // Parse the combined invariant for the Rust backend
-    const invariantExpr = toExpr(prev, invariantString)
-    if (invariantExpr.isLeft()) {
+    const individualInvariantsResult = mergeInMany(individualInvariants.map(inv => toExpr(prev, inv)))
+    if (individualInvariantsResult.isLeft()) {
       return cliErr('Argument error', {
         ...simulator,
-        errors: [mkErrorMessage(prev.sourceMap)(invariantExpr.value)],
+        errors: individualInvariantsResult.value.map(mkErrorMessage(new Map())),
       })
     }
 
-    const quintRustWrapper = new QuintRustWrapper(verbosityLevel)
+    const commandWrapper = new CommandWrapper(verbosityLevel)
     const nThreads = Math.min(prev.args.maxSamples, prev.args.nThreads)
-    outcome = await quintRustWrapper.simulate(
-      { modules: [], table: prev.resolver.table, main: mainName, init, step, invariant: invariantExpr.value },
+    outcome = await commandWrapper.simulate(
+      {
+        modules: [],
+        table: prev.resolver.table,
+        main: mainName,
+        init,
+        step,
+        invariants: individualInvariantsResult.value,
+        witnesses: witnesses,
+      },
       prev.path,
-      witnesses,
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
       nThreads,
       prev.args.seed,
+      prev.args.mbt,
       options.onTrace
     )
   } else {
@@ -448,19 +461,32 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   simulator.seed = outcome.bestTraces[0]?.seed
   const states = outcome.bestTraces[0]?.states
+  const diagnostics = outcome.bestTraces[0]?.diagnostics || []
+  const pendingDiagnostics = outcome.bestTraces[0]?.pendingDiagnostics
   const frames = recorder.bestTraces[0]?.frame?.subframes
+
+  if (states && states.length > 0) {
+    maybePrintCounterExample(verbosityLevel, states, diagnostics, frames, prev.args.hide || [], pendingDiagnostics)
+  }
 
   switch (outcome.status) {
     case 'error':
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log(
+          chalk.red(`[error]`) +
+            ' Runtime error ' +
+            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+        )
+      }
       return cliErr('Runtime error', {
         ...simulator,
         status: outcome.status,
-        seed: prev.args.seed,
+        seed: simulator.seed,
+        trace: states,
         errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
     case 'ok':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.green('[ok]') +
@@ -482,7 +508,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'violation':
-      maybePrintCounterExample(verbosityLevel, states, frames, prev.args.hide || [])
       if (verbosity.hasResults(verbosityLevel)) {
         console.log(
           chalk.red(`[violation]`) +
@@ -490,7 +515,13 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
             chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
         )
 
-        printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
+        // Use Rust-provided violated invariants if available, otherwise fall back to TS evaluation
+        // Only print individual violations when there are multiple invariants
+        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0 && individualInvariants.length > 1) {
+          printViolatedInvariantsByIndex(outcome.violatedInvariants, individualInvariants)
+        } else {
+          printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
+        }
       }
 
       if (verbosity.hasHints(verbosityLevel)) {
@@ -520,7 +551,32 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     return cliErr(`module ${mainName} does not exist`, { ...typechecked, errors: [], sourceCode: new Map() })
   }
 
-  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
+  const extraDefsAsText: string[] = []
+
+  // init/step are required for TLA+ and verification (default to 'init'/'step'),
+  // but optional for JSON compilation (#1584).
+  // When flattening, init/step are needed: imported definitions
+  // are only included if referenced, so without q::init/q::step,
+  // definitions from imported modules would be silently dropped.
+  if (args.target !== 'json' || args.flatten !== false) {
+    args.init = args.init ?? 'init'
+    args.step = args.step ?? 'step'
+  }
+
+  for (const [name, flag] of [
+    [args.init, 'init'],
+    [args.step, 'step'],
+  ] as const) {
+    if (name === undefined) continue
+    const checkResult = toExpr(typechecked, name, { kind: 'action', flag })
+    if (checkResult.isLeft()) {
+      return cliErr('Argument error', {
+        ...typechecked,
+        errors: [checkResult.value].map(mkErrorMessage(new Map())),
+      })
+    }
+    extraDefsAsText.push(`action q::${flag} = ${name}`)
+  }
 
   const [invariantString, invariantsList] = getInvariants(typechecked.args)
   if (invariantsList.length > 0) {
@@ -588,89 +644,37 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 }
 
 /**
- * Verify a spec via Apalache.
+ * Verify a spec via a model checker(Apalache or TLC).
  *
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<TracingStage>> {
-  const verifying = { ...prev, stage: 'verifying' as stage }
-  const args = verifying.args
+  const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
 
-  const itfFile: string | undefined = prev.args.outItf
-  if (itfFile) {
-    if (itfFile.includes(PLACEHOLDERS.test) || itfFile.includes(PLACEHOLDERS.seq)) {
-      console.log(
-        `${chalk.yellow('[warning]')} the output file contains ${chalk.grey(PLACEHOLDERS.test)} or ${chalk.grey(
-          PLACEHOLDERS.seq
-        )}, but this has no effect since at most a single trace will be produced.`
+  // Warn when using temporal properties with Apalache, which has only experimental support
+  if (prev.args.temporal && prev.args.backend !== 'tlc') {
+    console.warn(
+      chalk.yellow(
+        '\n  WARNING: Apalache has experimental support for temporal properties and might give incorrect results.\n' +
+          '  Consider using --backend tlc, which fully supports temporal properties.\n'
       )
+    )
+
+    const confirmed = await askUserYesNo('Do you want to proceed with Apalache anyway? (y/N) ')
+    if (!confirmed) {
+      return cliErr('Aborted: re-run with --backend tlc for full temporal property support', {
+        ...verifying,
+        errors: [],
+        sourceCode: prev.sourceCode,
+      })
     }
   }
 
-  const loadedConfig = loadApalacheConfig(verifying, args.apalacheConfig)
-
-  const veryfiyingFlat = { ...prev, modules: [prev.mainModule] }
-  const parsedSpec = outputJson(veryfiyingFlat)
-
-  const [invariantsString, invariantsList] = getInvariants(prev.args)
-
-  if (args.inductiveInvariant) {
-    const hasOrdinaryInvariant = invariantsList.length > 0
-    const nPhases = hasOrdinaryInvariant ? 3 : 2
-    const initConfig = createConfig(loadedConfig, parsedSpec, { ...args, maxSteps: 0 }, ['q::inductiveInv'])
-
-    // Checking whether the inductive invariant holds in the initial state(s)
-    printInductiveInvariantProgress(verbosityLevel, args, 1, nPhases)
-
-    const startMs = Date.now()
-    return verify(args.serverEndpoint, args.apalacheVersion, initConfig, verbosityLevel).then(res => {
-      if (res.isLeft()) {
-        return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
-      }
-
-      // Checking whether the inductive invariant is preserved by the step
-      printInductiveInvariantProgress(verbosityLevel, args, 2, nPhases)
-
-      const stepConfig = createConfig(
-        loadedConfig,
-        parsedSpec,
-        { ...args, maxSteps: 1 },
-        ['q::inductiveInv'],
-        'q::inductiveInv'
-      )
-
-      return verify(args.serverEndpoint, args.apalacheVersion, stepConfig, verbosityLevel).then(res => {
-        if (res.isLeft() || !hasOrdinaryInvariant) {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, [args.inductiveInvariant])
-        }
-
-        // Checking whether the inductive invariant implies the ordinary invariant
-        printInductiveInvariantProgress(verbosityLevel, args, 3, nPhases, invariantsString)
-
-        const propConfig = createConfig(
-          loadedConfig,
-          parsedSpec,
-          { ...args, maxSteps: 0 },
-          ['q::inv'],
-          'q::inductiveInv'
-        )
-
-        return verify(args.serverEndpoint, args.apalacheVersion, propConfig, verbosityLevel).then(res => {
-          return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
-        })
-      })
-    })
+  if (prev.args.backend === 'tlc') {
+    return verifyWithTlcBackend(prev, verifying, verbosityLevel)
   }
-
-  // We need to insert the data form CLI args into their appropriate locations
-  // in the Apalache config
-  const config = createConfig(loadedConfig, parsedSpec, args, invariantsList.length > 0 ? ['q::inv'] : [])
-  const startMs = Date.now()
-
-  return verify(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel).then(res => {
-    return processVerifyResult(res, startMs, verbosityLevel, verifying, invariantsList)
-  })
+  return verifyWithApalacheBackend(prev, verifying, verbosityLevel)
 }
 
 /** output a compiled spec in the format specified in the `compiled.args.target` to stdout
@@ -789,4 +793,20 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
   }
 
   return right({ ...parsing, documentation: new Map(allEntries) })
+}
+
+/**
+ * Prompt the user with a yes/no question on the terminal. Defaults to "no".
+ */
+function askUserYesNo(question: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  })
+  return new Promise(resolve => {
+    rl.question(chalk.yellow(question), answer => {
+      rl.close()
+      resolve(answer.trim().toLowerCase() === 'y')
+    })
+  })
 }

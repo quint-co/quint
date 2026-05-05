@@ -4,6 +4,7 @@ use quint_evaluator::{
     evaluator::{run, Env, EvalResult, Interpreter},
     helpers,
     value::Value,
+    Verbosity,
 };
 
 fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -18,7 +19,7 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         )
     };
 
-    let parsed = helpers::parse(&quint_content(input), "init", "step", None)?;
+    let parsed = helpers::parse(&quint_content(input), None)?;
     let input_def = parsed.find_definition_by_name("expr")?;
     let value = run(&parsed.table, &input_def.expr);
 
@@ -27,9 +28,9 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
         return Ok(());
     }
 
-    let parsed_expected = helpers::parse(&quint_content(expected), "init", "step", None)?;
+    let parsed_expected = helpers::parse(&quint_content(expected), None)?;
     let expected_def = parsed_expected.find_definition_by_name("expr")?;
-    let expected_value = run(&parsed_expected.table, &expected_def.expr);
+    let expected_value = run(&parsed_expected.table, &expected_def.expr).map(|v| v.normalize());
 
     let value = value.map(|v| v.normalize());
 
@@ -39,6 +40,21 @@ fn assert_from_string(input: &str, expected: &str) -> Result<(), Box<dyn std::er
     );
 
     Ok(())
+}
+
+fn eval_expr(input: &str) -> EvalResult {
+    let quint_content = format!(
+        "module main {{
+          type T = Some(int) | None
+          val expr = {input}
+          val init = true
+          val step = true
+        }}"
+    );
+
+    let parsed = helpers::parse(&quint_content, None).unwrap();
+    let input_def = parsed.find_definition_by_name("expr").unwrap();
+    run(&parsed.table, &input_def.expr)
 }
 fn eval_run(callee: &str, input: &str) -> EvalResult {
     let quint_content = {
@@ -52,10 +68,10 @@ fn eval_run(callee: &str, input: &str) -> EvalResult {
         )
     };
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None).unwrap();
+    let parsed = helpers::parse(&quint_content, None).unwrap();
     let run_def = parsed.find_definition_by_name(callee).unwrap();
-    let mut interpreter = Interpreter::new(&parsed.table);
-    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+    let mut interpreter = Interpreter::new(parsed.table.clone());
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
 
     interpreter.eval(&mut env, run_def.expr.clone())
 }
@@ -78,10 +94,10 @@ fn assert_var_after_run(
         )
     };
 
-    let parsed = helpers::parse(&quint_content, "init", "step", None)?;
+    let parsed = helpers::parse(&quint_content, None)?;
     let run_def = parsed.find_definition_by_name(callee)?;
-    let mut interpreter = Interpreter::new(&parsed.table);
-    let mut env = Env::new(Rc::clone(&interpreter.var_storage));
+    let mut interpreter = Interpreter::new(parsed.table.clone());
+    let mut env = Env::new(Rc::clone(&interpreter.var_storage), Verbosity::default());
 
     let run_result = interpreter.eval(&mut env, run_def.expr.clone());
 
@@ -96,9 +112,9 @@ fn assert_var_after_run(
         .borrow();
     let var_value = var_value.clone().value.unwrap().normalize();
 
-    let parsed_expected = helpers::parse(&quint_content, "init", "step", None)?;
+    let parsed_expected = helpers::parse(&quint_content, None)?;
     let expected_def = parsed_expected.find_definition_by_name("expected")?;
-    let expected_value = run(&parsed_expected.table, &expected_def.expr)?;
+    let expected_value = run(&parsed_expected.table, &expected_def.expr)?.normalize();
 
     assert_eq!(
         var_value, expected_value,
@@ -1063,9 +1079,9 @@ fn run_then_failure_when_rhs_is_unreachable() -> Result<(), Box<dyn std::error::
     let err = result.unwrap_err();
     assert_eq!(
         err.to_string(),
-        "[QNT513] Cannot continue in A.then(B), A evaluates to 'false'"
+        "[QNT513] Cannot continue in `then` because the highlighted expression evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1106,7 +1122,7 @@ fn run_reps_false_when_action_is_false() -> Result<(), Box<dyn std::error::Error
         err.to_string(),
         "[QNT513] Reps loop could not continue after iteration #6 evaluated to false"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1146,7 +1162,7 @@ fn run_expect_failure() -> Result<(), Box<dyn std::error::Error>> {
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1171,7 +1187,7 @@ fn run_expect_failure_when_lhs_is_false() -> Result<(), Box<dyn std::error::Erro
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert_eq!(err.to_string(), "[QNT508] Cannot continue to \"expect\"");
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1188,7 +1204,7 @@ fn run_expect_and_then_expect_failure() -> Result<(), Box<dyn std::error::Error>
         err.to_string(),
         "[QNT508] Expect condition does not hold true"
     );
-    assert!(err.reference.is_some());
+    assert!(!err.trace.is_empty());
 
     Ok(())
 }
@@ -1213,4 +1229,111 @@ fn run_q_debug_single_arg() -> Result<(), Box<dyn std::error::Error>> {
         "var n: int\n
          run run1 = (n' = 1).then(n' = q::debug(n + 1))",
     )
+}
+
+#[test]
+fn compile_int_builtin() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Int", "Int")
+}
+
+#[test]
+fn compile_int_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Int.contains(123)", "true")?;
+    assert_from_string("Int.contains(0)", "true")?;
+    assert_from_string("Int.contains(-123)", "true")
+}
+
+#[test]
+fn compile_nat_builtin() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat", "Nat")
+}
+
+#[test]
+fn compile_nat_contains() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat.contains(123)", "true")?;
+    assert_from_string("Nat.contains(0)", "true")?;
+    assert_from_string("Nat.contains(-123)", "false")
+}
+
+#[test]
+fn compile_subseteq_nat_int() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat.subseteq(Nat)", "true")?;
+    assert_from_string("Nat.subseteq(Int)", "true")?;
+    assert_from_string("Int.subseteq(Int)", "true")?;
+    assert_from_string("Int.subseteq(Nat)", "false")
+}
+
+#[test]
+fn compile_equality_nat_int() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("Nat == Nat", "true")?;
+    assert_from_string("Int == Int", "true")?;
+    assert_from_string("Nat == Int", "false")?;
+    assert_from_string("Int == Nat", "false")?;
+    assert_from_string("Int == Set(0, 1)", "false")
+}
+
+#[test]
+fn set_int_fails() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("Set(Int)");
+    assert!(result.is_err(), "Set(Int) should fail");
+    Ok(())
+}
+
+#[test]
+fn set_nat_fails() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("Set(Nat)");
+    assert!(result.is_err(), "Set(Nat) should fail");
+    Ok(())
+}
+
+#[test]
+fn arithmetic_overflow() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("9223372036854775807 + 1");
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "[QNT601] Integer overflow in arithmetic operations: 9223372036854775807 + 1"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn cardinality_overflow() -> Result<(), Box<dyn std::error::Error>> {
+    let result = eval_expr("1.to(80).powerset().size()");
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "[QNT601] Integer overflow in cardinality computation: powerset size 2^80 exceeds the maximum supported size"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn error_trace_on_division_by_zero() {
+    // A direct error should produce a trace with at least one entry
+    let result = eval_expr("1 / 0");
+    let err = result.unwrap_err();
+    assert!(
+        !err.trace.is_empty(),
+        "Division by zero should have a stack trace"
+    );
+}
+
+#[test]
+fn error_trace_through_user_def() {
+    // When a user-defined operator triggers an error, the trace should grow
+    // with each call site in the chain
+    let result = eval_expr(
+        "def f(x) = 1 / x
+         def g(y) = f(y)
+         g(0)",
+    );
+    let err = result.unwrap_err();
+    assert!(
+        err.trace.len() == 3,
+        "Error through nested user-defined calls should have exactly 3 trace entries, got {}",
+        err.trace.len()
+    );
 }

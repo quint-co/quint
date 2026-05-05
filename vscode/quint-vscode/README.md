@@ -11,6 +11,8 @@ This extension provides language support for Quint, the specification language.
   - Type errors
   - Effect errors
   - Mode errors
+- Symbol navigation:
+  - Find all references
 
 New features are listed and discussed on [this GitHub
 discussion](https://github.com/informalsystems/quint/discussions/254).

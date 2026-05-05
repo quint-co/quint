@@ -12,7 +12,7 @@
  * @module
  */
 
-import isEqual from 'lodash.isequal'
+import { isDeepStrictEqual as isEqual } from 'node:util'
 import { unreachable } from '../util'
 import { ConcreteEffect, Effect, Entity, StateVariable } from './base'
 

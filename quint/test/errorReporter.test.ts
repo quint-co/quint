@@ -13,7 +13,7 @@ describe('errorReporter', () => {
 
   it('highlights the middle line', () => {
     const message: ErrorMessage = {
-      explanation: 'error explanation',
+      explanation: '[QNT000] error explanation',
       locs: [
         {
           source: 'file',
@@ -23,9 +23,11 @@ describe('errorReporter', () => {
       ],
     }
 
-    const expectedError = `file:2:5 - error: error explanation
-2:   def op = "value"
-       ^^^^`
+    const expectedError = `Error [QNT000]: error explanation
+
+  at file:2:5
+  2:   def op = "value"
+         ^^^^`
 
     const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
@@ -33,7 +35,7 @@ describe('errorReporter', () => {
 
   it('highlights the first 2 lines', () => {
     const message: ErrorMessage = {
-      explanation: 'error explanation',
+      explanation: '[QNT000] error explanation',
       locs: [
         {
           source: 'file',
@@ -43,11 +45,13 @@ describe('errorReporter', () => {
       ],
     }
 
-    const expectedError = `file:1:5 - error: error explanation
-1: module test {
-       ^^^^^^^^^
-2:   def op = "value"
-   ^^^^^^^^`
+    const expectedError = `Error [QNT000]: error explanation
+
+  at file:1:5
+  1: module test {
+         ^^^^^^^^^
+  2:   def op = "value"
+     ^^^^^^^^`
 
     const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
@@ -55,7 +59,7 @@ describe('errorReporter', () => {
 
   it('highlights a single char when loc has no end', () => {
     const message: ErrorMessage = {
-      explanation: 'error explanation',
+      explanation: '[QNT000] error explanation',
       locs: [
         {
           source: 'file',
@@ -64,9 +68,11 @@ describe('errorReporter', () => {
       ],
     }
 
-    const expectedError = `file:2:5 - error: error explanation
-2:   def op = "value"
-       ^`
+    const expectedError = `Error [QNT000]: error explanation
+
+  at file:2:5
+  2:   def op = "value"
+         ^`
 
     const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
@@ -74,7 +80,7 @@ describe('errorReporter', () => {
 
   it('uses column information when index is 0', () => {
     const message: ErrorMessage = {
-      explanation: 'error explanation',
+      explanation: '[QNT000] error explanation',
       locs: [
         {
           source: 'file',
@@ -84,9 +90,11 @@ describe('errorReporter', () => {
       ],
     }
 
-    const expectedError = `file:2:5 - error: error explanation
-2:   def op = "value"
-       ^^^^`
+    const expectedError = `Error [QNT000]: error explanation
+
+  at file:2:5
+  2:   def op = "value"
+         ^^^^`
 
     const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)

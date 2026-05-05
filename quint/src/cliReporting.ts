@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
+import { prettyQuintEx, printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { QuintEx, QuintModule } from './ir/quintIr'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
@@ -18,16 +18,20 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { ofItfNormalized, toItf } from './itf'
+import { DebugMessage, ItfState, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
-import { Either, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { cwd } from 'process'
 import { replacer } from './jsonHelper'
 import { ApalacheResult } from './apalache'
+import { TlcError } from './tlc'
 import { QuintError } from './quintError'
+import { LookupTable } from './names/base'
+import { findViolatedInvariants } from './rust/invariantsReporter'
 import { TestResult } from './runtime/testing'
 import { createFinders, formatError } from './errorReporter'
 import { ErrorMessage } from './ErrorMessage'
+import { Doc, brackets, format, line, nest, space, text } from './prettierimp'
 
 export type TraceHook = (index: number, status: string, vars: string[], states: QuintEx[], name?: string) => void
 
@@ -42,8 +46,10 @@ export type TraceHook = (index: number, status: string, vars: string[], states: 
 export function maybePrintCounterExample(
   verbosityLevel: number,
   states: QuintEx[],
+  diagnostics: DebugMessage[][],
   frames: ExecutionFrame[] = [],
-  hideVars: string[] = []
+  hideVars: string[] = [],
+  pendingDiagnostics?: DebugMessage[]
 ): void {
   if (verbosity.hasStateOutput(verbosityLevel)) {
     console.log(chalk.gray('An example execution:\n'))
@@ -51,7 +57,7 @@ export function maybePrintCounterExample(
       width: terminalWidth(),
       out: (s: string) => process.stdout.write(s),
     }
-    printTrace(myConsole, states, frames, hideVars)
+    printTrace(myConsole, states, diagnostics, frames, hideVars, pendingDiagnostics)
   }
 }
 
@@ -75,6 +81,24 @@ export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, wi
         } explored ${percentage}`
       )
     })
+  }
+}
+
+/**
+ * Print violated invariants using indices provided by the Rust backend.
+ *
+ * @param violatedIndices The indices of invariants that were violated.
+ * @param invariants The list of invariant names/expressions.
+ */
+export function printViolatedInvariantsByIndex(violatedIndices: number[], invariants: string[]): void {
+  if (violatedIndices.length === 0) {
+    return
+  }
+
+  for (const idx of violatedIndices) {
+    if (idx < invariants.length) {
+      console.log(chalk.red(`  ❌ ${invariants[idx]}`))
+    }
   }
 }
 
@@ -105,57 +129,112 @@ export function printViolatedInvariants(state: QuintEx, invariants: string[], pr
 }
 
 /**
- * Process the result of a verification call.
- *
- * @param res The result of the verification.
- * @param startMs The start time in milliseconds.
- * @param verbosityLevel The verbosity level.
- * @param verifying The current tracing stage.
- * @param invariantsList The list of invariants.
- * @param prev The previous stage context.
- * @returns The processed result.
+ * Process verification result from TLC.
  */
-export function processVerifyResult(
-  res: ApalacheResult<void>,
+export function processTlcResult(
+  res: Either<TlcError, void>,
   startMs: number,
   verbosityLevel: number,
-  stage: TracingStage,
-  invariantsList: string[]
+  stage: TracingStage
 ): CLIProcedure<TracingStage> {
   const elapsedMs = Date.now() - startMs
 
   return res
     .map((): TracingStage => {
       if (verbosity.hasResults(verbosityLevel)) {
-        console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-        if (verbosity.hasHints(verbosityLevel)) {
-          console.log(chalk.gray('You may increase --max-steps.'))
-          console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
-        }
+        console.log('\n' + chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
       }
       return { ...stage, status: 'ok', errors: [] }
     })
     .mapLeft(err => {
-      const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
-      const status = trace !== undefined ? 'violation' : 'failure'
-
-      if (trace !== undefined) {
-        maybePrintCounterExample(verbosityLevel, trace, [], stage.args.hide || [])
-
-        if (verbosity.hasResults(verbosityLevel)) {
-          console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-          printViolatedInvariants(trace[trace.length - 1], invariantsList, stage)
-        }
-
-        if (stage.args.outItf && err.traces) {
-          writeToJson(stage.args.outItf, err.traces[0])
-        }
+      const status = err.isViolation ? 'violation' : 'failure'
+      const summary = err.isViolation ? 'Found an issue' : 'TLC encountered an error'
+      if (verbosity.hasResults(verbosityLevel)) {
+        console.log('\n' + chalk.red(`[${status}]`) + ' ' + summary + ' ' + chalk.gray(`(${elapsedMs}ms).`))
       }
       return {
         msg: err.explanation,
-        stage: { ...stage, status, errors: err.errors, trace },
+        stage: { ...stage, status, errors: err.errors },
       }
     })
+}
+
+/**
+ * Process the result of a verification call.
+ *
+ * @param res The result of the verification.
+ * @param startMs The start time in milliseconds.
+ * @param verbosityLevel The verbosity level.
+ * @param stage The current tracing stage.
+ * @param invariantsList The list of invariants.
+ * @param invariantExprs Optional parsed invariant expressions for Rust-based evaluation.
+ * @param table Optional lookup table for Rust-based evaluation.
+ * @returns The processed result.
+ */
+export async function processApalacheResult(
+  res: ApalacheResult<void>,
+  startMs: number,
+  verbosityLevel: number,
+  stage: TracingStage,
+  invariantsList: string[],
+  invariantExprs?: QuintEx[],
+  table?: LookupTable
+): Promise<CLIProcedure<TracingStage>> {
+  const elapsedMs = Date.now() - startMs
+
+  if (res.isRight()) {
+    if (verbosity.hasResults(verbosityLevel)) {
+      console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+      if (verbosity.hasHints(verbosityLevel)) {
+        console.log(chalk.gray('You may increase --max-steps.'))
+        console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+      }
+    }
+    return right({ ...stage, status: 'ok', errors: [] } as TracingStage)
+  }
+
+  const err = res.value
+  const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
+  const status = trace !== undefined ? 'violation' : 'failure'
+
+  if (trace !== undefined) {
+    maybePrintCounterExample(verbosityLevel, trace, [], [], stage.args.hide || [])
+
+    if (verbosity.hasResults(verbosityLevel)) {
+      console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+      const itfStates = err.traces?.[0]?.states
+      const lastItfState = itfStates?.[itfStates.length - 1]
+      if (invariantExprs && table && lastItfState) {
+        await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
+      }
+    }
+
+    if (stage.args.outItf && err.traces) {
+      writeToJson(stage.args.outItf, err.traces[0])
+    }
+  }
+  return left({
+    msg: err.explanation,
+    stage: { ...stage, status, errors: err.errors, trace },
+  })
+}
+
+/**
+ * Print violated invariants using the Rust evaluator.
+ */
+async function printViolatedInvariantsWithRust(
+  invariantsList: string[],
+  verbosityLevel: number,
+  invariantExprs: QuintEx[],
+  table: LookupTable,
+  itfState: ItfState
+): Promise<void> {
+  const result = await findViolatedInvariants(itfState, table, invariantExprs, verbosityLevel)
+  if (result.isRight()) {
+    printViolatedInvariantsByIndex(result.value, invariantsList)
+  } else {
+    console.warn(chalk.yellow(`Warning: could not determine violated invariants: ${result.value.message}`))
+  }
 }
 
 export function outputJson(stage: ProcedureStage): string {
@@ -273,11 +352,25 @@ export function outputTestResults(results: TestResult[], verbosityLevel: number,
     results.forEach(res => {
       if (res.status === 'passed') {
         out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-      }
-      if (res.status === 'failed') {
+      } else if (res.status === 'failed') {
         const errNo = chalk.red(nFailures)
         out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
         nFailures++
+      }
+      if (res.status !== 'ignored') {
+        for (const msgs of res.traces?.at(0)?.diagnostics || []) {
+          for (const msg of msgs) {
+            const doc: Doc = nest('       ', [
+              text('       '),
+              brackets(text('DEBUG')),
+              space,
+              text(msg.label),
+              line(),
+              prettyQuintEx(msg.value),
+            ])
+            out(format(terminalWidth(), 5, doc))
+          }
+        }
       }
     })
 
@@ -322,18 +415,21 @@ export function outputTestErrors(prev: ParsedStage, verbosityLevel: number, fail
 
       if (verbosity.hasActionTracking(verbosityLevel)) {
         out('')
-        testResult.frames.forEach((f, index) => {
-          out(`[${chalk.bold('Frame ' + index)}]`)
-          const console = {
-            width: columns,
-            out: (s: string) => process.stdout.write(s),
-          }
-          printExecutionFrameRec(console, f, [])
-          out('')
-        })
+        // Skip frame display for Rust backend
+        if (!testResult.traces) {
+          testResult.frames?.forEach((f, index) => {
+            out(`[${chalk.bold('Frame ' + index)}]`)
+            const console = {
+              width: columns,
+              out: (s: string) => process.stdout.write(s),
+            }
+            printExecutionFrameRec(console, f, [])
+            out('')
+          })
 
-        if (testResult.frames.length == 0) {
-          out('    [No execution]')
+          if (testResult.frames?.length == 0) {
+            out('    [No execution]')
+          }
         }
       }
       // output the seed

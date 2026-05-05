@@ -6,6 +6,9 @@
 			"include": "#hashbangLine"
 		},
 		{
+			"include": "#docComments"
+		},
+		{
 			"include": "#lineComments"
 		},
 		{
@@ -19,6 +22,9 @@
 		},
 		{
 			"include": "#constants"
+		},
+		{
+			"include": "#punctuation"
 		},
 		{
 			"include": "#operators"
@@ -44,7 +50,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.quint",
-					"match": "\\b(module|import|from|export|as|if|else|not|or|and|implies|iff|all|any)\\b"
+					"match": "\\b(module|import|from|export|as|if|else|match|not|or|and|implies|iff|all|any|leadsTo|strongFair|weakFair)\\b"
 				}
 			]
 		},
@@ -56,7 +62,11 @@
 				},
 				{
 					"name": "storage.type.quint",
-					"match": "\\b(Tup|Rec|Set|List|int|str|bool)\\b"
+					"match": "\\b(Set|List|int|str|bool)\\b"
+				},
+				{
+					"name": "support.type.quint",
+					"match": "\\b(Map|Tup|Rec)\\b"
 				}
 			]
 		},
@@ -64,20 +74,14 @@
 			"patterns": [
 				{
 					"name": "keyword.operator.quint",
-					"match": "(=>|<=|>|<|=|!=|\\.|\\*|\\+|-|/|%|\\^)"
+					"match": "(=>|->|<=|>|<|=|!=|'|\\.|\\*|\\+|-|/|%|\\^)"
 				}
 			]
 		},
 		"strings": {
 			"name": "string.quoted.double.quint",
 			"begin": "\"",
-			"end": "\"",
-			"patterns": [
-				{
-					"name": "constant.character.escape.quint",
-					"match": "\\\\."
-				}
-			]
+			"end": "\""
 		},
 		"numbers": {
 			"patterns": [
@@ -91,7 +95,7 @@
 			"patterns": [
 				{
 					"name": "constant.language.quint",
-					"match": "(false|true|Bool|Int|Nat)"
+					"match": "\\b(false|true|Bool|Int|Nat)\\b"
 				}
 			]
 		},
@@ -99,7 +103,31 @@
 			"patterns": [
 				{
 					"name": "comment.line.hashbang.quint",
-					"match": "^#!.*$"
+					"match": "\\A#!.*$"
+				}
+			]
+		},
+		"docComments": {
+			"patterns": [
+				{
+					"name": "comment.block.documentation.quint",
+					"match": "///.*$"
+				}
+			]
+		},
+		"punctuation": {
+			"patterns": [
+				{
+					"name": "keyword.operator.spread.quint",
+					"match": "\\.\\.\\."
+				},
+				{
+					"name": "punctuation.accessor.quint",
+					"match": "::"
+				},
+				{
+					"name": "punctuation.separator.quint",
+					"match": "\\|"
 				}
 			]
 		},

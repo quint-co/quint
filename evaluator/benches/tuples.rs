@@ -3,33 +3,17 @@ use std::process::Stdio;
 use std::{io::Write, time::Duration};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use quint_evaluator::{evaluator::run, ir::QuintOutput};
+use quint_evaluator::{evaluator::run, helpers};
 use tempfile::NamedTempFile;
 
 fn run_in_rust(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
-          val init = true
-          val step = true
         }}"
     );
 
-    // A unique filename so multiple tests can run in parallel
-    let mut file = NamedTempFile::new()?;
-
-    file.write_all(quint_content.as_bytes())?;
-
-    let output = Command::new("quint")
-        .arg("compile")
-        .arg(file.path())
-        .stdout(std::process::Stdio::piped())
-        .output()
-        .unwrap();
-
-    let serialized_quint = String::from_utf8(output.stdout).unwrap();
-
-    let parsed: QuintOutput = serde_json::from_str(serialized_quint.as_str()).unwrap();
+    let parsed = helpers::parse(&quint_content, None)?;
 
     let def = parsed.find_definition_by_name("input").unwrap();
 
@@ -46,8 +30,6 @@ fn run_in_quint_repl(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     let quint_content = format!(
         "module main {{
           val input = {input}
-          val init = true
-          val step = true
         }}"
     );
 

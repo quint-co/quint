@@ -122,10 +122,6 @@ module ewd840 {
   // FIXME(#630): OrKeep takes an arbitrary type for now
   val vars = (active, color, tpos, tcolor)
 
-  // FIXME(#1236): we cannot add `init` to this property since, in quint, it is an
-  // action - not a predicate
-  // temporal Spec = init and always(step.orKeep(vars) and System.weakFair(vars))
-
   //-----------------------------------------------------------------------------
 
   /* Non-properties, useful for validating the specification with `run` and `verify`. */
@@ -145,15 +141,14 @@ module ewd840 {
     terminationDetected implies Nodes.forall(i => not(active.get(i)))
 
   /// Liveness property: termination is eventually detected.
-  temporal Liveness =
-    always(Nodes.forall(i => not(active.get(i))) implies eventually(terminationDetected))
+  /// Once all nodes are inactive, termination will eventually be detected.
+  temporal liveness =
+    System.weakFair(vars) implies (Nodes.forall(i => not(active.get(i))) leadsTo terminationDetected)
 
   /// The following property asserts that when every process always eventually
   /// terminates then eventually termination will be detected. It does not hold
-  /// since processes can wake up each other.
-  temporal FalseLiveness =
-    always(Nodes.forall(i => always(eventually(not(active.get(i)))))
-           implies eventually(terminationDetected))
+  temporal falseLiveness =
+    System.weakFair(vars) implies Nodes.forall(i => always(eventually(not(active.get(i))))) leadsTo terminationDetected
 
   // The property `AllNodesTerminateIfNoMessages` says that eventually all nodes
   // will terminate assuming that from some point onwards no messages are sent.
@@ -161,17 +156,13 @@ module ewd840 {
   // computations. However, this property is verified if the fairness condition
   // WF_vars(step) is used instead of only WF_vars(System) that requires fairness
   // of the actions controlled by termination detection.
-  //
-  // FIXME(#1236): we cannot add `init` to this property since, in quint, it is an
-  // action - not a predicate
-  // temporal SpecWFstep = always(step.orKeep(vars) and step.weakFair(vars)) and init
 
   // Not expressible in quint (for now), as it negates an action
-  // temporal AllNodesTerminateIfNoMessages = (
-  //   eventually(always(
-  //       Node.forall(i => not(SendMsg(i))).orKeep(vars)
-  //   )) implies eventually(Node.forall(i => not(active.get(i))))
-  // )
+  // temporal AllNodesTerminateIfNoMessages =
+  //   step.orKeep(vars) and step.weakFair(vars) implies
+  //     eventually(always(
+  //         Node.forall(i => not(SendMsg(i))).orKeep(vars)
+  //     )) implies eventually(Node.forall(i => not(active.get(i))))
 
   /// Dijkstra's inductive invariant
   /// Check that it is indeed inductive (together with TypeOK) with:
