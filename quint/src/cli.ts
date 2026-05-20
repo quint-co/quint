@@ -10,6 +10,20 @@
  * @author Igor Konnov, konnov.phd, 2024
  */
 
+// Re-exec with a larger JS stack so deep ASTs (e.g. a long `.then`
+// chain) survive the recursive walks in the TS pipeline — IRVisitor,
+// the TS runtime builder, JSONbig.stringify on the Rust-backend path.
+// A sentinel env var keeps the re-exec from looping.
+import { spawnSync } from 'child_process'
+if (!process.env.QUINT_STACK_BUMPED) {
+  const result = spawnSync(
+    process.execPath,
+    ['--stack-size=8000', ...process.execArgv, process.argv[1], ...process.argv.slice(2)],
+    { stdio: 'inherit', env: { ...process.env, QUINT_STACK_BUMPED: '1' } }
+  )
+  process.exit(result.status ?? 1)
+}
+
 import os from 'os'
 import yargs from 'yargs'
 
