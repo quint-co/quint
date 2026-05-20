@@ -17,7 +17,20 @@ import * as ir from './quintIr'
 import * as t from './quintTypes'
 import { unreachable } from '../util'
 import { LookupDefinition } from '../names/base'
-import cloneDeep from 'lodash.clonedeep'
+
+// Shallow clone, preserving the discriminated-union type. Previously
+// `lodash.clonedeep`, but it recursively walked every field at every
+// level — a deep AST (e.g. a long `.then` chain) overflowed the JS
+// stack. A shallow copy is enough as long as
+// every IRTransformer hook obeys this invariant: hooks may return a
+// new object or mutate the top-level fields of the value they
+// received, but must NOT reach into a child reference and mutate it
+// in place (e.g. `expr.args[0].kind = 'foo'`). The recursive descent
+// below replaces every nested child with the transformed (already
+// shallow-cloned) version, so the original tree stays untouched.
+function shallowCloneIR<T extends object>(value: T): T {
+  return { ...value }
+}
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -112,7 +125,7 @@ export class IRTransformer {
  * @returns the transformed Quint module
  */
 export function transformModule(transformer: IRTransformer, quintModule: ir.QuintModule): ir.QuintModule {
-  let newModule = cloneDeep(quintModule)
+  let newModule = shallowCloneIR(quintModule)
 
   if (transformer.enterModule) {
     newModule = transformer.enterModule(newModule)
@@ -137,7 +150,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
  * @returns the transformed Quint type
  */
 export function transformType(transformer: IRTransformer, type: t.QuintType): t.QuintType {
-  let newType = cloneDeep(type)
+  let newType = shallowCloneIR(type)
   if (transformer.enterType) {
     newType = transformer.enterType(newType)
   }
@@ -318,7 +331,7 @@ export function transformLookupDefinition(transformer: IRTransformer, lud: Looku
  * @returns the transformed Quint definition
  */
 export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintDeclaration): ir.QuintDeclaration {
-  let newDecl = cloneDeep(decl)
+  let newDecl = shallowCloneIR(decl)
   if (transformer.enterDecl) {
     newDecl = transformer.enterDecl(newDecl)
   }
@@ -376,7 +389,7 @@ export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintD
  * @returns the transformed Quint definition
  */
 export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef): ir.QuintDef {
-  let newDef = cloneDeep(def)
+  let newDef = shallowCloneIR(def)
   if (transformer.enterDef) {
     newDef = transformer.enterDef(newDef)
   }
@@ -451,7 +464,7 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
  * @returns the transformed Quint expression
  */
 function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.QuintEx {
-  let newExpr = cloneDeep(expr)
+  let newExpr = shallowCloneIR(expr)
   if (transformer.enterExpr) {
     newExpr = transformer.enterExpr(newExpr)
   }
@@ -543,7 +556,7 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
  * @returns the transformed Quint row
  */
 export function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
-  let newRow = cloneDeep(row)
+  let newRow = shallowCloneIR(row)
   if (transformer.enterRow) {
     newRow = transformer.enterRow(newRow)
   }
