@@ -19,6 +19,11 @@ module simple_test {
     1 + 1 == 3
   }
 
+  // Test that returns a non-boolean value
+  run ignoredTest = {
+    1
+  }
+
   // Test that uses assert and fails (fails with QNT508)
   run failingAssertTest = {
     assert(1 + 1 == 3)
