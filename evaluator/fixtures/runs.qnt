@@ -29,4 +29,7 @@ module simple_test {
     init.then({
       x' = -1
     }).expect(x >= 0)
+
+  // Test that returns a non-boolean value (should be ignored)
+  val ignoredTest = 1
 }

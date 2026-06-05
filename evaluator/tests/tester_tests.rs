@@ -81,3 +81,15 @@ fn failing_expect_action_returns_qnt508() {
     // Could be either "Cannot continue" or "does not hold" depending on which part fails
     assert!(!result.errors[0].trace.is_empty());
 }
+
+#[test]
+fn non_bool_test_is_ignored() {
+    let file_path = Path::new("fixtures/runs.qnt");
+    let test_case = parse_test_from_path(file_path, "ignoredTest").unwrap();
+
+    let result = test_case.execute(Some(0), 1, progress::no_report(), Verbosity::default());
+
+    // Non-boolean tests should be marked as ignored, not crashed
+    // No errors and no panic means the test was handled gracefully
+    assert_eq!(result.errors.len(), 0);
+}

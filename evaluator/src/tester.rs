@@ -63,6 +63,7 @@ impl TestCase {
 
         let mut errors = Vec::new();
         let mut nsamples = 0;
+        let mut ignored = false;
         let mut trace = Trace {
             states: Vec::new(),
             violation: false,
@@ -82,7 +83,12 @@ impl TestCase {
 
             match test_result {
                 Ok(result) => {
-                    if !result.as_bool() {
+                    if !result.is_bool() {
+                        // Non-boolean results (e.g., val ignoredTest = 1)
+                        // are marked as ignored, matching TypeScript evaluator behavior
+                        ignored = true;
+                        break;
+                    } else if !result.as_bool() {
                         let error =
                             QuintError::new("QNT511", &format!("Test {test_name} returned false"))
                                 .with_reference(test_def_id);
@@ -101,7 +107,9 @@ impl TestCase {
             }
         }
 
-        let status = if errors.is_empty() {
+        let status = if ignored {
+            TestStatus::Ignored
+        } else if errors.is_empty() {
             TestStatus::Passed
         } else {
             TestStatus::Failed
