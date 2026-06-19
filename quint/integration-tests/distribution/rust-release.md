@@ -24,10 +24,10 @@ QUINT_HOME="$(mktemp -d)" quint run \
   --backend=rust \
   --n-threads=4 \
   ./testFixture/simulator/gettingStarted.qnt \
-  | grep -o "Downloading Rust evaluator from https://api.github.com/repos/informalsystems/quint/releases/assets/"
+  | grep -o "Downloading Rust evaluator from https://api.github.com/repos/quint-co/quint/releases/assets/"
 ```
 
 <!-- !test out download and run -->
 ```
-Downloading Rust evaluator from https://api.github.com/repos/informalsystems/quint/releases/assets/
+Downloading Rust evaluator from https://api.github.com/repos/quint-co/quint/releases/assets/
 ```
