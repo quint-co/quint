@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * Test fixture for record destructuring patterns in val declarations.
  *

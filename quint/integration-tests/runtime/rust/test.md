@@ -105,12 +105,12 @@ exit $exit_code
 
   1) bidWithdrawTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/SimpleAuction.qnt:72:25
+        at HOME/SimpleAuction.qnt:71:25
         72:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at isUInt(fromBal) (HOME/SimpleAuction.qnt:99:17)
-          at evmSend(evmState, sender, s.addressOfThis, value) (HOME/SimpleAuction.qnt:188:23)
-          at bid("alice", 5) (HOME/SimpleAuction.qnt:288:19)
+          at isUInt(fromBal) (HOME/SimpleAuction.qnt:98:17)
+          at evmSend(evmState, sender, s.addressOfThis, value) (HOME/SimpleAuction.qnt:187:23)
+          at bid("alice", 5) (HOME/SimpleAuction.qnt:287:19)
     Use --seed=0x1 --match=bidWithdrawTest to repeat.
 
 
@@ -141,11 +141,11 @@ exit $exit_code
 
   1) transferFromWhileApproveInFlightTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:34:25
+        at HOME/erc20.qnt:33:25
         34:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at transferFrom(erc20State, tx.sender, tx.fromAddr, tx.toAddr, tx.amount) (HOME/erc20.qnt:445:32)
-          at commit(TransferFromTx("bob", "alice", "eve", 54)) (HOME/erc20.qnt:522:15)
+          at transferFrom(erc20State, tx.sender, tx.fromAddr, tx.toAddr, tx.amount) (HOME/erc20.qnt:444:32)
+          at commit(TransferFromTx("bob", "alice", "eve", 54)) (HOME/erc20.qnt:521:15)
     Use --seed=0x1 --match=transferFromWhileApproveInFlightTest to repeat.
 
 
@@ -179,12 +179,12 @@ exit $exit_code
 
   1) transferTest:
        Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:34:25
+        at HOME/erc20.qnt:33:25
         34:     pure val MAX_UINT = 2^256 - 1
                                     ^^^^^
-          at isUint(state.totalSupply) (HOME/erc20.qnt:232:9)
-          at isNoOverflows(s) (HOME/erc20.qnt:311:9)
-          at isValid(erc20State) (HOME/erc20.qnt:327:25)
+          at isUint(state.totalSupply) (HOME/erc20.qnt:231:9)
+          at isNoOverflows(s) (HOME/erc20.qnt:310:9)
+          at isValid(erc20State) (HOME/erc20.qnt:326:25)
     Use --seed=0x1 --match=transferTest to repeat.
 
 
@@ -219,7 +219,7 @@ exit $exit_code
 
   1) requireTest:
        Error [QNT600]: Integer literal 9223372036854775808 is outside i64 range and is not supported by the Rust evaluator.
-        at HOME/ics20.qnt:517:23
+        at HOME/ics20.qnt:516:23
         517:     pure val amount = 9223372036854775808
                                    ^^^^^^^^^^^^^^^^^^^
     Use --seed=0x1 --match=requireTest to repeat.

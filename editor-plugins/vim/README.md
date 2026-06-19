@@ -18,7 +18,7 @@ This guide will help you set up Vim for Quint, including syntax highlighting and
 
    - **Option C (Modelines):** Make sure you have modelines enabled and add the following line to the end of your Quint file:
 
-     ```bluespec
+     ```quint
      // vim: syntax=quint
      ```
 

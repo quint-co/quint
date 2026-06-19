@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /**
  * A bank module for ICS-020 (Fungible Token Transfer).

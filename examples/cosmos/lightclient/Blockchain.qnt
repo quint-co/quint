@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 //   This is a high-level specification of Tendermint blockchain
 //   that is designed specifically for the light client.
 //   Validators have the voting power of one. If you like to model various

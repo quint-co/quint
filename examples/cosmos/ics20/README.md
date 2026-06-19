@@ -36,7 +36,7 @@ true
 It also provides an action `init` that sets up the initial state of the protocol. This assigns 100 ATOM to account `"alice"` on chain `"A"`.
 The state of each chain is available as `chainStates.get(`chain`)`, and can be inspected interactively:
 
-```bluespec
+```quint
 >>> init
 true
 >>> chainStates.get("A")
@@ -53,14 +53,14 @@ true
 
 We can now initiate a transfer of 1 ATOM from `"alice"` on chain `"A"` to `"bob"` on chain `"B"`:
 
-```bluespec
+```quint
 >>> sendPacket("A", "B", ATOM, 1, "alice", "bob")
 true
 ```
 
 Following the ICS 20 protocol, 1 ATOM has been moved out of Alice's account, and into a module-specific escrow account:
 
-```bluespec
+```quint
 >>> chainStates.get("A")
 {
   bank: Map(
@@ -85,14 +85,14 @@ Also note that the outgoing IBC packet has been added to the chain state.
 
 By executing the `sendPacket` action, the packet was only sent, but not yet relayed/received. We can convince ourselves by checking that the bank state on chain `"B"` has not yet changed:
 
-```bluespec
+```quint
 >>> chainStates.get("B").bank
 Map()
 ```
 
 Let's now take action `receivePacket`, which triggers receival of the packet:
 
-```bluespec
+```quint
 >>> receivePacket("A", "B")
 true
 >>> chainStates.get("B")
@@ -111,7 +111,7 @@ Now Bob has been minted the sent token. We can also see that the token's base de
 
 Receival of the packet has created an IBC acknowledgement. Although receival of a successful acknowledgement has no effect, let's receive it on chain `"A"`:
 
-```bluespec
+```quint
 >>> chainStates.get("A").inAcknowledgements
 Set({ errorMessage: "", success: true })
 >>> receiveAck("A")
@@ -120,7 +120,7 @@ true
 
 To take the protocol through a complete transfer, in a single step, use the `sendTransfer` run:
 
-```bluespec
+```quint
 >>> sendTransfer("A", "B", ATOM, 50, "alice", "charlie")
 true
 >>> chainStates.get("A").bank

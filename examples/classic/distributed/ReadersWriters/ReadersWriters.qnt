@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 module ReadersWriters {
   /***************************************************************************)
   (* This solution to the readers-writers problem, cf.                       *)

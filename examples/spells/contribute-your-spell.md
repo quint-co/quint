@@ -6,7 +6,7 @@ consider contributing it to our library of spells :scroll:.
 To do so, open a pull request that adds a spell in the file
 [rareSpells.qnt](./rareSpells.qnt) by following the template:
 
-```bluespec
+```quint
  /// An explanation of what the spell is doing.
  ///
  /// @param __param1 a description of the first parameter

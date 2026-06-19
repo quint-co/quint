@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 // This is a protocol specification of ICS23, tuned towards the Grug JMT
 // (The original spec was for the IAVL case.)

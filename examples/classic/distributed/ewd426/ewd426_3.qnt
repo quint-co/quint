@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * ewd426's Stabilizing Token Ring (EWD426)
  * 3 state machine

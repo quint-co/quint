@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /*
  * Quint Specification for Algorithm 18: K-set Consensus Algorithm in the Presence of Crash Failures

@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * Lamport's bakery algorithm in Quint
  * https://lamport.azurewebsites.net/pubs/bakery.pdf

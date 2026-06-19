@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module rock_paper_scissors {
     // Constants for player names

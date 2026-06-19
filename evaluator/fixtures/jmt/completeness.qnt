@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module completeness {
   import grug_ics23.* from "./grug_ics23"

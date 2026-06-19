@@ -17,7 +17,7 @@ to specify it is the first step towards automatic verification.
 To be more exact, the problematic behavior is formally specified
 and can be reproduced with the test:
 
-```bluespec
+```quint
     // This is the scenario reported in the paper.
     // By modeling the mempool, we can specify this scenario.
     run lotteryMultiBuyTest = {
@@ -34,7 +34,7 @@ and can be reproduced with the test:
 
 We can also specify a state invariant that is broken by the above test:
 
-```bluespec
+```quint
     val noBuyInDrawingInv = {
         // note that there may be multiple "draw" transactions in flight
         val winningIds =
@@ -68,7 +68,7 @@ quint run --max-samples 100000 --max-steps 5 \
 
 With a bit of luck, quint finds a violation in 29 seconds:
 
-```bluespec
+```quint
 An example execution:
 ---------------------------------------------
 action step0 = all {

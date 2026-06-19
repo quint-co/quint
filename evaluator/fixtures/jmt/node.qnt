@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module node {
   import hashes.* from "./hashes"

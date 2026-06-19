@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * A more elaborate example of a Ponzi scheme, inspired by the Solidity contract [2].
  * Do not use it in production! The purpose of this example is to show how to

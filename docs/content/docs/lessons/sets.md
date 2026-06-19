@@ -484,7 +484,7 @@ for (let i = 0; i < n; i++) {
 in JavaScript. It happens that Quint supports exactly this pattern, though it
 has a slightly different syntax:
 
-```bluespec
+```quint
 1.to(n)
  .fold(someCoins,
        (prevCoins, i) => buyableVia1Swap(prevCoins))
@@ -498,7 +498,7 @@ are not even using `i`. @KryptoCoffeeCat could even have written `_`
 instead of `i` in the above expression, which would indicate that the second
 argument is not used:
 
-```bluespec
+```quint
 1.to(n)
  .fold(someCoins,
        (prevCoins, _) => buyableVia1Swap(prevCoins))

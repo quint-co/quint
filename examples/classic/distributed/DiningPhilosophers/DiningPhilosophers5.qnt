@@ -1,4 +1,3 @@
-// -- -*- mode: Bluespec; -*-
 // Dining Philosophers Problem Specification, with Dijkstra's solution
 // Based on: https://en.wikipedia.org/wiki/Dining_philosophers_problem
 //

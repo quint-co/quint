@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * The famous Prisoners puzzle. See a detailed description in:
  *

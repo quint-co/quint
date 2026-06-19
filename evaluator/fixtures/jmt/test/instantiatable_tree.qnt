@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module instantiatable_tree {
   import apply_state_machine.* from "../apply_state_machine"

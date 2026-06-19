@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module node_test {
   import node.* from "../node"

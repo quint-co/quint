@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * Test fixture for tuple destructuring patterns in val declarations.
  *

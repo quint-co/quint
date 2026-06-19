@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * This is a collection of rare spells. When we see some of these spells
  * appearing in multiple specs, we would move them to commonSpells.

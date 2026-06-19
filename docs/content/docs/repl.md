@@ -94,7 +94,6 @@ In this tutorial, we are interactively constructing the module
 [kettle.qnt](./kettle.qnt) that has the following structure:
 
 ```quint ../../../examples/tutorials/repl/kettle.qnt +=
-// -*- mode: Bluespec; -*-
 // The example from the REPL tutorial
 module kettle {
 <<<definitions>>>

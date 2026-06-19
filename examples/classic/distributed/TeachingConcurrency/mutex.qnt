@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * A simple mutex definition where two processes can increment a shared counter.
  *
