@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * A simple algorithm from Lamport's "Teaching Concurrency" paper:
  * https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf

@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /* This specification stems from the specification of the two phase protocol
    by Leslie Lamport:

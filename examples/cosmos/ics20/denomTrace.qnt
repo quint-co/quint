@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /**
  * A specification for the denomination trace manipulation in the ICS20 fungible

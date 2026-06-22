@@ -63,7 +63,7 @@ For alternative installation methods or advanced setup, see the full [Getting St
 ### Example code in Quint
 
 Here is a small specification for a bank:
-``` bluespec
+```quint
 
 module bank {
   /// A state variable to store the balance of each account
@@ -113,7 +113,7 @@ $ quint run bank.qnt --invariant=no_negatives
 
 And the result is a violation where address `"alice"` has balance `-79` in the second state.
 
-``` bluespec
+```quint
 An example execution:
 
 [State 0] { balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0) }
@@ -182,7 +182,7 @@ formal semantics built-in.
 <summary>An example that highlights differences between Quint and TLA<sup>+</sup></summary>
 
 Quint:
-```bluespec
+```quint
 type Status = Working | Prepared | Committed | Aborted
 
 const ResourceManagers: Set[str]

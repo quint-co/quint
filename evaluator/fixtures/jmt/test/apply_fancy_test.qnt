@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module apply_fancy_test {
   import basicSpells.* from "../spells/basicSpells"

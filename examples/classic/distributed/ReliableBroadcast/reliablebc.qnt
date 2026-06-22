@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * This is a spec for what we call the Folklore Reliable Broadcast Algorithm (FRBC), and it works as follows:
  * You want to make sure that, in the presence of potential process crashes, all correct processes should see the same set of messages.

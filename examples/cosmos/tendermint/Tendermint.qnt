@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 module Tendermint {
   /*
    A Quint specification of a simplified Tendermint consensus, tuned for

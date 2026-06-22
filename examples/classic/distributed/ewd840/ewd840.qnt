@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /**
  * Quint spefication for EWD840: an algorithm for distributed termination

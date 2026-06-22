@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module soundness {
   import grug_ics23.* from "./grug_ics23"

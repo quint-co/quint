@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 // A non-deterministic spec used to test weak fairness with leadsTo.
 //
 // `step` can either finish (set done=true) or stutter. Without fairness,

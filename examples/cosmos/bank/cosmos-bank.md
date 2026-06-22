@@ -38,8 +38,7 @@ as complex as their implementation! These are the most illuminating differences:
 
 From the engineer's perspective, the bank module looks as follows:
 
-```bluespec bank.qnt +=
-// -*- mode: Bluespec; -*-
+```quint bank.qnt +=
 // An executable specification of the bank module
 module bank {
   //----------------------- type declarations -------------------------
@@ -54,8 +53,7 @@ module bank {
 From the protocol designer's point of view, the bank module alone could be
 tested by introducing the following non-deterministic state machine:
 
-```bluespec bankTest.qnt +=
-// -*- mode: Bluespec; -*-
+```quint bankTest.qnt +=
 module bankTest {
   import bank.* from "./bank"
 
@@ -80,7 +78,7 @@ The actual implementation uses different types. **This is not a bug, but a
 feature!** By using more abstract types, we make the protocol description
 much easier to read and understand.
 
-```bluespec "types" +=
+```quint "types" +=
 // Addresses are simply strings
 type Addr = str
 // Denominations are simply strings too
@@ -167,7 +165,7 @@ the implementation of the above types in Cosmos SDK:
 
 This is a perfect opportunity to define a state invariant:
 
-```bluespec "invariants" +=
+```quint "invariants" +=
 // sum up amounts over all balances for a given denomination
 def sumForDenom(denom: Denom): Int256 = {
   balances.keys().fold(0, (sum, addr) => {
@@ -204,7 +202,7 @@ byte as a key.
 
 We represent this field as a map in the protocol specification:
 
-```bluespec "state" +=
+```quint "state" +=
 // Total supply of coins per denomination
 var supply: Denom -> Int256
 ```
@@ -215,7 +213,7 @@ var supply: Denom -> Int256
 
 We represent this field as a map in the protocol specification:
 
-```bluespec "state" +=
+```quint "state" +=
 // Balances for each address
 var balances: Addr -> Coins
 ```
@@ -225,7 +223,7 @@ the last error message. It makes it easier to write tests. To indicate that
 this variable is not, strictly speaking, part of the protocol, we start its
 name with underscore:
 
-```bluespec "state" +=
+```quint "state" +=
 // if non-empty, then it stores the last error message
 var _lastError: str
 ```
@@ -233,7 +231,7 @@ var _lastError: str
 We could initialize the state via `init`, which would be similar to executing
 genesis transactions in Cosmos:
 
-```bluespec "transitions" +=
+```quint "transitions" +=
 // initialize the state machine
 action init = all {
   // limit the total supply of burgers and bananas to 10_000
@@ -278,7 +276,7 @@ action init = all {
 
 The type in Quint:
 
-```bluespec "types" +=
+```quint "types" +=
 // An input of a multiparty transfer
 type Input = {
   address: str,
@@ -302,7 +300,7 @@ An output of a multiparty transfer.
 
 The type in Quint:
 
-```bluespec "types" +=
+```quint "types" +=
 // An output of a multiparty transfer
 type Output = {
   address: str,
@@ -341,7 +339,7 @@ classDiagram
 
 We define the part of the SDK context that is accessed by the bank module:
 
-```bluespec "types" +=
+```quint "types" +=
 // the portion of the context that is accessed by the bank module
 type BankCtx = {
   // block time (needed by vesting accounts)
@@ -364,7 +362,7 @@ Its code can be found in [view.go](https://github.com/cosmos/cosmos-sdk/blob/v0.
  - `getAllBalances` returns all the account balances for the given account
     address:
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// `GetAllBalances` returns all the account balances for the given account address.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L61
 pure def ViewKeeper::GetAllBalances(ctx: BankCtx, addr: Addr): Coins = {
@@ -379,7 +377,7 @@ pure def ViewKeeper::GetAllBalances(ctx: BankCtx, addr: Addr): Coins = {
 
 For example, we expect the `GetAllBalances` to return balances in the genesis state as follows:
 
-```bluespec "tests" +=
+```quint "tests" +=
 run getAllBalancesTest = {
   init
     .expect(
@@ -417,7 +415,7 @@ def stateToCtx(time: int): BankCtx = {
    state. In the case of vesting accounts, balances may change in a valid
    manner that would otherwise yield an error from this call.
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// `ValidateBalance` should only be called upon genesis state.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L202
 pure def ViewKeeper::ValidateBalance(ctx: BankCtx, addr: Addr): bool = and {
@@ -433,7 +431,7 @@ pure def ViewKeeper::ValidateBalance(ctx: BankCtx, addr: Addr): bool = and {
  - `getBalance` returns the balance of a specific denomination
    for a given account by address:
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// GetBalance returns the balance of a specific denomination for a given account by address.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L98
 pure def ViewKeeper::GetBalance(ctx: BankCtx, addr: Addr, denom: str): CoinResult = {
@@ -453,7 +451,7 @@ pure def ViewKeeper::GetBalance(ctx: BankCtx, addr: Addr, denom: str): CoinResul
 
  - `HasBalance` returns whether or not an account has at least amt balance:
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// HasBalance returns whether or not an account has at least amt balance.\
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L56
 pure def ViewKeeper::HasBalance(ctx: BankCtx, addr: Addr, coin: Coin): BoolResult = {
@@ -468,7 +466,7 @@ pure def ViewKeeper::HasBalance(ctx: BankCtx, addr: Addr, coin: Coin): BoolResul
 
  - `GetAccountsBalances` returns all the accounts balances from the store:
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// GetAccountsBalances returns all the accounts balances from the store.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L72
 pure def ViewKeeper::GetAccountsBalances(ctx: BankCtx): Set[Balance] = {
@@ -518,7 +516,7 @@ Its code can be found in
 <details>
   <summary>Click to see how SendCoins works</summary>
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// SendCoins transfers amt coins from a sending account to a receiving account.
 /// An error is returned upon failure.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/send.go#L135
@@ -568,7 +566,7 @@ pure def SendKeeper::SendCoins(ctx: BankCtx,
 ```
 </details>
 
-```bluespec "transitions" +=
+```quint "transitions" +=
 action send(fromAddr: Addr, toAddr: Addr, coins: Coins): bool = all {
   val ctx = stateToCtx(0)
   val result = SendKeeper::SendCoins(ctx, fromAddr, toAddr, coins)
@@ -591,7 +589,7 @@ action send(fromAddr: Addr, toAddr: Addr, coins: Coins): bool = all {
 
 Here is a basic test of `send`:
 
-```bluespec "tests" +=
+```quint "tests" +=
 run sendTest = {
   init
     // the King has bananas and he can send it
@@ -618,7 +616,7 @@ run sendTest = {
 
  - `GetParams` returns the total set of bank parameters.
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// GetParams returns the total set of bank parameters.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/send.go#L61
 pure def SendKeeper::GetParams(ctx: BankCtx): Params = ctx.params
@@ -627,7 +625,7 @@ pure def SendKeeper::GetParams(ctx: BankCtx): Params = ctx.params
 
  - `SetParams` sets the total set of bank parameters.
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// SetParams sets the total set of bank parameters.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/send.go#L67
 pure def SendKeeper::SetParams(ctx: BankCtx, params: Params): BankCtx = {
@@ -639,7 +637,7 @@ pure def SendKeeper::SetParams(ctx: BankCtx, params: Params): BankCtx = {
  - `IsSendEnabledCoin` returns the current SendEnabled status of the provided
    coin's denom.
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// IsSendEnabledCoin returns the current SendEnabled status of the provided coin's denom.
 /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/send.go#L315
 pure def SendKeeper::IsSendEnabledCoin(ctx: BankCtx, coin: Coin): bool = {
@@ -657,7 +655,7 @@ pure def SendKeeper::IsSendEnabledCoin(ctx: BankCtx, coin: Coin): bool = {
    any of the coins are not configured for sending. Returns `nil` if sending is enabled
    for all provided coin.
 
-```bluespec "functional" +=
+```quint "functional" +=
 /// IsSendEnabledCoins checks the coins provide and returns an ErrSendDisabled if
 /// any of the coins are not configured for sending.  Returns nil if sending is enabled
 /// for all provided coin.
@@ -701,7 +699,7 @@ The default send enabled value controls send transfer capability for all coin de
 
 We pack `SendEnabled` and `DefaultSendEnabled` in the record `Params`:
 
-```bluespec "types" +=
+```quint "types" +=
 // Parameters of the bank module
 type Params = {
   // whether coin send is enabled for specific denominations
@@ -716,14 +714,14 @@ type Params = {
 This part contains technical parts of the specification that are not that
 interesting.
 
-```bluespec "state" +=
+```quint "state" +=
 // all addresses we would like to work with
 pure val ADDR = Set("king", "donkeykong", "peaches", "mario")
 // all denominations
 pure val DENOM = Set("banana", "burger")
 ```
 
-```bluespec "transitions" +=
+```quint "transitions" +=
 
 action step = any {
   nondet fromAddr = oneOf(ADDR)

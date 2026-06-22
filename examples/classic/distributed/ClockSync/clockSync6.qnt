@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * Clock Synchronization Algorithm - Version 6 (from TLA+ ClockSync6)
  *

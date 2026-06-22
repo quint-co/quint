@@ -47,7 +47,7 @@ This is the main module where the game logic resides.
 
 This module imports the `rock_paper_scissors` module and assigns the player names:
 
-```bluespec
+```quint
 import rock_paper_scissor(PLAYER1 = "Mahtab", PLAYER2 = "Gabriela").*
 ```
 

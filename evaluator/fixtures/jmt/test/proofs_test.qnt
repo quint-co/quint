@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module proofs_test {
   import proofs.* from "../proofs"

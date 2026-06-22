@@ -19,7 +19,7 @@ quint -r ewd426.qnt::ewd426
 
 This will open the REPL with the `ewd426` machine loaded. You can now interact with the machine and explore its states and transitions:
 
-``` bluespec
+```quint
 Quint REPL 0.22.4
 Type ".exit" to exit, or ".help" for more information
 >>> init

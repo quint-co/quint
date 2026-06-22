@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module tree_test {
   import tree.* from "../tree"
