@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
  /** 
   * Quint specification for a two-layered cache system. The system consists of

@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module apply_simple {
   import basicSpells.* from "./spells/basicSpells"

@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /**
  * A specification of UTXO (Unspent Transaction Outputs)

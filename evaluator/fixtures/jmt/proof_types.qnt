@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module proof_types {
   import basicSpells.* from "./spells/basicSpells"

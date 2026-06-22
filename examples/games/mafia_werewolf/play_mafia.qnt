@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * Mafia, also called Werewolf, is a party game to enjoy your gathering!
  *

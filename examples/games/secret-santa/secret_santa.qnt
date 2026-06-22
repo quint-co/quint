@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * A Secret Santa spec, in celebration of the 2023 end-of-year holidays.
  * This is accompanied by a blogpost! See [1].

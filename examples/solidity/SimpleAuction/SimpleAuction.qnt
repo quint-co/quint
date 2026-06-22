@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * DISCLAIMER: This specification uses integers larger than 64 bits.
  * Big integers are only supported by Apalache (`quint verify`) and the

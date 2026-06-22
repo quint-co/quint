@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module pruning_state_machine {
   import tree.* from "tree"

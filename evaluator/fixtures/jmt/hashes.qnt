@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /// A symbolic specification of a string that is suitable for reasoning about
 /// strings and hashes (such as SHA256). The exact hash function is irrelevant.

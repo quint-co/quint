@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /*
  * Quint Specification for Algorithm 15: Consensus Algorithm in the Presence of Crash Failures

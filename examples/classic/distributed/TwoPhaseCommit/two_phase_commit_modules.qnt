@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 /* This specification is a variation on ./two_phase_commit.qnt that experiments with
    using modules to divides the state spaces to reflect possible state access in the

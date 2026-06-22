@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 /**
  * A simple definition of the tictactoe game based on [1]. Player X will
  * always play the best move while Player O will play a random valid move.

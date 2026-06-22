@@ -1,4 +1,3 @@
-// -*- mode: Bluespec; -*-
 
 module test_all {
   import apply_simple_test as apply_simple from "apply_simple_test"
