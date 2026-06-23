@@ -9,7 +9,7 @@ import { LookupTable } from '../../src/names/base'
 import { moduleToString } from '../../src/ir/IRprinting'
 import { AnalysisOutput, analyzeModules } from '../../src/quintAnalyzer'
 
-function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
+function inlineModule(text: string, inlineSumTypes: boolean = true): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const idGen = newIdGenerator()
   const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
   const { modules, table, errors } = parse(idGen, 'fake_location', fake_path, text)
@@ -18,7 +18,7 @@ function inlineModule(text: string): { modules: QuintModule[]; table: LookupTabl
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
   assert.isEmpty(analysisErrors)
 
-  return inlineTypeAliases(modules, table, analysisOutput)
+  return inlineTypeAliases(modules, table, analysisOutput, inlineSumTypes)
 }
 
 describe('inlineAliases', () => {
