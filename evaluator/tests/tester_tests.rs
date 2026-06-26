@@ -1,12 +1,18 @@
-use quint_evaluator::tester::TestCase;
+use quint_evaluator::tester::{TestCase, TestStatus};
 use quint_evaluator::{helpers, progress, Verbosity};
 use std::error::Error;
 use std::path::Path;
 
 /// Helper to parse a test definition from a Quint file
 fn parse_test_from_path(file_path: &Path, test_name: &str) -> Result<TestCase, Box<dyn Error>> {
+    let source_path = if file_path.is_absolute() {
+        file_path.to_path_buf()
+    } else {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join(file_path)
+    };
+
     // Use helpers to compile the file
-    let output = helpers::parse(&std::fs::read_to_string(file_path)?, None)?;
+    let output = helpers::parse(&std::fs::read_to_string(source_path)?, None)?;
 
     // Find the test definition
     let test_op_def = output.find_definition_by_name(test_name)?;
@@ -51,6 +57,19 @@ fn failing_test_returns_qnt511() {
     assert!(!result.errors[0].trace.is_empty());
     assert_eq!(result.errors[0].trace[0], test_case.test_def.id());
     assert_eq!(result.seed, 0);
+}
+
+#[test]
+fn non_boolean_test_is_ignored() {
+    let file_path = Path::new("fixtures/runs.qnt");
+    let test_case = parse_test_from_path(file_path, "ignoredTest").unwrap();
+
+    let result = test_case.execute(Some(0), 1, progress::no_report(), Verbosity::default());
+
+    assert!(matches!(result.status, TestStatus::Ignored));
+    assert_eq!(result.errors.len(), 0);
+    assert_eq!(result.seed, 0);
+    assert!(result.nsamples > 0);
 }
 
 #[test]
