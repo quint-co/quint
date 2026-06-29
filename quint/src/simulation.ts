@@ -62,8 +62,8 @@ export interface TraceStatistics {
 
 export function getTraceStatistics(traceLengths: number[]): TraceStatistics {
   return {
-    maxTraceLength: Math.max(...traceLengths),
-    minTraceLength: Math.min(...traceLengths),
+    maxTraceLength: traceLengths.reduce((a, b) => Math.max(a, b), 0),
+    minTraceLength: traceLengths.reduce((a, b) => Math.min(a, b), Infinity),
     averageTraceLength: traceLengths.reduce((a, b) => a + b, 0) / traceLengths.length,
   }
 }
