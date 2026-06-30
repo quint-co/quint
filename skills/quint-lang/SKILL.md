@@ -50,7 +50,7 @@ import Voting as V           // namespace alias
 Type aliases:
 ```quint
 type NodeId = int
-type Phase = str   // "propose" | "vote" | "commit"
+type Phase = Idle | Propose | Vote | Commit   // enum — prefer over string literals
 ```
 
 ---
@@ -85,7 +85,7 @@ val threshold: int = N / 2 + 1
 ```quint
 type LocalState = {
   leader: int,
-  phase: str,
+  phase: Phase,        // enum (see Type aliases) — prefer over a bare str
   votes: Set[int],
   log: List[str],
 }
@@ -105,17 +105,17 @@ Actions describe state transitions. They return `bool` — `true` if the action 
 ```quint
 action init: bool = all {
   leader' = 0,
-  phase' = "idle",
+  phase' = Idle,
   votes' = Set(),
   log' = List(),
   state' = Map(),
 }
 
 action propose(node: int): bool = all {
-  phase == "idle",
+  phase == Idle,
   node > 0,
   leader' = node,
-  phase' = "propose",
+  phase' = Propose,
   votes' = votes,
   log' = log,
   state' = state,
@@ -206,7 +206,7 @@ Records group related fields into a named type. They are the primary tool for mo
 
 ```quint
 type NodeState = {
-  phase:  str,     // "idle" | "propose" | "vote" | "commit"
+  phase:  Phase,   // enum: Idle | Propose | Vote | Commit
   voted:  bool,
   log:    List[int],
 }
@@ -222,18 +222,18 @@ type Message = {
 ### Creating and accessing
 
 ```quint
-val n: NodeState = { phase: "idle", voted: false, log: List() }
-n.phase                          // "idle"
+val n: NodeState = { phase: Idle, voted: false, log: List() }
+n.phase                          // Idle
 n.voted                          // false
 ```
 
 ### Updating (immutable — returns a new record)
 
 ```quint
-{ ...n, phase: "propose" }                          // ✅ preferred — idiomatic, handles multiple fields
-{ ...n, voted: true, phase: "vote" }                // ✅ multiple fields at once
+{ ...n, phase: Propose }                            // ✅ preferred — idiomatic, handles multiple fields
+{ ...n, voted: true, phase: Vote }                  // ✅ multiple fields at once
 
-n.with("phase", "propose")                          // ⚠️ valid but non-idiomatic — field name is a string literal
+n.with("phase", Propose)                            // ⚠️ valid but non-idiomatic — field name is a string literal
 ```
 
 ### Records as state — when to group variables
@@ -282,15 +282,15 @@ var received_messages: Set[Message]
 
 **For N actors, use a map of grouped records:**
 ```quint
-type LocalState = { phase: str, votedFor: int, log: List[int] }
+type LocalState = { phase: Phase, votedFor: int, log: List[int] }
 
 var nodes: int -> LocalState
 
-action becomeFollower(id: int): bool = {
+action commit(id: int): bool = {
   val node = nodes.get(id)
   all {
-    node.phase == "candidate",
-    nodes' = nodes.put(id, {...node, phase: "follower"}),
+    node.phase == Vote,
+    nodes' = nodes.put(id, {...node, phase: Commit}),
   }
 }
 ```
@@ -310,7 +310,7 @@ var cluster: ClusterState
 cluster.nodes.get(1).phase
 
 // Update nested field (must rebuild from the inside out):
-val updated = {...cluster.nodes.get(1), phase: "leader"}
+val updated = {...cluster.nodes.get(1), phase: Commit}
 cluster' = {...cluster, nodes: cluster.nodes.put(1, updated)}
 ```
 
@@ -375,10 +375,10 @@ Use sum types when a message, event, or state can take structurally different fo
 Enum types are a special case of sum types where each case has no additional data.
 
 ```quint
-type Phase = IDLE | PROPOSE | VOTE | COMMIT
+type Phase = Idle | Propose | Vote | Commit
 var phase: Phase
 
-if (phase == PROPOSE) { ... }
+if (phase == Propose) { ... }
 ```
 
 ---
