@@ -1,0 +1,15 @@
+{
+  "name": "quint",
+  "description": "Official Claude Code plugins for the Quint specification language.",
+  "owner": {
+    "name": "Quint Co"
+  },
+  "plugins": [
+    {
+      "name": "quint",
+      "source": ".",
+      "description": "Language reference and modeling skills for the Quint specification language.",
+      "category": "development"
+    }
+  ]
+}
