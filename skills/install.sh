@@ -4,11 +4,11 @@
 # directory of a SKILL.md-compatible coding agent.
 #
 # Usage:
-#   skills/install.sh <agent> [--user] [--force]
+#   skills/install.sh <agent> [--user] [--overwrite]
 #
-#   <agent>   One of: claude | cursor | codex | gemini
-#   --user    Install for your user (home dir) instead of the current project
-#   --force   Overwrite an existing skill of the same name
+#   <agent>     One of: claude | cursor | codex | gemini
+#   --user      Install for your user (home dir) instead of the current project
+#   --overwrite Replace an already-installed skill of the same name
 #
 # Example:
 #   curl -fsSL https://raw.githubusercontent.com/quint-co/quint/main/skills/install.sh | bash -s -- cursor
@@ -29,20 +29,20 @@ die()  { printf '%serror:%s %s\n' "$RED" "$RESET" "$*" >&2; exit 1; }
 
 usage() {
   cat <<'EOF'
-Usage: skills/install.sh <agent> [--user] [--force]
-  <agent>   claude | cursor | codex | gemini
-  --user    install into your home dir instead of the current project
-  --force   overwrite an existing skill of the same name
+Usage: skills/install.sh <agent> [--user] [--overwrite]
+  <agent>      claude | cursor | codex | gemini
+  --user       install into your home dir instead of the current project
+  --overwrite  replace an already-installed skill of the same name
 EOF
 }
 
 # --- parse args --------------------------------------------------------------
-AGENT=""; SCOPE="project"; FORCE=0
+AGENT=""; SCOPE="project"; OVERWRITE=0
 for arg in "$@"; do
   case "$arg" in
-    --user)    SCOPE="user" ;;
-    --force)   FORCE=1 ;;
-    -h|--help) usage; exit 0 ;;
+    --user)      SCOPE="user" ;;
+    --overwrite) OVERWRITE=1 ;;
+    -h|--help)   usage; exit 0 ;;
     claude|cursor|codex|gemini) AGENT="$arg" ;;
     *) die "unknown argument: $arg (run with --help)" ;;
   esac
@@ -77,8 +77,8 @@ info "Installing Quint skills into ${BOLD}$DEST${RESET} (${SCOPE} scope)"
 mkdir -p "$DEST"
 for skill in "${SKILLS[@]}"; do
   target="$DEST/$skill"
-  if [ -e "$target" ] && [ "$FORCE" -ne 1 ]; then
-    info "  ${DIM}skip${RESET}       $skill (already exists — use --force to overwrite)"
+  if [ -e "$target" ] && [ "$OVERWRITE" -ne 1 ]; then
+    info "  ${DIM}skip${RESET}       $skill (already exists — use --overwrite to replace)"
     continue
   fi
   rm -rf "$target"
