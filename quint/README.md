@@ -234,7 +234,7 @@ Cosmos in 2023.
   Model-based testing framework for Rust. Automatically validate your implementation against your Quint spec by replaying generated test traces.
 - [Quint Trace Explorer:](https://github.com/informalsystems/quint-trace-explorer)
   Terminal UI for navigating execution traces. Highlights state changes to make it easy to understand what has happened.
-- [Quint Claude Code Skills:](https://github.com/quint-co/quint/tree/main/skills) Language reference and modeling skills that help Claude write and reason about `.qnt` specifications.
+- [Quint Agent Skills:](https://github.com/quint-co/quint/tree/main/skills) Language reference and modeling skills that help AI coding agents write and reason about `.qnt` specifications.
 
 
 ## Community
