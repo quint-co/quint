@@ -48,9 +48,3 @@ Options:
   --user    Install into the home directory instead of the current project (default: project)
   --force   Overwrite an existing skill of the same name
 ```
-
-If the Quint repository is already cloned, run the script directly from its root:
-
-```
-./skills/install.sh <agent> [options]
-```
