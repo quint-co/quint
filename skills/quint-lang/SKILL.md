@@ -3,14 +3,11 @@ name: quint-lang
 description: >
   Quint language and CLI reference — the expert on Quint syntax, operators, types, `basicSpells`,
   the toolchain (typecheck/run/test/verify), and how to read simulation and counterexample output.
-  Use when writing or debugging the contents of a `.qnt` file, fixing a typecheck/parse error,
+  Use when writing or debugging Quint (`.qnt`) files, fixing a typecheck/parse error,
   looking up an operator or idiom, analyzing an invariant violation or counterexample trace, or
-  optimizing state-space exploration. This is for working IN Quint at the language level — not for
-  analyzing or running TLA+/TLC itself. For building a NEW model end-to-end from some source —
-  including translating a TLA+ spec into Quint, or modeling code/requirements/an idea — use the
-  quint-modeling skill, which owns that workflow and consults this reference for syntax. Keywords:
-  quint, syntax, operators, typecheck, model checking, counterexample, basicSpells, CLI,
-  specification language.
+  optimizing state-space exploration. For building a new model end-to-end from some source
+  (including translating TLA+, or modeling code/requirements/an idea), use quint-modeling instead —
+  it consults this reference for syntax as needed.
 ---
 # Quint Language Reference
 

@@ -1,20 +1,16 @@
 ---
 name: quint-modeling
 description: >
-  Build a Quint model of a system, protocol, or algorithm. Use this whenever the user wants to
-  model, spec out, formally describe, model-check, or verify a system in Quint — e.g. "model this
+  Build a Quint model of a system, protocol, or algorithm. Use whenever the user wants to model,
+  spec out, formally describe, model-check, or verify a system in Quint — e.g. "model this
   protocol in Quint", "spec out this design", "translate this TLA+", "formally check this Rust
-  code" — even if they never say the word "specification." When the goal is to verify or
-  model-check a design or implementation and no Quint model exists yet, writing the model is the
-  required first step, so start here. It generates the spec from whatever the user has — an idea
-  developed interactively, natural-language or functional requirements, source code (Rust, Go,
-  TypeScript, etc.), or an existing TLA+ specification — and walks the modelling flow (state,
-  actions, invariants), adapting to the source type. Also use this to **review or audit an
-  existing Quint spec** — "review my .qnt", "audit this spec before I ship it", "is this model
-  any good" — it carries the structural + runtime review checklist. Do NOT use this for
-  implementing code against a spec that already exists (that's quint-execute-spec) or for pure
-  Quint syntax/CLI/debugging questions (quint-lang). For Quint language syntax and the CLI, see the
-  quint-lang reference.
+  code" — even if they never say "specification." If the goal is to verify or model-check a
+  design and no Quint model exists yet, writing it is the required first step, so start here. It
+  generates the spec from whatever the user has — an idea, requirements, source code (Rust, Go,
+  TypeScript, etc.), or an existing TLA+ spec — and walks the modelling flow (state, actions,
+  invariants), adapting to the source. Also use this to **review or audit an existing Quint
+  spec** — "review my .qnt", "is this model any good" — it carries the review checklist. For pure
+  Quint syntax/CLI/debugging questions with no new model to build, use quint-lang instead.
 ---
 
 # Quint Modelling
