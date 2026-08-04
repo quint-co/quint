@@ -1,0 +1,15 @@
+id = "quint"
+name = "Quint"
+description = "Quint language support: syntax highlighting and language server."
+version = "0.1.0"
+schema_version = 1
+authors = ["Informal Systems <hello@informal.systems>"]
+repository = "https://github.com/quint-co/quint"
+
+[language_servers.quint-language-server]
+name = "Quint Language Server"
+language = "Quint"
+
+[grammars.quint]
+repository = "https://github.com/gruhn/tree-sitter-quint"
+commit = "e413b1b57849a0097478548b25fcae2f3d0171d1"

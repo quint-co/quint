@@ -52,7 +52,7 @@ Welcome to Quint! In this short guide, we'll cover everything from installation 
 
 For the best experience writing Quint, you should set up your code editor with the Quint tools. The VSCode setup is, by far, the easiest, so you might want to use it if you want a quick start.
 
-<Tabs items={['VSCode', 'Emacs', 'Vim', 'Helix']}>
+<Tabs items={['VSCode', 'Emacs', 'Vim', 'Helix', 'Zed']}>
  <Tabs.Tab>
 <Image src="/vscode.png" alt="Quint extension on VSCode" width={500} height={100} />
  Install the [Quint extension](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode):
@@ -98,6 +98,16 @@ au BufNewFile,BufReadPost *.qnt runtime syntax/quint.vim
  <Tabs.Tab>
 
   🎉 Helix has built-in support for Quint, you don't need to do anything!
+
+ </Tabs.Tab>
+ <Tabs.Tab>
+
+ Install the [Quint extension](https://github.com/informalsystems/quint/tree/main/editor-plugins/zed) as a dev extension (it isn't published to Zed's extension registry yet):
+ 1. Clone the [Quint git repository](https://github.com/informalsystems/quint).
+ 2. Open the command palette and run `zed: install dev extension`.
+ 3. Select the `editor-plugins/zed` directory from your clone.
+
+ Zed builds the grammar and starts `quint-language-server` automatically, installing it via npm if it isn't already on your `$PATH`.
 
  </Tabs.Tab>
 </Tabs>
