@@ -511,6 +511,11 @@ impl Value {
         )
     }
 
+    /// Checks whether a value is a boolean.
+    pub fn is_bool(&self) -> bool {
+        matches!(self.0.as_ref(), ValueInner::Bool(_))
+    }
+
     /// Enumerate the value as a set. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     ///
