@@ -19,6 +19,19 @@ bash -
 
 ## Configuration errors
 
+### Legacy Apalache configuration is rejected cleanly
+
+<!-- !test in legacy Apalache config -->
+```
+quint verify --apalache-config=./testFixture/apalache/legacyConfig.json ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err legacy Apalache config -->
+```
+error: $.input: Unknown configuration key.
+```
+
 ### Verifying spec with invalid init param produces an error
 
 <!-- !test in invalid init -->

@@ -76,13 +76,10 @@ export function createConfig(
 ): ApalacheConfig {
   return {
     ...loadedConfig,
-    input: {
-      ...(loadedConfig.input ?? {}),
-      source: {
-        type: 'string',
-        format: 'qnt',
-        content: parsedSpec,
-      },
+    source: {
+      kind: 'string',
+      format: 'qnt',
+      content: parsedSpec,
     },
     checker: {
       ...(loadedConfig.checker ?? {}),
@@ -90,7 +87,7 @@ export function createConfig(
       init: init,
       next: next,
       inv: inv,
-      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
+      temporal: args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
         ...(loadedConfig.checker?.tuning ?? {}),
         'search.simulation': args.randomTransitions ? 'true' : 'false',
@@ -108,7 +105,7 @@ export function serverEndpointToConnectionString(endpoint: ServerEndpoint): stri
   return `${endpoint.hostname}:${endpoint.port}`
 }
 
-export const DEFAULT_APALACHE_VERSION_TAG = '0.56.1'
+export const DEFAULT_APALACHE_VERSION_TAG = '0.62.1'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // const APALACHE_TGZ = 'apalache.tgz'
 
@@ -191,14 +188,18 @@ async function handleResponse(response: RunResponse): Promise<ApalacheResult<any
   }
 }
 
+function handleRpcError(error: any): ApalacheResult<any> {
+  return err(error.details ?? error.message ?? error)
+}
+
 // Construct the Apalache interface around the cmdExecutor
 function apalache(cmdExecutor: AsyncCmdExecutor): Apalache {
   const check = async (c: ApalacheConfig): Promise<ApalacheResult<void>> => {
-    return cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) }).then(handleResponse)
+    return cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) }).then(handleResponse, handleRpcError)
   }
 
   const tla = async (c: ApalacheConfig): Promise<ApalacheResult<string>> => {
-    return cmdExecutor.run({ cmd: 'TLA', config: JSON.stringify(c) }).then(handleResponse)
+    return cmdExecutor.run({ cmd: 'TLA', config: JSON.stringify(c) }).then(handleResponse, handleRpcError)
   }
 
   return { check, tla }
