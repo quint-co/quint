@@ -202,6 +202,11 @@ impl ParsedQuint {
             trace_witnessed.fill(false);
             let mut remaining = compiled_witnesses.len();
 
+            // Clear storage so that metadata left by a previous sample's
+            // failed step attempt is not recorded into this sample's initial
+            // state.
+            env.var_storage.borrow_mut().clear_metadata();
+
             // Wrap execute calls to catch panics and print seed
             let result = catch_unwind(AssertUnwindSafe(|| -> Result<bool, QuintError> {
                 if !init.execute(env)?.as_bool() {
