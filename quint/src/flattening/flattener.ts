@@ -31,6 +31,7 @@ import { IRVisitor, walkDefinition, walkExpression, walkModule } from '../ir/IRV
 import { addNamespaceToDefinition } from '../ir/namespacer'
 import assert from 'assert'
 import { uniqBy } from 'lodash'
+import { QuintAppType, QuintConstType } from '../ir/quintTypes'
 
 /**
  * Flatten a module, replacing instances, imports and exports with definitions referred by the module.
@@ -109,6 +110,18 @@ class Flattener implements IRVisitor {
 
   enterApp(app: QuintApp) {
     this.flattenName(app.id)
+  }
+
+  enterConstType(type: QuintConstType) {
+    if (type.id !== undefined) {
+      this.flattenName(type.id)
+    }
+  }
+
+  enterAppType(type: QuintAppType) {
+    if (type.id !== undefined) {
+      this.flattenName(type.id)
+    }
   }
 
   enterExport(decl: QuintExport) {
