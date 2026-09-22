@@ -72,7 +72,7 @@ jobs:
         run: quint --version
       - name: Set up apalache
         run: |
-          # Fetch the latest apalache release
+          # Fetch the apalache release used by quint
           make apalache
         env:
           GH_TOKEN: ${{ github.token }}
