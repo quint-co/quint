@@ -136,8 +136,10 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
             let (variant_label, variant_value) = matched_expr.as_variant();
             let cases = &args[1..];
 
-            let matching_case = cases.chunks_exact(2).find_map(|chunk| match chunk {
-                [case_label_expr, case_elim_expr] => {
+            let (case_pairs, _) = cases.as_chunks::<2>();
+            let matching_case = case_pairs
+                .iter()
+                .find_map(|[case_label_expr, case_elim_expr]| {
                     let case_label = case_label_expr.execute(env).ok()?;
                     if case_label.as_str() == *variant_label || case_label.as_str() == "_" {
                         // We found a matching case (or a wildcard "_")
@@ -145,9 +147,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
                     } else {
                         None
                     }
-                }
-                _ => None,
-            });
+                });
 
             match matching_case {
                 Some(case_elim_expr) => {
@@ -332,8 +332,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         "Rec" => |_env, args| {
             // Constructs a record from the given arguments. Arguments are lists like [key1, value1, key2, value2, ...]
             Ok(Value::record(
-                args.chunks_exact(2)
-                    .map(|chunk| (chunk[0].as_str(), chunk[1].clone()))
+                args.as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|[key, value]| (key.as_str(), value.clone()))
                     .collect(),
             ))
         },
