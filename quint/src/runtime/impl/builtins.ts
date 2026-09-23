@@ -738,6 +738,26 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
         return right(set.first())
       }
 
+    case 'chooseSome':
+        // Pick one element from a set-like value, using the runtime RNG.
+        return (ctx, args) => {
+            const set = args[0];
+            const cardinality = set.cardinality();
+            if (cardinality.isRight()) {
+                const size = cardinality.unwrap();
+                if (size === 0n) {
+                    return left({ 
+                      code: 'QNT505', 
+                      message: `Called 'chooseSome' on an empty set` 
+                    });
+                }
+                return set.pick([ctx.rand(size)].values());
+            }
+            // Infinite set: pick from a wide signed range, similar to nondet selection.
+            const index = -(2n ** 255n) + ctx.rand(2n ** 256n);
+            return set.pick([index].values());
+        }
+
     case 'q::debug':
       // Print a value to the console, and return it
       return (_, args) => {
@@ -749,7 +769,6 @@ export function builtinLambda(op: string): (ctx: Context, args: RuntimeValue[]) 
 
     // standard unary operators that are not handled by REPL
     case 'allLists':
-    case 'chooseSome':
     case 'always':
     case 'eventually':
     case 'enabled':

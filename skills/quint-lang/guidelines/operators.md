@@ -32,7 +32,7 @@ nondet x = Set(1, 2, 3).oneOf()        // nondeterministic pick — use in actio
 
 **Picking an element**: use `getOnlyElement()` when the set has exactly one element (deterministic), or `oneOf()` inside a `nondet` binding in an action for a nondeterministic pick. `oneOf` outside a `nondet` binding causes a type/effect error.
 
-> Quint also has a `chooseSome` operator in its type signatures, but the simulator and verifier **do not implement it** — calling it raises a runtime error (`QNT501: Runtime does not support the built-in operator 'chooseSome'`). Do not use it in executable specs.
+> Quint includes a `chooseSome` operator in its type signatures, and it is **now functional at runtime**: both the simulator and verifier implement it. You can use it in executable specs.
 
 ---
 

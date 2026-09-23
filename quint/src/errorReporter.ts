@@ -98,16 +98,18 @@ export function formatError(
 
       const endLine = loc.end ? loc.end.line : loc.start.line
       const endCol = loc.end ? loc.end.col : loc.start.col
-      for (let i = loc.start.line; i <= endLine; i++) {
-        // finder's indexes start at 1
-        const lineStartIndex = finder.toIndex(i + 1, 1)
-        const line = text.slice(lineStartIndex).split('\n')[0]
+      if (finder && text) {
+        for (let i = loc.start.line; i <= endLine; i++) {
+          // finder's indexes start at 1
+          const lineStartIndex = finder.toIndex(i + 1, 1)
+          const line = text.slice(lineStartIndex).split('\n')[0]
 
-        const lineStartCol = i === loc.start.line ? loc.start.col : 0
-        const lineEndCol = i === endLine ? endCol : line.length - 1
+          const lineStartCol = i === loc.start.line ? loc.start.col : 0
+          const lineEndCol = i === endLine ? endCol : line.length - 1
 
-        const lineIndex = lineOffset.map(offs => offs + i)
-        output += formatLine(lineIndex, lineStartCol, lineEndCol, line, 2)
+          const lineIndex = lineOffset.map(offs => offs + i)
+          output += formatLine(lineIndex, lineStartCol, lineEndCol, line, 2)
+        }
       }
       return output
     }, '')

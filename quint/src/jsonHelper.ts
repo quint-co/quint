@@ -27,9 +27,11 @@ export function replacer(_key: String, value: any): any {
  * record fields named `trace` in the simulator output.
  */
 export function reviveQuintError(err: any): QuintError {
-  const { ['#trace']: trace, ...rest } = err
-  if (Array.isArray(trace)) {
-    return { ...rest, trace: trace.map((v: any) => BigInt(v)) }
+  const hashTrace = err['#trace']
+  const rawTrace = Array.isArray(hashTrace) ? hashTrace : (Array.isArray(err['trace']) ? err['trace'] : undefined)
+  const { ['#trace']: _h, trace: _t, ...rest } = err
+  if (rawTrace !== undefined) {
+    return { ...rest, trace: rawTrace.map((v: any) => BigInt(v)) }
   }
   return rest
 }

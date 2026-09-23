@@ -915,6 +915,40 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             Ok(set.iter().next().cloned().unwrap())
         },
 
+        "chooseSome" => |env, args| {
+            let set = args[0].clone();
+
+            // Special handling for large PowerSet (base >= 64 elements)
+            if set.is_large_powerset() {
+                if let ValueInner::PowerSet(base_set) = set.0.as_ref() {
+                    let n = base_set.cardinality()?;
+                    let cardinality = BigUint::from(1u64) << n;
+                    let random_index = env.rand.next_biguint(&cardinality);
+                    let positions: Vec<u64> = random_index
+                        .to_u32_digits()
+                        .iter()
+                        .map(|&d| d as u64)
+                        .collect();
+                    return set.pick(&mut positions.into_iter());
+                }
+            }
+
+            let bounds = set.bounds()?;
+            let mut positions = Vec::with_capacity(bounds.len());
+
+            for bound in bounds {
+                if bound == 0 {
+                    return Err(QuintError::new(
+                        "QNT505",
+                        "Called 'chooseSome' on an empty set. Make sure the set has at least one element.",
+                    ));
+                }
+                positions.push(env.rand.next(bound));
+            }
+
+            set.pick(&mut positions.into_iter())
+        },
+
         // Collect debug message when verbosity has debug output, and return the value
         "q::debug" => |env, args| {
             if env.verbosity.has_diagnostics() {
@@ -935,7 +969,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
 
         // These are not supported in the REPL
-        "chooseSome" | "always" | "eventually" | "enabled" | "orKeep" | "mustChange"
+        "always" | "eventually" | "enabled" | "orKeep" | "mustChange"
         | "weakFair" | "strongFair" | "leadsTo" => |_env, _args| {
             Err(QuintError::new(
                 "QNT501",

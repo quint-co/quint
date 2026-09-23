@@ -13,7 +13,7 @@
  * @module
  */
 import { Either, left, right } from '@sweet-monads/either'
-import { dirname, join, normalize, posix } from 'path'
+import { dirname, join, normalize } from 'path'
 import { readFileSync } from 'fs'
 import { lf } from 'eol'
 
@@ -88,10 +88,12 @@ export function fileSourceResolver(
 ): SourceResolver {
   return {
     lookupPath: (basepath: string, importPath: string) => {
+      const normalizedPath = normalize(join(basepath, importPath))
       return {
-        normalizedPath: normalize(join(basepath, importPath)),
+        normalizedPath: normalizedPath,
         toSourceName: () => {
-          return replacer(posix.join(basepath, importPath))
+          // Always use forward slashes so source names are platform-independent
+          return replacer(normalizedPath).replace(/\\/g, '/')
         },
       }
     },

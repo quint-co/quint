@@ -1104,8 +1104,6 @@ describe('compiling specs to runtime values', () => {
     it('unsupported operators', () => {
       assertResultAsString('allLists(1.to(3))', undefined)
 
-      assertResultAsString('chooseSome(1.to(3))', undefined)
-
       assertResultAsString('always(true)', undefined)
 
       assertResultAsString('eventually(true)', undefined)
@@ -1119,6 +1117,14 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('weakFair(true, [])', undefined)
 
       assertResultAsString('strongFair(true, [])', undefined)
+    })
+    
+    it('chooseSome picks an element from the set', () => {
+      const [evaluator, expr] = prepareEvaluator('chooseSome(1.to(3))', '')
+      evaluator
+        .evaluate(expr)
+        .map(val => assert.include(['1', '2', '3'], expressionToString(val), 'chooseSome should pick an element from the set'))
+        .mapLeft(err => assert.fail(`Expected chooseSome to succeed, found error ${quintErrorToString(err)}`))
     })
   })
 })

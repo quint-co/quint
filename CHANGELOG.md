@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added `chooseSome` implementation for typeScript and rust backend.
+
 ### Changed
 
 - Upgraded the default Apalache version to 0.62.1, which requires Java 21 or newer.
@@ -16,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Fixed path independence for error formatting.
 - Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
 - `quint compile --target=json` no longer requires `init` and `step` to exist in the module (#1971)
 - Prevent stack overflow in `getTraceStatistics` (#1992)

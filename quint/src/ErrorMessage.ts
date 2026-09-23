@@ -47,8 +47,11 @@ export function sourceIdToLoc(sourceMap: Map<bigint, Loc>, id: bigint): Loc {
 }
 
 export function resolveErrorLocation(sourceMap: Map<bigint, Loc>, error: QuintError): Loc | undefined {
-  const errorId = error.trace?.[0] ?? error.reference
-  return errorId ? sourceMap.get(errorId) : undefined
+  const rawId = error.trace?.[0] ?? error.reference
+  if (rawId === undefined) return undefined
+  // Guard against non-BigInt IDs that were not revived correctly
+  const errorId = typeof rawId === 'bigint' ? rawId : BigInt(rawId as any)
+  return sourceMap.get(errorId)
 }
 
 export function resolveTraceLocations(sourceMap: Map<bigint, Loc>, error: QuintError): Loc[] | undefined {
