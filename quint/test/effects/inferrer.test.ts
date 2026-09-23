@@ -298,6 +298,33 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
   })
 
+  it('infers temporal effect for orKeep with an action that updates variables', () => {
+    const defs = ["action myStep = x' = x + 1", 'temporal a = always(myStep.orKeep(x))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for orKeep with an action property using next', () => {
+    const defs = ['temporal a = always((next(x) > x).orKeep(x))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for mustChange with an action property using next', () => {
+    const defs = ['temporal a = always(eventually((next(x) > x).mustChange(x)))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
   it('infers temporal effect for leadsTo', () => {
     const defs = ['temporal a = always(x > 0) leadsTo eventually(x > 5)']
 

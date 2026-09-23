@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 
+- `orKeep` and `mustChange` now accept expressions using `next`, so action properties like `always((next(x) > x).orKeep(x))` can be written and checked with `--backend tlc`
 - Upgraded the default Apalache version to 0.62.1, which requires Java 21 or newer.
 
 ### Deprecated

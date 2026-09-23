@@ -212,8 +212,13 @@ const temporalOperators = [
   { name: 'always', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
   { name: 'eventually', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
   { name: 'next', effect: parseAndQuantify('(Read[r]) => Temporal[r]') },
-  { name: 'orKeep', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
-  { name: 'mustChange', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  // orKeep and mustChange accept temporal expressions in the first argument, so that action properties
+  // relating the current and next states can be written, e.g., `always((next(x) > x).orKeep(x))`.
+  { name: 'orKeep', effect: parseAndQuantify('(Read[r] & Update[u] & Temporal[t], Read[v]) => Temporal[r, u, v, t]') },
+  {
+    name: 'mustChange',
+    effect: parseAndQuantify('(Read[r] & Update[u] & Temporal[t], Read[v]) => Temporal[r, u, v, t]'),
+  },
   // Enabled: Should we do this? https://github.com/informalsystems/quint/discussions/109
   // Or should the result be temporal?
   { name: 'enabled', effect: parseAndQuantify('(Read[r1] & Update[u1]) => Read[r1]') },

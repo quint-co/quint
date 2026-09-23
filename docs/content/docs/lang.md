@@ -1801,11 +1801,16 @@ A.orKeep(x)
 
 The arguments to `orKeep` are as follows:
 
- - `A` is an expression in the Action mode,
+ - `A` is an expression in the Action mode, or a Temporal-mode expression
+   that relates the current and next states via `next`,
  - `x` is a variable or a tuple of variables.
 
 *Mode:* Temporal, Run. This operator converts an action (in the Action mode) to a
 temporal property or a run.
+
+Together with `always`, this operator lets us write action properties, that is,
+properties of every transition. For example, `always((next(x) > x).orKeep(x))`
+is like `[][x' > x]_x` of TLA+.
 
 #### MustChange
 
@@ -1818,7 +1823,8 @@ A.mustChange(x)
 
 The arguments to `mustChange` are as follows:
 
- - `A` is an expression in the Action mode,
+ - `A` is an expression in the Action mode, or a Temporal-mode expression
+   that relates the current and next states via `next`,
  - `x` is a variable or a tuple of variables.
 
 *Mode:* Temporal. This operator converts an action (in the Action mode) to a
