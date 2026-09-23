@@ -325,6 +325,20 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
   })
 
+  it('infers temporal effect for exists and forall over actions', () => {
+    const defs = [
+      "action A(i) = x' = i",
+      'temporal a = Set(1, 2).exists(i => A(i))',
+      'temporal b = Set(1, 2).forall(i => next(x) > x implies A(i))',
+    ]
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'b'), "Read['x'] & Temporal['x']")
+  })
+
   it('infers temporal effect for leadsTo', () => {
     const defs = ['temporal a = always(x > 0) leadsTo eventually(x > 5)']
 

@@ -122,6 +122,10 @@ export const standardPropagation = propagateComponents(['read', 'temporal'])
 // e.g., `init and always(...)` in a spec formula.
 const actionTemporalPropagation = propagateComponents(['read', 'temporal', 'update'])
 
+const actionAsTemporalQuantifier = parseAndQuantify(
+  '(Read[r1] & Temporal[t1], (Read[r1] & Temporal[t1]) => Read[r2] & Temporal[t2] & Update[u]) => Read[r1, r2] & Temporal[t1, t2, u]'
+)
+
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 export const booleanOperators = [
   { name: 'eq', effect: standardPropagation(2) },
@@ -132,8 +136,11 @@ export const booleanOperators = [
 ]
 
 export const setOperators = [
-  { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
-  { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
+  // The body of exists/forall may be an action, which then becomes temporal: its updates are treated as
+  // references to the next state (like `next(x)`). This allows writing action properties such as
+  // `always(S.exists(i => A(i)).orKeep(vars))`, while actions still have to use `nondet` instead.
+  { name: 'exists', effect: actionAsTemporalQuantifier },
+  { name: 'forall', effect: actionAsTemporalQuantifier },
   { name: 'in', effect: standardPropagation(2) },
   { name: 'contains', effect: standardPropagation(2) },
   { name: 'union', effect: standardPropagation(2) },

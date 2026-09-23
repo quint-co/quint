@@ -17,7 +17,7 @@ import { isDeepStrictEqual as isEqual } from 'node:util'
 import { qualifierToString } from '../ir/IRprinting'
 import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
@@ -59,7 +59,34 @@ export class ModeChecker implements IRVisitor {
 
   private effects: Map<bigint, EffectScheme> = new Map<bigint, EffectScheme>()
 
+  // For each operator definition being visited (innermost last), the first `exists`/`forall` application
+  // in it whose body is an action. Such applications have a temporal effect.
+  private quantifiedActions: (QuintApp | undefined)[] = []
+
+  enterOpDef(_def: QuintOpDef) {
+    this.quantifiedActions.push(undefined)
+  }
+
+  enterApp(app: QuintApp) {
+    const current = this.quantifiedActions.length - 1
+    if (current < 0 || this.quantifiedActions[current] !== undefined) {
+      return
+    }
+
+    const lambda = app.args[1]
+    if ((app.opcode === 'exists' || app.opcode === 'forall') && lambda?.kind === 'lambda') {
+      const bodyEffect = this.effects.get(lambda.expr.id)?.effect
+      if (
+        bodyEffect?.kind === 'concrete' &&
+        bodyEffect.components.some(c => c.kind === 'update' && hasEntities(c.entity))
+      ) {
+        this.quantifiedActions[current] = app
+      }
+    }
+  }
+
   exitOpDef(def: QuintOpDef) {
+    const quantifiedAction = this.quantifiedActions.pop()
     const effect = this.effects.get(def.id)
     if (!effect) {
       return
@@ -68,6 +95,26 @@ export class ModeChecker implements IRVisitor {
     const [mode, explanation] = modeForEffect(effect, def.qualifier)
 
     if (mode === def.qualifier) {
+      return
+    }
+
+    if (mode === 'temporal' && quantifiedAction !== undefined && def.qualifier !== 'run') {
+      // The temporal effect comes from quantifying over an action, which is only allowed in temporal
+      // properties. Suggesting `temporal` would be misleading for actions, so we point to `nondet` instead.
+      const hint =
+        quantifiedAction.opcode === 'exists'
+          ? 'To pick a value non-deterministically in an action, use `nondet x = S.oneOf()` instead.'
+          : 'This is only allowed in temporal properties.'
+      this.errors.set(quantifiedAction.id, {
+        code: 'QNT200',
+        message: `\`${
+          quantifiedAction.opcode
+        }\` over an action is only allowed in temporal definitions, but it is used in ${qualifierToString(
+          def.qualifier
+        )} \`${def.name}\`. ${hint}`,
+        reference: quantifiedAction.id,
+        data: {},
+      })
       return
     }
 
@@ -138,6 +185,10 @@ function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
     case 'run':
       return '[not supported by the mode checker]'
   }
+}
+
+function hasEntities(entity: Entity): boolean {
+  return entityNames(entity).length > 0 || stateVariables(entity).length > 0
 }
 
 const componentKindPriority: ComponentKind[] = ['temporal', 'update', 'read']

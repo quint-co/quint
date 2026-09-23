@@ -56,6 +56,26 @@ describe('checkModes', () => {
     assert.deepEqual(suggestions.size, 0)
   })
 
+  it('points to nondet when exists over an action is used in an action', () => {
+    const defs = [`action a = Set(1, 2).exists(i => x' = i)`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    const messages = [...errors.values()].map(e => e.message)
+    assert.deepEqual(messages, [
+      '`exists` over an action is only allowed in temporal definitions, but it is used in action `a`. ' +
+        'To pick a value non-deterministically in an action, use `nondet x = S.oneOf()` instead.',
+    ])
+  })
+
+  it('finds no errors for quantifying over an action in a temporal definition', () => {
+    const defs = [`action A(i) = x' = i`, `temporal t = always(Set(1, 2).exists(i => A(i)).orKeep(x))`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+  })
+
   it('finds no errors for pure def using polymorphic operator', () => {
     const defs = [`pure def a(p) = if (not(p > 1)) p else p + 1`]
 
