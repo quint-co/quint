@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- `mustChange` (`<<A>>_v` in TLA+) is now correctly printed in the TLA+ output, so it can be checked with `--backend tlc`. Quint now post-processes the TLA+ produced by Apalache to fix issues in its pretty printer
 - Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
 - `quint compile --target=json` no longer requires `init` and `step` to exist in the module (#1971)
 - Prevent stack overflow in `getTraceStatistics` (#1992)
