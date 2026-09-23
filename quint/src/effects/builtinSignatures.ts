@@ -130,7 +130,9 @@ const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ 
 export const booleanOperators = [
   { name: 'eq', effect: standardPropagation(2) },
   { name: 'neq', effect: standardPropagation(2) },
-  { name: 'not', effect: standardPropagation(1) },
+  // Negating an action makes it temporal, as with the body of exists/forall (see below). This allows
+  // action properties such as `always(not(A).orKeep(vars))`.
+  { name: 'not', effect: parseAndQuantify('(Read[r] & Temporal[t] & Update[u]) => Read[r] & Temporal[t, u]') },
   { name: 'iff', effect: actionTemporalPropagation(2) },
   { name: 'implies', effect: actionTemporalPropagation(2) },
 ]

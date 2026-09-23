@@ -68,12 +68,55 @@ describe('checkModes', () => {
     ])
   })
 
+  it('finds mode errors for negating an action in an action', () => {
+    const defs = [`action a = not(x' = 1)`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    const messages = [...errors.values()].map(e => e.message)
+    assert.deepEqual(messages, [
+      'Negating an action is only allowed in temporal definitions, but it is used in action `a`.',
+    ])
+  })
+
+  it('finds no errors for negating an action in a temporal definition', () => {
+    const defs = [`action A(i) = x' = i`, `temporal t = always(Set(1, 2).forall(i => not(A(i))).orKeep(x))`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+  })
+
   it('finds no errors for quantifying over an action in a temporal definition', () => {
     const defs = [`action A(i) = x' = i`, `temporal t = always(Set(1, 2).exists(i => A(i)).orKeep(x))`]
 
     const [errors, _suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+  })
+
+  it('finds no errors for pure defs passing an argument to not, exists or forall', () => {
+    const defs = [
+      `pure def myNot(b) = not(b)`,
+      `pure def myExists(S, p) = S.exists(i => p(i))`,
+      `pure def myForall(S, p) = S.forall(i => p(i))`,
+    ]
+
+    const [errors, suggestions] = checkMockedDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+    assert.deepEqual(suggestions.size, 0)
+  })
+
+  it('finds mode errors for def using next on a parameter', () => {
+    const defs = [`def a(p) = next(p)`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.deepEqual(
+      [...errors.values()].map(e => e.data),
+      [{ fix: { kind: 'replace', original: 'def', replacement: 'temporal' } }]
+    )
   })
 
   it('finds no errors for pure def using polymorphic operator', () => {

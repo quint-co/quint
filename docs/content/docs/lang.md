@@ -1825,6 +1825,13 @@ temporal validChange = always(Credits.forall(c =>
 
 In actions, use `nondet` instead of `exists` to pick a value.
 
+Similarly, an action may be negated with `not` inside a temporal definition.
+For example, "eventually, no node ever sends a message" is written as:
+
+```scala
+temporal noMoreMessages = eventually(always(Nodes.forall(i => not(SendMsg(i))).orKeep(vars)))
+```
+
 #### MustChange
 
 The following operator is similar to `<A>_x` of TLA+:

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `orKeep` and `mustChange` now accept expressions using `next`, so action properties like `always((next(x) > x).orKeep(x))` can be written and checked with `--backend tlc`
 - Actions can be used in the body of `exists` and `forall` in temporal definitions, making the result temporal. Using this in actions reports an error that suggests `nondet` instead
+- Actions can be negated with `not` in temporal definitions, making the result temporal (e.g. `always(not(A).orKeep(vars))`)
 - Upgraded the default Apalache version to 0.62.1, which requires Java 21 or newer.
 
 ### Deprecated
