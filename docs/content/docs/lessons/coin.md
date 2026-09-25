@@ -454,7 +454,7 @@ only assigns new values to state variables, but does not read their previous val
 gets 1000 coins, while the other addresses get 0 coins, as before.
 Hint: use `if (cond) value1 else value2`.
             
-## 11. Defining the action `send`
+## 11. Defining the action `mint`
 
 *Progress:*  43%
 
