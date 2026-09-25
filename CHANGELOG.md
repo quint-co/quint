@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Upgraded the default Apalache version to 0.62.1, which requires Java 21 or newer.
+
 ### Deprecated
 ### Removed
 ### Fixed

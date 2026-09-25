@@ -12,11 +12,11 @@
 		"Programming Languages"
 	],
 	"bugs": {
-		"url": "https://github.com/informalsystems/quint/issues"
+		"url": "https://github.com/quint-co/quint/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/informalsystems/quint.git"
+		"url": "https://github.com/quint-co/quint.git"
 	},
 	"activationEvents": [
 		"onLanguage:quint"

@@ -35,12 +35,10 @@ export async function compileToTlaplus(
   verbosityLevel: number
 ): Promise<ApalacheResult<string>> {
   const config = {
-    input: {
-      source: {
-        type: 'string',
-        format: 'qnt',
-        content: parseDataJson,
-      },
+    source: {
+      kind: 'string',
+      format: 'qnt',
+      content: parseDataJson,
     },
   }
   const connectionResult = await connect(serverEndpoint, apalacheVersion, verbosityLevel)

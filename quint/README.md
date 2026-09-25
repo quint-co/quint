@@ -2,23 +2,23 @@
 
 <!-- Title -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-light.png">
-  <img alt="Quint Lang" src="https://raw.githubusercontent.com/informalsystems/quint/main/logos/quint-logo-dark.png" width=700>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/quint-co/quint/main/logos/quint-logo-light.png">
+  <img alt="Quint Lang" src="https://raw.githubusercontent.com/quint-co/quint/main/logos/quint-logo-dark.png" width=700>
 </picture>
 
 <!-- Menu -->
 <p>
-    <a href="https://quint-lang.org/">Website</a> •
-    <a href="https://quint-lang.org/docs/getting-started">Getting Started</a> •
+    <a href="https://quint.sh/">Website</a> •
+    <a href="https://quint.sh/docs/getting-started">Getting Started</a> •
     <a href="#documentation">Documentation</a> •
     <a href="#community">Community</a>
 </p>
 
 <!-- Badges -->
 <p>
-    <a href="https://github.com/informalsystems/quint/actions">
+    <a href="https://github.com/quint-co/quint/actions">
         <img
-            src="https://github.com/informalsystems/quint/actions/workflows/integration-tests.yml/badge.svg"
+            src="https://github.com/quint-co/quint/actions/workflows/integration-tests.yml/badge.svg"
             alt="build badge">
     </a>
     <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
@@ -58,7 +58,7 @@ Install [node/npm](https://nodejs.org/en/download/package-manager) if you don't 
  npm i @informalsystems/quint -g
  ```
 
-For alternative installation methods or advanced setup, see the full [Getting Started](https://quint-lang.org/docs/getting-started) guide.
+For alternative installation methods or advanced setup, see the full [Getting Started](https://quint.sh/docs/getting-started) guide.
 
 ### Example code in Quint
 
@@ -126,7 +126,7 @@ Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
 
-Check the [Getting Started](https://quint-lang.org/docs/getting-started) guide
+Check the [Getting Started](https://quint.sh/docs/getting-started) guide
 to see how we can fix this problem and formally verify the result.
 
 [Apalache]: https://github.com/apalache-mc/apalache
@@ -162,9 +162,9 @@ Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
 advanced developer tooling and static analysis (see our [design
-principles](https://github.com/informalsystems/quint/blob/main/docs/content/docs/design-principles.md)
+principles](https://github.com/quint-co/quint/blob/main/docs/content/docs/design-principles.md)
 and
-[previews](https://github.com/informalsystems/quint/blob/main/docs/content/docs/previews.md)
+[previews](https://github.com/quint-co/quint/blob/main/docs/content/docs/previews.md)
 of the tooling).
 
 The syntax also aims to be familiar to engineers:
@@ -228,11 +228,11 @@ Cosmos in 2023.
 
 ### Tools built for Quint
 
-- [Quint LLM Kit:](https://github.com/informalsystems/quint-llm-kit)
+- [Quint LLM Kit:](https://github.com/quint-co/quint-llm-kit)
   AI agents and commands that help you generate and iterate on Quint specs.
-- [Quint Connect:](https://github.com/informalsystems/quint-connect)
+- [Quint Connect:](https://github.com/quint-co/quint-connect)
   Model-based testing framework for Rust. Automatically validate your implementation against your Quint spec by replaying generated test traces.
-- [Quint Trace Explorer:](https://github.com/informalsystems/quint-trace-explorer)
+- [Quint Trace Explorer:](https://github.com/quint-co/quint-trace-explorer)
   Terminal UI for navigating execution traces. Highlights state changes to make it easy to understand what has happened.
 - [Quint Agent Skills:](https://github.com/quint-co/quint/tree/main/skills) Language reference and modeling skills that help AI coding agents write and reason about `.qnt` specifications.
 
@@ -240,15 +240,15 @@ Cosmos in 2023.
 ## Community
 
 - Join the chat in the [Telegram group](https://t.me/quint_lang) or in the [Zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
-- Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
-- [Contribute your spell](https://github.com/informalsystems/quint/blob/main/examples/spells/contribute-your-spell.md) to the collection of Quint spells
-- [Contribute](https://github.com/informalsystems/quint/blob/main/CONTRIBUTING.md) to the development of Quint
+- Join the [Quint discussions on GitHub](https://github.com/quint-co/quint/discussions)
+- [Contribute your spell](https://github.com/quint-co/quint/blob/main/examples/spells/contribute-your-spell.md) to the collection of Quint spells
+- [Contribute](https://github.com/quint-co/quint/blob/main/CONTRIBUTING.md) to the development of Quint
 
 
 
 ## Documentation
 
-View the [Quint documentation](https://quint-lang.org/docs/getting-started).
+View the [Quint documentation](https://quint.sh/docs/getting-started).
 
 We aspire to have great, comprehensive documentation. At present, we have a
 good start, but still far to go. Please try what we have available and share
@@ -262,7 +262,7 @@ possible to transmute specifications into executable assets and empower ideas to
 become referenced artifacts.
 
 ## Acknowledgments
-Quint is currently developed and maintained by the Quint core team at [Informal Systems](https://informal.systems/):
+Quint is currently developed and maintained by the [Quint](https://quint.sh/) core team:
 [Erick Pintor](https://github.com/erickpintor), [Gabriela Moreira](https://bugarela.com),
  [Jasmina Malicevic](https://www.linkedin.com/in/jmalicevic/) and [Yassine Boukhari](https://www.linkedin.com/in/myassineboukhari/). 💜
 

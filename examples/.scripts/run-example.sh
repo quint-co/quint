@@ -58,13 +58,13 @@ result () {
     if [[ $succeeded == false ]]; then
       # Print additional explanations
       if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1285</sup>"
       elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1284</sup>"
       elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt" && "$cmd" =~ (test|verify) ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1299</sup>"
       elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1393</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1393</sup>"
       elif [[ "$cmd" == "test" && (
               "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
               "$file" == "solidity/ERC20/erc20.qnt" ||
@@ -73,9 +73,9 @@ result () {
               "$file" == "cosmos/bank/bankTest.qnt" ||
               "$file" == "tutorials/coin.qnt" ||
               "$file" == "cosmos/ics20/ics20.qnt" ) ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/releases/tag/v0.31.0</sup>"
+        printf "<sup>https://github.com/quint-co/quint/releases/tag/v0.31.0</sup>"
       elif [[ "$file" == "language-features/counters.qnt" && "$cmd" == "test" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1941</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1941</sup>"
       fi
     fi
 }

@@ -129,7 +129,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
-          java-version: "19"
+          java-version: "21"
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build Rust evaluator
@@ -175,7 +175,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
-          java-version: "19"
+          java-version: "21"
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - run: npm install -g txm
