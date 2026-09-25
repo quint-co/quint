@@ -487,6 +487,14 @@ impl Value {
         }
     }
 
+    /// Convert a boolean value to `bool`, returning `None` for non-boolean values.
+    pub fn as_bool_opt(&self) -> Option<bool> {
+        match self.0.as_ref() {
+            ValueInner::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+
     /// Convert a string value to `Str`. Panics if the wrong type is given,
     /// which should never happen as input expressions are type-checked.
     pub fn as_str(&self) -> Str {
