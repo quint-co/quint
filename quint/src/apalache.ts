@@ -470,6 +470,26 @@ export async function fetchApalache(apalacheVersion: string, verbosityLevel: num
 }
 
 /**
+ * Compute the options used to spawn the Apalache server process.
+ *
+ * On Windows, the Apalache launcher is a `.bat` file. Since Node 18.20.2 /
+ * 20.12.2 / 21.7.2 (CVE-2024-27980), `child_process.spawn` refuses to launch
+ * `.bat`/`.cmd` files when `shell: false`, failing with `EINVAL` instead.
+ * Passing `shell: true` opts back in; this is safe here because the spawned
+ * arguments are fully controlled by us (a literal `'server'` and a numeric
+ * port), not user-supplied strings that could carry shell metacharacters.
+ *
+ * @param platform the value of `process.platform`
+ * @param stdio the stdio configuration to use for the spawned process
+ */
+export function apalacheSpawnOptions(
+  platform: NodeJS.Platform,
+  stdio: StdioOptions
+): { shell: boolean; stdio: StdioOptions } {
+  return { shell: platform === 'win32', stdio }
+}
+
+/**
  * Connect to an already running Apalache server, or – if unsuccessful – fetch
  * Apalache, spawn it, and connect to it.
  *
@@ -510,9 +530,7 @@ export async function connect(
             verbosityLevel >= verbosity.defaultLevel
               ? ['ignore', process.stdout, process.stderr]
               : ['ignore', 'ignore', 'ignore']
-          // importantly, do not wrap the command in a shell,
-          // as this will prevent the child process from being properly terminated
-          const options = { shell: false, stdio: stdio }
+          const options = apalacheSpawnOptions(process.platform, stdio)
           const args = ['server', `--port=${serverEndpoint.port}`]
           const apalache = child_process.spawn(exe, args, options)
 
@@ -521,10 +539,22 @@ export async function connect(
             debugLog(verbosityLevel, 'Shutting down Apalache server')
             // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
             apalache.removeAllListeners('exit')
-            // Try to kill Apalache
-            let killed = apalache.kill('SIGTERM')
-            if (!killed) {
-              debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
+            if (options.shell && apalache.pid) {
+              // On Windows, we spawned Apalache via a shell (cmd.exe) to launch the
+              // .bat launcher, so apalache.pid is the shell's pid, not the underlying
+              // Java process. Killing just the shell would orphan Apalache, so we
+              // kill the whole process tree instead.
+              try {
+                child_process.execSync(`taskkill /pid ${apalache.pid} /T /F`)
+              } catch (e) {
+                debugLog(verbosityLevel, `Could not kill Apalache server, exiting: ${e}`)
+              }
+            } else {
+              // Try to kill Apalache
+              let killed = apalache.kill('SIGTERM')
+              if (!killed) {
+                debugLog(verbosityLevel, `Could not kill Apalache server, exiting`)
+              }
             }
           }
 
