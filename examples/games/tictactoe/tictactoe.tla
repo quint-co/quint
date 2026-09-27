@@ -88,27 +88,27 @@ StartInCorner ==
 BoardIs(coordinate, player) ==
     board[coordinate[1]][coordinate[2]] = player
 
-CanWin == \E winningPostion \in WinningPositions, partialWin \in PartialWins:
-                    /\ BoardIs(winningPostion[partialWin[1]],"X")
-                    /\ BoardIs(winningPostion[partialWin[2]],"X")
-                    /\ BoardIs(winningPostion[partialWin[3]],"_")
+CanWin == \E winningPosition \in WinningPositions, partialWin \in PartialWins:
+                    /\ BoardIs(winningPosition[partialWin[1]],"X")
+                    /\ BoardIs(winningPosition[partialWin[2]],"X")
+                    /\ BoardIs(winningPosition[partialWin[3]],"_")
 
-Win == \E winningPostion \in WinningPositions, partialWin \in PartialWins:
-                    /\ BoardIs(winningPostion[partialWin[1]],"X")
-                    /\ BoardIs(winningPostion[partialWin[2]],"X")
-                    /\ BoardIs(winningPostion[partialWin[3]],"_")
-                    /\ Move("X", winningPostion[partialWin[3]]) \* Move into the winning position
+Win == \E winningPosition \in WinningPositions, partialWin \in PartialWins:
+                    /\ BoardIs(winningPosition[partialWin[1]],"X")
+                    /\ BoardIs(winningPosition[partialWin[2]],"X")
+                    /\ BoardIs(winningPosition[partialWin[3]],"_")
+                    /\ Move("X", winningPosition[partialWin[3]]) \* Move into the winning position
 
-CanBlockWin == \E winningPostion \in WinningPositions, partialWin \in PartialWins:
-                        /\ BoardIs(winningPostion[partialWin[1]], "O")
-                        /\ BoardIs(winningPostion[partialWin[2]], "O")
-                        /\ BoardIs(winningPostion[partialWin[3]], "_")
+CanBlockWin == \E winningPosition \in WinningPositions, partialWin \in PartialWins:
+                        /\ BoardIs(winningPosition[partialWin[1]], "O")
+                        /\ BoardIs(winningPosition[partialWin[2]], "O")
+                        /\ BoardIs(winningPosition[partialWin[3]], "_")
 
-BlockWin == \E winningPostion \in WinningPositions, partialWin \in PartialWins:
-                        /\ BoardIs(winningPostion[partialWin[1]], "O")
-                        /\ BoardIs(winningPostion[partialWin[2]], "O")
-                        /\ BoardIs(winningPostion[partialWin[3]], "_")
-                        /\ Move("X", winningPostion[partialWin[3]]) \* Move into the winning position
+BlockWin == \E winningPosition \in WinningPositions, partialWin \in PartialWins:
+                        /\ BoardIs(winningPosition[partialWin[1]], "O")
+                        /\ BoardIs(winningPosition[partialWin[2]], "O")
+                        /\ BoardIs(winningPosition[partialWin[3]], "_")
+                        /\ Move("X", winningPosition[partialWin[3]]) \* Move into the winning position
 
 CanTakeCenter == board[2][2] = "_" \* precondition
 
