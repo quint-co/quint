@@ -9,11 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- `orKeep` and `mustChange` now accept expressions using `next`, so action properties like `always((next(x) > x).orKeep(x))` can be written and checked with `--backend tlc`
+- Actions can be used as arguments of operators that are not specific to actions (e.g. `not`, `==`, `exists`, `forall`) in temporal definitions, making the result temporal, e.g. `always(not(A).orKeep(vars))`. Doing this in actions reports an error explaining it (and suggesting `nondet` instead of `exists`)
+- `if`-`else` can be used with temporal formulas, e.g. `always((if (x < 3) next(x) == x + 1 else next(x) == 0).orKeep(x))`. As before, both branches of an `if` in an action must update the same variables
+- Actions can take temporal arguments in temporal definitions, e.g. `Accept(owner.get(c), next(owner).get(c), c)`, so actions can be used as relations between the current and next state
+- Upgraded the default Apalache version to 0.62.1, which requires Java 21 or newer.
+
 ### Deprecated
 ### Removed
 ### Fixed
 
 - Fixed the Rust evaluator sometimes recording a wrong `mbt::actionTaken` and `mbt::nondetPicks` on the initial state of `--mbt` traces (#2012)
+- Fixed concurrent `quint verify` runs failing with "Could not find or load main class tlc2.TLC" while another run was still downloading the Apalache distribution. The distribution is now unpacked in a temporary directory and moved into place once complete
+- Fixed `and`, `or`, `implies` and `iff` being accepted to combine assignments in actions (e.g. `x > 0 and x' = 1`), a regression in v0.32.0. Use `all { ... }` and `any { ... }` in actions, as documented. In temporal definitions, they can combine actions and temporal formulas, e.g. `init and always(step.orKeep(vars))`
+- Fixed flattening of qualified imports (`import A as C`) when an imported name starts with the qualifier, e.g. `Credits` with `C`, which failed with "Name 'C::Credits' not found"
+- `mustChange` (`<<A>>_v` in TLA+) is now correctly printed in the TLA+ output, so it can be checked with `--backend tlc`. Quint now post-processes the TLA+ produced by Apalache to fix issues in its pretty printer
 - Fixed `--step`/`--init` resolving to a state variable instead of an action when the variable is named `step` or `init` (#1969)
 - `quint compile --target=json` no longer requires `init` and `step` to exist in the module (#1971)
 - Prevent stack overflow in `getTraceStatistics` (#1992)

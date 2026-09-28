@@ -353,7 +353,23 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
   } else if (isEqual(v1, v2)) {
     return right([])
   } else if (v1.kind === 'union' && v2.kind === 'concrete') {
-    return mergeInMany(v1.entities.map(v => unifyEntities(v, v2)))
+    // The state variables of the concrete entities in the union are already covered, so the variables in the
+    // union only need to cover the remaining ones. E.g., for `[u, 'x']` and `['x']`, `u` is bound to `[]`.
+    const covered = v1.entities.flatMap(e => (e.kind === 'concrete' ? e.stateVariables : []))
+    const uncovered = covered.filter(c => !v2.stateVariables.some(v => v.name === c.name))
+    if (uncovered.length > 0) {
+      return left({
+        location,
+        message: `Expected [${uncovered.map(v => v.name)}] to be in [${v2.stateVariables.map(v => v.name)}]`,
+        children: [],
+      })
+    }
+
+    const remaining: Entity = {
+      kind: 'concrete',
+      stateVariables: v2.stateVariables.filter(v => !covered.some(c => c.name === v.name)),
+    }
+    return mergeInMany(v1.entities.filter(v => v.kind !== 'concrete').map(v => unifyEntities(v, remaining)))
       .map(subs => subs.flat())
       .mapLeft(err => buildErrorTree(location, err))
   } else if (v1.kind === 'concrete' && v2.kind === 'union') {

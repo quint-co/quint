@@ -439,7 +439,7 @@ export class QuintLanguageServer {
         // entire body and quantifiers, while we're only looking to replace
         // its name. Thus, we try to parse the declaration using a regular
         // expression, and extract offsets to account for offsets caused by
-        // preceeding qualifiers.
+        // preceding qualifiers.
 
         const declLoc = sourceMap.get(decl.id)
         if (!declLoc) {

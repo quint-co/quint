@@ -17,7 +17,7 @@ import { isDeepStrictEqual as isEqual } from 'node:util'
 import { qualifierToString } from '../ir/IRprinting'
 import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
@@ -59,7 +59,34 @@ export class ModeChecker implements IRVisitor {
 
   private effects: Map<bigint, EffectScheme> = new Map<bigint, EffectScheme>()
 
+  // For each operator definition being visited (innermost last), the first application in it that turns
+  // an action into a temporal expression, e.g. `not(A)` or `S.exists(i => A(i))` for an action `A`.
+  private actionsAsTemporal: (QuintApp | undefined)[] = []
+
+  enterOpDef(_def: QuintOpDef) {
+    this.actionsAsTemporal.push(undefined)
+  }
+
+  enterApp(app: QuintApp) {
+    const current = this.actionsAsTemporal.length - 1
+    if (current < 0 || this.actionsAsTemporal[current] !== undefined || temporalOperators.has(app.opcode)) {
+      return
+    }
+
+    // An argument (or the body of a lambda argument) is an action, but the application doesn't update
+    // anything: the updates became temporal.
+    const hasUpdates = (id: bigint) => {
+      const effect = this.effects.get(id)?.effect
+      return effect?.kind === 'concrete' && effect.components.some(c => c.kind === 'update' && hasEntities(c.entity))
+    }
+    const actionArg = app.args.some(arg => hasUpdates(arg.kind === 'lambda' ? arg.expr.id : arg.id))
+    if (actionArg && !hasUpdates(app.id)) {
+      this.actionsAsTemporal[current] = app
+    }
+  }
+
   exitOpDef(def: QuintOpDef) {
+    const actionAsTemporal = this.actionsAsTemporal.pop()
     const effect = this.effects.get(def.id)
     if (!effect) {
       return
@@ -68,6 +95,23 @@ export class ModeChecker implements IRVisitor {
     const [mode, explanation] = modeForEffect(effect, def.qualifier)
 
     if (mode === def.qualifier) {
+      return
+    }
+
+    if (mode === 'temporal' && actionAsTemporal !== undefined && def.qualifier !== 'run') {
+      // The temporal effect comes from using an action as a temporal expression, which is only allowed in
+      // temporal definitions. Suggesting `temporal` would be misleading for actions, so we explain instead.
+      const hint = actionOperatorHints.get(actionAsTemporal.opcode) ?? ''
+      this.errors.set(actionAsTemporal.id, {
+        code: 'QNT200',
+        message: `Using an action as an argument of \`${
+          actionAsTemporal.opcode
+        }\` is only allowed in temporal definitions, but it is used in ${qualifierToString(def.qualifier)} \`${
+          def.name
+        }\`.${hint}`,
+        reference: actionAsTemporal.id,
+        data: {},
+      })
       return
     }
 
@@ -140,6 +184,30 @@ function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
   }
 }
 
+// Hints for operators whose counterparts should be used in actions
+const actionOperatorHints = new Map([
+  ['and', ' To combine actions, use `all { ... }` instead.'],
+  ['or', ' For alternative actions, use `any { ... }` instead.'],
+  ['exists', ' To pick a value non-deterministically in an action, use `nondet x = S.oneOf()` instead.'],
+])
+
+// Operators that are meant to turn actions into temporal formulas
+const temporalOperators = new Set([
+  'always',
+  'eventually',
+  'next',
+  'orKeep',
+  'mustChange',
+  'enabled',
+  'weakFair',
+  'strongFair',
+  'leadsTo',
+])
+
+function hasEntities(entity: Entity): boolean {
+  return entityNames(entity).length > 0 || stateVariables(entity).length > 0
+}
+
 const componentKindPriority: ComponentKind[] = ['temporal', 'update', 'read']
 const componentDescription = new Map<ComponentKind, string>([
   ['temporal', 'performs temporal operations over'],
@@ -202,7 +270,12 @@ function modeForEffect(scheme: EffectScheme, annotatedMode: OpQualifier): [OpQua
       const addedEntitiesByComponentKind = new Map<ComponentKind, Entity[]>()
 
       r.components.forEach(c => {
-        const paramEntities = entitiesByComponentKind.get(c.kind) ?? []
+        // Updates of parameters may become temporal in the result (e.g. in `not(a)` for an action `a`). This is
+        // determined by the arguments, so it doesn't make the operator itself temporal.
+        const paramEntities =
+          c.kind === 'temporal'
+            ? (entitiesByComponentKind.get('temporal') ?? []).concat(entitiesByComponentKind.get('update') ?? [])
+            : entitiesByComponentKind.get(c.kind) ?? []
         addedEntitiesByComponentKind.set(c.kind, addedEntities(paramEntities, c.entity))
       })
 

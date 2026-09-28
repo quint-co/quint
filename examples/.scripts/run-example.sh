@@ -45,26 +45,29 @@ result () {
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
     local succeeded=false
-    if (eval "$quint_cmd &> /dev/null")
+    local output
+    if output=$(eval "$quint_cmd" 2>&1)
     then
         printf ":white_check_mark:"
         succeeded=true
     else
         printf ":x:"
         succeeded=false
+        # Show why the command failed in the job log, as the dashboard only records the result
+        printf '>>> %s failed:\n%s\n' "$quint_cmd" "$(echo "$output" | tail -n 30)" >&2
     fi
 
     # We only want to print additional info to annotate failing results
     if [[ $succeeded == false ]]; then
       # Print additional explanations
       if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1285</sup>"
       elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1284</sup>"
       elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt" && "$cmd" =~ (test|verify) ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1299</sup>"
       elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1393</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1393</sup>"
       elif [[ "$cmd" == "test" && (
               "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
               "$file" == "solidity/ERC20/erc20.qnt" ||
@@ -73,9 +76,9 @@ result () {
               "$file" == "cosmos/bank/bankTest.qnt" ||
               "$file" == "tutorials/coin.qnt" ||
               "$file" == "cosmos/ics20/ics20.qnt" ) ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/releases/tag/v0.31.0</sup>"
+        printf "<sup>https://github.com/quint-co/quint/releases/tag/v0.31.0</sup>"
       elif [[ "$file" == "language-features/counters.qnt" && "$cmd" == "test" ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1941</sup>"
+        printf "<sup>https://github.com/quint-co/quint/issues/1941</sup>"
       fi
     fi
 }

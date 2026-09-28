@@ -35,7 +35,7 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0] & Update['x']"
+    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0] & Update['x'] & Temporal[v1]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
@@ -49,11 +49,11 @@ describe('inferEffects', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(
       effectForDef(defs, effects, 'a'),
-      "∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0, 'x'] & Temporal[v1] & Update[v2]"
+      "∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0, 'x'] & Temporal[v1, v2]"
     )
     assert.deepEqual(
       effectForDef(defs, effects, 'b'),
-      '∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0] & Temporal[v1] & Update[v2]'
+      '∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0] & Temporal[v1, v2]'
     )
   })
 
@@ -62,7 +62,7 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
+    const expectedEffect = "∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0, 'x'] & Temporal[v1, v2]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
@@ -73,7 +73,7 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
+    const expectedEffect = "∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0, 'x'] & Temporal[v1, v2]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
@@ -140,7 +140,7 @@ describe('inferEffects', () => {
     const [errors, effects] = inferEffectsForDefs(defs)
 
     const expectedEffect =
-      '∀ v0, v1, v2, v3 . ((Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3], Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3]'
+      '∀ v0, v1, v2, v3, v4 . ((Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3] & Update[v4], Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3, v4]'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
@@ -159,7 +159,7 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = '∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0] & Temporal[v1]'
+    const expectedEffect = '∀ v0, v1, v2 . (Read[v0] & Temporal[v1] & Update[v2]) => Read[v0] & Temporal[v1, v2]'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
@@ -177,7 +177,8 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = '∀ v0, v1 . (Read[v0], (Read[v0]) => Read[v1], Read[v0]) => Read[v0, v1]'
+    const expectedEffect =
+      '∀ v0, v1, v2, v3, v4, v5, v6 . (Read[v0] & Temporal[v1] & Update[v2], (Read[v0] & Temporal[v1]) => Read[v3] & Temporal[v4] & Update[v5], Read[v0] & Temporal[v1] & Update[v6]) => Read[v0, v3] & Temporal[v1, v4, v5, v2, v6]'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'MinBy'), expectedEffect)
@@ -201,7 +202,8 @@ describe('inferEffects', () => {
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'channel'] & Update['channel']"
+    const expectedEffect =
+      "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'channel'] & Temporal[v1] & Update['channel']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'CoolAction'), expectedEffect)
@@ -296,6 +298,84 @@ describe('inferEffects', () => {
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for orKeep with an action that updates variables', () => {
+    const defs = ["action myStep = x' = x + 1", 'temporal a = always(myStep.orKeep(x))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for orKeep with an action property using next', () => {
+    const defs = ['temporal a = always((next(x) > x).orKeep(x))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for mustChange with an action property using next', () => {
+    const defs = ['temporal a = always(eventually((next(x) > x).mustChange(x)))']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+  })
+
+  it('infers temporal effect for exists and forall over actions', () => {
+    const defs = [
+      "action A(i) = x' = i",
+      'temporal a = Set(1, 2).exists(i => A(i))',
+      'temporal b = Set(1, 2).forall(i => next(x) > x implies A(i))',
+    ]
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'b'), "Read['x'] & Temporal['x']")
+  })
+
+  it('infers temporal effect for negation of an action', () => {
+    const defs = ["action A = x' = x + 1", 'temporal a = not(A)', 'val b = not(x > 0)']
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Read['x'] & Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'b'), "Read['x']")
+  })
+
+  it('infers effects for if-then-else with temporal formulas and actions', () => {
+    const defs = [
+      "action A = x' = x + 1",
+      "action B = x' = x - 1",
+      'temporal a = if (x > 0) always(x > 0) else eventually(x > 0)',
+      'temporal b = if (next(x) > x) always(x > 0) else x > 0',
+      'temporal c = if (A) always(x > 0) else x > 0',
+      'action d = if (x > 0) A else B',
+    ]
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'a'), "Read['x'] & Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'b'), "Read['x'] & Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'c'), "Read['x'] & Temporal['x']")
+    assert.deepEqual(effectForDef(defs, effects, 'd'), "Read['x'] & Update['x']")
+  })
+
+  it('finds errors for if-then-else with branches updating different variables', () => {
+    const defs = ["action A = x' = x + 1", 'action a = if (x > 0) A else true']
+
+    const [errors] = inferEffectsForDefs(defs)
+
+    assert.isNotEmpty(errors)
   })
 
   it('infers temporal effect for leadsTo', () => {

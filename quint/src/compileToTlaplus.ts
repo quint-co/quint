@@ -14,6 +14,7 @@
  */
 
 import { ApalacheResult, ServerEndpoint, connect } from './apalache'
+import { postprocessTlaplus } from './tlaplusPostprocessing'
 
 /**
  * Get apalache to convert quint parse data into TLA+
@@ -35,14 +36,13 @@ export async function compileToTlaplus(
   verbosityLevel: number
 ): Promise<ApalacheResult<string>> {
   const config = {
-    input: {
-      source: {
-        type: 'string',
-        format: 'qnt',
-        content: parseDataJson,
-      },
+    source: {
+      kind: 'string',
+      format: 'qnt',
+      content: parseDataJson,
     },
   }
   const connectionResult = await connect(serverEndpoint, apalacheVersion, verbosityLevel)
-  return connectionResult.asyncChain(conn => conn.tla(config))
+  const tlaResult = await connectionResult.asyncChain(conn => conn.tla(config))
+  return tlaResult.map(postprocessTlaplus)
 }

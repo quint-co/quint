@@ -187,7 +187,7 @@ quint run bank.qnt --invariant=no_negatives
 However, the simulator might miss several executions. To make sure we fixed the problem, we should run the model checker, by using the `verify` subcommand.
 
 <Callout>
-The model checker requires Java Development Kit >= 17. We recommend version 17 of the [Eclipse Temurin](https://adoptium.net/) or [Zulu](https://www.azul.com/downloads/?version=java-17-lts&package=jdk#download-openjdk) builds of OpenJDK.
+The model checker requires Java Development Kit >= 21. We recommend version 21 of the [Eclipse Temurin](https://adoptium.net/) or [Zulu](https://www.azul.com/downloads/?version=java-21-lts&package=jdk#download-openjdk) builds of OpenJDK.
 </Callout>
 ```sh
 quint verify bank.qnt --invariant=no_negatives

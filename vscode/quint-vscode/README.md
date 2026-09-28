@@ -15,7 +15,7 @@ This extension provides language support for Quint, the specification language.
   - Find all references
 
 New features are listed and discussed on [this GitHub
-discussion](https://github.com/informalsystems/quint/discussions/254).
+discussion](https://github.com/quint-co/quint/discussions/254).
 
 Parse errors are highlighted in red, and hovering over the error will show the
 error message.
@@ -52,4 +52,4 @@ There are no external requirements.
 ## Known Issues
 
 Issues are tracked on GitHub under the [Fvscode
-tag](https://github.com/informalsystems/quint/labels/Fvscode).
+tag](https://github.com/quint-co/quint/labels/Fvscode).

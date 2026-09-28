@@ -12,7 +12,7 @@ We use the `paths-filter` action instead of constraining the triggers because th
 - Runs tests, then creates a gh release of the source code and publishes the
   quint executable to npm.
 - Requires the `NPM_TOKEN` secret is provided as a [repository
-  secret](https://github.com/informalsystems/quint/settings/secrets/actions),
+  secret](https://github.com/quint-co/quint/settings/secrets/actions),
   with permissions to write to the quint package.
 
 ## Releasing the Rust evaluator [./release-evaluator.yml](./release-evaluator.yml)

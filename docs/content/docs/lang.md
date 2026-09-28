@@ -1801,11 +1801,41 @@ A.orKeep(x)
 
 The arguments to `orKeep` are as follows:
 
- - `A` is an expression in the Action mode,
+ - `A` is an expression in the Action mode, or a Temporal-mode expression
+   that relates the current and next states via `next`,
  - `x` is a variable or a tuple of variables.
 
 *Mode:* Temporal, Run. This operator converts an action (in the Action mode) to a
 temporal property or a run.
+
+Together with `always`, this operator lets us write action properties, that is,
+properties of every transition. For example, `always((next(x) > x).orKeep(x))`
+is like `[][x' > x]_x` of TLA+.
+
+Inside a temporal definition, actions may also be used as arguments of the
+operators that are not specific to actions, such as `not`, `==`, `exists`,
+`forall`, `if`-`else` or set operators. The result is temporal: the updates of the action are
+treated as references to the next state. Actions may also take arguments that
+refer to the next state, like `nextCo` below. For example:
+
+```quint
+// if the owner of a credit changes, it's because the new owner accepted an offer
+temporal ValidChange(c) = {
+  val co = owner.get(c)
+  temporal nextCo = next(owner).get(c)
+  co != nextCo implies Accept(co, nextCo, c)
+}
+temporal validChange = always(Credits.forall(c => ValidChange(c)).orKeep(owner))
+
+// "eventually, no node ever sends a message"
+temporal noMoreMessages = eventually(always(Nodes.forall(i => not(SendMsg(i))).orKeep(vars)))
+
+// the transition depends on the current state
+temporal byCase = always((if (x < 3) next(x) == x + 1 else next(x) == 0).orKeep(x))
+```
+
+This is not allowed in actions, where the action operators should be used
+instead, e.g., `nondet` instead of `exists` to pick a value.
 
 #### MustChange
 
@@ -1818,7 +1848,8 @@ A.mustChange(x)
 
 The arguments to `mustChange` are as follows:
 
- - `A` is an expression in the Action mode,
+ - `A` is an expression in the Action mode, or a Temporal-mode expression
+   that relates the current and next states via `next`,
  - `x` is a variable or a tuple of variables.
 
 *Mode:* Temporal. This operator converts an action (in the Action mode) to a

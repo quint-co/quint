@@ -58,6 +58,21 @@ describe('flattenModule', () => {
     assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
+  it('flattens import with qualifier that is a prefix of an imported name', () => {
+    const baseDecls = ['val Credits = Set(1, 2)', 'val numCredits = Credits.size()']
+
+    const decls = ['import A as C', 'val a = C::numCredits']
+
+    const expectedDecls = [
+      'val C::Credits = Set(1, 2)',
+      'val C::numCredits = size(C::Credits)',
+      'val a = C::numCredits',
+    ]
+
+    const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
+    assert.deepEqual(flattenedDecls, expectedDecls)
+  })
+
   it('flattens import with self-qualifier', () => {
     const baseDecls = ['def f(x) = x + 1']
 

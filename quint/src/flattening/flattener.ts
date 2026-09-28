@@ -126,7 +126,7 @@ class Flattener implements IRVisitor {
 
       const namespace = this.namespaceForNested ?? qualifier(decl)
       const newDef: QuintDef =
-        namespace && !def.name.startsWith(namespace)
+        namespace && !def.name.startsWith(`${namespace}::`)
           ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
           : def
 
@@ -181,7 +181,7 @@ class Flattener implements IRVisitor {
 
     const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
     const newDef =
-      namespace && !def.name.startsWith(namespace)
+      namespace && !def.name.startsWith(`${namespace}::`)
         ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
         : def
 

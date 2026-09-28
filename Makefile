@@ -41,11 +41,14 @@ BUILD_DIR := quint/_build
 quint/_build:
 	mkdir $@
 
-# Download the latest Apalache for quint integration tests
+# The Apalache version that quint uses by default
+APALACHE_VERSION := $(shell sed -n "s/.*DEFAULT_APALACHE_VERSION_TAG = '\(.*\)'.*/\1/p" quint/src/apalache.ts)
+
+# Download the Apalache version used by quint for quint integration tests
 apalache: | $(BUILD_DIR)
 	# remove the previously downloaded archive in case it exists (required by gh)
 	rm -f $(BUILD_DIR)/apalache.tgz
-	gh release download --repo apalache-mc/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
+	gh release download v$(APALACHE_VERSION) --repo apalache-mc/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
 	tar -xvzf $(BUILD_DIR)/apalache.tgz --directory $(BUILD_DIR) > /dev/null
 
 # Alias to update examples readme

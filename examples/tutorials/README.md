@@ -1,3 +1,3 @@
 # Tutorial examples
 
-Examples from the [Lessons](https://quint-lang.org/docs/lessons)
+Examples from the [Lessons](https://quint.sh/docs/lessons)

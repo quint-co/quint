@@ -19,6 +19,19 @@ bash -
 
 ## Configuration errors
 
+### Legacy Apalache configuration is rejected cleanly
+
+<!-- !test in legacy Apalache config -->
+```
+quint verify --apalache-config=./testFixture/apalache/legacyConfig.json ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err legacy Apalache config -->
+```
+error: $.input: Unknown configuration key.
+```
+
 ### Verifying spec with invalid init param produces an error
 
 <!-- !test in invalid init -->
@@ -729,6 +742,326 @@ quint verify --backend tlc --temporal falseLiveness --main ewd840_3 ../examples/
 
 <!-- !test exit 1 -->
 <!-- !test err TLC ewd840 falseLiveness violation -->
+```
+error: found a counterexample
+```
+
+## TLC: Action properties
+
+The examples from Hillel Wayne's "Action Properties"
+(https://www.hillelwayne.com/post/action-properties/), in
+`./testFixture/apalache/actionProperties.qnt`, with one module per example.
+
+### TLC: `intro`: `[][x' > x]_x` holds
+
+<!-- !test check TLC action properties intro increasing -->
+```
+quint verify --backend tlc --main=intro --temporal=increasing ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `intro`: `[][x' > x + 1]_x` is violated
+
+<!-- !test in TLC action properties intro jumpsViolated -->
+```
+quint verify --backend tlc --main=intro --temporal=jumpsViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties intro jumpsViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `intro`: `[][Next]_x` holds
+
+<!-- !test check TLC action properties intro nextHolds -->
+```
+quint verify --backend tlc --main=intro --temporal=nextHolds ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `conditional`: `[][x' /= x => y' = x]_<<x, y>>` holds
+
+<!-- !test check TLC action properties conditional lockstep -->
+```
+quint verify --backend tlc --main=conditional --temporal=lockstep ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `conditional`: `[][Machine => Inv']_vars` holds
+
+<!-- !test check TLC action properties conditional machineKeepsInv -->
+```
+quint verify --backend tlc --main=conditional --temporal=machineKeepsInv ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `conditional`: `[][disabled => UNCHANGED x]_<<disabled, x>>` is violated
+
+<!-- !test in TLC action properties conditional killSwitchViolated -->
+```
+quint verify --backend tlc --main=conditional --temporal=killSwitchViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties conditional killSwitchViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `conditional`: `[][World => Inv']_vars` is violated
+
+<!-- !test in TLC action properties conditional worldKeepsInvViolated -->
+```
+quint verify --backend tlc --main=conditional --temporal=worldKeepsInvViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties conditional worldKeepsInvViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `credits`: ownership changes because of accepted offers
+
+<!-- !test check TLC action properties credits changeProp -->
+```
+quint verify --backend tlc --main=credits --temporal=changeProp ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `creditsUnguarded`: ownership changes because of accepted offers is violated without the ownership guard
+
+<!-- !test in TLC action properties creditsUnguarded changePropViolated -->
+```
+quint verify --backend tlc --main=creditsUnguarded --temporal=changePropViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties creditsUnguarded changePropViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `serverStatus`: no `Offline` to `Online` transition
+
+<!-- !test check TLC action properties serverStatus noSkipBoot -->
+```
+quint verify --backend tlc --main=serverStatus --temporal=noSkipBoot ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `serverStatus`: no `Booting` to `Online` transition is violated
+
+<!-- !test in TLC action properties serverStatus neverOnlineViolated -->
+```
+quint verify --backend tlc --main=serverStatus --temporal=neverOnlineViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties serverStatus neverOnlineViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `transitions`: `[][<<state, state'>> \in Transitions]_state` holds
+
+<!-- !test check TLC action properties transitions validTransitions -->
+```
+quint verify --backend tlc --main=transitions --temporal=validTransitions ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `transitions`: never going from `C` to `A` is violated
+
+<!-- !test in TLC action properties transitions neverBackToAViolated -->
+```
+quint verify --backend tlc --main=transitions --temporal=neverBackToAViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties transitions neverBackToAViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `conditionalTransitions`: `[][T = <<A, B>> => x' > x]_<<state, x>>` holds
+
+<!-- !test check TLC action properties conditionalTransitions abIncrements -->
+```
+quint verify --backend tlc --main=conditionalTransitions --temporal=abIncrements ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `conditionalTransitions`: `[][x' < x => T = <<A, C>>]_<<state, x>>` holds
+
+<!-- !test check TLC action properties conditionalTransitions onlyAcDecrements -->
+```
+quint verify --backend tlc --main=conditionalTransitions --temporal=onlyAcDecrements ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `conditionalTransitions`: `[][T = <<C, B>> => x' > x]_<<state, x>>` is violated
+
+<!-- !test in TLC action properties conditionalTransitions cbIncrementsViolated -->
+```
+quint verify --backend tlc --main=conditionalTransitions --temporal=cbIncrementsViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties conditionalTransitions cbIncrementsViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `concurrentTransitions`: all machines follow the transitions
+
+<!-- !test check TLC action properties concurrentTransitions machinesTransitions -->
+```
+quint verify --backend tlc --main=concurrentTransitions --temporal=machinesTransitions ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `concurrentTransitions`: all machines follow the transitions is violated with an adversary
+
+<!-- !test in TLC action properties concurrentTransitions machinesTransitions with adversarialStep -->
+```
+quint verify --backend tlc --main=concurrentTransitions --step=adversarialStep --temporal=machinesTransitions ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties concurrentTransitions machinesTransitions with adversarialStep -->
+```
+error: found a counterexample
+```
+
+### TLC: `lock`: the lock is released before being acquired by another thread
+
+<!-- !test check TLC action properties lock lockRelease -->
+```
+quint verify --backend tlc --main=lock --temporal=lockRelease ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `lock`: the lock is released before being acquired by another thread is violated when stealing it
+
+<!-- !test in TLC action properties lock lockRelease with stealingStep -->
+```
+quint verify --backend tlc --main=lock --step=stealingStep --temporal=lockRelease ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties lock lockRelease with stealingStep -->
+```
+error: found a counterexample
+```
+
+### TLC: `appendOnlyLog`: the log is append-only
+
+<!-- !test check TLC action properties appendOnlyLog appendOnly -->
+```
+quint verify --backend tlc --main=appendOnlyLog --temporal=appendOnly ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `appendOnlyLog`: the log is frozen once non-empty is violated
+
+<!-- !test in TLC action properties appendOnlyLog logFrozenViolated -->
+```
+quint verify --backend tlc --main=appendOnlyLog --temporal=logFrozenViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties appendOnlyLog logFrozenViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `stickyFlag`: `[][flag => flag']_flag` holds
+
+<!-- !test check TLC action properties stickyFlag flagSticks -->
+```
+quint verify --backend tlc --main=stickyFlag --temporal=flagSticks ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `stickyFlag`: `[][~flag => ~flag']_flag` is violated
+
+<!-- !test in TLC action properties stickyFlag neverSetViolated -->
+```
+quint verify --backend tlc --main=stickyFlag --temporal=neverSetViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties stickyFlag neverSetViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `nonNull`: a value doesn't go back to `None`
+
+<!-- !test check TLC action properties nonNull staysNonNull -->
+```
+quint verify --backend tlc --main=nonNull --temporal=staysNonNull ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `nonNull`: a value doesn't change once set is violated
+
+<!-- !test in TLC action properties nonNull frozenOnceSetViolated -->
+```
+quint verify --backend tlc --main=nonNull --temporal=frozenOnceSetViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties nonNull frozenOnceSetViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `clientQueue`: the current client doesn't change while it has messages
+
+<!-- !test check TLC action properties clientQueue stickyClient -->
+```
+quint verify --backend tlc --main=clientQueue --temporal=stickyClient ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `clientQueue`: the current client doesn't change while it has messages is violated when switching at any time
+
+<!-- !test in TLC action properties clientQueue stickyClient with impatientStep -->
+```
+quint verify --backend tlc --main=clientQueue --step=impatientStep --temporal=stickyClient ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties clientQueue stickyClient with impatientStep -->
+```
+error: found a counterexample
+```
+
+### TLC: `notes`: `[]<><<Machine>>_x` holds with fairness
+
+<!-- !test check TLC action properties notes machineInfinitelyOften -->
+```
+quint verify --backend tlc --main=notes --temporal=machineInfinitelyOften ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `notes`: `[]<><<Machine>>_x` is violated without fairness
+
+<!-- !test in TLC action properties notes machineInfinitelyOftenViolated -->
+```
+quint verify --backend tlc --main=notes --temporal=machineInfinitelyOftenViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties notes machineInfinitelyOftenViolated -->
+```
+error: found a counterexample
+```
+
+### TLC: `notes`: `<>[][World => Safe]_vars => []<>Safe` holds with fairness
+
+<!-- !test check TLC action properties notes rareWorldResilient -->
+```
+quint verify --backend tlc --main=notes --temporal=rareWorldResilient ./testFixture/apalache/actionProperties.qnt 2>&1 | grep '\[ok\]'
+```
+
+### TLC: `notes`: `<>[][World => Safe]_vars => []<>Safe` is violated without fairness
+
+<!-- !test in TLC action properties notes rareWorldResilientViolated -->
+```
+quint verify --backend tlc --main=notes --temporal=rareWorldResilientViolated ./testFixture/apalache/actionProperties.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err TLC action properties notes rareWorldResilientViolated -->
 ```
 error: found a counterexample
 ```

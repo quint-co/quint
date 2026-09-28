@@ -47,26 +47,18 @@ function nameForVariable(kind: ComponentKind, i: number) {
  * Example: propagateComponents(['read', 'temporal'])(2) results in
  * (Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]
  *
+ * With `updatesAsTemporal`, the arguments may also have update components, which become temporal in
+ * the result. For example, propagateComponents(['read', 'temporal'], true)(1) results in
+ * (Read[r1] & Temporal[t1] & Update[u1]) => Read[r1] & Temporal[t1, u1]
+ *
  * @param kinds the kinds of components to propagate
+ * @param updatesAsTemporal whether to accept updates in the arguments and turn them into temporal
  * @returns an arrow function taking arity and returning the effect for that arity
  */
-function propagateComponents(kinds: ComponentKind[]): (arity: number) => EffectScheme {
+function propagateComponents(kinds: ComponentKind[], updatesAsTemporal = false): (arity: number) => EffectScheme {
   return (arity: number) => {
-    const params: Effect[] = times(arity, i => {
-      const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, i + 1) } }
-      })
-
-      return { kind: 'concrete', components: components }
-    })
-
-    const resultComponents: EffectComponent[] = kinds.map(kind => {
-      const names = times(arity, i => nameForVariable(kind, i + 1))
-      const entities: Entity[] = names.map(name => ({ kind: 'variable', name }))
-      return { kind: kind, entity: { kind: 'union', entities } }
-    })
-
-    const result: Effect = { kind: 'concrete', components: resultComponents }
+    const params: Effect[] = times(arity, i => paramEffect(kinds, i + 1, updatesAsTemporal))
+    const result = resultEffect(kinds, arity, updatesAsTemporal)
     const effect: Effect = { kind: 'arrow', params: params, result: result }
 
     return { effect, ...effectNames(effect) }
@@ -82,67 +74,85 @@ function propagateComponents(kinds: ComponentKind[]): (arity: number) => EffectS
  * Example: propagationWithLambda(['read', 'temporal'])(2) results in
  * (Read[r1] & Temporal[t1], (Read[r1] & Temporal[t1]) => Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]
  *
+ * With `updatesAsTemporal`, the arguments and the lambda body may also have update components, which
+ * become temporal in the result (the lambda parameters don't have updates). For example,
+ * propagationWithLambda(['read', 'temporal'], true)(2) results in
+ * (Read[r1] & Temporal[t1] & Update[u1], (Read[r1] & Temporal[t1]) => Read[r2] & Temporal[t2] & Update[u2])
+ *   => Read[r1, r2] & Temporal[t1, t2, u1, u2]
+ *
  * @param kinds the kinds of components to propagate
+ * @param updatesAsTemporal whether to accept updates in the arguments and turn them into temporal
  * @returns an arrow function taking arity and returning the effect for that arity
  */
-function propagationWithLambda(kinds: ComponentKind[]): (arity: number) => EffectScheme {
+function propagationWithLambda(kinds: ComponentKind[], updatesAsTemporal = false): (arity: number) => EffectScheme {
   return (arity: number) => {
-    const params: Effect[] = times(arity - 1, i => {
-      const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, i + 1) } }
-      })
-
-      return { kind: 'concrete', components: components }
-    })
-
-    const lambdaResult: Effect = {
-      kind: 'concrete',
-      components: kinds.map(kind => {
-        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, arity) } }
-      }),
-    }
-
-    const lambda: Effect = { kind: 'arrow', params, result: lambdaResult }
-
-    const resultComponents: EffectComponent[] = kinds.map(kind => {
-      const names = times(arity, i => nameForVariable(kind, i + 1))
-      const entities: Entity[] = names.map(name => ({ kind: 'variable', name }))
-      return { kind: kind, entity: { kind: 'union', entities } }
-    })
-
-    const result: Effect = { kind: 'concrete', components: resultComponents }
+    const params: Effect[] = times(arity - 1, i => paramEffect(kinds, i + 1, updatesAsTemporal))
+    const lambdaParams: Effect[] = times(arity - 1, i => paramEffect(kinds, i + 1, false))
+    const lambda: Effect = { kind: 'arrow', params: lambdaParams, result: paramEffect(kinds, arity, updatesAsTemporal) }
+    const result = resultEffect(kinds, arity, updatesAsTemporal)
 
     const effect: Effect = { kind: 'arrow', params: params.concat(lambda), result }
     return { effect, ...effectNames(effect) }
   }
 }
 
-export const standardPropagation = propagateComponents(['read', 'temporal'])
-// Propagation for boolean connectives that may combine actions with temporal formulas,
-// e.g., `init and always(...)` in a spec formula.
-const actionTemporalPropagation = propagateComponents(['read', 'temporal', 'update'])
+/** The effect of the i-th parameter, with a variable for each kind (and for updates, if `withUpdates`) */
+function paramEffect(kinds: ComponentKind[], i: number, withUpdates: boolean): Effect {
+  const paramKinds: ComponentKind[] = withUpdates ? kinds.concat('update') : kinds
+  const components: EffectComponent[] = paramKinds.map(kind => {
+    return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, i) } }
+  })
+
+  return { kind: 'concrete', components: components }
+}
+
+/**
+ * The effect of the result, with the union of the variables of each kind in the `arity` parameters
+ * (and the update variables in the temporal component, if `updatesAsTemporal`)
+ */
+function resultEffect(kinds: ComponentKind[], arity: number, updatesAsTemporal: boolean): Effect {
+  const variables = (kind: ComponentKind): Entity[] =>
+    times(arity, i => ({ kind: 'variable', name: nameForVariable(kind, i + 1) }))
+
+  const components: EffectComponent[] = kinds.map(kind => {
+    const entities =
+      kind === 'temporal' && updatesAsTemporal ? variables(kind).concat(variables('update')) : variables(kind)
+    return { kind: kind, entity: { kind: 'union', entities } }
+  })
+
+  return { kind: 'concrete', components }
+}
+
+// Standard propagation for operators that are not specific to actions or temporal formulas. Actions may be
+// given as arguments, which makes the result temporal: the updates are treated as references to the next state
+// (like `next(x)`). This allows writing action properties such as `always(not(A).orKeep(vars))` or
+// `always(S.exists(i => A(i)).orKeep(vars))`, and spec formulas such as `init and always(step.orKeep(vars))`,
+// while actions have to use the action operators (e.g. `all`/`any` instead of `and`/`or`, `nondet` instead of
+// `exists`), as ensured by the mode checker.
+export const standardPropagation = propagateComponents(['read', 'temporal'], true)
+const standardPropagationWithLambda = propagationWithLambda(['read', 'temporal'], true)
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 export const booleanOperators = [
   { name: 'eq', effect: standardPropagation(2) },
   { name: 'neq', effect: standardPropagation(2) },
   { name: 'not', effect: standardPropagation(1) },
-  { name: 'iff', effect: actionTemporalPropagation(2) },
-  { name: 'implies', effect: actionTemporalPropagation(2) },
+  { name: 'iff', effect: standardPropagation(2) },
+  { name: 'implies', effect: standardPropagation(2) },
 ]
 
 export const setOperators = [
-  { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
-  { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
+  { name: 'exists', effect: standardPropagationWithLambda(2) },
+  { name: 'forall', effect: standardPropagationWithLambda(2) },
   { name: 'in', effect: standardPropagation(2) },
   { name: 'contains', effect: standardPropagation(2) },
   { name: 'union', effect: standardPropagation(2) },
   { name: 'intersect', effect: standardPropagation(2) },
   { name: 'exclude', effect: standardPropagation(2) },
   { name: 'subseteq', effect: standardPropagation(2) },
-  { name: 'filter', effect: propagationWithLambda(['read', 'temporal'])(2) },
-  { name: 'map', effect: propagationWithLambda(['read', 'temporal'])(2) },
-  { name: 'fold', effect: propagationWithLambda(['read', 'temporal'])(3) },
+  { name: 'filter', effect: standardPropagationWithLambda(2) },
+  { name: 'map', effect: standardPropagationWithLambda(2) },
+  { name: 'fold', effect: standardPropagationWithLambda(3) },
   { name: 'powerset', effect: standardPropagation(1) },
   { name: 'flatten', effect: standardPropagation(1) },
   { name: 'allLists', effect: standardPropagation(1) },
@@ -157,7 +167,7 @@ export const setOperators = [
 export const mapOperators = [
   { name: 'get', effect: standardPropagation(2) },
   { name: 'keys', effect: standardPropagation(1) },
-  { name: 'mapBy', effect: propagationWithLambda(['read', 'temporal'])(2) },
+  { name: 'mapBy', effect: standardPropagationWithLambda(2) },
   { name: 'setToMap', effect: standardPropagation(1) },
   { name: 'setOfMaps', effect: standardPropagation(2) },
   { name: 'set', effect: standardPropagation(3) },
@@ -188,9 +198,9 @@ export const listOperators = [
   { name: 'replaceAt', effect: standardPropagation(3) },
   { name: 'slice', effect: standardPropagation(3) },
   { name: 'range', effect: standardPropagation(2) },
-  { name: 'select', effect: propagationWithLambda(['read', 'temporal'])(2) },
-  { name: 'foldl', effect: propagationWithLambda(['read', 'temporal'])(3) },
-  { name: 'foldr', effect: propagationWithLambda(['read', 'temporal'])(3) },
+  { name: 'select', effect: standardPropagationWithLambda(2) },
+  { name: 'foldl', effect: standardPropagationWithLambda(3) },
+  { name: 'foldr', effect: standardPropagationWithLambda(3) },
 ]
 
 export const integerOperators = [
@@ -212,8 +222,13 @@ const temporalOperators = [
   { name: 'always', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
   { name: 'eventually', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
   { name: 'next', effect: parseAndQuantify('(Read[r]) => Temporal[r]') },
-  { name: 'orKeep', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
-  { name: 'mustChange', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  // orKeep and mustChange accept temporal expressions in the first argument, so that action properties
+  // relating the current and next states can be written, e.g., `always((next(x) > x).orKeep(x))`.
+  { name: 'orKeep', effect: parseAndQuantify('(Read[r] & Update[u] & Temporal[t], Read[v]) => Temporal[r, u, v, t]') },
+  {
+    name: 'mustChange',
+    effect: parseAndQuantify('(Read[r] & Update[u] & Temporal[t], Read[v]) => Temporal[r, u, v, t]'),
+  },
   // Enabled: Should we do this? https://github.com/informalsystems/quint/discussions/109
   // Or should the result be temporal?
   { name: 'enabled', effect: parseAndQuantify('(Read[r1] & Update[u1]) => Read[r1]') },
@@ -239,7 +254,10 @@ const temporalOperators = [
 ]
 
 const otherOperators = [
-  { name: 'assign', effect: parseAndQuantify('(Read[r1], Read[r2]) => Read[r2] & Update[r1]') },
+  {
+    name: 'assign',
+    effect: parseAndQuantify('(Read[r1], Read[r2] & Temporal[t]) => Read[r2] & Update[r1] & Temporal[t]'),
+  },
   { name: 'then', effect: parseAndQuantify('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]') },
   { name: 'expect', effect: parseAndQuantify('(Read[r1] & Update[u], Read[r2]) => Read[r1] & Update[u]') },
   { name: 'reps', effect: parseAndQuantify('(Pure, (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]') },
@@ -261,8 +279,13 @@ const otherOperators = [
     effect: parseAndQuantify('(Pure, Pure, Update[u1], Read[r2] & Update[u2], Read[r3]) => Read[r2, r3] & Update[u2]'),
   },
   {
+    // Both branches must update the same variables, so that `if` can be used in actions. Branches and the
+    // condition may be temporal, and as in `standardPropagation`, the condition may be an action, which then
+    // becomes temporal.
     name: 'ite',
-    effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),
+    effect: parseAndQuantify(
+      '(Read[r1] & Temporal[t1] & Update[u1], Read[r2] & Temporal[t2] & Update[u], Read[r3] & Temporal[t3] & Update[u]) => Read[r1, r2, r3] & Temporal[t1, t2, t3, u1] & Update[u]'
+    ),
   },
   {
     name: 'variant',
@@ -277,8 +300,8 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['Rec', standardPropagation],
   ['Tup', standardPropagation],
   ['tuples', standardPropagation],
-  ['and', actionTemporalPropagation],
-  ['or', actionTemporalPropagation],
+  ['and', standardPropagation],
+  ['or', standardPropagation],
   [
     // A match operator that looks like
     //
@@ -322,15 +345,16 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
       return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
     },
   ],
-  ['actionAll', propagateComponents(['read', 'update'])],
+  ['actionAll', propagateComponents(['read', 'temporal', 'update'])],
   [
     'actionAny',
     (arity: number) => {
       const indexes = range(arity)
 
-      const args = indexes.map(i => `Read[r${i}] & Update[u]`)
+      const args = indexes.map(i => `Read[r${i}] & Temporal[t${i}] & Update[u]`)
       const readVars = indexes.map(i => `r${i}`).join(', ')
-      return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
+      const temporalVars = indexes.map(i => `t${i}`).join(', ')
+      return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Temporal[${temporalVars}] & Update[u]`)
     },
   ],
 ]

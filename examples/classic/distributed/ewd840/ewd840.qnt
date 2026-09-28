@@ -156,12 +156,17 @@ module ewd840 {
   // WF_vars(step) is used instead of only WF_vars(System) that requires fairness
   // of the actions controlled by termination detection.
 
-  // Not expressible in quint (for now), as it negates an action
-  // temporal AllNodesTerminateIfNoMessages =
-  //   step.orKeep(vars) and step.weakFair(vars) implies
-  //     eventually(always(
-  //         Node.forall(i => not(SendMsg(i))).orKeep(vars)
-  //     )) implies eventually(Node.forall(i => not(active.get(i))))
+  temporal AllNodesTerminateIfNoMessages =
+    eventually(always(Nodes.forall(i => not(SendMsg(i))).orKeep(vars)))
+      implies eventually(Nodes.forall(i => not(active.get(i))))
+
+  /// `AllNodesTerminateIfNoMessages` under fairness of `System` only. It does not hold.
+  temporal AllNodesTerminateIfNoMessagesFairSystem =
+    System.weakFair(vars) implies AllNodesTerminateIfNoMessages
+
+  /// `AllNodesTerminateIfNoMessages` under fairness of `step`. It holds.
+  temporal AllNodesTerminateIfNoMessagesFairStep =
+    step.weakFair(vars) implies AllNodesTerminateIfNoMessages
 
   /// Dijkstra's inductive invariant
   /// Check that it is indeed inductive (together with TypeOK) with:
