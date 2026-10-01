@@ -645,7 +645,7 @@ Preserves the order of the elements.
 ### Examples
 
 ```quint
-assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
+assert(List(1, 2, 3).select(x => x % 2 == 0) == List(2))
 ```
 
 ## foldl

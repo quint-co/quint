@@ -502,7 +502,7 @@ module builtin {
   /// ### Examples
   ///
   /// ```quint
-  /// assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
+  /// assert(List(1, 2, 3).select(x => x % 2 == 0) == List(2))
   /// ```
   pure def select(l, p): (List[a], (a) => bool) => List[a]
 
