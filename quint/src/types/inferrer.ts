@@ -26,8 +26,8 @@ import { difference } from 'lodash'
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
 export class TypeInferrer extends ConstraintGeneratorVisitor {
-  constructor(table: LookupTable, types?: Map<bigint, TypeScheme>) {
-    super(solveConstraint, table, types)
+  constructor(table: LookupTable, types?: Map<bigint, TypeScheme>, enforceConstVarMonomorphism: boolean = false) {
+    super(solveConstraint, table, types, enforceConstVarMonomorphism)
   }
 
   /**

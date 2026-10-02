@@ -43,10 +43,15 @@ export type AnalysisResult = [QuintError[], AnalysisOutput]
  *
  * @param lookupTable - The lookup tables for the modules.
  * @param quintModules - The Quint modules to be analyzed.
+ * @param enforceConstVarMonomorphism - Whether to enforce monomorphic types for const/var declarations.
  * @returns A tuple with a list of errors and the analysis output.
  */
-export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
-  const analyzer = new QuintAnalyzer(lookupTable)
+export function analyzeModules(
+  lookupTable: LookupTable,
+  quintModules: QuintModule[],
+  enforceConstVarMonomorphism: boolean = false
+): AnalysisResult {
+  const analyzer = new QuintAnalyzer(lookupTable, undefined, enforceConstVarMonomorphism)
   // XXX: the modules are mutated here.
   quintModules.forEach(m => (m.declarations = analyzer.analyzeDeclarations(m.declarations)))
   return analyzer.getResult()
@@ -61,14 +66,16 @@ export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModu
  * @param analysisOutput - The previous analysis output to be used as a starting point.
  * @param lookupTable - The lookup tables for the modules.
  * @param declarations - The Quint declarations to be analyzed.
+ * @param enforceConstVarMonomorphism - Whether to enforce monomorphic types for const/var declarations.
  * @returns A tuple with a list of errors and the analysis output.
  */
 export function analyzeInc(
   analysisOutput: AnalysisOutput,
   lookupTable: LookupTable,
-  declarations: QuintDeclaration[]
+  declarations: QuintDeclaration[],
+  enforceConstVarMonomorphism: boolean = false
 ): AnalysisResult {
-  const analyzer = new QuintAnalyzer(lookupTable, analysisOutput)
+  const analyzer = new QuintAnalyzer(lookupTable, analysisOutput, enforceConstVarMonomorphism)
   analyzer.analyzeDeclarations(declarations)
   return analyzer.getResult()
 }
@@ -94,10 +101,14 @@ class QuintAnalyzer {
   private errors: QuintError[] = []
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
-  constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
+  constructor(
+    lookupTable: LookupTable,
+    previousOutput?: AnalysisOutput,
+    enforceConstVarMonomorphism: boolean = false
+  ) {
     // XXX: the lookUp table is mutated when TypeApplicationResolver is instantiated
     this.typeApplicationResolver = new TypeApplicationResolver(lookupTable)
-    this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types)
+    this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types, enforceConstVarMonomorphism)
     // FIXES: https://github.com/informalsystems/quint/issues/428
     this.effectInferrer = new EffectInferrer(lookupTable, new Map([...(previousOutput?.effects.entries() ?? [])]))
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()

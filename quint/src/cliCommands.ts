@@ -39,6 +39,7 @@ import { fileSourceResolver } from './parsing/sourceResolver'
 import { verifyWithApalacheBackend, verifyWithTlcBackend } from './verify'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
+import { inlineTypeAliases } from './types/aliasInliner'
 import { newTraceRecorder } from './runtime/trace'
 import { flow, uniqWith } from 'lodash'
 import { isDeepStrictEqual as isEqual } from 'node:util'
@@ -633,11 +634,35 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   // Pick the main module
   const flatMain = flattenedModules.find(m => m.name === mainName)!
 
+  // Re-run type checking on flattened modules with enforceConstVarMonomorphism = true
+  // This ensures vars/consts have precise, monomorphic types required by Apalache
+  const [postFlatteningErrors, postFlatteningOutput] = analyzeModules(
+    flattenedTable,
+    [flatMain],
+    true // enforceConstVarMonomorphism
+  )
+
+  if (postFlatteningErrors.length > 0) {
+    const errors = postFlatteningErrors.map(mkErrorMessage(typechecked.sourceMap))
+    return cliErr('Type checking after flattening failed', { ...typechecked, errors })
+  }
+
+  // After type checking, inline sum types for Apalache
+  // This is a second pass that inlines sum type aliases which were skipped during flattening
+  const { modules: finalModules, table: finalTable, analysisOutput: finalAnalysis } = inlineTypeAliases(
+    flattenedModules,
+    flattenedTable,
+    postFlatteningOutput,
+    true // inlineSumTypes
+  )
+
+  const finalMain = finalModules.find(m => m.name === mainName)!
+
   return right({
     ...typechecked,
-    ...flattenedAnalysis,
-    mainModule: flatMain,
-    table: flattenedTable,
+    ...finalAnalysis,
+    mainModule: finalMain,
+    table: finalTable,
     main: mainName,
     stage: 'compiling',
   })
