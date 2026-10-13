@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The REPL now resolves `import ... from` paths relative to the loaded file instead of the working directory, so `quint -r dir/spec.qnt` works when `spec.qnt` imports other files (#1449)
 - The REPL now discards definitions from inputs rejected by static analysis. Before, they stayed in the lookup table and made the REPL crash with `invalid IR reference: type constructor ... has no type definition` after an unknown type alias was used, or repeat a type application error on every later input
+- Fixed `quint run` recording a run twice when `step` cannot be extended. Such runs were written twice with `--n-traces` and `--out-itf`, the shortest traces were dropped when `--n-traces` equals `--max-samples`, and the trace length statistics counted them twice
+- Fixed the Rust evaluator counting runs that cannot be extended or that violate an invariant twice in the trace length statistics
 
 ### Security
 

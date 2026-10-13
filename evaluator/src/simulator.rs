@@ -240,7 +240,6 @@ impl ParsedQuint {
                     }
 
                     if !invariant.execute(env)?.as_bool() {
-                        trace_lengths.push(env.trace.len());
                         return Ok(false);
                     }
 
@@ -249,9 +248,8 @@ impl ParsedQuint {
                         // Since we are doing random simulation, it is very likely
                         // that we have not generated good values for extending
                         // the run. Hence, do not report an error here, but simply
-                        // drop the run. Otherwise, we would have a lot of false
+                        // end the run. Otherwise, we would have a lot of false
                         // positives, which look like deadlocks but they are not.
-                        trace_lengths.push(env.trace.len());
                         return Ok(true);
                     }
                 }
