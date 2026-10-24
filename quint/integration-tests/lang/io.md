@@ -161,6 +161,32 @@ Trying to unify str and int
 error: typechecking failed
 ```
 
+## typecheck reports an arity error for an under-applied type alias
+
+Regression test for [#2006](https://github.com/quint-co/quint/issues/2006).
+A parameter annotated `Option` instead of `Option[a]`, used at two different
+instantiations, must be a located type error rather than an internal crash.
+
+<!-- !test exit 1 -->
+<!-- !test in under-applied type alias -->
+```
+quint typecheck ./testFixture/typechecking/underAppliedTypeAlias.qnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err under-applied type alias -->
+```
+
+ Error [QNT000]: too few arguments supplied: Option only accepts 1 parameters
+applying type constructor Option to arguments
+
+
+  at ./testFixture/typechecking/underAppliedTypeAlias.qnt:6:23
+  6:   pure def is_some(o: Option): bool = match o { | Some(_) => true | None => false }
+                           ^^^^^^
+
+error: typechecking failed
+```
+
 
 ## typecheck finds error on incorrect instance overrides
 

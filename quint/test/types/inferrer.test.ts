@@ -5,6 +5,8 @@ import { typeSchemeToString } from '../../src/types/printing'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 import { TypeApplicationResolver } from '../../src/types/typeApplicationResolution'
+import { analyzeModules } from '../../src/quintAnalyzer'
+import { quintErrorToString } from '../../src/quintError'
 
 // Utility used to print update `stringType` values to make
 // updating the expected values in the following tests less
@@ -590,5 +592,102 @@ Trying to unify (_t0, Set[_t0]) => bool and (int, str) => _t1
 
     const [errors] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors, 'Should find type errors')
+  })
+
+  // Regression test for https://github.com/quint-co/quint/issues/2006
+  it('reports an arity error instead of crashing on an under-applied type alias', () => {
+    const text = `module minimal {
+  type Option[a] = Some(a) | None
+  type Prod = { m: int }
+  type Req = { c: int }
+  pure def is_some(o: Option): bool = match o { | Some(_) => true | None => false }
+  pure def use(prod: Option[Prod], req: Option[Req]): bool =
+    is_some(prod) and is_some(req)
+}`
+    const { modules, table, sourceMap } = parseMockedModule(text)
+    const [errors] = analyzeModules(table, modules)
+
+    assert.lengthOf(errors, 1, `expected one error, found: ${errors.map(quintErrorToString).join('\n---\n')}`)
+    assert.equal(errors[0].code, 'QNT000')
+    assert.equal(
+      errors[0].message,
+      'too few arguments supplied: Option only accepts 1 parameters\napplying type constructor Option to arguments\n'
+    )
+
+    const reference = errors[0].reference
+    assert.isDefined(reference)
+    const loc = sourceMap.get(reference!)
+    assert.isDefined(loc)
+    const start = loc!.start.index
+    const end = (loc!.end?.index ?? start) + 1
+    assert.equal(text.slice(start, end), 'Option')
+  })
+
+  it('reports an arity error for an imported or instantiated under-applied alias', () => {
+    const text = `module A {
+  const N: int
+  type Option[a] = Some(a) | None
+  type Result[ok, err] = Ok(ok) | Err(err)
+}
+module B {
+  import A.*
+  pure def bare(o: Option): bool = true
+  pure def applied(o: Option[int]): bool = match o { | Some(_) => true | None => false }
+}
+module C {
+  import A(N=1) as A1
+  pure def bare(o: A1::Option): bool = true
+  pure def two(r: A1::Result): bool = true
+  pure def applied(o: A1::Option[int]): bool = match o { | Some(_) => true | None => false }
+}`
+    const { modules, table, sourceMap } = parseMockedModule(text)
+    const [errors] = analyzeModules(table, modules)
+    // One diagnostic per invalid reference. The analyzer re-appends stored
+    // error maps on later modules for every error kind, so compare distinct ids.
+    const unique = [...new Map(errors.map(e => [e.reference, e])).values()]
+    assert.lengthOf(unique, 3)
+    const messages = unique.map(e => e.message)
+    assert.sameDeepMembers(messages, [
+      'too few arguments supplied: Option only accepts 1 parameters\napplying type constructor Option to arguments\n',
+      'too few arguments supplied: A1::Option only accepts 1 parameters\napplying type constructor A1::Option to arguments\n',
+      'too few arguments supplied: A1::Result only accepts 2 parameters\napplying type constructor A1::Result to arguments\n',
+    ])
+    unique.forEach(e => {
+      assert.equal(e.code, 'QNT000')
+      const loc = sourceMap.get(e.reference!)
+      assert.isDefined(loc)
+      const start = loc!.start.index
+      const end = (loc!.end?.index ?? start) + 1
+      const snippet = text.slice(start, end)
+      assert.include(['Option', 'A1::Option', 'A1::Result'], snippet)
+    })
+  })
+
+  it('typechecks aliases defined from other aliases and non-parameterized aliases', () => {
+    const defs = [
+      'type Option[a] = Some(a) | None',
+      'type Alias[a] = Option[a]',
+      'type IntAlias = int',
+      'type Concrete = Option[int]',
+      'pure def is_some(o: Alias[a]): bool = match o { | Some(_) => true | None => false }',
+      'pure def use_alias(x: IntAlias): int = x',
+      'pure def use_concrete(o: Concrete): bool = is_some(o)',
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+  })
+
+  it('typechecks a parameterized alias applied to a type variable', () => {
+    const defs = [
+      'type Option[a] = Some(a) | None',
+      'type Prod = { m: int }',
+      'type Req = { c: int }',
+      'pure def is_some(o: Option[a]): bool = match o { | Some(_) => true | None => false }',
+      'pure def use(prod: Option[Prod], req: Option[Req]): bool = is_some(prod) and is_some(req)',
+    ]
+
+    const [errors] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
   })
 })

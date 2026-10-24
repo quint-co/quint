@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- `quint typecheck` reports an arity error when a parameterized type is used with no arguments (for example `o: Option` instead of `o: Option[a]`), instead of crashing with an internal unification error (#2006)
+
 ### Security
 
 ## v0.33.1 -- 2026-10-28
