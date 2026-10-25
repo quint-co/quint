@@ -25,30 +25,32 @@ import { QuintType } from '../ir/quintTypes'
  * @param modules - The array of QuintModules to transform.
  * @param table - The LookupTable containing the type aliases to be resolved.
  * @param analysisOutput - The AnalysisOutput to transform.
+ * @param inlineSumTypes - Whether to inline sum type aliases (default: false).
  *
  * @returns An object containing the transformed QuintModules, LookupTable and AnalysisOutput.
  */
 export function inlineTypeAliases(
   modules: QuintModule[],
   table: LookupTable,
-  analysisOutput: AnalysisOutput
+  analysisOutput: AnalysisOutput,
+  inlineSumTypes: boolean = false
 ): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
-  const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
+  const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table, inlineSumTypes))
   const tableWithInlinedAliases = new Map(
     [...table.entries()].map(([id, def]): [bigint, LookupDefinition] => {
       if (def.kind === 'param') {
-        const typeAnnotation = def.typeAnnotation ? inlineAliasesInType(def.typeAnnotation, table) : undefined
+        const typeAnnotation = def.typeAnnotation ? inlineAliasesInType(def.typeAnnotation, table, inlineSumTypes) : undefined
         return [id, { ...def, typeAnnotation }]
       }
 
-      return [id, inlineAliasesInDef(def, table)]
+      return [id, inlineAliasesInDef(def, table, inlineSumTypes)]
     })
   )
 
   return {
     modules: modulesWithInlinedAliases,
     table: tableWithInlinedAliases,
-    analysisOutput: inlineAnalysisOutput(analysisOutput, table),
+    analysisOutput: inlineAnalysisOutput(analysisOutput, table, inlineSumTypes),
   }
 }
 
@@ -57,13 +59,14 @@ export function inlineTypeAliases(
  *
  * @param analysisOutput - The AnalysisOutput to transform.
  * @param table - The LookupTable containing the type aliases to be resolved.
+ * @param inlineSumTypes - Whether to inline sum type aliases.
  *
  * @returns The transformed AnalysisOutput with all type aliases replaced with their resolved types.
  */
-export function inlineAnalysisOutput(analysisOutput: AnalysisOutput, table: LookupTable): AnalysisOutput {
+export function inlineAnalysisOutput(analysisOutput: AnalysisOutput, table: LookupTable, inlineSumTypes: boolean = false): AnalysisOutput {
   const typesWithInlinedAliases = new Map(
     [...analysisOutput.types.entries()].map(([id, typeScheme]) => {
-      const inlinedType = inlineAliasesInType(typeScheme.type, table)
+      const inlinedType = inlineAliasesInType(typeScheme.type, table, inlineSumTypes)
       return [id, { ...typeScheme, type: inlinedType }]
     })
   )
@@ -81,12 +84,13 @@ export function inlineAnalysisOutput(analysisOutput: AnalysisOutput, table: Look
  * @param lookupTable - The LookupTable containing the type aliases to be
  * resolved.
  * @param def - The QuintDef to transform.
+ * @param inlineSumTypes - Whether to inline sum type aliases.
  *
  * @returns The transformed QuintDef with all type aliases replaced with
  * their resolved types.
  */
-export function inlineAliasesInDef(def: QuintDef, lookupTable: LookupTable): QuintDef {
-  const inliner = new AliasInliner(lookupTable)
+export function inlineAliasesInDef(def: QuintDef, lookupTable: LookupTable, inlineSumTypes: boolean = false): QuintDef {
+  const inliner = new AliasInliner(lookupTable, inlineSumTypes)
   return transformDefinition(inliner, def)
 }
 
@@ -97,12 +101,13 @@ export function inlineAliasesInDef(def: QuintDef, lookupTable: LookupTable): Qui
  * @param lookupTable - The LookupTable containing the type aliases to be
  * resolved.
  * @param quintModule - The QuintModule to transform.
+ * @param inlineSumTypes - Whether to inline sum type aliases.
  *
  * @returns The transformed QuintModule with all type aliases replaced with
  * their resolved types.
  */
-function inlineAliasesInModule(quintModule: QuintModule, lookupTable: LookupTable): QuintModule {
-  const inliner = new AliasInliner(lookupTable)
+function inlineAliasesInModule(quintModule: QuintModule, lookupTable: LookupTable, inlineSumTypes: boolean = false): QuintModule {
+  const inliner = new AliasInliner(lookupTable, inlineSumTypes)
   return transformModule(inliner, quintModule)
 }
 
@@ -112,32 +117,38 @@ function inlineAliasesInModule(quintModule: QuintModule, lookupTable: LookupTabl
  * @param lookupTable - The LookupTable containing the type aliases to be
  * resolved.
  * @param type - The QuintType to transform.
+ * @param inlineSumTypes - Whether to inline sum type aliases.
  *
  * @returns The transformed QuintType with all type aliases replaced with
  * their resolved types.
  */
-function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
-  const inliner = new AliasInliner(lookupTable)
+function inlineAliasesInType(type: QuintType, lookupTable: LookupTable, inlineSumTypes: boolean = false): QuintType {
+  const inliner = new AliasInliner(lookupTable, inlineSumTypes)
   return transformType(inliner, type)
 }
 
 class AliasInliner implements IRTransformer {
   private lookupTable: LookupTable
+  private inlineSumTypes: boolean
 
-  constructor(lookupTable: LookupTable) {
+  constructor(lookupTable: LookupTable, inlineSumTypes: boolean = false) {
     this.lookupTable = lookupTable
+    this.inlineSumTypes = inlineSumTypes
   }
 
   enterType(type: QuintType): QuintType {
-    return resolveAlias(this.lookupTable, type)
+    return resolveAlias(this.lookupTable, type, this.inlineSumTypes)
   }
 }
 
-export function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
+export function resolveAlias(lookupTable: LookupTable, type: QuintType, inlineSumTypes: boolean = false): QuintType {
   if (type.kind === 'const' && type.id) {
     const aliasValue = lookupTable.get(type.id)
     if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {
-      return resolveAlias(lookupTable, aliasValue.type)
+      if (!inlineSumTypes && aliasValue.type.kind == 'sum') {
+        return type
+      }
+      return resolveAlias(lookupTable, aliasValue.type, inlineSumTypes)
     }
   }
   return type
