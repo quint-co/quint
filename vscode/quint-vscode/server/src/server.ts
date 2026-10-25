@@ -9,6 +9,8 @@ import {
   CodeAction,
   CodeActionKind,
   CodeActionParams,
+  CodeLens,
+  CodeLensParams,
   CompletionItem,
   CompletionParams,
   CompletionTriggerKind,
@@ -98,6 +100,9 @@ export class QuintLanguageServer {
           referencesProvider: true,
           signatureHelpProvider: {
             triggerCharacters: ['('],
+          },
+          codeLensProvider: {
+            resolveProvider: false,
           },
         },
       }
@@ -477,6 +482,47 @@ export class QuintLanguageServer {
         params.textDocument.uri,
         params.position,
         params.context.includeDeclaration
+      )
+    })
+
+    connection.onCodeLens((params: CodeLensParams): CodeLens[] => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      const filePath = URI.parse(params.textDocument.uri).path
+
+      const localModules = parsedData.modules.filter(module => {
+        const loc = parsedData.sourceMap.get(module.id)
+        if (!loc) {
+          return false
+        }
+        const moduleUri = URI.parse(loc.source).toString()
+        return moduleUri == params.textDocument.uri
+      })
+
+      return localModules.flatMap(module =>
+        module.declarations.flatMap(d => {
+          if (d.kind !== 'def' || d.qualifier !== 'run') {
+            return []
+          }
+          const loc = parsedData.sourceMap.get(d.id)
+          if (!loc) {
+            return []
+          }
+          const range = locToRange(loc)
+          return [
+            {
+              range,
+              command: {
+                title: '▶ Run test',
+                command: 'quint.runTest',
+                arguments: [filePath, d.name],
+              },
+            },
+          ]
+        })
       )
     })
 
