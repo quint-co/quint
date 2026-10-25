@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
+
 ### Security
 
 ## v0.33.1 -- 2026-10-28

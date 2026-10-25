@@ -15,7 +15,7 @@ import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { mkErrorMessage } from '../../src/cliHelpers'
-import { QuintError } from '../../src'
+import { QuintError, isDef } from '../../src'
 
 // the name that we are using by default
 const defaultSourceName = 'moduleName'
@@ -95,6 +95,81 @@ describe('parsing', () => {
     )
     const module = { id: 1n, name: 'empty', declarations: [] }
     assert.deepEqual(result.modules[0], module)
+  })
+
+  // Regression test for https://github.com/quint-co/quint/issues/2013
+  it('parses a doc comment immediately before the closing brace of a module', () => {
+    const code = `module test {
+  var b: bool
+  action init = { b' = true }
+  action step = all { b' = not(b) }
+  /// some doccomment message
+}
+`
+    const result = parsePhase1fromText(newIdGenerator(), code, defaultSourceName)
+    assert.deepEqual(result.errors, [])
+    assert.lengthOf(result.modules, 1)
+
+    const parsed = result.modules[0]
+    assert.equal(parsed.name, 'test')
+    assert.notProperty(parsed, 'doc')
+    assert.deepEqual(
+      parsed.declarations.map(decl => (isDef(decl) ? decl.name : decl.kind)),
+      ['b', 'init', 'step']
+    )
+    for (const decl of parsed.declarations) {
+      assert.notProperty(decl, 'doc')
+    }
+  })
+
+  it('parses an empty module that contains only a doc comment', () => {
+    const code = `module empty {
+  /// only a doc comment
+}
+`
+    const result = parsePhase1fromText(newIdGenerator(), code, defaultSourceName)
+    assert.deepEqual(result.errors, [])
+    assert.lengthOf(result.modules, 1)
+    assert.equal(result.modules[0].name, 'empty')
+    assert.deepEqual(result.modules[0].declarations, [])
+    assert.notProperty(result.modules[0], 'doc')
+  })
+
+  it('keeps module and declaration docs when a module ends with a doc comment', () => {
+    const code = `/// module doc
+module test {
+  /// declaration doc
+  var b: bool
+
+  /// first trailing line
+  /// second trailing line
+}
+`
+    const result = parsePhase1fromText(newIdGenerator(), code, defaultSourceName)
+    assert.deepEqual(result.errors, [])
+    assert.lengthOf(result.modules, 1)
+
+    const parsed = result.modules[0]
+    assert.equal(parsed.doc, 'module doc')
+    assert.lengthOf(parsed.declarations, 1)
+    const decl = parsed.declarations[0]
+    assert.isTrue(isDef(decl))
+    if (isDef(decl)) {
+      assert.equal(decl.name, 'b')
+      assert.equal(decl.doc, 'declaration doc')
+    }
+  })
+
+  it('still reports other syntax errors when a module ends with a doc comment', () => {
+    const code = `module test {
+  const broken
+  /// trailing doc
+}
+`
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].code, 'QNT000')
+    assert.notInclude(errors[0].message, 'DOCCOMMENT')
   })
 
   it('parses SuperSpec', () => {

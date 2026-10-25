@@ -20,7 +20,10 @@ import { quintErrorToString } from '../quintError'
 // entry point for the parser
 modules : HASHBANG_LINE? module+ EOF;
 
-module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* '}';
+// Trailing doc comments (after the last declaration, before '}') are accepted
+// and ignored. They are not part of a documentedDeclaration, so they are not
+// attached to the previous declaration.
+module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* DOCCOMMENT* '}';
 documentedDeclaration : DOCCOMMENT* declaration;
 
 // a module declaration
