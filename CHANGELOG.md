@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
+
 ### Changed
 
 - The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory

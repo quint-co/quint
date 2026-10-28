@@ -21,7 +21,7 @@ use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
 use itertools::{Either, Itertools};
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint, Sign};
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -87,10 +87,12 @@ const _: () = assert!(std::mem::size_of::<Value>() == 8);
 /// values that enable lazy evaluation of some potentially expensive expressions.
 ///
 /// `Int` only for n outside the i61 range [-2^60, 2^60), which the tagged word
-/// cannot hold; ints inside it are always inline, so the two forms never
-/// coexist for the same integer.
+/// cannot hold; ints inside it are always inline. `BigInt` only for n outside
+/// the i64 range. So each integer has exactly one representation, which `Eq`
+/// and `Hash` rely on.
 enum HeapValue {
     Int(i64),
+    BigInt(BigInt),
     Str(Str),
     Set(ImmutableSet<Value>),
     Tuple(ImmutableVec<Value>),
@@ -134,6 +136,9 @@ pub enum ValueRef<'a> {
     // Infinite sets
     InfiniteInt, // represents the set of all integers
     InfiniteNat, // represents the set of all natural numbers (>= 0)
+    // Integers outside the i64 range. Last, so that the discriminants (and
+    // hashes) of the other variants stay the same.
+    BigInt(&'a BigInt),
 }
 
 impl Value {
@@ -185,6 +190,7 @@ impl Value {
             // SAFETY: tag just decoded as Heap.
             Tag::Heap => match unsafe { self.heap_ref() } {
                 HeapValue::Int(n) => ValueRef::Int(*n),
+                HeapValue::BigInt(n) => ValueRef::BigInt(n),
                 HeapValue::Str(s) => ValueRef::Str(s),
                 HeapValue::Set(set) => ValueRef::Set(set),
                 HeapValue::Tuple(elems) => ValueRef::Tuple(elems),
@@ -257,6 +263,10 @@ impl Hash for Value {
                 );
             }
             ValueRef::Int(n) => {
+                discriminant.hash(state);
+                n.hash(state);
+            }
+            ValueRef::BigInt(n) => {
                 discriminant.hash(state);
                 n.hash(state);
             }
@@ -336,6 +346,10 @@ impl PartialEq for Value {
         use ValueRef::*;
         match (self.view(), other.view()) {
             (Int(a), Int(b)) => a == b,
+            (ValueRef::BigInt(a), ValueRef::BigInt(b)) => a == b,
+            // Big integers are only used outside the i64 range, so they are
+            // never equal to an `Int`
+            (Int(_), ValueRef::BigInt(_)) | (ValueRef::BigInt(_), Int(_)) => false,
             (Bool(a), Bool(b)) => a == b,
             (Str(a), Str(b)) => a == b,
             (Set(a), Set(b)) => *a == *b,
@@ -392,6 +406,13 @@ impl Value {
             Value::immediate(Tag::Int, n as usize)
         } else {
             Value::heap(HeapValue::Int(n))
+        }
+    }
+
+    pub fn bigint(n: BigInt) -> Self {
+        match i64::try_from(&n) {
+            Ok(n) => Value::int(n),
+            Err(_) => Value::heap(HeapValue::BigInt(n)),
         }
     }
 
@@ -564,6 +585,8 @@ impl Value {
         Ok(match (self.view(), elem.view()) {
             (ValueRef::Set(elems), _) => elems.contains(elem),
             (ValueRef::Interval(start, end), ValueRef::Int(n)) => start <= n && n <= end,
+            // Interval bounds fit in i64, and big integers don't
+            (ValueRef::Interval(_, _), ValueRef::BigInt(_)) => false,
             (ValueRef::CrossProduct(sets), ValueRef::Tuple(elems)) => {
                 if sets.len() != elems.len() {
                     false
@@ -593,9 +616,10 @@ impl Value {
                         .try_fold(true, |acc, v| Ok(acc && range.contains(v)?))?
                 }
             }
-            (ValueRef::InfiniteInt, ValueRef::Int(_)) => true,
+            (ValueRef::InfiniteInt, ValueRef::Int(_) | ValueRef::BigInt(_)) => true,
             (ValueRef::InfiniteInt, _) => false,
             (ValueRef::InfiniteNat, ValueRef::Int(n)) => n >= 0,
+            (ValueRef::InfiniteNat, ValueRef::BigInt(n)) => n.sign() != Sign::Minus,
             (ValueRef::InfiniteNat, _) => false,
             _ => panic!("contains not implemented for {self:?}"),
         })
@@ -659,16 +683,43 @@ impl Value {
         })
     }
 
-    /// Convert an integer value to `i64`. Panics if the wrong type is given,
-    /// which should never happen as input expressions are type-checked.
-    pub fn as_int(&self) -> i64 {
+    /// Convert an integer value to `i64`, or `None` if it doesn't fit in i64.
+    /// Panics if the wrong type is given, which should never happen as input
+    /// expressions are type-checked.
+    pub fn as_i64(&self) -> Option<i64> {
         // Hot path: no `ValueRef` construction for the inline case.
         if self.tag() == Tag::Int {
-            return self.payload();
+            return Some(self.payload());
         }
         match self.view() {
-            ValueRef::Int(n) => n,
+            ValueRef::Int(n) => Some(n),
+            ValueRef::BigInt(_) => None,
             _ => panic!("Expected integer"),
+        }
+    }
+
+    /// Convert an integer value to a big integer. Panics if the wrong type is
+    /// given, which should never happen as input expressions are type-checked.
+    pub fn as_bigint(&self) -> BigInt {
+        match self.view() {
+            ValueRef::Int(n) => BigInt::from(n),
+            ValueRef::BigInt(n) => n.clone(),
+            _ => panic!("Expected integer"),
+        }
+    }
+
+    /// Convert an integer value to `i64`, saturating big integers to
+    /// `i64::MIN` or `i64::MAX`. For indexes, lengths and counts, where a big
+    /// integer is out of range anyway, just like `i64::MIN` or `i64::MAX`.
+    /// Panics if the wrong type is given, which should never happen as input
+    /// expressions are type-checked.
+    pub fn as_i64_saturating(&self) -> i64 {
+        match self.as_i64() {
+            Some(n) => n,
+            None => match self.view() {
+                ValueRef::BigInt(n) if n.sign() == Sign::Minus => i64::MIN,
+                _ => i64::MAX,
+            },
         }
     }
 
@@ -923,6 +974,7 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self.view() {
             ValueRef::Int(n) => write!(f, "{n}"),
+            ValueRef::BigInt(n) => write!(f, "{n}"),
             ValueRef::Bool(b) => write!(f, "{b}"),
             ValueRef::Str(s) => write!(f, "{s:?}"),
             ValueRef::Set(_)
@@ -1024,9 +1076,26 @@ mod tests {
             i64::MIN,
             i64::MAX,
         ] {
-            assert_eq!(Value::int(n).as_int(), n, "roundtrip of {n}");
+            assert_eq!(Value::int(n).as_i64(), Some(n), "roundtrip of {n}");
             assert!(matches!(Value::int(n).view(), ValueRef::Int(m) if m == n));
         }
+    }
+
+    #[test]
+    fn bigint_is_only_used_outside_i64() {
+        for n in [0, -1, I61_MAX, 1 << 60, i64::MIN, i64::MAX] {
+            let v = Value::bigint(BigInt::from(n));
+            assert_eq!(v, Value::int(n), "{n} as bigint");
+            assert_eq!(fxhash(&v), fxhash(&Value::int(n)), "hash of {n} as bigint");
+        }
+
+        let big = BigInt::from(i64::MAX) + 1u8;
+        let v = Value::bigint(big.clone());
+        assert!(matches!(v.view(), ValueRef::BigInt(n) if *n == big));
+        assert_eq!(v.as_i64(), None);
+        assert_eq!(v.as_bigint(), big);
+        assert_eq!(v, Value::bigint(big.clone()));
+        assert_eq!(fxhash(&v), fxhash(&Value::bigint(big)));
     }
 
     #[test]

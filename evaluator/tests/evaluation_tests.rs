@@ -3,7 +3,7 @@ use std::rc::Rc;
 use quint_evaluator::{
     evaluator::{run, Env, EvalResult, Interpreter},
     helpers,
-    value::Value,
+    value::{Value, ValueRef},
     Verbosity,
 };
 
@@ -1359,12 +1359,27 @@ fn set_nat_fails() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn arithmetic_overflow() -> Result<(), Box<dyn std::error::Error>> {
-    let result = eval_expr("9223372036854775807 + 1");
-    let err = result.unwrap_err();
+fn arithmetic_past_i64() -> Result<(), Box<dyn std::error::Error>> {
+    // Integers are big integers, so there is no overflow at the i64 bounds
     assert_eq!(
-        err.to_string(),
-        "[QNT601] Integer overflow in arithmetic operations: 9223372036854775807 + 1"
+        eval_expr("9223372036854775807 + 1").unwrap().to_string(),
+        "9223372036854775808"
+    );
+    assert_eq!(
+        eval_expr("-9223372036854775807 - 2").unwrap().to_string(),
+        "-9223372036854775809"
+    );
+    assert_eq!(
+        eval_expr("-(-9223372036854775807 - 1)")
+            .unwrap()
+            .to_string(),
+        "9223372036854775808"
+    );
+    assert_eq!(
+        eval_expr("(-9223372036854775807 - 1) / -1")
+            .unwrap()
+            .to_string(),
+        "9223372036854775808"
     );
 
     Ok(())
@@ -1408,4 +1423,92 @@ fn error_trace_through_user_def() {
         "Error through nested user-defined calls should have exactly 3 trace entries, got {}",
         err.trace.len()
     );
+}
+
+fn assert_error_code(input: &str, code: &str) {
+    let err = eval_expr(input).expect_err(input);
+    assert_eq!(err.code, code, "expression: {input}, error: {err}");
+}
+
+#[test]
+fn big_integers() -> Result<(), Box<dyn std::error::Error>> {
+    // Integers outside i64 are printed with all their digits
+    assert_eq!(
+        eval_expr("2^64").unwrap().to_string(),
+        "18446744073709551616"
+    );
+    assert_eq!(
+        eval_expr("2^256").unwrap().to_string(),
+        "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+    );
+    assert_eq!(
+        eval_expr("-(2^64) - 1").unwrap().to_string(),
+        "-18446744073709551617"
+    );
+
+    // The examples of the integers tutorial, with the results of the
+    // TypeScript backend
+    assert_from_string("2^32 * 2^32 == 2^64", "true")?;
+    assert_from_string("((2^64 - 1) % 2^64 + 1) % 2^64", "0")?;
+    assert_from_string("(2^64 - 123) % 2^63", "9223372036854775685")?;
+    assert_from_string("-(-2^63) == 2^63", "true")?;
+    assert_from_string("(-(2^64) - 5) / 7", "-2635249153387078803")?;
+    assert_from_string("(-(2^64) - 5) % 7", "0")?;
+
+    // Results that fit in i64 again are plain integers, also when both
+    // arguments are big integers
+    assert!(matches!(
+        eval_expr("2^64 + (5 - 2^64)").unwrap().view(),
+        ValueRef::Int(5)
+    ));
+    assert!(matches!(
+        eval_expr("-(2^64) / 2^60").unwrap().view(),
+        ValueRef::Int(-16)
+    ));
+    assert_from_string("(2^63 - 1) + 1 - 1", "9223372036854775807")?;
+    assert_from_string("2^64 - 2^64", "0")?;
+    assert_from_string("2^256 / 2^255", "2")?;
+
+    // 0, 1 and -1 to the power of a big exponent
+    assert_from_string("(-1)^(2^64 + 1)", "-1")?;
+    assert_from_string("(-1)^(2^64)", "1")?;
+    assert_from_string("1^(2^64)", "1")?;
+    assert_from_string("0^(2^64)", "0")?;
+
+    // Comparisons
+    assert_from_string("2^64 > 2^63", "true")?;
+    assert_from_string("-(2^64) < -(2^63)", "true")?;
+    assert_from_string("2^64 <= 2^32 * 2^32", "true")?;
+    assert_from_string("-(2^64) >= 0", "false")?;
+
+    // Equal big integers computed in different ways are the same set element
+    // and map key
+    assert_from_string("Set(2^64, 2^32 * 2^32).size()", "1")?;
+    assert_from_string("Map(2^64 -> 1).get(2^32 * 2^32)", "1")?;
+
+    // Membership
+    assert_from_string("(2^64).in(Int)", "true")?;
+    assert_from_string("(2^64).in(Nat)", "true")?;
+    assert_from_string("(-(2^64)).in(Nat)", "false")?;
+    assert_from_string("(2^64).in(0.to(10))", "false")?;
+
+    // Lists and intervals
+    assert_from_string("range(2^64, 2^64 + 2).length()", "2")?;
+    assert_from_string("(2^64 + 1).to(2^64)", "Set()")?;
+
+    Ok(())
+}
+
+#[test]
+fn big_integers_errors() {
+    // Big indexes are out of bounds, as in the TypeScript backend
+    assert_error_code("List(1, 2, 3).nth(2^64)", "QNT510");
+    assert_error_code("List(1, 2, 3).replaceAt(2^64, 5)", "QNT510");
+    assert_error_code("List(1, 2, 3).slice(0, 2^64)", "QNT506");
+    // Intervals are only supported with bounds in i64
+    assert_error_code("(2^64).to(2^64 + 2)", "QNT601");
+    // Too large to compute
+    assert_error_code("2^(2^31)", "QNT601");
+    assert_error_code("5 % 0", "QNT503");
+    assert_error_code("(2^64) / 0", "QNT503");
 }

@@ -25,7 +25,9 @@ use crate::itf::DebugMessage;
 use crate::value::{ImmutableMap, ImmutableSet, ImmutableVec, Value, ValueRef};
 use fxhash::FxHashSet;
 use itertools::Itertools;
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint};
+use num_traits::{One, Zero};
+use std::cmp::Ordering;
 
 /// A list of operators that need to be compiled lazily (with `compile_lazy_op`).
 pub const LAZY_OPS: [&str; 13] = [
@@ -224,7 +226,7 @@ pub fn compile_lazy_op(op: &str) -> CompiledExprWithLazyArgs {
         "reps" => {
             |env, args| {
                 // Repeats the given action n times, stopping if the action evaluates to false.
-                let reps = args[0].execute(env).map(|r| r.as_int())?;
+                let reps = args[0].execute(env).map(|r| r.as_i64_saturating())?;
                 let action = &args[1];
                 let mut result = Value::bool(true);
                 for i in 0..reps {
@@ -360,143 +362,91 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Inequality
         "neq" => |_env, args| Ok(Value::bool(args[0] != args[1])),
         // Integer addition
-        "iadd" => |_env, args| {
-            let a = args[0].as_int();
-            let b = args[1].as_int();
-            a.checked_add(b)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {a} + {b}"),
-                    )
-                })
-                .map(Value::int)
-        },
+        "iadd" => |_env, args| Ok(int_op(&args[0], &args[1], i64::checked_add, |a, b| a + b)),
         // Integer subtraction
-        "isub" => |_env, args| {
-            let a = args[0].as_int();
-            let b = args[1].as_int();
-            a.checked_sub(b)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {a} - {b}"),
-                    )
-                })
-                .map(Value::int)
-        },
+        "isub" => |_env, args| Ok(int_op(&args[0], &args[1], i64::checked_sub, |a, b| a - b)),
         // Integer multiplication
-        "imul" => |_env, args| {
-            let a = args[0].as_int();
-            let b = args[1].as_int();
-            a.checked_mul(b)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {a} * {b}"),
-                    )
-                })
-                .map(Value::int)
-        },
+        "imul" => |_env, args| Ok(int_op(&args[0], &args[1], i64::checked_mul, |a, b| a * b)),
         // Integer division
         "idiv" => |_env, args| {
-            let dividend = args[0].as_int();
-            let divisor = args[1].as_int();
-            if divisor == 0 {
+            // Zero fits in i64, so a big integer is never zero
+            if args[1].as_i64() == Some(0) {
                 return Err(QuintError::new("QNT503", "Division by zero"));
             }
-
-            dividend
-                .checked_div(divisor)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!(
-                            "Integer overflow in arithmetic operations: {dividend} / {divisor}"
-                        ),
-                    )
-                })
-                .map(Value::int)
+            Ok(int_op(&args[0], &args[1], i64::checked_div, |a, b| a / b))
         },
         // Integer modulus
         "imod" => |_env, args| {
-            let dividend = args[0].as_int();
-            let divisor = args[1].as_int();
-            dividend
-                .checked_rem(divisor)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!(
-                            "Integer overflow in arithmetic operations: {dividend} % {divisor}"
-                        ),
-                    )
-                })
-                .map(Value::int)
+            if args[1].as_i64() == Some(0) {
+                return Err(QuintError::new("QNT503", "Division by zero"));
+            }
+            Ok(int_op(&args[0], &args[1], i64::checked_rem, |a, b| a % b))
         },
         // Integer exponentiation
         "ipow" => |_env, args| {
-            let base = args[0].as_int();
-            let exp = args[1].as_int();
-            if base == 0 && exp == 0 {
+            let (base, exp) = (&args[0], &args[1]);
+            if base.as_i64() == Some(0) && exp.as_i64() == Some(0) {
                 return Err(QuintError::new("QNT503", "0^0 is undefined"));
             }
-            if exp < 0 {
+            if int_cmp(exp, &Value::int(0)).is_lt() {
                 return Err(QuintError::new("QNT503", "i^j is undefined for j < 0"));
             }
 
-            base.checked_pow(exp as u32)
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!("Integer overflow in arithmetic operations: {base} ^ {exp}"),
-                    )
-                })
-                .map(Value::int)
+            if let (Some(base), Some(exp)) = (base.as_i64(), exp.as_i64()) {
+                if let Some(n) = u32::try_from(exp)
+                    .ok()
+                    .and_then(|exp| base.checked_pow(exp))
+                {
+                    return Ok(Value::int(n));
+                }
+            }
+            big_pow(base.as_bigint(), exp.as_bigint()).map(Value::bigint)
         },
         // Integer unary minus
-        "iuminus" => |_env, args| {
-            let a = args[0].as_int();
-            a.checked_neg()
-                .ok_or_else(|| {
-                    QuintError::new(
-                        "QNT601",
-                        &format!("Integer overflow in arithmetic operations: -{a}"),
-                    )
-                })
-                .map(Value::int)
-        },
+        "iuminus" => |_env, args| Ok(int_unary_op(&args[0], i64::checked_neg, |a| -a)),
         // Integer less than
-        "ilt" => |_env, args| Ok(Value::bool(args[0].as_int() < args[1].as_int())),
+        "ilt" => |_env, args| Ok(Value::bool(int_cmp(&args[0], &args[1]).is_lt())),
         // Integer less than or equal to
-        "ilte" => |_env, args| Ok(Value::bool(args[0].as_int() <= args[1].as_int())),
+        "ilte" => |_env, args| Ok(Value::bool(int_cmp(&args[0], &args[1]).is_le())),
         // Integer greater than
-        "igt" => |_env, args| Ok(Value::bool(args[0].as_int() > args[1].as_int())),
+        "igt" => |_env, args| Ok(Value::bool(int_cmp(&args[0], &args[1]).is_gt())),
         // Integer greater than or equal to
-        "igte" => |_env, args| Ok(Value::bool(args[0].as_int() >= args[1].as_int())),
+        "igte" => |_env, args| Ok(Value::bool(int_cmp(&args[0], &args[1]).is_ge())),
 
         // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
-        "item" => |_env, args| at_index(args[0].as_list(), args[1].as_int() - 1),
+        "item" => |_env, args| {
+            at_index(
+                args[0].as_list(),
+                args[1].as_i64_saturating().saturating_sub(1),
+            )
+        },
         // A set of all possible tuples from the elements of the respective given sets.
         "tuples" => |_env, args| Ok(Value::cross_product(args)),
 
         // Constructs a list of integers from start to end.
-        "range" => |_env, args| {
-            let start = args[0].as_int();
-            let end = args[1].as_int();
-            Ok(Value::list((start..end).map(Value::int).collect()))
+        "range" => |_env, args| match (args[0].as_i64(), args[1].as_i64()) {
+            (Some(start), Some(end)) => Ok(Value::list((start..end).map(Value::int).collect())),
+            _ => {
+                let (mut i, end) = (args[0].as_bigint(), args[1].as_bigint());
+                let mut list = ImmutableVec::new();
+                while i < end {
+                    list.push_back(Value::bigint(i.clone()));
+                    i += 1;
+                }
+                Ok(Value::list(list))
+            }
         },
         // List access
-        "nth" => |_env, args| at_index(args[0].as_list(), args[1].as_int()),
+        "nth" => |_env, args| at_index(args[0].as_list(), args[1].as_i64_saturating()),
         // Replace an element at a given index in a list.
         "replaceAt" => |_env, args| {
             let mut list = args[0].as_list().clone();
-            let index = args[1].as_int();
+            let index = args[1].as_i64_saturating();
 
             if index < 0 || index >= list.len().try_into().unwrap() {
                 return Err(QuintError::new(
                     "QNT510",
-                    "Out of bounds, replaceAt(${index})",
+                    &format!("Out of bounds, replaceAt({index})"),
                 ));
             }
 
@@ -526,8 +476,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Get a sublist of a list from start to end.
         "slice" => |_env, args| {
             let list = args[0].as_list();
-            let start = args[1].as_int();
-            let end = args[2].as_int() as usize;
+            let start = args[1].as_i64_saturating();
+            let end = args[2].as_i64_saturating() as usize;
 
             if start >= 0 && end <= list.len() && start as usize <= end {
                 Ok(Value::list(list.clone().slice(start as usize..end)))
@@ -668,13 +618,20 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         },
         // Construct a set of integers from a to b.
         "to" => |_env, args| {
-            let start = args[0].as_int();
-            let end = args[1].as_int();
-            if start > end {
+            if int_cmp(&args[0], &args[1]).is_gt() {
                 // Avoid having different intervals that represent the same thing (empty set)
                 return Ok(Value::set(ImmutableSet::default()));
             }
-            Ok(Value::interval(start, end))
+            match (args[0].as_i64(), args[1].as_i64()) {
+                (Some(start), Some(end)) => Ok(Value::interval(start, end)),
+                _ => Err(QuintError::new(
+                    "QNT601",
+                    &format!(
+                        "Interval bounds must fit in 64-bit integers in the Rust backend: {}.to({})",
+                        args[0], args[1]
+                    ),
+                )),
+            }
         },
 
         // Fold a set
@@ -868,7 +825,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Generate all lists of length up to the given number, from a set
         "allListsUpTo" => |_env, args| {
             let set = args[0].as_set()?;
-            let length = args[1].as_int();
+            let length = args[1].as_i64_saturating();
             let mut lists = FxHashSet::default();
             let mut last_lists = FxHashSet::<ImmutableVec<Value>>::default();
             lists.insert(ImmutableVec::default());
@@ -940,6 +897,70 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
             panic!("Unknown eager op: {op}")
         }
     })
+}
+
+/// The maximum size of an integer produced by exponentiation, the same as the
+/// maximum size of big integers in JavaScript, and so in the TypeScript
+/// backend. Larger integers take too much memory and time to compute with.
+const MAX_INT_BITS: u64 = 1 << 30;
+
+/// Apply an integer operation with `small` when both arguments and the result
+/// fit in `i64`, or with `big` on big integers otherwise.
+fn int_op(
+    a: &Value,
+    b: &Value,
+    small: impl FnOnce(i64, i64) -> Option<i64>,
+    big: impl FnOnce(BigInt, BigInt) -> BigInt,
+) -> Value {
+    if let (Some(a), Some(b)) = (a.as_i64(), b.as_i64()) {
+        if let Some(n) = small(a, b) {
+            return Value::int(n);
+        }
+    }
+    Value::bigint(big(a.as_bigint(), b.as_bigint()))
+}
+
+/// Apply a unary integer operation with `small` when the argument and the
+/// result fit in `i64`, or with `big` on a big integer otherwise.
+fn int_unary_op(
+    a: &Value,
+    small: impl FnOnce(i64) -> Option<i64>,
+    big: impl FnOnce(BigInt) -> BigInt,
+) -> Value {
+    if let Some(n) = a.as_i64().and_then(small) {
+        return Value::int(n);
+    }
+    Value::bigint(big(a.as_bigint()))
+}
+
+/// Exponentiation of big integers, for when the result doesn't fit in `i64`.
+/// The exponent is not negative, and the result is not `0^0`.
+fn big_pow(base: BigInt, exp: BigInt) -> Result<BigInt, QuintError> {
+    // 0, 1 and -1 stay small for any exponent, even one that doesn't fit in u32
+    if base.is_zero() || base.is_one() {
+        return Ok(base);
+    }
+    if base == -BigInt::one() {
+        return Ok(if exp.bit(0) { base } else { BigInt::one() });
+    }
+
+    match u32::try_from(&exp) {
+        Ok(exp) if base.bits().saturating_mul(exp.into()) <= MAX_INT_BITS => Ok(base.pow(exp)),
+        _ => Err(QuintError::new(
+            "QNT601",
+            &format!(
+                "Integer overflow in arithmetic operations: {base} ^ {exp} exceeds the maximum integer size of {MAX_INT_BITS} bits"
+            ),
+        )),
+    }
+}
+
+/// Compare two integers, as `i64` when both fit in it.
+fn int_cmp(a: &Value, b: &Value) -> Ordering {
+    match (a.as_i64(), b.as_i64()) {
+        (Some(a), Some(b)) => a.cmp(&b),
+        _ => a.as_bigint().cmp(&b.as_bigint()),
+    }
 }
 
 /// Utility to fold iterables from left to right. This exists mostly to keep a

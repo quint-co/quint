@@ -80,153 +80,96 @@ See [#1195](https://github.com/informalsystems/quint/issues/1195).
     quint test --backend=rust ./testFixture/_1050diffName.qnt
 
 
-### FAIL on test SimpleAuction.qnt (QNT601 integer overflow)
+### OK on test SimpleAuction.qnt (big integers)
 
-`2^256` overflows the Rust evaluator's bigint implementation. The stack trace
-shows the call chain from the overflow site up through each call site.
+`2^256` is outside the i64 range, which the Rust evaluator supports as a big
+integer.
 
-<!-- !test exit 1 -->
-<!-- !test in SimpleAuction overflow -->
+<!-- !test in SimpleAuction bigint -->
 ```
 output=$(quint test --backend=rust --seed=1 --match=bidWithdrawTest \
   ../examples/solidity/SimpleAuction/SimpleAuction.qnt)
 exit_code=$?
-echo "$output" | sed -e 's#[^ (]*SimpleAuction.qnt#HOME/SimpleAuction.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
 exit $exit_code
 ```
 
-<!-- !test out SimpleAuction overflow -->
+<!-- !test out SimpleAuction bigint -->
 ```
 
   SimpleAuction
-    1) bidWithdrawTest failed after 1 test(s)
+    ok bidWithdrawTest passed 1 test(s)
 
-  1 failed
-
-  1) bidWithdrawTest:
-       Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/SimpleAuction.qnt:71:25
-        71:     pure val MAX_UINT = 2^256 - 1
-                                    ^^^^^
-          at isUInt(fromBal) (HOME/SimpleAuction.qnt:98:17)
-          at evmSend(evmState, sender, s.addressOfThis, value) (HOME/SimpleAuction.qnt:187:23)
-          at bid("alice", 5) (HOME/SimpleAuction.qnt:287:19)
-    Use --seed=0x1 --match=bidWithdrawTest to repeat.
-
-
-  Use --verbosity=3 to show executions.
-  Further debug with: quint test --verbosity=3 HOME/SimpleAuction.qnt
+  1 passing (duration)
 ```
 
 
-### FAIL on test erc20.qnt::mempool (QNT601 integer overflow)
+### OK on test erc20.qnt::mempool (big integers)
 
-<!-- !test exit 1 -->
-<!-- !test in erc20 mempool overflow -->
+<!-- !test in erc20 mempool bigint -->
 ```
 output=$(quint test --backend=rust --seed=1 --main=mempool \
   ../examples/solidity/ERC20/erc20.qnt)
 exit_code=$?
-echo "$output" | sed -e 's#[^ (]*erc20.qnt#HOME/erc20.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
 exit $exit_code
 ```
 
-<!-- !test out erc20 mempool overflow -->
+<!-- !test out erc20 mempool bigint -->
 ```
 
   mempool
-    1) transferFromWhileApproveInFlightTest failed after 1 test(s)
+    ok transferFromWhileApproveInFlightTest passed 1 test(s)
 
-  1 failed
-
-  1) transferFromWhileApproveInFlightTest:
-       Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:33:25
-        33:     pure val MAX_UINT = 2^256 - 1
-                                    ^^^^^
-          at transferFrom(erc20State, tx.sender, tx.fromAddr, tx.toAddr, tx.amount) (HOME/erc20.qnt:444:32)
-          at commit(TransferFromTx("bob", "alice", "eve", 54)) (HOME/erc20.qnt:521:15)
-    Use --seed=0x1 --match=transferFromWhileApproveInFlightTest to repeat.
-
-
-  Use --verbosity=3 to show executions.
-  Further debug with: quint test --verbosity=3 HOME/erc20.qnt
+  1 passing (duration)
 ```
 
 
-### FAIL on test erc20.qnt::erc20Tests (QNT601 integer overflow)
+### OK on test erc20.qnt::erc20Tests (big integers)
 
-The overflow is not hit immediately — it surfaces after 160 randomized samples
-when `totalSupply` grows large enough to exceed the bigint implementation's range.
+`totalSupply` grows beyond the i64 range after some randomized samples, which
+the Rust evaluator supports as a big integer.
 
-<!-- !test exit 1 -->
-<!-- !test in erc20Tests overflow -->
+<!-- !test in erc20Tests bigint -->
 ```
 output=$(quint test --backend=rust --seed=1 --main=erc20Tests --match=transferTest --max-samples=10000 \
   ../examples/solidity/ERC20/erc20.qnt)
 exit_code=$?
-echo "$output" | sed -e 's#[^ (]*erc20.qnt#HOME/erc20.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
 exit $exit_code
 ```
 
-<!-- !test out erc20Tests overflow -->
+<!-- !test out erc20Tests bigint -->
 ```
 
   erc20Tests
-    1) transferTest failed after 160 test(s)
+    ok transferTest passed 10000 test(s)
 
-  1 failed
-
-  1) transferTest:
-       Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-        at HOME/erc20.qnt:33:25
-        33:     pure val MAX_UINT = 2^256 - 1
-                                    ^^^^^
-          at isUint(state.totalSupply) (HOME/erc20.qnt:231:9)
-          at isNoOverflows(s) (HOME/erc20.qnt:310:9)
-          at isValid(erc20State) (HOME/erc20.qnt:326:25)
-    Use --seed=0x1 --match=transferTest to repeat.
-
-
-  Use --verbosity=3 to show executions.
-  Further debug with: quint test --verbosity=3 HOME/erc20.qnt
+  1 passing (duration)
 ```
 
 
-### FAIL on test ics20 (QNT600 integer literal out of i64 range)
+### OK on test ics20 (integer literal outside i64 range)
 
-The literal `9223372036854775808` (`2^63`) exceeds i64 range and is rejected
-immediately at compile time by the Rust evaluator, before any test runs.
-All 27 tests in the module fail for the same reason; one is shown here.
+The literal `9223372036854775808` (`2^63`) exceeds the i64 range, which the
+Rust evaluator supports as a big integer.
 
-<!-- !test exit 1 -->
-<!-- !test in ics20 i64 overflow -->
+<!-- !test in ics20 bigint -->
 ```
 output=$(quint test --backend=rust --seed=1 --main=ics20Test --match=requireTest \
   ../examples/cosmos/ics20/ics20.qnt)
 exit_code=$?
-echo "$output" | sed -e 's#[^ (]*ics20.qnt#HOME/ics20.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
 exit $exit_code
 ```
 
-<!-- !test out ics20 i64 overflow -->
+<!-- !test out ics20 bigint -->
 ```
 
   ics20Test
-    1) requireTest failed after 0 test(s)
+    ok requireTest passed 1 test(s)
 
-  1 failed
-
-  1) requireTest:
-       Error [QNT600]: Integer literal 9223372036854775808 is outside i64 range and is not supported by the Rust evaluator.
-        at HOME/ics20.qnt:516:23
-        516:     pure val amount = 9223372036854775808
-                                   ^^^^^^^^^^^^^^^^^^^
-    Use --seed=0x1 --match=requireTest to repeat.
-
-
-  Use --verbosity=3 to show executions.
-  Further debug with: quint test --verbosity=3 HOME/ics20.qnt
+  1 passing (duration)
 ```
 
 
@@ -295,9 +238,6 @@ exit $exit_code
 
 ### Test outputs ITF
 
-<!-- NOTE: This test is currently failing due to integer overflow issues in the Rust evaluator -->
-
-<!-- !test exit 1 -->
 <!-- !test in test itf -->
 ```
 output=$(quint test --backend=rust --out-itf='coin_{seq}_{test}.itf.json' \
@@ -318,23 +258,9 @@ exit $exit_code
 
   coin
     ok sendWithoutMintTest passed 10000 test(s)
-    1) mintSendTest failed after 1 test(s)
+    ok mintSendTest passed 10000 test(s)
 
-  1 passing (duration)
-  1 failed
-
-  1) mintSendTest:
-       Error [QNT601]: Integer overflow in arithmetic operations: 2 ^ 256
-      HOME/coin.qnt:41:25
-        41:     pure val MAX_UINT = 2^256 - 1
-                                    ^^^^^
-      HOME/coin.qnt:89:21)
-      HOME/coin.qnt:167:19)
-    Use --seed=SEED --match=mintSendTest to repeat.
-
-
-  Use --verbosity=3 to show executions.
-      HOME/coin.qnt
+  2 passing (duration)
 [
   [
     "alice",

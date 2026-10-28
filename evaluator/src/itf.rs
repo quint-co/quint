@@ -138,12 +138,7 @@ impl Value {
             itf::Value::Bool(b) => Value::bool(b),
             itf::Value::Number(n) => Value::int(n),
             itf::Value::String(s) => Value::str(Str::from(s)),
-            itf::Value::BigInt(b) => {
-                use num_bigint::BigInt as NumBigInt;
-                let n: NumBigInt = b.into_inner();
-                let n: i64 = n.try_into().expect("BigInt value does not fit in i64");
-                Value::int(n)
-            }
+            itf::Value::BigInt(b) => Value::bigint(b.into_inner()),
             itf::Value::List(elems) => {
                 Value::list(elems.into_iter().map(Value::from_itf).collect())
             }
@@ -189,7 +184,12 @@ impl Value {
 
     pub fn to_itf(&self) -> itf::Value {
         match self.view() {
-            ValueRef::Int(i) => itf::Value::Number(i),
+            // The TypeScript side parses JSON numbers longer than 15 digits as
+            // bignumber.js values instead of integers, so those are written as
+            // `#bigint`, the standard ITF encoding of integers
+            ValueRef::Int(i) if i.unsigned_abs() < 10u64.pow(15) => itf::Value::Number(i),
+            ValueRef::Int(i) => itf::Value::BigInt(itf::value::BigInt::new(i)),
+            ValueRef::BigInt(n) => itf::Value::BigInt(itf::value::BigInt::new(n.clone())),
             ValueRef::Bool(b) => itf::Value::Bool(b),
             ValueRef::Str(s) => itf::Value::String(s.to_string()),
             ValueRef::InfiniteInt => itf::Value::Unserializable(
