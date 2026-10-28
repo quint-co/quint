@@ -233,38 +233,57 @@ impl fmt::Debug for Value {
 
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        // First, hash the discriminant, as we want hashes of Set(1, 2, 3) and
-        // List(1, 2, 3) to be different.
+        // Hash the discriminant, as we want hashes of Tuple(1, 2, 3) and
+        // List(1, 2, 3) to be different. Finite sets hash a tag of `"Set"`
+        // instead, as they have different discriminants for each representation.
         let view = self.view();
-        core::mem::discriminant(&view).hash(state);
+        let discriminant = core::mem::discriminant(&view);
 
         match view {
-            ValueRef::Int(n) => n.hash(state),
-            ValueRef::Bool(b) => b.hash(state),
-            ValueRef::Str(s) => s.hash(state),
-            ValueRef::Set(set) => {
-                for elem in set {
-                    elem.hash(state);
-                }
+            // Finite sets are equal when they have the same elements, no
+            // matter how they are represented (e.g. `1.to(3) == Set(1, 2, 3)`),
+            // so they must have the same hash too. Hash their elements,
+            // combining them in a way that doesn't depend on the iteration
+            // order, which differs between representations.
+            ValueRef::Set(_)
+            | ValueRef::Interval(_, _)
+            | ValueRef::CrossProduct(_)
+            | ValueRef::PowerSet(_)
+            | ValueRef::MapSet(_, _) => {
+                "Set".hash(state);
+                hash_unordered(
+                    self.as_set_iter().expect("can't enumerate set for hashing"),
+                    state,
+                );
+            }
+            ValueRef::Int(n) => {
+                discriminant.hash(state);
+                n.hash(state);
+            }
+            ValueRef::Bool(b) => {
+                discriminant.hash(state);
+                b.hash(state);
+            }
+            ValueRef::Str(s) => {
+                discriminant.hash(state);
+                s.hash(state);
             }
             ValueRef::Tuple(elems) => {
+                discriminant.hash(state);
                 for elem in elems {
                     elem.hash(state);
                 }
             }
             ValueRef::Record(fields) => {
-                for (name, value) in fields {
-                    name.hash(state);
-                    value.hash(state);
-                }
+                discriminant.hash(state);
+                hash_unordered(fields.iter(), state);
             }
             ValueRef::Map(map) => {
-                for (key, value) in map {
-                    key.hash(state);
-                    value.hash(state);
-                }
+                discriminant.hash(state);
+                hash_unordered(map.iter(), state);
             }
             ValueRef::List(elems) => {
+                discriminant.hash(state);
                 for elem in elems {
                     elem.hash(state);
                 }
@@ -273,31 +292,43 @@ impl Hash for Value {
                 panic!("Cannot hash lambda");
             }
             ValueRef::Variant(label, value) => {
+                discriminant.hash(state);
                 label.hash(state);
                 value.hash(state);
             }
-            ValueRef::Interval(start, end) => {
-                start.hash(state);
-                end.hash(state);
-            }
-            ValueRef::CrossProduct(sets) => {
-                for value in sets {
-                    value.hash(state);
-                }
-            }
-            ValueRef::PowerSet(value) => {
-                value.hash(state);
-            }
-            ValueRef::MapSet(a, b) => {
-                a.hash(state);
-                b.hash(state);
-            }
             ValueRef::InfiniteInt | ValueRef::InfiniteNat => {
-                // The discriminant is already hashed, which is sufficient
-                // for distinguishing between Int and Nat
+                // The discriminant is sufficient for distinguishing between
+                // Int and Nat
+                discriminant.hash(state);
             }
         }
     }
+}
+
+/// Order-independent hash: the sum of the item hashes, each mixed with `fmix64`.
+fn hash_unordered<T: Hash, H: Hasher>(items: impl Iterator<Item = T>, state: &mut H) {
+    /// FxHash of an integer is linear (`n * K`), so summing raw hashes makes a set's hash
+    /// depend only on its size and the sum of its elements.
+    /// The MurmurHash3 finalizer breaks this linearity.
+    fn fmix64(mut h: u64) -> u64 {
+        h ^= h >> 33;
+        h = h.wrapping_mul(0xff51_afd7_ed55_8ccd);
+        h ^= h >> 33;
+        h = h.wrapping_mul(0xc4ce_b9fe_1a85_ec53);
+        h ^= h >> 33;
+        h
+    }
+
+    let mut size: u64 = 0;
+    let mut items_hash: u64 = 0;
+    for item in items {
+        let mut hasher = fxhash::FxHasher::default();
+        item.hash(&mut hasher);
+        items_hash = items_hash.wrapping_add(fmix64(hasher.finish()));
+        size += 1;
+    }
+    size.hash(state);
+    items_hash.hash(state);
 }
 
 impl PartialEq for Value {
@@ -316,12 +347,21 @@ impl PartialEq for Value {
             (Variant(a_label, a_value), Variant(b_label, b_value)) => {
                 a_label == b_label && a_value == b_value
             }
+            // Lazy sets with different parameters can still be equal when
+            // they are empty, e.g. `tuples(Set(), Set(1)) == tuples(Set(2), Set())`
             (Interval(a_start, a_end), Interval(b_start, b_end)) => {
-                a_start == b_start && a_end == b_end
+                (a_start == b_start && a_end == b_end)
+                    || (self.is_empty_set() && other.is_empty_set())
             }
-            (CrossProduct(a), CrossProduct(b)) => *a == *b,
+            (CrossProduct(a), CrossProduct(b)) => {
+                *a == *b || (self.is_empty_set() && other.is_empty_set())
+            }
             (PowerSet(a), PowerSet(b)) => *a == *b,
-            (MapSet(a1, b1), MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            // `setOfMaps(Set(), range)` is `Set(Map())` for any range
+            (MapSet(a1, b1), MapSet(a2, b2)) => {
+                (a1 == a2 && (b1 == b2 || a1.is_empty_set()))
+                    || (self.is_empty_set() && other.is_empty_set())
+            }
             (InfiniteInt, InfiniteInt) => true,
             (InfiniteNat, InfiniteNat) => true,
             // Infinite sets are not equal to any other set (including each other)
@@ -499,6 +539,22 @@ impl Value {
                 ))
             }
             _ => panic!("Cardinality not implemented for {self:?}"),
+        }
+    }
+
+    /// Check if a set is empty, without having to enumerate it. Unlike
+    /// `cardinality`, this works for products of infinite sets too.
+    pub fn is_empty_set(&self) -> bool {
+        match self.view() {
+            ValueRef::Set(set) => set.is_empty(),
+            ValueRef::Interval(start, end) => start > end,
+            ValueRef::CrossProduct(sets) => sets.iter().any(Value::is_empty_set),
+            // A powerset contains at least the empty set
+            ValueRef::PowerSet(_) => false,
+            // A map set with an empty domain contains the empty map
+            ValueRef::MapSet(domain, range) => !domain.is_empty_set() && range.is_empty_set(),
+            ValueRef::InfiniteInt | ValueRef::InfiniteNat => false,
+            _ => panic!("is_empty_set not implemented for {self:?}"),
         }
     }
 
@@ -994,6 +1050,57 @@ mod tests {
         assert_ne!(fxhash(&Value::int(0)), fxhash(&Value::bool(false)));
         assert!(Value::bool(true).as_bool());
         assert!(!Value::bool(false).as_bool());
+    }
+
+    #[test]
+    fn equal_maps_have_same_hash_regardless_of_insertion_order() {
+        // `{1, 4}` and `{2, 3}` collide in imbl's 32-bit HAMT hash, so the
+        // order the keys are stored in depends on the insertion order
+        let entries = [
+            (iset(&[1, 4]), Value::int(1)),
+            (iset(&[2, 3]), Value::int(2)),
+        ];
+        let forward = Value::map(entries.iter().cloned().collect());
+        let backward = Value::map(entries.iter().rev().cloned().collect());
+        assert_eq!(forward, backward);
+        assert_eq!(fxhash(&forward), fxhash(&backward));
+    }
+
+    #[test]
+    fn set_hashes_depend_on_more_than_size_and_sum() {
+        // All subsets of 1..=10: many of them share the size and the sum
+        let subsets: Vec<Value> = (0..1u32 << 10)
+            .map(|mask| {
+                let ints: Vec<i64> = (1..=10).filter(|i| mask & (1 << (i - 1)) != 0).collect();
+                iset(&ints)
+            })
+            .collect();
+        let hashes: std::collections::HashSet<u64> = subsets.iter().map(fxhash).collect();
+        assert_eq!(hashes.len(), subsets.len());
+    }
+
+    #[test]
+    fn empty_lazy_sets_are_equal() {
+        let empty = iset(&[]);
+        let empties = [
+            empty.clone(),
+            Value::interval(5, 3),
+            Value::interval(9, 1),
+            Value::cross_product(vec![empty.clone(), iset(&[1])]),
+            Value::cross_product(vec![iset(&[2]), empty.clone()]),
+            Value::map_set(iset(&[1]), empty.clone()),
+            Value::map_set(iset(&[2]), empty.clone()),
+        ];
+        for a in &empties {
+            for b in &empties {
+                assert_eq!(a, b, "{a:?} == {b:?}");
+            }
+        }
+        // `setOfMaps(Set(), range)` is `Set(Map())` for any range
+        assert_eq!(
+            Value::map_set(empty.clone(), iset(&[1])),
+            Value::map_set(empty.clone(), iset(&[2]))
+        );
     }
 
     /// Clones and drops of a heap value must balance the refcount; miri

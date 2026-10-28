@@ -365,6 +365,61 @@ fn exists_over_lazy_sets_stops_early() -> Result<(), Box<dyn std::error::Error>>
     assert_from_string("setOfMaps(1.to(10), 1.to(10)).exists(m => true)", "true")
 }
 
+#[test]
+fn equal_sets_with_different_representations_have_same_hash(
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Regression test for issue #1633: sets are equal no matter how they are
+    // represented, so they must be found as set elements and map keys
+    // without normalizing them first
+    assert_from_string("Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))", "3")?;
+    assert_from_string("Map(2.to(4) -> 1).get(Set(2, 3, 4))", "1")?;
+    assert_from_string("Map(Set(2, 3, 4) -> 1).put(2.to(4), 2).keys().size()", "1")?;
+    assert_from_string("Set(1.to(3), Set(1, 2, 3)).size()", "1")?;
+    assert_from_string("Set(1.to(3)).contains(Set(1, 2, 3))", "true")?;
+    assert_from_string("Set((1.to(2), 1)).contains((Set(1, 2), 1))", "true")?;
+    assert_from_string("Map(2.to(4) -> 1).keys() == Set(Set(2, 3, 4))", "true")?;
+    assert_from_string(
+        "Set(tuples(1.to(2), Set(3)), Set((1, 3), (2, 3))).size()",
+        "1",
+    )?;
+    assert_from_string(
+        "Set(1.to(2).powerset(), Set(Set(), Set(1), Set(2), Set(1, 2))).size()",
+        "1",
+    )?;
+    assert_from_string(
+        "Set(setOfMaps(Set(1), 1.to(2)), Set(Map(1 -> 1), Map(1 -> 2))).size()",
+        "1",
+    )
+}
+
+#[test]
+fn equal_maps_with_different_insertion_order_are_equal_set_elements(
+) -> Result<(), Box<dyn std::error::Error>> {
+    // `Set(1, 4)` and `Set(2, 3)` collide in the HAMT hash, so the two maps
+    // store their keys in a different order
+    assert_from_string(
+        "Set(Map(Set(1, 4) -> 1, Set(2, 3) -> 2), Map(Set(2, 3) -> 2, Set(1, 4) -> 1)).size()",
+        "1",
+    )
+}
+
+#[test]
+fn empty_lazy_sets_are_equal() -> Result<(), Box<dyn std::error::Error>> {
+    assert_from_string("tuples(Set(), Set(1)) == tuples(Set(2), Set())", "true")?;
+    assert_from_string(
+        "setOfMaps(Set(1), Set()) == setOfMaps(Set(2), Set())",
+        "true",
+    )?;
+    assert_from_string(
+        "setOfMaps(Set(), Set(1)) == setOfMaps(Set(), Set(2))",
+        "true",
+    )?;
+    assert_from_string(
+        "Set(tuples(Set(), Set(1)), tuples(Set(2), Set()), Set()).size()",
+        "1",
+    )
+}
+
 // TODO: variables
 // #[test]
 // fn compile_variables() -> Result<(), Box<dyn std::error::Error>> {

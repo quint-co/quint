@@ -461,7 +461,7 @@ exit $exit_code
 Witnesses:
 won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
 stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
-Use --seed=0x1995 --backend=rust to reproduce.
+Use --seed=0x198d --backend=rust to reproduce.
 ```
 
 ### Prints violated invariants when multiple invariants are given 

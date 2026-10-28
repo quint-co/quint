@@ -717,7 +717,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Get a value from a map.
         "get" => |_env, args| {
             let map = args[0].as_map();
-            let key = args[1].clone().normalize()?;
+            let key = args[1].clone();
             match map.get(&key) {
                 Some(value) => Ok(value.clone()),
                 None => Err(QuintError::new(
@@ -735,7 +735,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for an existing key in a map.
         "set" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize()?;
+            let key = args[1].clone();
 
             if !map.contains_key(&key) {
                 return Err(QuintError::new(
@@ -751,7 +751,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for any key in a map.
         "put" => |_env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize()?;
+            let key = args[1].clone();
             let value = args[2].clone();
             map.insert(key, value);
             Ok(Value::map(map))
@@ -760,7 +760,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Set a value for an existing key in a map using a lambda over the current value.
         "setBy" => |env, args| {
             let mut map = args[0].as_map().clone();
-            let key = args[1].clone().normalize()?;
+            let key = args[1].clone();
             match map.get(&key) {
                 Some(value) => {
                     let new_value = args[2].as_closure()(env, vec![value.clone()])?;
@@ -843,7 +843,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
-                    acc.insert(key.normalize()?, value);
+                    acc.insert(key, value);
                     Ok(acc)
                 },
             )?))
