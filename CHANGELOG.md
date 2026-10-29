@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Tab-completion in the REPL for names in scope (definitions, types, variant
+  constructors, qualified names), built-ins, keywords and REPL commands.
 ### Changed
 ### Deprecated
 ### Removed
