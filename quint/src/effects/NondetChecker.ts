@@ -23,7 +23,7 @@ import { typeSchemeToString } from '../types/printing'
 export class NondetChecker implements IRVisitor {
   private table: LookupTable
   private types: Map<bigint, TypeScheme> = new Map()
-  private lastDefQualifier: OpQualifier = 'def'
+  private defQualifiers: OpQualifier[] = []
 
   private errors: QuintError[] = []
 
@@ -47,7 +47,7 @@ export class NondetChecker implements IRVisitor {
   }
 
   enterOpDef(def: QuintOpDef) {
-    this.lastDefQualifier = def.qualifier
+    this.defQualifiers.push(def.qualifier)
 
     const entry = this.table.get(def.id)
     if (!entry) {
@@ -65,13 +65,18 @@ export class NondetChecker implements IRVisitor {
     }
   }
 
+  exitOpDef(_def: QuintOpDef) {
+    this.defQualifiers.pop()
+  }
+
   enterApp(app: QuintApp) {
     if (app.opcode !== 'oneOf' && app.opcode !== 'apalache::generate') {
       // nothing to check
       return
     }
 
-    if (this.lastDefQualifier !== 'nondet') {
+    const enclosingQualifier = this.defQualifiers[this.defQualifiers.length - 1] ?? 'def'
+    if (enclosingQualifier !== 'nondet') {
       this.errors.push({
         code: 'QNT203',
         message: `'${app.opcode}' must be used inside a nondet definition`,

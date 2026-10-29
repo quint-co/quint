@@ -385,6 +385,13 @@ function concatEntity(list: Entity[], entity: Entity): Entity[] {
 const modeOrder = ['pureval', 'val', 'puredef', 'def', 'nondet', 'action', 'temporal', 'run']
 
 function isMoreGeneral(m1: OpQualifier, m2: OpQualifier): boolean {
+  // Modes are not totally ordered: pure definitions cannot read state, and
+  // temporal definitions cannot update it, even though `val` and `action`
+  // otherwise precede those annotations in the suggestion order.
+  if ((m2 === 'puredef' && m1 === 'val') || (m2 === 'temporal' && m1 === 'action')) {
+    return true
+  }
+
   const p1 = modeOrder.findIndex(elem => elem === m1)
   const p2 = modeOrder.findIndex(elem => elem === m2)
 
