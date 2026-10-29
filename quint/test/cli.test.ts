@@ -1,8 +1,11 @@
 // Unit tests for CLI procedures
+import { mkdtempSync, readFileSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { parse, runTests, stage, typecheck } from '../src/cliCommands'
-import { isMatchingTest, toExpr } from '../src/cliHelpers'
+import { ErrResult, outputResult, parse, runTests, stage, typecheck } from '../src/cliCommands'
+import { isMatchingTest, noTestsMatchedMessage, toExpr } from '../src/cliHelpers'
 
 const exModule = `
 module exModule {
@@ -198,17 +201,28 @@ describe('isMatchingTest', () => {
   })
 })
 
+function assertNoMatchDiagnostic(err: ErrResult, match?: string) {
+  assert.include(err.msg, 'no tests matched')
+  assert.include(err.msg, '--match')
+  assert.include(err.msg, 'Test')
+  if (match) {
+    assert.include(err.msg, match)
+  }
+  assert.deepEqual(err.stage.passed, [])
+  assert.deepEqual(err.stage.failed, [])
+  assert.deepEqual(err.stage.ignored, [])
+  assert.lengthOf(err.stage.errors, 1)
+  assert.deepEqual(err.stage.errors[0].locs, [])
+  assert.equal(err.stage.errors[0].explanation, err.msg)
+}
+
 describe('runTests when no definitions match', () => {
   it('fails and explains the default Test suffix when --match is omitted (#2056)', async () => {
     const typechecked = await typecheckModule('trap1', unmatchedModule)
     const result = await runTests(typechecked)
 
     assert.isTrue(result.isLeft(), 'expected runTests to fail when nothing matches the default filter')
-    result.mapLeft(err => {
-      assert.include(err.msg, 'no tests matched')
-      assert.include(err.msg, '--match')
-      assert.include(err.msg, 'Test')
-    })
+    result.mapLeft(err => assertNoMatchDiagnostic(err))
   })
 
   it('runs definitions ending in Test when --match is omitted', async () => {
@@ -237,11 +251,32 @@ describe('runTests when no definitions match', () => {
     const result = await runTests(typechecked)
 
     assert.isTrue(result.isLeft(), 'expected runTests to fail when --match selects nothing')
-    result.mapLeft(err => {
-      assert.include(err.msg, 'no tests matched')
-      assert.include(err.msg, '--match')
-      assert.include(err.msg, 'doesNotExist')
-      assert.include(err.msg, 'Test')
-    })
+    result.mapLeft(err => assertNoMatchDiagnostic(err, 'doesNotExist'))
+  })
+
+  it('includes the diagnostic in --out JSON (#2056)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'quint-no-match-'))
+    const out = join(dir, 'result.json')
+    const exit = process.exit
+    try {
+      const typechecked = await typecheckModule('trap1', unmatchedModule, { out })
+      const result = await runTests(typechecked)
+      process.exit = ((code?: number) => {
+        throw new Error(`exit ${code}`)
+      }) as typeof process.exit
+
+      assert.throws(() => outputResult(result), /exit 1/)
+
+      const json = JSON.parse(readFileSync(out, 'utf8'))
+      const message = noTestsMatchedMessage(undefined)
+      assert.deepEqual(json.passed, [])
+      assert.deepEqual(json.failed, [])
+      assert.deepEqual(json.ignored, [])
+      assert.deepEqual(json.errors, [{ explanation: message, locs: [] }])
+      result.mapLeft(err => assert.equal(err.msg, message))
+    } finally {
+      process.exit = exit
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

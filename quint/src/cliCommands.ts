@@ -317,12 +317,15 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   // An empty selection used to print only the module name and exit 0, so CI
   // could not tell a passing suite from one that selected nothing (#2056).
   if (testDefs.length === 0) {
-    return cliErr(noTestsMatchedMessage(prev.args.match), {
+    const message = noTestsMatchedMessage(prev.args.match)
+    return cliErr(message, {
       ...testing,
       passed: [],
       failed: [],
       ignored: [],
-      errors: [],
+      // `msg` is printed on stderr and dropped when `--out` is set. Other CLI
+      // failures put the diagnostic in `errors`, which is what `--out` writes.
+      errors: [{ explanation: message, locs: [] }],
     })
   }
 
@@ -776,12 +779,17 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
         writeOutputToJson(args.out, stage)
       } else {
         const finders = createFinders(sourceCode!)
-        uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
+        const formattedErrors = uniqWith(errors, isEqual).map(err => formatError(sourceCode, finders, err))
+        formattedErrors.forEach(text => console.error(text))
         if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
           const backend = stage.args.backend ?? 'typescript'
           console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
         }
-        console.error(`error: ${msg}`)
+        // A diagnostic with no source location formats as `error: ${explanation}`.
+        // When that text is already `msg`, printing the summary again would repeat it.
+        if (!formattedErrors.includes(`error: ${msg}`)) {
+          console.error(`error: ${msg}`)
+        }
       }
       process.exit(1)
     })

@@ -608,3 +608,45 @@ exit $exit_code
 ```
 error: no tests matched --match 'doesNotExist'. By default, quint test runs definitions whose names end with "Test". Use --match to select other names (for example, --match '.*')
 ```
+
+### No tests matched is included in `--out`
+
+`--out` suppresses stderr, so the diagnostic has to be in the JSON `errors`
+array. Empty `passed`, `failed`, and `ignored` arrays are not enough to tell
+this failure from a run that never recorded a result.
+
+<!-- !test exit 1 -->
+<!-- !test in no tests matched is reported in --out -->
+```
+quint test --backend=typescript --main=trap1 --out=no-match-out.json ./testFixture/noMatchingTests.qnt 2>no-match-out.err || status=$?
+jq -c '{explanation: .errors[0].explanation, passed, failed, ignored}' no-match-out.json || exit 3
+if [ -s no-match-out.err ]; then
+  cat no-match-out.err >&2
+  exit 2
+fi
+rm no-match-out.json no-match-out.err
+exit "${status:-0}"
+```
+
+<!-- !test out no tests matched is reported in --out -->
+```
+{"explanation":"no tests matched. By default, quint test runs definitions whose names end with \"Test\". Use --match to select other names (for example, --match '.*')","passed":[],"failed":[],"ignored":[]}
+```
+
+<!-- !test exit 1 -->
+<!-- !test in match selects nothing is reported in --out -->
+```
+quint test --backend=typescript --main=withDefaultTest --match=doesNotExist --out=no-match-match-out.json ./testFixture/noMatchingTests.qnt 2>no-match-match-out.err || status=$?
+jq -c '{explanation: .errors[0].explanation, passed, failed, ignored}' no-match-match-out.json || exit 3
+if [ -s no-match-match-out.err ]; then
+  cat no-match-match-out.err >&2
+  exit 2
+fi
+rm no-match-match-out.json no-match-match-out.err
+exit "${status:-0}"
+```
+
+<!-- !test out match selects nothing is reported in --out -->
+```
+{"explanation":"no tests matched --match 'doesNotExist'. By default, quint test runs definitions whose names end with \"Test\". Use --match to select other names (for example, --match '.*')","passed":[],"failed":[],"ignored":[]}
+```

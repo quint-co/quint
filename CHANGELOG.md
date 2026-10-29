@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
-- `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0 (#2056)
+- `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0. With `--out`, that diagnostic is included in the JSON `errors` array (#2056)
 
 ### Security
 
