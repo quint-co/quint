@@ -63,7 +63,15 @@ import {
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
+import {
+  deriveVerbosity,
+  getInvariants,
+  guessMainModule,
+  isMatchingTest,
+  mkErrorMessage,
+  noTestsMatchedMessage,
+  toExpr,
+} from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions, TestResult } from './runtime/testing'
@@ -302,15 +310,27 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces, false),
   }
 
+  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
+    .flat()
+    .filter(d => d.kind === 'def' && options.testMatch(d.name))
+
+  // An empty selection used to print only the module name and exit 0, so CI
+  // could not tell a passing suite from one that selected nothing (#2056).
+  if (testDefs.length === 0) {
+    return cliErr(noTestsMatchedMessage(prev.args.match), {
+      ...testing,
+      passed: [],
+      failed: [],
+      ignored: [],
+      errors: [],
+    })
+  }
+
   const startMs = Date.now()
 
   if (verbosity.hasResults(verbosityLevel)) {
     console.log(`\n  ${mainName}`)
   }
-
-  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
-    .flat()
-    .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   let results: TestResult[]
 

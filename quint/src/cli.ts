@@ -224,7 +224,7 @@ const testCmd = {
       //        type: 'number',
       //      })
       .option('match', {
-        desc: 'a string or regex that selects names to use as tests',
+        desc: 'a string or regex that selects names to use as tests (default: names ending with "Test")',
         type: 'string',
       })
       .option('backend', {

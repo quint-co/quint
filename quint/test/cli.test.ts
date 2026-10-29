@@ -1,8 +1,8 @@
 // Unit tests for CLI procedures
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { parse, stage, typecheck } from '../src/cliCommands'
-import { toExpr } from '../src/cliHelpers'
+import { parse, runTests, stage, typecheck } from '../src/cliCommands'
+import { isMatchingTest, toExpr } from '../src/cliHelpers'
 
 const exModule = `
 module exModule {
@@ -146,6 +146,102 @@ module initVarModule {
         assert.include(err.message, 'is used by a')
         assert.include(err.message, '--init')
       })
+    })
+  })
+})
+
+// Issue #2056: `quint test` with no matching definitions must not exit successfully.
+const unmatchedModule = `
+module trap1 {
+  val x = 1
+  run runOne = x == 1
+}
+`
+
+const defaultMatchModule = `
+module trap1 {
+  val x = 1
+  run runOne = x == 1
+  run runOneTest = x == 1
+}
+`
+
+function loadedModule(name: string, source: string, args: Record<string, unknown> = {}) {
+  const path = `mocked/${name}.qnt`
+  return {
+    args: { input: path, verbosity: 0, maxSamples: 1, ...args },
+    path,
+    sourceCode: new Map([[path, source]]),
+    stage: 'loading' as stage,
+    warnings: [],
+  }
+}
+
+async function typecheckModule(name: string, source: string, args: Record<string, unknown> = {}) {
+  const parsed = await parse(loadedModule(name, source, args))
+  const typechecked = await parsed.asyncChain(typecheck)
+  if (typechecked.isLeft()) {
+    assert.fail(`typecheck failed: ${typechecked.value.msg}`)
+  }
+  return typechecked.unwrap()
+}
+
+describe('isMatchingTest', () => {
+  it('matches names ending in Test when --match is omitted', () => {
+    assert.isTrue(isMatchingTest(undefined, 'runOneTest'))
+    assert.isFalse(isMatchingTest(undefined, 'runOne'))
+  })
+
+  it('uses --match as a regular expression when it is set', () => {
+    assert.isTrue(isMatchingTest('runOne', 'runOne'))
+    assert.isFalse(isMatchingTest('doesNotExist', 'runOneTest'))
+  })
+})
+
+describe('runTests when no definitions match', () => {
+  it('fails and explains the default Test suffix when --match is omitted (#2056)', async () => {
+    const typechecked = await typecheckModule('trap1', unmatchedModule)
+    const result = await runTests(typechecked)
+
+    assert.isTrue(result.isLeft(), 'expected runTests to fail when nothing matches the default filter')
+    result.mapLeft(err => {
+      assert.include(err.msg, 'no tests matched')
+      assert.include(err.msg, '--match')
+      assert.include(err.msg, 'Test')
+    })
+  })
+
+  it('runs definitions ending in Test when --match is omitted', async () => {
+    const typechecked = await typecheckModule('trap1', defaultMatchModule, { seed: 1n })
+    const result = await runTests(typechecked)
+
+    assert.isTrue(result.isRight(), 'expected the default filter to run runOneTest')
+    result.map(tested => {
+      assert.deepEqual(tested.passed, ['runOneTest'])
+      assert.deepEqual(tested.failed, [])
+    })
+  })
+
+  it('runs a name that does not end in Test when --match selects it', async () => {
+    const typechecked = await typecheckModule('trap1', unmatchedModule, { match: 'runOne', seed: 1n })
+    const result = await runTests(typechecked)
+
+    assert.isTrue(result.isRight(), 'expected --match runOne to run runOne')
+    result.map(tested => {
+      assert.deepEqual(tested.passed, ['runOne'])
+    })
+  })
+
+  it('fails when an explicit --match selects nothing', async () => {
+    const typechecked = await typecheckModule('trap1', defaultMatchModule, { match: 'doesNotExist' })
+    const result = await runTests(typechecked)
+
+    assert.isTrue(result.isLeft(), 'expected runTests to fail when --match selects nothing')
+    result.mapLeft(err => {
+      assert.include(err.msg, 'no tests matched')
+      assert.include(err.msg, '--match')
+      assert.include(err.msg, 'doesNotExist')
+      assert.include(err.msg, 'Test')
     })
   })
 })

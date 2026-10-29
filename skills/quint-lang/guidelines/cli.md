@@ -102,7 +102,7 @@ quint run spec.qnt --invariant myInv --seed 12345 --verbosity 3
 
 ## `quint test` — Deterministic Tests
 
-Runs all `run` definitions in the spec (or a filtered subset).
+Runs definitions whose names end in `Test`, or the names selected by `--match`.
 
 ```bash
 quint test spec.qnt --main MyModule --match testName
@@ -113,7 +113,7 @@ quint test spec.qnt --main MyModule --match testName
 | Flag | Default | Effect |
 |---|---|---|
 | `--main` | filename | Module to use |
-| `--match` | all | String or regex to filter test names |
+| `--match` | names ending in `Test` | String or regex to filter test names |
 | `--max-samples` | 10000 | Max runs for randomized tests |
 | `--seed` | random | Seed for reproducibility |
 | `--verbosity` | 2 | Output detail level |
