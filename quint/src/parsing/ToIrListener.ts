@@ -135,7 +135,9 @@ export class ToIrListener implements QuintListener {
 
     this.declarationStack = []
 
-    const doc = getDocText(ctx.DOCCOMMENT())
+    // DOCCOMMENT() includes comments before `module` and any trailing comments
+    // before `}`. Only the former document the module; trailing comments are ignored.
+    const doc = getDocText(leadingModuleDocComments(ctx))
 
     if (doc) {
       this.modules.push({ ...module, doc })
@@ -1603,6 +1605,15 @@ function popMany<T>(stack: T[], n: number, defaultGen: () => T): T[] {
 /* The comment content is the text of the comment minus the `/// ` prefix */
 function getDocText(doc: TerminalNode[]): string {
   return doc.map(l => l.text.slice(4, -1)).join('\n')
+}
+
+// Module-level docs are the DOCCOMMENT tokens that precede the `module` keyword.
+// The module rule also accepts trailing doc comments before `}`, and those tokens
+// are direct children of the same rule. They must not be attached to the module.
+function leadingModuleDocComments(ctx: p.ModuleContext): TerminalNode[] {
+  // T__0 is the unnamed `'module'` literal (the first literal in Quint.g4).
+  const moduleKeyword = ctx.getToken(p.QuintParser.T__0, 0)
+  return ctx.DOCCOMMENT().filter(doc => doc.symbol.tokenIndex < moduleKeyword.symbol.tokenIndex)
 }
 
 // Helper to construct an empty record (the unit value)
