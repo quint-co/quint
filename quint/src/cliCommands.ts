@@ -63,7 +63,15 @@ import {
   writeOutputToJson,
   writeToJson,
 } from './cliReporting'
-import { deriveVerbosity, getInvariants, guessMainModule, isMatchingTest, mkErrorMessage, toExpr } from './cliHelpers'
+import {
+  deriveVerbosity,
+  getInvariants,
+  guessMainModule,
+  isMatchingTest,
+  mkErrorMessage,
+  noTestsMatchedMessage,
+  toExpr,
+} from './cliHelpers'
 import { fail } from 'assert'
 import { newRng } from './rng'
 import { TestOptions, TestResult } from './runtime/testing'
@@ -302,15 +310,30 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces, false),
   }
 
+  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
+    .flat()
+    .filter(d => d.kind === 'def' && options.testMatch(d.name))
+
+  // An empty selection used to print only the module name and exit 0, so CI
+  // could not tell a passing suite from one that selected nothing (#2056).
+  if (testDefs.length === 0) {
+    const message = noTestsMatchedMessage(prev.args.match)
+    return cliErr(message, {
+      ...testing,
+      passed: [],
+      failed: [],
+      ignored: [],
+      // `msg` is printed on stderr and dropped when `--out` is set. Other CLI
+      // failures put the diagnostic in `errors`, which is what `--out` writes.
+      errors: [{ explanation: message, locs: [] }],
+    })
+  }
+
   const startMs = Date.now()
 
   if (verbosity.hasResults(verbosityLevel)) {
     console.log(`\n  ${mainName}`)
   }
-
-  const testDefs = Array.from(prev.resolver.collector.definitionsByModule.get(mainName)!.values())
-    .flat()
-    .filter(d => d.kind === 'def' && options.testMatch(d.name))
 
   let results: TestResult[]
 
@@ -756,12 +779,17 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
         writeOutputToJson(args.out, stage)
       } else {
         const finders = createFinders(sourceCode!)
-        uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
+        const formattedErrors = uniqWith(errors, isEqual).map(err => formatError(sourceCode, finders, err))
+        formattedErrors.forEach(text => console.error(text))
         if (!stage.args.outItf && stage.seed && verbosity.hasResults(verbosityLevel)) {
           const backend = stage.args.backend ?? 'typescript'
           console.log(chalk.gray(`Use --seed=0x${stage.seed.toString(16)} --backend=${backend} to reproduce.`))
         }
-        console.error(`error: ${msg}`)
+        // A diagnostic with no source location formats as `error: ${explanation}`.
+        // When that text is already `msg`, printing the summary again would repeat it.
+        if (!formattedErrors.includes(`error: ${msg}`)) {
+          console.error(`error: ${msg}`)
+        }
       }
       process.exit(1)
     })

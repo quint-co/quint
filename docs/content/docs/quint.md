@@ -314,9 +314,15 @@ Options:
                  randomized test                       [number] [default: 10000]
   --seed       random seed to use for non-deterministic choice          [string]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
-  --match      a string or regex that selects names to use as tests     [string]
+  --match      a string or regex that selects names to use as tests
+               (default: names ending with "Test")                    [string]
   --backend    backend to run tests [choices: "typescript", "rust"] [default: "typescript"]
 ```
+
+ - By default, `quint test` runs definitions whose names end with `Test`.
+   Pass `--match` (a string or regular expression) to select other names.
+   If no definition matches, the command prints an error and exits with a
+   non-zero status.
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
    command succeeds. The output file contains the parsed and resolved module in

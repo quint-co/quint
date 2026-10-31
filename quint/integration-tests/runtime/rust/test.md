@@ -72,12 +72,21 @@ bash -
     quint test --backend=rust --main=gradualPonziTest ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
 
-### OK on test with the default module
+### Default module is found when it has no tests
 
 See [#1195](https://github.com/informalsystems/quint/issues/1195).
+The file's only module is named `t`, not the filename. Resolving that module
+must not report `QNT405`. The module defines no tests, so `quint test` reports
+that nothing matched and exits non-zero (#2056).
 
-<!-- !test check test the default module -->
+<!-- !test exit 1 -->
+<!-- !test in test the default module -->
     quint test --backend=rust ./testFixture/_1050diffName.qnt
+
+<!-- !test err test the default module -->
+```
+error: no tests matched. By default, quint test runs definitions whose names end with "Test". Use --match to select other names (for example, --match '.*')
+```
 
 
 ### OK on test SimpleAuction.qnt (big integers)
