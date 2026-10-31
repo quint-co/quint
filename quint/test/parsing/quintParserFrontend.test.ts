@@ -172,6 +172,72 @@ module test {
     assert.notInclude(errors[0].message, 'DOCCOMMENT')
   })
 
+  // Accepting trailing doc comments must not make the parser give up on the
+  // whole module when a syntax error follows a doc comment.
+  it('recovers from syntax errors that follow a doc comment', () => {
+    const code = `module test {
+  /// doc
+  vall x = 3
+  val ok = 1
+  /// doc2
+  vall z = 4
+  val w = 2
+  /// trailing doc
+}
+`
+    const result = parsePhase1fromText(newIdGenerator(), code, defaultSourceName)
+    assert.deepEqual(
+      result.errors.map(e => [e.code, e.message.split(' expecting')[0]]),
+      [
+        ['QNT000', "extraneous input 'vall'"],
+        ['QNT000', "extraneous input 'vall'"],
+      ]
+    )
+    // The parser recovers inside the module, so later declarations are kept
+    assert.lengthOf(result.modules, 1)
+    assert.deepEqual(
+      result.modules[0].declarations.map(decl => (isDef(decl) ? [decl.name, decl.doc] : decl.kind)),
+      [
+        ['ok', 'doc'],
+        ['w', 'doc2'],
+      ]
+    )
+  })
+
+  it('reports a missing closing brace after trailing doc comments', () => {
+    const code = `module test {
+  val y = 1
+  /// doc
+`
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.lengthOf(errors, 1)
+    assert.equal(errors[0].code, 'QNT000')
+    assert.match(errors[0].message, /^extraneous input '<EOF>' expecting \{'}'/)
+  })
+
+  it('attaches doc comments to the next declaration', () => {
+    const code = `module test {
+  /// doc of x
+  val x = 1
+
+  /// first line of y
+  /// second line of y
+  val y = 2
+  val z = 3
+}
+`
+    const result = parsePhase1fromText(newIdGenerator(), code, defaultSourceName)
+    assert.deepEqual(result.errors, [])
+    assert.deepEqual(
+      result.modules[0].declarations.map(decl => (isDef(decl) ? [decl.name, decl.doc] : decl.kind)),
+      [
+        ['x', 'doc of x'],
+        ['y', 'first line of y\nsecond line of y'],
+        ['z', undefined],
+      ]
+    )
+  })
+
   it('parses SuperSpec', () => {
     const result = parsePhase1fromText(
       newIdGenerator(),

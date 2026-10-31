@@ -72,7 +72,7 @@ import { ImportDefContext } from "./QuintParser";
 import { ExportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
-import { DocumentedDeclarationContext } from "./QuintParser";
+import { ModuleItemContext } from "./QuintParser";
 import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
@@ -633,11 +633,11 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitModule?: (ctx: ModuleContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `QuintParser.documentedDeclaration`.
+	 * Visit a parse tree produced by `QuintParser.moduleItem`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => Result;
+	visitModuleItem?: (ctx: ModuleItemContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.declaration`.
