@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
+- The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
+- With the Rust backend, a `--seed` from a previous version can produce a different trace in this version for specs that pick from `setOfMaps` with `oneOf`.
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed `flatten` in the Rust evaluator silently returning an empty set for infinite inner sets, e.g. `Set(Int).flatten()`. It now reports `QNT501`
+
 ### Security
 
 ## v0.33.1 -- 2026-10-28

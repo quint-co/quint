@@ -204,9 +204,9 @@ impl Value {
             | ValueRef::PowerSet(_)
             | ValueRef::MapSet(_, _) => {
                 let set = self
-                    .as_set()
+                    .as_set_iter()
                     .expect("can't convert value to set for ITF conversion");
-                itf::Value::Set(set.iter().map(|v| v.to_itf()).collect())
+                itf::Value::Set(set.map(|v| v.to_itf()).collect())
             }
             ValueRef::Tuple(elems) => itf::Value::Tuple(elems.iter().map(|v| v.to_itf()).collect()),
             ValueRef::Record(fields) => itf::Value::Record(

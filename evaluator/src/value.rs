@@ -20,7 +20,7 @@ use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
-use itertools::Itertools;
+use itertools::{Either, Itertools};
 use num_bigint::BigUint;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -589,12 +589,9 @@ impl Value {
             (ValueRef::InfiniteInt, ValueRef::InfiniteInt) => true,
             (ValueRef::InfiniteInt, ValueRef::InfiniteNat) => false,
             // Use the `contains` definition for infinite sets
-            (_, ValueRef::InfiniteNat | ValueRef::InfiniteInt) if self.is_set() => {
-                let self_set = self.as_set()?;
-                self_set
-                    .iter()
-                    .try_fold(true, |acc, v| Ok(acc && superset.contains(v)?))?
-            }
+            (_, ValueRef::InfiniteNat | ValueRef::InfiniteInt) if self.is_set() => self
+                .as_set_iter()?
+                .try_fold(true, |acc, v| Ok(acc && superset.contains(&v)?))?,
             // Infinite sets can't be subsets of finite sets
             (ValueRef::InfiniteInt, _) | (ValueRef::InfiniteNat, _) => false,
             // Fall back to the native implementation (`is_subset`) if no optimization is possible
@@ -665,54 +662,67 @@ impl Value {
     pub fn as_set(&self) -> Result<Cow<'_, ImmutableSet<Value>>, QuintError> {
         Ok(match self.view() {
             ValueRef::Set(set) => Cow::Borrowed(set),
-            ValueRef::Interval(start, end) => Cow::Owned((start..=end).map(Value::int).collect()),
+            _ => Cow::Owned(self.as_set_iter()?.collect()),
+        })
+    }
+
+    /// Iterate over the elements of the value as a set. Panics if the wrong
+    /// type is given, which should never happen as input expressions are
+    /// type-checked.
+    ///
+    /// Unlike [`Value::as_set`], lazy sets (intervals, cross products, power
+    /// sets and map sets) are not enumerated into a hash set, but their
+    /// elements are generated one by one, so iterating over them can stop
+    /// early without paying for the whole set. Intervals are iterated in
+    /// ascending order.
+    pub fn as_set_iter(&self) -> Result<impl Iterator<Item = Value> + '_, QuintError> {
+        type Elems<'a> = Box<dyn Iterator<Item = Value> + 'a>;
+
+        let generated: Elems<'_> = match self.view() {
+            ValueRef::Set(set) => return Ok(Either::Left(Either::Left(set.iter().cloned()))),
+            ValueRef::Interval(start, end) => {
+                return Ok(Either::Left(Either::Right((start..=end).map(Value::int))))
+            }
             ValueRef::CrossProduct(sets) => {
                 let size = self.cardinality()?;
                 if size == 0 {
                     // an empty set produces the empty product
-                    return Ok(Cow::Owned(ImmutableSet::default()));
+                    return Ok(Either::Right(Box::new(std::iter::empty()) as Elems<'_>));
                 }
 
-                #[allow(clippy::unnecessary_to_owned)] // False positive
                 let product_sets = sets
                     .iter()
-                    .map(|set| {
-                        set.as_set()
-                            .map(|s| s.into_owned().into_iter().collect::<Vec<_>>())
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .multi_cartesian_product()
-                    .map(|product| Value::tuple(ImmutableVec::from(product)))
-                    .collect::<ImmutableSet<_>>();
+                    .map(|set| set.as_set_iter().map(|s| s.collect::<Vec<_>>()))
+                    .collect::<Result<Vec<_>, _>>()?;
 
-                Cow::Owned(product_sets)
+                Box::new(
+                    product_sets
+                        .into_iter()
+                        .multi_cartesian_product()
+                        .map(|product| Value::tuple(ImmutableVec::from(product))),
+                )
             }
 
             ValueRef::PowerSet(value) => {
                 let base = value.as_set()?;
                 let size: u64 = self.cardinality()?;
-                Cow::Owned(
-                    (0..size)
-                        .map(|i| powerset_at_index(base.as_ref(), i))
-                        .collect(),
-                )
+                Box::new((0..size).map(move |i| powerset_at_index(base.as_ref(), i)))
             }
 
             ValueRef::MapSet(domain, range) => {
                 if domain.cardinality()? == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return Ok(Cow::Owned(
-                        std::iter::once(Value::map(ImmutableMap::default())).collect(),
-                    ));
+                    return Ok(Either::Right(Box::new(std::iter::once(Value::map(
+                        ImmutableMap::default(),
+                    ))) as Elems<'_>));
                 }
 
                 if range.cardinality()? == 0 {
                     // To reflect the behaviour of TLC, an empty range needs to give Set()
-                    return Ok(Cow::Owned(ImmutableSet::default()));
+                    return Ok(Either::Right(Box::new(std::iter::empty()) as Elems<'_>));
                 }
-                let domain_vec = domain.as_set()?.iter().cloned().collect::<Vec<_>>();
-                let range_vec = range.as_set()?.iter().cloned().collect::<Vec<_>>();
+                let domain_vec = domain.as_set_iter()?.collect::<Vec<_>>();
+                let range_vec = range.as_set_iter()?.collect::<Vec<_>>();
 
                 let nindices = domain_vec.len();
                 let nvalues = range_vec.len();
@@ -726,19 +736,15 @@ impl Value {
                         )
                     })?;
 
-                let mut result_set = ImmutableSet::new();
-
-                for i in 0..nmaps {
+                Box::new((0..nmaps).map(move |i| {
                     let mut pairs = Vec::with_capacity(nindices);
                     let mut index = i;
                     for key in domain_vec.iter() {
                         pairs.push((key.clone(), range_vec[index % nvalues].clone()));
                         index /= nvalues;
                     }
-                    result_set.insert(Value::map(ImmutableMap::from_iter(pairs)));
-                }
-
-                Cow::Owned(result_set)
+                    Value::map(ImmutableMap::from_iter(pairs))
+                }))
             }
             ValueRef::InfiniteInt => Err(QuintError::new(
                 "QNT501",
@@ -749,7 +755,8 @@ impl Value {
                 "Infinite set Nat is non-enumerable",
             ))?,
             _ => panic!("Expected set"),
-        })
+        };
+        Ok(Either::Right(generated))
     }
 
     /// Convert a map value to a map. Panics if the wrong type is given, which
@@ -868,8 +875,8 @@ impl fmt::Display for Value {
             | ValueRef::PowerSet(_)
             | ValueRef::MapSet(_, _) => {
                 write!(f, "Set(")?;
-                let set = self.as_set().expect("can't enumerate set for display");
-                for (i, elem) in set.iter().enumerate() {
+                let set = self.as_set_iter().expect("can't enumerate set for display");
+                for (i, elem) in set.enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
