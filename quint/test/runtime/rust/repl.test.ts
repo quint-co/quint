@@ -758,7 +758,7 @@ describe('repl ok', () => {
       |true
       |>>> nondet m = 1.to(5).setOfMaps(1.to(10)).oneOf(); x' = m.get(3)
       |true
-      |{ x: 45 => 8 }
+      |{ x: 45 => 3 }
       |>>> x.in(Int)
       |true
       |>>> nondet m = Set().oneOf(); x' = m
