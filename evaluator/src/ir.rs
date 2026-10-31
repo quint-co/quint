@@ -4,6 +4,7 @@
 use fxhash::FxBuildHasher;
 use hipstr::HipStr;
 use indexmap::IndexMap;
+use num_bigint::BigInt;
 use serde::{Deserialize, Deserializer, Serialize};
 use thiserror::Error;
 
@@ -345,6 +346,48 @@ pub enum OpQualifier {
     Temporal,
 }
 
+/// (De)serialization of integer literals, which can be arbitrarily large. The
+/// ones that fit in i64 are JSON numbers, and the larger ones are strings, as
+/// serde_json loses the precision of numbers that don't fit in 64 bits.
+mod int_literal {
+    use num_bigint::BigInt;
+    use serde::{de, Deserializer, Serializer};
+    use std::fmt;
+
+    pub fn serialize<S: Serializer>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error> {
+        match i64::try_from(value) {
+            Ok(n) => serializer.serialize_i64(n),
+            Err(_) => serializer.serialize_str(&value.to_string()),
+        }
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<BigInt, D::Error> {
+        struct IntLiteralVisitor;
+
+        impl de::Visitor<'_> for IntLiteralVisitor {
+            type Value = BigInt;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an integer, or a string with an integer")
+            }
+
+            fn visit_i64<E: de::Error>(self, value: i64) -> Result<BigInt, E> {
+                Ok(value.into())
+            }
+
+            fn visit_u64<E: de::Error>(self, value: u64) -> Result<BigInt, E> {
+                Ok(value.into())
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<BigInt, E> {
+                value.parse().map_err(E::custom)
+            }
+        }
+
+        deserializer.deserialize_any(IntLiteralVisitor)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "kind")]
 pub enum QuintEx {
@@ -355,7 +398,11 @@ pub enum QuintEx {
     QuintBool { id: QuintId, value: bool },
 
     #[serde(rename = "int")]
-    QuintInt { id: QuintId, value: i64 }, // Should we use BigInts?
+    QuintInt {
+        id: QuintId,
+        #[serde(with = "int_literal")]
+        value: BigInt,
+    },
 
     #[serde(rename = "str")]
     QuintStr { id: QuintId, value: QuintName },
@@ -405,6 +452,33 @@ pub struct QuintLambdaParameter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn int_literals_are_numbers_or_strings() {
+        let small: QuintEx = serde_json::from_str(r#"{"id":1,"kind":"int","value":-42}"#).unwrap();
+        let big: QuintEx =
+            serde_json::from_str(r#"{"id":2,"kind":"int","value":"-18446744073709551616"}"#)
+                .unwrap();
+
+        let QuintEx::QuintInt { value, .. } = &small else {
+            panic!("expected int literal, got {small:?}");
+        };
+        assert_eq!(*value, BigInt::from(-42));
+        let QuintEx::QuintInt { value, .. } = &big else {
+            panic!("expected int literal, got {big:?}");
+        };
+        assert_eq!(*value, -(BigInt::from(u64::MAX) + 1u8));
+
+        // Serialized back the same way
+        assert_eq!(
+            serde_json::to_string(&small).unwrap(),
+            r#"{"kind":"int","id":1,"value":-42}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&big).unwrap(),
+            r#"{"kind":"int","id":2,"value":"-18446744073709551616"}"#
+        );
+    }
 
     /// Test that demonstrates why the custom deserializer is needed.
     ///

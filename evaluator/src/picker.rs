@@ -75,12 +75,11 @@ impl Value {
                     range.clone()
                 };
 
-                let keys = domain.as_set()?;
-                let key_values = keys
-                    .iter()
+                let key_values = domain
+                    .as_set_iter()?
                     .map(|key| {
                         let value = range_to_pick.pick(indexes)?;
-                        Ok((key.clone(), value))
+                        Ok((key, value))
                     })
                     .collect::<Result<_, _>>()?;
 

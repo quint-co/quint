@@ -124,21 +124,40 @@ export function loadApalacheConfig(stage: CompiledStage, apalacheConfig: string 
   }
 }
 
+/** Suffix used when `--match` is omitted. Names ending with this are tests. */
+const DEFAULT_TEST_NAME_SUFFIX = 'Test'
+
 /**
- * Does a definition name match the expected test criteria.
+ * Does a definition name match the expected test criteria?
  *
- * @param tests an optional array of test names
+ * When `match` is omitted, a name matches if it ends with 'Test'.
+ * Otherwise `match` is treated as a regular expression.
+ *
+ * @param match an optional regular expression, as passed to `--match`
  * @param name the name of a definition to match
- * @returns whether the name matches the tests, if tests are not undefined,
- *          or name ends with 'Test'
- *
  */
 export function isMatchingTest(match: string | undefined, name: string) {
   if (match) {
     return new RegExp(match).exec(name) !== null
   } else {
-    return name.endsWith('Test')
+    return name.endsWith(DEFAULT_TEST_NAME_SUFFIX)
   }
+}
+
+/**
+ * Explain that a `quint test` invocation selected no definitions.
+ *
+ * The message names the `--match` option and the default name suffix so a
+ * silent empty suite cannot be confused with a passing one.
+ */
+export function noTestsMatchedMessage(match: string | undefined): string {
+  const how =
+    `By default, quint test runs definitions whose names end with "${DEFAULT_TEST_NAME_SUFFIX}". ` +
+    `Use --match to select other names (for example, --match '.*')`
+  if (match) {
+    return `no tests matched --match '${match}'. ${how}`
+  }
+  return `no tests matched. ${how}`
 }
 
 // Derive the verbosity for simulation and verification routines

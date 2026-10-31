@@ -6,33 +6,21 @@
 
 /**
  * Custom JSON replacer for serializing data to the Rust evaluator.
- * Handles Map/Set conversion and detects out-of-bounds integer literals.
+ * Handles Map/Set conversion and integer literals outside the i64 range.
  *
  * @author Yassine Boukhari
  */
 
-import { QuintError } from '../quintError'
 import { replacer } from '../jsonHelper'
 
 const I64_MIN = -(2n ** 63n)
 const I64_MAX = 2n ** 63n - 1n
 
-function createError(value: bigint, context: string, id: bigint): QuintError {
-  return {
-    code: 'QNT600',
-    message: `Integer literal ${value}${context} is outside i64 range and is not supported by the Rust evaluator.`,
-    reference: id,
-  }
-}
-
-export function bigintCheckerReplacer(_key: string, value: any): any {
-  // Detect QuintInt expressions with out-of-bounds values
-  if (value && typeof value.value === 'bigint') {
-    const intValue = value.value
-    if (intValue < I64_MIN || intValue > I64_MAX) {
-      const error = createError(intValue, '', value.id)
-      throw error
-    }
+export function rustEvaluatorReplacer(_key: string, value: any): any {
+  // Send QuintInt values outside the i64 range as strings, as the Rust
+  // evaluator cannot parse JSON numbers that don't fit in 64 bits
+  if (value && typeof value.value === 'bigint' && (value.value < I64_MIN || value.value > I64_MAX)) {
+    return { ...value, value: value.value.toString() }
   }
 
   // Delegate to standard replacer for Map/Set handling

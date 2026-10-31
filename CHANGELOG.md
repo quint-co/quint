@@ -8,12 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
+
 ### Changed
+
+- The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
+- The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
+- With the Rust backend, a `--seed` from a previous version can produce a different trace in this version for specs that pick from `setOfMaps` with `oneOf`.
+
 ### Deprecated
 ### Removed
 ### Fixed
 
 - A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
+- `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0. With `--out`, that diagnostic is included in the JSON `errors` array (#2056)
+- Fixed `flatten` in the Rust evaluator silently returning an empty set for infinite inner sets, e.g. `Set(Int).flatten()`. It now reports `QNT501`
+- Fixed the Rust backend treating equal values as different: sets with different representations as set elements and map keys (e.g. `Set(1.to(3), Set(1, 2, 3)).size()` returned 2 and `Map(2.to(4) -> 1).get(Set(2, 3, 4))` failed), maps with keys added in a different order as set elements, and empty `tuples` and `setOfMaps` built from different sets (e.g. `tuples(Set(), Set(1)) == tuples(Set(2), Set())` returned `false`). Map keys are no longer normalized, which speeds up map operations (#1633)
 
 ### Security
 
