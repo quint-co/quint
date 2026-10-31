@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- The TypeScript evaluator compares lazy sets as sets. Empty `tuples` products built from different operands are equal, and `setOfMaps` with an empty domain is `Set(Map())` for every range, so `tuples(Set(), Set(1)) == tuples(Set(2), Set())` and `setOfMaps(Set(), Set(1)) == setOfMaps(Set(), Set(2))`. The same holds for a powerset of an empty product (#2058)
+
 ### Security
 
 ## v0.33.1 -- 2026-10-28
