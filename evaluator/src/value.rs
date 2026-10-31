@@ -220,7 +220,7 @@ impl Drop for Value {
         if self.tag() == Tag::Heap {
             // SAFETY: as in Clone; this Value's strong count is released
             // exactly once, here.
-            unsafe { drop(Rc::from_raw(self.0)) };
+            unsafe { Rc::decrement_strong_count(self.0) };
         }
     }
 }
