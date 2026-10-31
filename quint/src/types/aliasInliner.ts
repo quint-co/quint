@@ -136,7 +136,11 @@ class AliasInliner implements IRTransformer {
 export function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
   if (type.kind === 'const' && type.id) {
     const aliasValue = lookupTable.get(type.id)
-    if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {
+    // Only non-parameterized aliases can be inlined here. A bare reference to
+    // `type Option[a] = ...` still carries the declared parameter `a`; inlining
+    // it would share that name across instantiations. Missing arguments are
+    // reported by the type application resolver.
+    if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type && (aliasValue.params?.length ?? 0) === 0) {
       return resolveAlias(lookupTable, aliasValue.type)
     }
   }
