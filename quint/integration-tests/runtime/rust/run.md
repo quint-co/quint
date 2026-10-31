@@ -461,7 +461,7 @@ exit $exit_code
 Witnesses:
 won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
 stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
-Use --seed=0x1995 --backend=rust to reproduce.
+Use --seed=0x198d --backend=rust to reproduce.
 ```
 
 ### Prints violated invariants when multiple invariants are given 
@@ -611,9 +611,9 @@ quint run \
   ./testFixture/nestedParameterizedCallsWithLet.qnt
 ```
 
-## Run fails with bigint outside i64 range
+## Run with bigint outside i64 range
 
-This test verifies that the Rust backend rejects integers outside the i64 range.
+This test verifies that the Rust backend supports integers outside the i64 range.
 
 <!-- !test in run bigint outside i64 range -->
 ```
@@ -631,17 +631,19 @@ module bigintTest {
 }
 EOF
 
-output=$(quint run --backend=rust --main=bigintTest /tmp/bigint_test.qnt 2>&1)
+output=$(quint run --backend=rust --main=bigintTest --max-samples=1 --max-steps=2 \
+  --seed=1 --verbosity=3 /tmp/bigint_test.qnt 2>&1)
 exit_code=$?
-echo "$output" | grep -o "QNT600.*i64 range"
+echo "$output" | grep -o "x: [0-9]*"
 rm /tmp/bigint_test.qnt
 exit $exit_code
 ```
 
-<!-- !test exit 1 -->
 <!-- !test out run bigint outside i64 range -->
 ```
-QNT600]: Integer literal 9223372036854775808 is outside i64 range
+x: 9223372036854775808
+x: 9223372036854775809
+x: 9223372036854775810
 ```
 
 ## Debug output in init action
