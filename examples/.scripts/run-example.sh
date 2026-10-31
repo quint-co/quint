@@ -50,6 +50,10 @@ result () {
     then
         printf ":white_check_mark:"
         succeeded=true
+    elif [[ "$cmd" == "test" && "$output" == *"no tests matched"* ]]
+    then
+        # Specs without any tests make `quint test` fail, but that is not a failure of the example
+        printf "N/A[^notests]"; return
     else
         printf ":x:"
         succeeded=false

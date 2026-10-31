@@ -128,3 +128,4 @@ listed without any additional command line arguments.
 
 [^nostatemachine]: This specification does not define a state machine.
 [^parameterized]: This specification is parameterized, and instantiated in another module.
+[^notests]: This specification does not define any tests.
