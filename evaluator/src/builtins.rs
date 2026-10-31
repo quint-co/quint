@@ -680,8 +680,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Fold a set
         "fold" => |env, args| {
             let reducer = args[2].as_closure();
-            let set = args[0].as_set()?;
-            fold_left(set.iter().cloned(), args[1].clone(), |acc, arg| {
+            fold_left(args[0].as_set_iter()?, args[1].clone(), |acc, arg| {
                 reducer(env, vec![acc, arg])
             })
         },
@@ -708,11 +707,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Flatten a set of sets.
         "flatten" => |_env, args| {
-            let outer_set = args[0].as_set()?;
-            let flattened = outer_set
-                .iter()
-                .flat_map(|v| v.as_set().map(|s| s.into_owned()).unwrap_or_default())
-                .collect();
+            let mut flattened = ImmutableSet::default();
+            for set in args[0].as_set_iter()? {
+                flattened.extend(set.as_set_iter()?);
+            }
             Ok(Value::set(flattened))
         },
 
@@ -781,9 +779,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Check if a predicate holds for some element in a set.
         "exists" => |env, args| {
             let c = args[1].as_closure();
-            let set = args[0].as_set()?;
-            for v in set.iter() {
-                if c(env, vec![v.clone()])?.as_bool() {
+            for v in args[0].as_set_iter()? {
+                if c(env, vec![v])?.as_bool() {
                     return Ok(Value::bool(true));
                 }
             }
@@ -792,9 +789,8 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         "forall" => |env, args| {
             let c = args[1].as_closure();
-            let set = args[0].as_set()?;
-            for v in set.iter() {
-                if !c(env, vec![v.clone()])?.as_bool() {
+            for v in args[0].as_set_iter()? {
+                if !c(env, vec![v])?.as_bool() {
                     return Ok(Value::bool(false));
                 }
             }
@@ -804,10 +800,10 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Map a lambda over a set.
         "map" => |env, args| {
             let c = args[1].as_closure();
-            let set = args[0].as_set()?;
             Ok(Value::set(
-                set.iter()
-                    .map(|v| c(env, vec![v.clone()]))
+                args[0]
+                    .as_set_iter()?
+                    .map(|v| c(env, vec![v]))
                     .collect::<Result<_, _>>()?,
             ))
         },
@@ -815,12 +811,11 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Filter a set using a lambda.
         "filter" => |env, args| {
             let c = args[1].as_closure();
-            let set = args[0].as_set()?;
-            Ok(Value::set(set.iter().try_fold(
+            Ok(Value::set(args[0].as_set_iter()?.try_fold(
                 ImmutableSet::default(),
                 |mut acc, v| {
                     if c(env, vec![v.clone()])?.as_bool() {
-                        acc.insert(v.clone());
+                        acc.insert(v);
                     }
                     Ok(acc)
                 },
@@ -844,21 +839,20 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
         // Construct a map by applying a lambda to the values of a set.
         "mapBy" => |env, args| {
             let closure = args[1].as_closure();
-            let keys = args[0].as_set()?;
-
-            Ok(Value::map(keys.iter().try_fold(
+            Ok(Value::map(args[0].as_set_iter()?.try_fold(
                 ImmutableMap::new(),
                 |mut acc, key| {
                     let value = closure(env, vec![key.clone()])?;
-                    acc.insert(key.clone().normalize()?, value);
+                    acc.insert(key.normalize()?, value);
                     Ok(acc)
                 },
             )?))
         },
         // Convert a set of key-value tuples to a map.
         "setToMap" => |_env, args| {
-            let set = args[0].as_set()?;
-            Ok(Value::map(set.iter().map(|v| v.as_tuple2()).collect()))
+            Ok(Value::map(
+                args[0].as_set_iter()?.map(|v| v.as_tuple2()).collect(),
+            ))
         },
         // A set of all possible maps with keys and values from the given sets.
         "setOfMaps" => |_env, args| Ok(Value::map_set(args[0].clone(), args[1].clone())),
@@ -899,8 +893,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
 
         // Get the only element of a set, or an error if the set is empty or has more than one element.
         "getOnlyElement" => |_env, args| {
-            let set = args[0].as_set()?;
-            let size = set.len();
+            let size = args[0].cardinality()?;
             if size != 1 {
                 return Err(QuintError::new(
                     "QNT505",
@@ -912,7 +905,7 @@ pub fn compile_eager_op(op: &str) -> CompiledExprWithArgs {
                 ));
             }
 
-            Ok(set.iter().next().cloned().unwrap())
+            Ok(args[0].as_set_iter()?.next().unwrap())
         },
 
         // Collect debug message when verbosity has debug output, and return the value

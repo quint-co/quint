@@ -17,9 +17,7 @@ impl Value {
             | ValueRef::CrossProduct(_)
             | ValueRef::PowerSet(_)
             | ValueRef::MapSet(_, _) => Value::set(
-                self.as_set()?
-                    .into_owned()
-                    .into_iter()
+                self.as_set_iter()?
                     .map(|v| v.normalize())
                     .collect::<Result<_, _>>()?,
             ),

@@ -348,6 +348,23 @@ fn higher_order_operators_in_folds() -> Result<(), Box<dyn std::error::Error>> {
     assert_from_string(input, "20")
 }
 
+#[test]
+fn fold_over_interval_is_ordered() -> Result<(), Box<dyn std::error::Error>> {
+    let input = "0.to(9).fold([], (acc, ele) => acc.append(ele))";
+    assert_from_string(input, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]")
+}
+
+#[test]
+fn exists_over_lazy_sets_stops_early() -> Result<(), Box<dyn std::error::Error>> {
+    // None of these sets fit in memory if enumerated
+    assert_from_string("1.to(30).powerset().exists(s => true)", "true")?;
+    assert_from_string(
+        "tuples(1.to(1000000), 1.to(1000000)).exists(t => true)",
+        "true",
+    )?;
+    assert_from_string("setOfMaps(1.to(10), 1.to(10)).exists(m => true)", "true")
+}
+
 // TODO: variables
 // #[test]
 // fn compile_variables() -> Result<(), Box<dyn std::error::Error>> {
