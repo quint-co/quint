@@ -9,7 +9,7 @@ impl Value {
     #[allow(clippy::unnecessary_to_owned)]
     pub fn normalize(self) -> Result<Value, QuintError> {
         Ok(match self.view() {
-            ValueRef::Int(_) | ValueRef::Bool(_) | ValueRef::Str(_) => self,
+            ValueRef::Int(_) | ValueRef::BigInt(_) | ValueRef::Bool(_) | ValueRef::Str(_) => self,
             // Infinite sets cannot be normalized (they're already in canonical form)
             ValueRef::InfiniteInt | ValueRef::InfiniteNat => self,
             ValueRef::Set(_)
@@ -17,9 +17,7 @@ impl Value {
             | ValueRef::CrossProduct(_)
             | ValueRef::PowerSet(_)
             | ValueRef::MapSet(_, _) => Value::set(
-                self.as_set()?
-                    .into_owned()
-                    .into_iter()
+                self.as_set_iter()?
                     .map(|v| v.normalize())
                     .collect::<Result<_, _>>()?,
             ),

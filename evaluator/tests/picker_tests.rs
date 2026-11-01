@@ -77,7 +77,7 @@ fn nested_set_of_maps_pick_test() -> Result<(), Box<dyn std::error::Error>> {
           action step = myMap' = myMap
         }";
 
-    run_test!(quint_content, Value::str("x".into()))
+    run_test!(quint_content, Value::str("y".into()))
 }
 
 #[test]
