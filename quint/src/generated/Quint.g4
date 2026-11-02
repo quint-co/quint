@@ -20,11 +20,16 @@ import { quintErrorToString } from '../quintError'
 // entry point for the parser
 modules : HASHBANG_LINE? module+ EOF;
 
-// Trailing doc comments (after the last declaration, before '}') are accepted
-// and ignored. They are not part of a documentedDeclaration, so they are not
-// attached to the previous declaration.
-module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* DOCCOMMENT* '}';
-documentedDeclaration : DOCCOMMENT* declaration;
+module : DOCCOMMENT* 'module' qualId '{' moduleItem* '}';
+
+// A module body is a flat sequence of declarations and doc comments.
+// Doc comments are attached to the declaration that follows them in ToIrListener.
+// Doc comments that are not followed by a declaration (e.g., right before the
+// closing brace) are ignored. Keeping this rule LL(1) is important: if a doc
+// comment could start two different alternatives, the parser would need
+// unbounded lookahead to decide, and a syntax error after a doc comment would
+// abort the whole module instead of being recovered from.
+moduleItem : DOCCOMMENT | declaration;
 
 // a module declaration
 declaration : 'const' qualId ':' type                     # const
