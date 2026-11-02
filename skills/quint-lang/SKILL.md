@@ -406,7 +406,7 @@ and { p1, p2, p3 } // block form — equivalent to p1 and p2 and p3
 or  { p1, p2, p3 } // block form — at least one must hold
 ```
 
-`and { }` and `or { }` are the same operators as `all { }` and `any { }` in actions — use whichever reads more naturally in context.
+In actions, combine action conditions with `all { }` and `any { }` only. `and`, `or`, `implies`, and `iff` with action arguments are allowed only in temporal definitions; using them in an action is error QNT200 since Quint 0.33.0.
 
 ---
 
@@ -428,6 +428,19 @@ eventually(p)      // p holds in some future state
 always(p)          // p holds in all future states
 p.implies(q)       // p => q
 ```
+
+### Action properties
+
+Action properties express relations between current and next state. `orKeep` and `mustChange` accept `next(...)`:
+
+```quint
+always((next(x) > x).orKeep(x)) // TLA+ [][x' > x]_x
+always((Inc or Reset).orKeep(x))
+```
+
+Actions can be used as relations inside temporal definitions, including as arguments to `not`, `==`, `exists`, `forall`, `if-else`, and set operators; actions may take `next(...)` arguments. This is not allowed inside actions, where `nondet` replaces `exists`.
+
+Check action and temporal properties with `quint verify --backend tlc` (non-interactively, with stdin closed). The default Apalache backend stops at an interactive prompt on temporal properties. Use Apalache (bounded, symbolic) or the simulator for invariants. A false property such as `always((next(x) < x).orKeep(x))` produces a counterexample.
 
 ---
 
