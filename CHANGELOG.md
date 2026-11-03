@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0. With `--out`, that diagnostic is included in the JSON `errors` array (#2056)
 - Fixed `flatten` in the Rust evaluator silently returning an empty set for infinite inner sets, e.g. `Set(Int).flatten()`. It now reports `QNT501`
 - Fixed the Rust backend treating equal values as different: sets with different representations as set elements and map keys (e.g. `Set(1.to(3), Set(1, 2, 3)).size()` returned 2 and `Map(2.to(4) -> 1).get(Set(2, 3, 4))` failed), maps with keys added in a different order as set elements, and empty `tuples` and `setOfMaps` built from different sets (e.g. `tuples(Set(), Set(1)) == tuples(Set(2), Set())` returned `false`). Map keys are no longer normalized, which speeds up map operations (#1633)
+- The TypeScript evaluator compares lazy sets as sets. Empty `tuples` products built from different operands are equal, and `setOfMaps` with an empty domain is `Set(Map())` for every range, so `tuples(Set(), Set(1)) == tuples(Set(2), Set())` and `setOfMaps(Set(), Set(1)) == setOfMaps(Set(), Set(2))`. The same holds for a powerset of an empty product (#2058)
 
 ### Security
 

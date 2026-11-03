@@ -722,6 +722,26 @@ abstract class RuntimeValueBase implements RuntimeValue {
       return this.label === other.label && this.value.equals(other.value)
     }
 
+    // Same-kind lazy sets compare structure below. That is not equality of the
+    // sets they denote when a product is empty, or when `setOfMaps` has an
+    // empty domain: the result does not depend on the other operand.
+    // `tuples(Set(), Set(1)) == Set()` already holds, because different kinds
+    // fall through to `toSet()`. Two such products compared false, so `==`
+    // was not transitive. `normalForm()` still runs before a value is hashed
+    // into an immutable set, which is why `Set(a, b).size()` was already 1.
+    if (isRuntimeSet(this) && isRuntimeSet(other)) {
+      const thisEmpty = isEmptySet(this)
+      const otherEmpty = isEmptySet(other)
+      if (thisEmpty || otherEmpty) {
+        return thisEmpty && otherEmpty
+      }
+    }
+    // `setOfMaps(Set(), r)` is `Set(Map())` for every r, including an infinite
+    // one. Comparing ranges would either disagree or enumerate r.
+    if (isEmptyDomainMapSet(this) || isEmptyDomainMapSet(other)) {
+      return isSingletonEmptyMap(this) && isSingletonEmptyMap(other)
+    }
+
     if (this instanceof RuntimeValueSet && other instanceof RuntimeValueSet) {
       return immutableIs(this.set, other.set)
     }
@@ -1726,4 +1746,57 @@ function toMaybe<T>(r: Either<QuintError, T>): Maybe<T> {
   } else {
     return none()
   }
+}
+
+// Explicit sets, intervals, products, powersets, sets of maps, Nat, and Int.
+// Records, lists, tuples, and maps are iterable too, but they are not sets.
+function isRuntimeSet(value: RuntimeValue): boolean {
+  return (
+    value instanceof RuntimeValueSet ||
+    value instanceof RuntimeValueInterval ||
+    value instanceof RuntimeValueCrossProd ||
+    value instanceof RuntimeValuePowerset ||
+    value instanceof RuntimeValueMapSet ||
+    value instanceof RuntimeValueInfSet
+  )
+}
+
+// Emptiness without enumerating. Products are empty when any component is,
+// even if another component is Nat or Int. A set of maps is empty only when
+// its range is empty and its domain is not: an empty domain denotes { Map() }.
+// Powersets are never empty.
+function isEmptySet(value: RuntimeValue): boolean {
+  if (value instanceof RuntimeValueCrossProd) {
+    return value.sets.some(set => isEmptySet(set))
+  }
+  if (value instanceof RuntimeValueMapSet) {
+    if (isEmptySet(value.domainSet)) {
+      return false
+    }
+    return isEmptySet(value.rangeSet)
+  }
+  if (value instanceof RuntimeValuePowerset || value instanceof RuntimeValueInfSet) {
+    return false
+  }
+  if (value instanceof RuntimeValueSet || value instanceof RuntimeValueInterval) {
+    const cardinality = value.cardinality()
+    return cardinality.isRight() && cardinality.value === 0n
+  }
+  return false
+}
+
+function isEmptyDomainMapSet(value: RuntimeValue): boolean {
+  return value instanceof RuntimeValueMapSet && isEmptySet(value.domainSet)
+}
+
+// { Map() }, either as setOfMaps(empty, _) or as the explicit set Set(Map()).
+function isSingletonEmptyMap(value: RuntimeValue): boolean {
+  if (value instanceof RuntimeValueMapSet) {
+    return isEmptySet(value.domainSet)
+  }
+  if (value instanceof RuntimeValueSet) {
+    const cardinality = value.cardinality()
+    return cardinality.isRight() && cardinality.value === 1n && value.contains(rv.mkMap([]))
+  }
+  return false
 }
