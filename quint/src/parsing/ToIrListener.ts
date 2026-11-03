@@ -89,6 +89,10 @@ export class ToIrListener implements QuintListener {
 
   // the stack of definitions
   protected declarationStack: QuintDeclaration[] = []
+  // doc comments in the current module body that are waiting for the next declaration
+  protected pendingDocComments: TerminalNode[] = []
+  // the size of declarationStack when the current module item started
+  protected declarationCountAtItemStart: number = 0
   // the stack of expressions
   protected exprStack: QuintEx[] = []
   // the stack of parameter lists
@@ -134,6 +138,8 @@ export class ToIrListener implements QuintListener {
     }
 
     this.declarationStack = []
+    // Doc comments not followed by a declaration (e.g., right before `}`) are ignored
+    this.pendingDocComments = []
 
     const doc = getDocText(ctx.DOCCOMMENT())
 
@@ -1252,10 +1258,25 @@ export class ToIrListener implements QuintListener {
     })
   }
 
-  exitDocumentedDeclaration(ctx: p.DocumentedDeclarationContext) {
-    const doc = getDocText(ctx.DOCCOMMENT())
+  enterModuleItem(_ctx: p.ModuleItemContext) {
+    this.declarationCountAtItemStart = this.declarationStack.length
+  }
 
-    if (doc) {
+  // A module item is either a doc comment or a declaration. Doc comments are
+  // collected until the next declaration, which they document.
+  exitModuleItem(ctx: p.ModuleItemContext) {
+    const docComment = ctx.DOCCOMMENT()
+    if (docComment) {
+      this.pendingDocComments.push(docComment)
+      return
+    }
+
+    const doc = getDocText(this.pendingDocComments)
+    this.pendingDocComments = []
+
+    // If the declaration failed to parse, it may not have produced anything.
+    // In that case, the doc must not be attached to an earlier declaration.
+    if (doc && this.declarationStack.length > this.declarationCountAtItemStart) {
       // Pop last declaration and re-push it with the doc
       const decl = this.declarationStack.pop()!
       this.declarationStack.push({ doc, ...decl })
