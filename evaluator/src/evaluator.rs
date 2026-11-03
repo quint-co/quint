@@ -541,7 +541,9 @@ impl Interpreter {
 
     pub fn compile_expr_core(&mut self, expr: &QuintEx) -> CompiledExpr {
         match expr {
-            QuintEx::QuintInt { id: _, value } => CompiledExpr::constant(Value::int(*value)),
+            QuintEx::QuintInt { id: _, value } => {
+                CompiledExpr::constant(Value::bigint(value.clone()))
+            }
 
             QuintEx::QuintBool { id: _, value } => CompiledExpr::constant(Value::bool(*value)),
 
@@ -738,10 +740,10 @@ impl Interpreter {
         };
 
         CompiledExpr::new(move |env| {
-            let nsteps = compiled_nsteps.execute(env)?.as_int() as usize;
-            let ntraces = compiled_ntraces.execute(env)?.as_int() as usize;
+            let nsteps = compiled_nsteps.execute(env)?.as_i64_saturating() as usize;
+            let ntraces = compiled_ntraces.execute(env)?.as_i64_saturating() as usize;
             let nruns = match &compiled_nruns {
-                Some(c) => c.execute(env)?.as_int() as usize,
+                Some(c) => c.execute(env)?.as_i64_saturating() as usize,
                 None => 1,
             };
 

@@ -72,7 +72,7 @@ import { ImportDefContext } from "./QuintParser";
 import { ExportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
-import { DocumentedDeclarationContext } from "./QuintParser";
+import { ModuleItemContext } from "./QuintParser";
 import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
@@ -943,15 +943,15 @@ export interface QuintListener extends ParseTreeListener {
 	exitModule?: (ctx: ModuleContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `QuintParser.documentedDeclaration`.
+	 * Enter a parse tree produced by `QuintParser.moduleItem`.
 	 * @param ctx the parse tree
 	 */
-	enterDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => void;
+	enterModuleItem?: (ctx: ModuleItemContext) => void;
 	/**
-	 * Exit a parse tree produced by `QuintParser.documentedDeclaration`.
+	 * Exit a parse tree produced by `QuintParser.moduleItem`.
 	 * @param ctx the parse tree
 	 */
-	exitDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => void;
+	exitModuleItem?: (ctx: ModuleItemContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.declaration`.
