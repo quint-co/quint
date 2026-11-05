@@ -18,7 +18,7 @@ import { FreshVarGenerator } from '../FreshVarGenerator'
 import { typeToString } from '../ir/IRprinting'
 import { IRTransformer, transformDeclaration, transformLookupDefinition, transformType } from '../ir/IRTransformer'
 import { QuintDeclaration, QuintTypeAlias } from '../ir/quintIr'
-import { QuintAppType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
+import { QuintAppType, QuintConstType, QuintType, QuintVarType, Row } from '../ir/quintTypes'
 import { LookupTable } from '../names/base'
 import { zip } from '../util'
 import { resolveAlias } from './aliasInliner'
@@ -51,6 +51,13 @@ export class TypeApplicationResolver implements IRTransformer {
   }
 
   exitType(t: QuintType): QuintType {
+    // `Foo` where `type Foo[a] = ...` is a const type, not an application, so the
+    // arity check in `resolveTypeApp` does not see it. Report it here, at the
+    // reference, before inference inlines the body and reuses the declared
+    // parameter names.
+    if (t.kind === 'const') {
+      this.reportUnderAppliedType(t)
+    }
     return this.resolveTypeApplicationsForType(t)
   }
 
@@ -91,14 +98,8 @@ export class TypeApplicationResolver implements IRTransformer {
     // NOTE: Early exit on error
     // Check for arity mismatch in type application
     if (params.length !== t.args.length) {
-      const ctorMsg = typeToString(t.ctor)
       const typeArgsMsg = t.args.map(typeToString).join(', ')
-      const manyOrFew = params.length > t.args.length ? 'few' : 'many'
-      const err = buildErrorLeaf(
-        `applying type constructor ${ctorMsg} to arguments ${typeArgsMsg}`,
-        `too ${manyOrFew} arguments supplied: ${ctorMsg} only accepts ${params.length} parameters`
-      )
-      this.errors.set(t.id, err)
+      this.errors.set(t.id, arityMismatchError(typeToString(t.ctor), params.length, t.args.length, typeArgsMsg))
       return t
     }
 
@@ -172,6 +173,37 @@ export class TypeApplicationResolver implements IRTransformer {
 
     return { type, params }
   }
+
+  // A const type that names a parameterized typedef was written with no
+  // arguments (`Option` instead of `Option[a]`).
+  private reportUnderAppliedType(t: QuintConstType): void {
+    if (t.id === undefined) {
+      return
+    }
+
+    const typeDef = this.table.get(t.id)
+    if (typeDef?.kind !== 'typedef' || !typeDef.type) {
+      // Unknown names are reported by name resolution. Uninterpreted types
+      // (`type T`) have no body and take no arguments.
+      return
+    }
+
+    const paramCount = typeDef.params?.length ?? 0
+    if (paramCount === 0) {
+      return
+    }
+
+    this.errors.set(t.id, arityMismatchError(typeToString(t), paramCount, 0, ''))
+  }
+}
+
+function arityMismatchError(ctorMsg: string, paramCount: number, argCount: number, typeArgsMsg: string): ErrorTree {
+  const manyOrFew = paramCount > argCount ? 'few' : 'many'
+  const argsSuffix = typeArgsMsg === '' ? '' : ` ${typeArgsMsg}`
+  return buildErrorLeaf(
+    `applying type constructor ${ctorMsg} to arguments${argsSuffix}`,
+    `too ${manyOrFew} arguments supplied: ${ctorMsg} only accepts ${paramCount} parameters`
+  )
 }
 
 // Map type variable names according to `f`
