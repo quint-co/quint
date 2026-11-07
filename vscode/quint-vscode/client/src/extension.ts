@@ -5,11 +5,12 @@
  * --------------------------------------------------------------------------------- */
 
 import * as path from 'path'
-import { ExtensionContext, workspace } from 'vscode'
+import { ExtensionContext, Terminal, commands, window, workspace } from 'vscode'
 
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node'
 
 let client: LanguageClient
+let testTerminal: Terminal | undefined
 
 export function activate(context: ExtensionContext) {
   // The server is implemented in node
@@ -42,6 +43,38 @@ export function activate(context: ExtensionContext) {
 
   // Create the language client and start the client.
   client = new LanguageClient('quintLspClient', 'Quint Language Server', serverOptions, clientOptions)
+
+  context.subscriptions.push(
+    commands.registerCommand('quint.runTest', async (filePath: string, testName: string) => {
+      const input = await window.showInputBox({
+        prompt: 'Max samples (leave empty for default)',
+        placeHolder: '10000',
+        validateInput: v => {
+          if (v === '') return null
+          if (!/^\d+$/.test(v) || Number(v) < 1) return 'Enter a positive integer'
+          return null
+        },
+      })
+      if (input === undefined) return
+      if (testTerminal?.exitStatus !== undefined) {
+        testTerminal = undefined
+      }
+      if (!testTerminal) {
+        testTerminal = window.createTerminal('Quint Test')
+      }
+      testTerminal.show()
+      const maxSamples = input ? ` --max-samples=${input}` : ''
+      testTerminal.sendText(`quint test '${filePath}' --match '^${testName}$'${maxSamples}`)
+    })
+  )
+
+  context.subscriptions.push(
+    window.onDidCloseTerminal(t => {
+      if (t === testTerminal) {
+        testTerminal = undefined
+      }
+    })
+  )
 
   // Start the client. This will also launch the server
   client.start()
