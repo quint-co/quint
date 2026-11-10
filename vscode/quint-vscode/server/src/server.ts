@@ -54,7 +54,7 @@ import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { findReferencesAtPosition } from './references'
-import { getDeclRegExp } from './rename'
+import { findFieldRenameEdits, getDeclRegExp } from './rename'
 import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 import { AnalysisResult, CompilationPipeline, CompilationResult } from './workerPipeline'
@@ -390,10 +390,28 @@ export class QuintLanguageServer {
         return null
       }
 
+      const sourceFile = URI.parse(params.textDocument.uri).path
+
+      // Record fields are not in the lookup table and need type information.
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      const document = documents.get(params.textDocument.uri)
+      if (analysisOutput && document) {
+        const fieldEdits = findFieldRenameEdits(
+          parsedData,
+          analysisOutput,
+          document,
+          sourceFile,
+          params.position,
+          params.newName
+        )
+        if (fieldEdits) {
+          return { changes: { [params.textDocument.uri]: fieldEdits } }
+        }
+      }
+
       // Find the name under the cursor.
       const { modules, sourceMap, table } = parsedData
       const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
-      const sourceFile = URI.parse(params.textDocument.uri).path
       const result = findBestMatchingResult(sourceMap, results, params.position, sourceFile)
       if (!result) {
         return null
