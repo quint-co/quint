@@ -8,11 +8,12 @@ import {
   QuintEx,
   QuintRecordType,
   QuintType,
+  Row,
   rowFieldNames,
   walkModule,
 } from '@informalsystems/quint'
 import { unify } from '@informalsystems/quint/dist/src/types/constraintSolver'
-import { Position, Range, TextEdit } from 'vscode-languageserver/node'
+import { Position, Range, ResponseError, TextEdit } from 'vscode-languageserver/node'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { locToRange } from './reporting'
 
@@ -58,6 +59,37 @@ interface FieldOccurrence {
   recordType: QuintRecordType | undefined
 }
 
+// `RequestFailed` of LSP 3.17, which our version of vscode-languageserver does
+// not define yet. Unlike `ContentModified`, VS Code shows its message.
+const requestFailed = -32803
+
+/**
+ * The results of the compilation pipeline for a document, with the document
+ * text that each of them was computed from.
+ */
+export interface CompiledDocument {
+  parsedData: ParserPhase3
+  parsedText: string
+  analysisOutput: AnalysisOutput | undefined
+  analyzedText: string | undefined
+}
+
+/**
+ * Check that the parse result belongs to the current document text. If the
+ * document changed since, the locations in the source map point to the wrong
+ * places, and no rename edit can be computed.
+ *
+ * @returns an error if the parse result is out of date, undefined otherwise
+ */
+export function checkParsedTextIsCurrent(
+  compiled: CompiledDocument,
+  document: TextDocument
+): ResponseError<void> | undefined {
+  return compiled.parsedText === document.getText()
+    ? undefined
+    : new ResponseError(requestFailed, 'The document is still being processed. Try again.')
+}
+
 /**
  * Compute the edits to rename the record field under the cursor.
  *
@@ -67,34 +99,73 @@ interface FieldOccurrence {
  * those with the same name in records whose type unifies with the type of the
  * record under the cursor.
  *
- * @returns the edits, or undefined if the cursor is not on a field name
+ * Assumes that the parse result belongs to the current document text, see
+ * `checkParsedTextIsCurrent`.
+ *
+ * @returns the edits, an error if the field cannot be renamed safely, or
+ *   undefined if the cursor is not on a field name
  */
 export function findFieldRenameEdits(
-  parsedData: ParserPhase3,
-  analysisOutput: AnalysisOutput,
+  compiled: CompiledDocument,
   document: TextDocument,
   sourceFile: string,
   position: Position,
   newName: string
-): TextEdit[] | undefined {
+): TextEdit[] | ResponseError<void> | undefined {
+  const { parsedData, parsedText, analyzedText } = compiled
+  // The analysis output refers to expressions by ID. IDs are reused across
+  // compilations, so types of another text belong to other expressions.
+  const analysisOutput = analyzedText === parsedText ? compiled.analysisOutput : undefined
   const occurrences = collectFieldOccurrences(parsedData, analysisOutput, document, sourceFile)
   const target = occurrences.find(o => containsPosition(o.range, position))
-  const targetType = target?.recordType
-  if (!target || !targetType) {
+  if (!target) {
     return undefined
+  }
+  const targetType = target.recordType
+  if (!targetType) {
+    return new ResponseError(
+      requestFailed,
+      analysisOutput
+        ? `The type of the record with field '${target.name}' is unknown.`
+        : `Renaming field '${target.name}' needs the types of the current text. Fix the errors in the document, or wait until it is processed.`
+    )
   }
 
   const { table } = parsedData
+  const unifies = (t1: QuintRecordType, t2: QuintRecordType) => unify(table, t1, t2).isRight()
+  const sameName = occurrences.filter(o => o.name === target.name)
+  const renamed = new Set(sameName.filter(o => o.recordType && unifies(o.recordType, targetType)))
+  const kept = sameName.filter(o => !renamed.has(o))
+
+  // A record with an open row, as in `pure def f(r) = r.close`, unifies with
+  // records that do not unify with each other. If we rename its field, records
+  // that we keep and that are passed to it no longer type check.
+  const conflict = [...renamed].find(
+    o =>
+      o.recordType &&
+      isOpenRow(o.recordType.fields) &&
+      kept.some(k => k.recordType && unifies(o.recordType!, k.recordType))
+  )
+  if (conflict) {
+    return new ResponseError(
+      requestFailed,
+      `Field '${target.name}' is accessed on line ${conflict.range.start.line + 1} on a record of unknown type, ` +
+        'which may be any of several record types. Annotate its type to rename the field.'
+    )
+  }
+
   const edits = new Map<string, TextEdit>()
-  occurrences
-    .filter(o => o.name === target.name && o.recordType && unify(table, o.recordType, targetType).isRight())
-    .forEach(o => edits.set(JSON.stringify(o.range), { range: o.range, newText: newName }))
+  renamed.forEach(o => edits.set(JSON.stringify(o.range), { range: o.range, newText: newName }))
   return [...edits.values()]
+}
+
+function isOpenRow(row: Row): boolean {
+  return row.kind === 'var' || (row.kind === 'row' && isOpenRow(row.other))
 }
 
 function collectFieldOccurrences(
   parsedData: ParserPhase3,
-  analysisOutput: AnalysisOutput,
+  analysisOutput: AnalysisOutput | undefined,
   document: TextDocument,
   sourceFile: string
 ): FieldOccurrence[] {
@@ -111,7 +182,7 @@ function collectFieldOccurrences(
   }
 
   const recordTypeOf = (ex: QuintEx): QuintRecordType | undefined => {
-    const type = analysisOutput.types.get(ex.id)?.type
+    const type = analysisOutput?.types.get(ex.id)?.type
     return type ? asRecordType(table, type) : undefined
   }
 
