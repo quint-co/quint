@@ -31,7 +31,7 @@ import {
 import { verbosity } from './verbosity'
 
 import { version } from './version'
-import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
+import { DEFAULT_APALACHE_VERSION_TAG, exitWithError, parseServerEndpoint } from './apalache'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -422,6 +422,7 @@ const verifyCmd = {
       .then(chainCmd(compile))
       .then(chainCmd(verifySpec))
       .then(outputResult)
+      .catch(exitWithError)
   },
 }
 

@@ -12,7 +12,7 @@
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
 import { QuintApp, QuintEx, QuintStr } from './ir/quintIr'
-import rv from './runtime/impl/runtimeValue'
+import rv, { fromQuintEx } from './runtime/impl/runtimeValue'
 import { zerog } from './idGenerator'
 
 /** The type of IFT traces.
@@ -221,7 +221,12 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
  * @returns An array of its states as normalized quint expressions
  */
 export function ofItfNormalized(itf: ItfTrace): QuintEx[] {
-  return ofItf(itf).map(rv.fromQuintEx).map(rv.toQuintEx)
+  return ofItf(itf).map(ex => {
+    const value = fromQuintEx(ex)
+    // `#unserializable` ITF values are `name` expressions, which are not runtime
+    // values. Keep them so a counterexample can still be printed.
+    return value.isJust() ? rv.toQuintEx(value.value) : ex
+  })
 }
 
 export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {

@@ -67,6 +67,9 @@ export function prettyQuintEx(ex: QuintEx): Doc {
     case 'str':
       return richtext(chalk.green, `"${ex.value}"`)
 
+    case 'name':
+      return text(ex.name)
+
     case 'app':
       switch (ex.opcode) {
         case 'Set':

@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 
-import { apalacheSpawnCommand, apalacheSpawnOptions, parseServerEndpoint } from '../src/apalache'
+import { apalacheSpawnCommand, apalacheSpawnOptions, exitWithError, parseServerEndpoint } from '../src/apalache'
 
 describe('apalacheSpawnOptions', () => {
   it('spawns with a shell on win32, so that the .bat launcher can run', () => {
@@ -33,6 +33,28 @@ describe('apalacheSpawnCommand', () => {
       command: exe,
       args: ['server', '--port=8822'],
     })
+  })
+})
+
+describe('exitWithError', () => {
+  it('prints the error on stderr and exits non-zero (#2074)', () => {
+    const exit = process.exit
+    const error = console.error
+    const messages: string[] = []
+    try {
+      process.exit = ((code?: number) => {
+        throw new Error(`exit ${code}`)
+      }) as typeof process.exit
+      console.error = ((msg?: unknown) => {
+        messages.push(String(msg))
+      }) as typeof console.error
+
+      expect(() => exitWithError(new Error('Cannot convert Rec("v") to a runtime value'))).to.throw('exit 1')
+      expect(messages).to.deep.equal(['error: Cannot convert Rec("v") to a runtime value'])
+    } finally {
+      process.exit = exit
+      console.error = error
+    }
   })
 })
 
