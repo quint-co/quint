@@ -562,7 +562,7 @@ export function exitWithError(err: unknown): never {
  * @param shell whether `apalache` was spawned via a shell (see `apalacheSpawnOptions`)
  * @param verbosityLevel the verbosity level for debug logging
  */
-function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityLevel: number): void {
+export function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityLevel: number): void {
   function exitHandler() {
     debugLog(verbosityLevel, 'Shutting down Apalache server')
     // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
