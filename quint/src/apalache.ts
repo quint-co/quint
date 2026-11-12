@@ -537,6 +537,21 @@ export function apalacheSpawnCommand(
 }
 
 /**
+ * Print an unexpected error to stderr and exit non-zero.
+ *
+ * `stopWithQuint` listens for `uncaughtException` so it can kill the Apalache
+ * server. That listener replaces Node's default crash, so a rejected promise
+ * (for example while printing a counterexample) would otherwise end the
+ * process with status 0 and no error. Call this from that listener and from
+ * the verify command's promise chain.
+ */
+export function exitWithError(err: unknown): never {
+  const message = err instanceof Error && err.message.length > 0 ? err.message : String(err)
+  console.error(`error: ${message}`)
+  return process.exit(1)
+}
+
+/**
  * Installs the process handlers that kill the Apalache server `apalache` when
  * Quint exits or is signalled.
  *
@@ -547,7 +562,7 @@ export function apalacheSpawnCommand(
  * @param shell whether `apalache` was spawned via a shell (see `apalacheSpawnOptions`)
  * @param verbosityLevel the verbosity level for debug logging
  */
-function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityLevel: number): void {
+export function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityLevel: number): void {
   function exitHandler() {
     debugLog(verbosityLevel, 'Shutting down Apalache server')
     // Remove 'exit' listeners on Apalache, to avoid exiting in that handler with a different code
@@ -575,7 +590,12 @@ function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityLevel: n
   process.on('SIGINT', exitHandler)
   process.on('SIGUSR1', exitHandler)
   process.on('SIGUSR2', exitHandler)
-  process.on('uncaughtException', exitHandler)
+  // This listener replaces Node's default crash. Report the error and exit
+  // non-zero; otherwise Quint exits 0 once the event loop drains.
+  process.on('uncaughtException', (err: unknown) => {
+    exitHandler()
+    exitWithError(err)
+  })
   process.on('SIGTERM', () => {
     exitHandler()
     process.exit(143)
