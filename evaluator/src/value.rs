@@ -20,8 +20,8 @@ use crate::evaluator::{CompiledExpr, Env, EvalResult};
 use crate::ir::{QuintError, QuintName};
 use imbl::shared_ptr::RcK;
 use imbl::{GenericHashMap, GenericHashSet, GenericVector};
-use itertools::Itertools;
-use num_bigint::BigUint;
+use itertools::{Either, Itertools};
+use num_bigint::{BigInt, BigUint, Sign};
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -87,10 +87,12 @@ const _: () = assert!(std::mem::size_of::<Value>() == 8);
 /// values that enable lazy evaluation of some potentially expensive expressions.
 ///
 /// `Int` only for n outside the i61 range [-2^60, 2^60), which the tagged word
-/// cannot hold; ints inside it are always inline, so the two forms never
-/// coexist for the same integer.
+/// cannot hold; ints inside it are always inline. `BigInt` only for n outside
+/// the i64 range. So each integer has exactly one representation, which `Eq`
+/// and `Hash` rely on.
 enum HeapValue {
     Int(i64),
+    BigInt(BigInt),
     Str(Str),
     Set(ImmutableSet<Value>),
     Tuple(ImmutableVec<Value>),
@@ -134,6 +136,9 @@ pub enum ValueRef<'a> {
     // Infinite sets
     InfiniteInt, // represents the set of all integers
     InfiniteNat, // represents the set of all natural numbers (>= 0)
+    // Integers outside the i64 range. Last, so that the discriminants (and
+    // hashes) of the other variants stay the same.
+    BigInt(&'a BigInt),
 }
 
 impl Value {
@@ -185,6 +190,7 @@ impl Value {
             // SAFETY: tag just decoded as Heap.
             Tag::Heap => match unsafe { self.heap_ref() } {
                 HeapValue::Int(n) => ValueRef::Int(*n),
+                HeapValue::BigInt(n) => ValueRef::BigInt(n),
                 HeapValue::Str(s) => ValueRef::Str(s),
                 HeapValue::Set(set) => ValueRef::Set(set),
                 HeapValue::Tuple(elems) => ValueRef::Tuple(elems),
@@ -220,7 +226,7 @@ impl Drop for Value {
         if self.tag() == Tag::Heap {
             // SAFETY: as in Clone; this Value's strong count is released
             // exactly once, here.
-            unsafe { drop(Rc::from_raw(self.0)) };
+            unsafe { Rc::decrement_strong_count(self.0) };
         }
     }
 }
@@ -233,38 +239,61 @@ impl fmt::Debug for Value {
 
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        // First, hash the discriminant, as we want hashes of Set(1, 2, 3) and
-        // List(1, 2, 3) to be different.
+        // Hash the discriminant, as we want hashes of Tuple(1, 2, 3) and
+        // List(1, 2, 3) to be different. Finite sets hash a tag of `"Set"`
+        // instead, as they have different discriminants for each representation.
         let view = self.view();
-        core::mem::discriminant(&view).hash(state);
+        let discriminant = core::mem::discriminant(&view);
 
         match view {
-            ValueRef::Int(n) => n.hash(state),
-            ValueRef::Bool(b) => b.hash(state),
-            ValueRef::Str(s) => s.hash(state),
-            ValueRef::Set(set) => {
-                for elem in set {
-                    elem.hash(state);
-                }
+            // Finite sets are equal when they have the same elements, no
+            // matter how they are represented (e.g. `1.to(3) == Set(1, 2, 3)`),
+            // so they must have the same hash too. Hash their elements,
+            // combining them in a way that doesn't depend on the iteration
+            // order, which differs between representations.
+            ValueRef::Set(_)
+            | ValueRef::Interval(_, _)
+            | ValueRef::CrossProduct(_)
+            | ValueRef::PowerSet(_)
+            | ValueRef::MapSet(_, _) => {
+                "Set".hash(state);
+                hash_unordered(
+                    self.as_set_iter().expect("can't enumerate set for hashing"),
+                    state,
+                );
+            }
+            ValueRef::Int(n) => {
+                discriminant.hash(state);
+                n.hash(state);
+            }
+            ValueRef::BigInt(n) => {
+                discriminant.hash(state);
+                n.hash(state);
+            }
+            ValueRef::Bool(b) => {
+                discriminant.hash(state);
+                b.hash(state);
+            }
+            ValueRef::Str(s) => {
+                discriminant.hash(state);
+                s.hash(state);
             }
             ValueRef::Tuple(elems) => {
+                discriminant.hash(state);
                 for elem in elems {
                     elem.hash(state);
                 }
             }
             ValueRef::Record(fields) => {
-                for (name, value) in fields {
-                    name.hash(state);
-                    value.hash(state);
-                }
+                discriminant.hash(state);
+                hash_unordered(fields.iter(), state);
             }
             ValueRef::Map(map) => {
-                for (key, value) in map {
-                    key.hash(state);
-                    value.hash(state);
-                }
+                discriminant.hash(state);
+                hash_unordered(map.iter(), state);
             }
             ValueRef::List(elems) => {
+                discriminant.hash(state);
                 for elem in elems {
                     elem.hash(state);
                 }
@@ -273,31 +302,43 @@ impl Hash for Value {
                 panic!("Cannot hash lambda");
             }
             ValueRef::Variant(label, value) => {
+                discriminant.hash(state);
                 label.hash(state);
                 value.hash(state);
             }
-            ValueRef::Interval(start, end) => {
-                start.hash(state);
-                end.hash(state);
-            }
-            ValueRef::CrossProduct(sets) => {
-                for value in sets {
-                    value.hash(state);
-                }
-            }
-            ValueRef::PowerSet(value) => {
-                value.hash(state);
-            }
-            ValueRef::MapSet(a, b) => {
-                a.hash(state);
-                b.hash(state);
-            }
             ValueRef::InfiniteInt | ValueRef::InfiniteNat => {
-                // The discriminant is already hashed, which is sufficient
-                // for distinguishing between Int and Nat
+                // The discriminant is sufficient for distinguishing between
+                // Int and Nat
+                discriminant.hash(state);
             }
         }
     }
+}
+
+/// Order-independent hash: the sum of the item hashes, each mixed with `fmix64`.
+fn hash_unordered<T: Hash, H: Hasher>(items: impl Iterator<Item = T>, state: &mut H) {
+    /// FxHash of an integer is linear (`n * K`), so summing raw hashes makes a set's hash
+    /// depend only on its size and the sum of its elements.
+    /// The MurmurHash3 finalizer breaks this linearity.
+    fn fmix64(mut h: u64) -> u64 {
+        h ^= h >> 33;
+        h = h.wrapping_mul(0xff51_afd7_ed55_8ccd);
+        h ^= h >> 33;
+        h = h.wrapping_mul(0xc4ce_b9fe_1a85_ec53);
+        h ^= h >> 33;
+        h
+    }
+
+    let mut size: u64 = 0;
+    let mut items_hash: u64 = 0;
+    for item in items {
+        let mut hasher = fxhash::FxHasher::default();
+        item.hash(&mut hasher);
+        items_hash = items_hash.wrapping_add(fmix64(hasher.finish()));
+        size += 1;
+    }
+    size.hash(state);
+    items_hash.hash(state);
 }
 
 impl PartialEq for Value {
@@ -305,6 +346,10 @@ impl PartialEq for Value {
         use ValueRef::*;
         match (self.view(), other.view()) {
             (Int(a), Int(b)) => a == b,
+            (ValueRef::BigInt(a), ValueRef::BigInt(b)) => a == b,
+            // Big integers are only used outside the i64 range, so they are
+            // never equal to an `Int`
+            (Int(_), ValueRef::BigInt(_)) | (ValueRef::BigInt(_), Int(_)) => false,
             (Bool(a), Bool(b)) => a == b,
             (Str(a), Str(b)) => a == b,
             (Set(a), Set(b)) => *a == *b,
@@ -316,12 +361,21 @@ impl PartialEq for Value {
             (Variant(a_label, a_value), Variant(b_label, b_value)) => {
                 a_label == b_label && a_value == b_value
             }
+            // Lazy sets with different parameters can still be equal when
+            // they are empty, e.g. `tuples(Set(), Set(1)) == tuples(Set(2), Set())`
             (Interval(a_start, a_end), Interval(b_start, b_end)) => {
-                a_start == b_start && a_end == b_end
+                (a_start == b_start && a_end == b_end)
+                    || (self.is_empty_set() && other.is_empty_set())
             }
-            (CrossProduct(a), CrossProduct(b)) => *a == *b,
+            (CrossProduct(a), CrossProduct(b)) => {
+                *a == *b || (self.is_empty_set() && other.is_empty_set())
+            }
             (PowerSet(a), PowerSet(b)) => *a == *b,
-            (MapSet(a1, b1), MapSet(a2, b2)) => a1 == a2 && b1 == b2,
+            // `setOfMaps(Set(), range)` is `Set(Map())` for any range
+            (MapSet(a1, b1), MapSet(a2, b2)) => {
+                (a1 == a2 && (b1 == b2 || a1.is_empty_set()))
+                    || (self.is_empty_set() && other.is_empty_set())
+            }
             (InfiniteInt, InfiniteInt) => true,
             (InfiniteNat, InfiniteNat) => true,
             // Infinite sets are not equal to any other set (including each other)
@@ -352,6 +406,13 @@ impl Value {
             Value::immediate(Tag::Int, n as usize)
         } else {
             Value::heap(HeapValue::Int(n))
+        }
+    }
+
+    pub fn bigint(n: BigInt) -> Self {
+        match i64::try_from(&n) {
+            Ok(n) => Value::int(n),
+            Err(_) => Value::heap(HeapValue::BigInt(n)),
         }
     }
 
@@ -502,12 +563,30 @@ impl Value {
         }
     }
 
+    /// Check if a set is empty, without having to enumerate it. Unlike
+    /// `cardinality`, this works for products of infinite sets too.
+    pub fn is_empty_set(&self) -> bool {
+        match self.view() {
+            ValueRef::Set(set) => set.is_empty(),
+            ValueRef::Interval(start, end) => start > end,
+            ValueRef::CrossProduct(sets) => sets.iter().any(Value::is_empty_set),
+            // A powerset contains at least the empty set
+            ValueRef::PowerSet(_) => false,
+            // A map set with an empty domain contains the empty map
+            ValueRef::MapSet(domain, range) => !domain.is_empty_set() && range.is_empty_set(),
+            ValueRef::InfiniteInt | ValueRef::InfiniteNat => false,
+            _ => panic!("is_empty_set not implemented for {self:?}"),
+        }
+    }
+
     /// Check for membership of a value in a set, without having to enumerate
     /// the set.
     pub fn contains(&self, elem: &Value) -> Result<bool, QuintError> {
         Ok(match (self.view(), elem.view()) {
             (ValueRef::Set(elems), _) => elems.contains(elem),
             (ValueRef::Interval(start, end), ValueRef::Int(n)) => start <= n && n <= end,
+            // Interval bounds fit in i64, and big integers don't
+            (ValueRef::Interval(_, _), ValueRef::BigInt(_)) => false,
             (ValueRef::CrossProduct(sets), ValueRef::Tuple(elems)) => {
                 if sets.len() != elems.len() {
                     false
@@ -537,9 +616,10 @@ impl Value {
                         .try_fold(true, |acc, v| Ok(acc && range.contains(v)?))?
                 }
             }
-            (ValueRef::InfiniteInt, ValueRef::Int(_)) => true,
+            (ValueRef::InfiniteInt, ValueRef::Int(_) | ValueRef::BigInt(_)) => true,
             (ValueRef::InfiniteInt, _) => false,
             (ValueRef::InfiniteNat, ValueRef::Int(n)) => n >= 0,
+            (ValueRef::InfiniteNat, ValueRef::BigInt(n)) => n.sign() != Sign::Minus,
             (ValueRef::InfiniteNat, _) => false,
             _ => panic!("contains not implemented for {self:?}"),
         })
@@ -589,12 +669,9 @@ impl Value {
             (ValueRef::InfiniteInt, ValueRef::InfiniteInt) => true,
             (ValueRef::InfiniteInt, ValueRef::InfiniteNat) => false,
             // Use the `contains` definition for infinite sets
-            (_, ValueRef::InfiniteNat | ValueRef::InfiniteInt) if self.is_set() => {
-                let self_set = self.as_set()?;
-                self_set
-                    .iter()
-                    .try_fold(true, |acc, v| Ok(acc && superset.contains(v)?))?
-            }
+            (_, ValueRef::InfiniteNat | ValueRef::InfiniteInt) if self.is_set() => self
+                .as_set_iter()?
+                .try_fold(true, |acc, v| Ok(acc && superset.contains(&v)?))?,
             // Infinite sets can't be subsets of finite sets
             (ValueRef::InfiniteInt, _) | (ValueRef::InfiniteNat, _) => false,
             // Fall back to the native implementation (`is_subset`) if no optimization is possible
@@ -606,16 +683,43 @@ impl Value {
         })
     }
 
-    /// Convert an integer value to `i64`. Panics if the wrong type is given,
-    /// which should never happen as input expressions are type-checked.
-    pub fn as_int(&self) -> i64 {
+    /// Convert an integer value to `i64`, or `None` if it doesn't fit in i64.
+    /// Panics if the wrong type is given, which should never happen as input
+    /// expressions are type-checked.
+    pub fn as_i64(&self) -> Option<i64> {
         // Hot path: no `ValueRef` construction for the inline case.
         if self.tag() == Tag::Int {
-            return self.payload();
+            return Some(self.payload());
         }
         match self.view() {
-            ValueRef::Int(n) => n,
+            ValueRef::Int(n) => Some(n),
+            ValueRef::BigInt(_) => None,
             _ => panic!("Expected integer"),
+        }
+    }
+
+    /// Convert an integer value to a big integer. Panics if the wrong type is
+    /// given, which should never happen as input expressions are type-checked.
+    pub fn as_bigint(&self) -> BigInt {
+        match self.view() {
+            ValueRef::Int(n) => BigInt::from(n),
+            ValueRef::BigInt(n) => n.clone(),
+            _ => panic!("Expected integer"),
+        }
+    }
+
+    /// Convert an integer value to `i64`, saturating big integers to
+    /// `i64::MIN` or `i64::MAX`. For indexes, lengths and counts, where a big
+    /// integer is out of range anyway, just like `i64::MIN` or `i64::MAX`.
+    /// Panics if the wrong type is given, which should never happen as input
+    /// expressions are type-checked.
+    pub fn as_i64_saturating(&self) -> i64 {
+        match self.as_i64() {
+            Some(n) => n,
+            None => match self.view() {
+                ValueRef::BigInt(n) if n.sign() == Sign::Minus => i64::MIN,
+                _ => i64::MAX,
+            },
         }
     }
 
@@ -665,54 +769,67 @@ impl Value {
     pub fn as_set(&self) -> Result<Cow<'_, ImmutableSet<Value>>, QuintError> {
         Ok(match self.view() {
             ValueRef::Set(set) => Cow::Borrowed(set),
-            ValueRef::Interval(start, end) => Cow::Owned((start..=end).map(Value::int).collect()),
+            _ => Cow::Owned(self.as_set_iter()?.collect()),
+        })
+    }
+
+    /// Iterate over the elements of the value as a set. Panics if the wrong
+    /// type is given, which should never happen as input expressions are
+    /// type-checked.
+    ///
+    /// Unlike [`Value::as_set`], lazy sets (intervals, cross products, power
+    /// sets and map sets) are not enumerated into a hash set, but their
+    /// elements are generated one by one, so iterating over them can stop
+    /// early without paying for the whole set. Intervals are iterated in
+    /// ascending order.
+    pub fn as_set_iter(&self) -> Result<impl Iterator<Item = Value> + '_, QuintError> {
+        type Elems<'a> = Box<dyn Iterator<Item = Value> + 'a>;
+
+        let generated: Elems<'_> = match self.view() {
+            ValueRef::Set(set) => return Ok(Either::Left(Either::Left(set.iter().cloned()))),
+            ValueRef::Interval(start, end) => {
+                return Ok(Either::Left(Either::Right((start..=end).map(Value::int))))
+            }
             ValueRef::CrossProduct(sets) => {
                 let size = self.cardinality()?;
                 if size == 0 {
                     // an empty set produces the empty product
-                    return Ok(Cow::Owned(ImmutableSet::default()));
+                    return Ok(Either::Right(Box::new(std::iter::empty()) as Elems<'_>));
                 }
 
-                #[allow(clippy::unnecessary_to_owned)] // False positive
                 let product_sets = sets
                     .iter()
-                    .map(|set| {
-                        set.as_set()
-                            .map(|s| s.into_owned().into_iter().collect::<Vec<_>>())
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .multi_cartesian_product()
-                    .map(|product| Value::tuple(ImmutableVec::from(product)))
-                    .collect::<ImmutableSet<_>>();
+                    .map(|set| set.as_set_iter().map(|s| s.collect::<Vec<_>>()))
+                    .collect::<Result<Vec<_>, _>>()?;
 
-                Cow::Owned(product_sets)
+                Box::new(
+                    product_sets
+                        .into_iter()
+                        .multi_cartesian_product()
+                        .map(|product| Value::tuple(ImmutableVec::from(product))),
+                )
             }
 
             ValueRef::PowerSet(value) => {
                 let base = value.as_set()?;
                 let size: u64 = self.cardinality()?;
-                Cow::Owned(
-                    (0..size)
-                        .map(|i| powerset_at_index(base.as_ref(), i))
-                        .collect(),
-                )
+                Box::new((0..size).map(move |i| powerset_at_index(base.as_ref(), i)))
             }
 
             ValueRef::MapSet(domain, range) => {
                 if domain.cardinality()? == 0 {
                     // To reflect the behaviour of TLC, an empty domain needs to give Set(Map())
-                    return Ok(Cow::Owned(
-                        std::iter::once(Value::map(ImmutableMap::default())).collect(),
-                    ));
+                    return Ok(Either::Right(Box::new(std::iter::once(Value::map(
+                        ImmutableMap::default(),
+                    ))) as Elems<'_>));
                 }
 
                 if range.cardinality()? == 0 {
                     // To reflect the behaviour of TLC, an empty range needs to give Set()
-                    return Ok(Cow::Owned(ImmutableSet::default()));
+                    return Ok(Either::Right(Box::new(std::iter::empty()) as Elems<'_>));
                 }
-                let domain_vec = domain.as_set()?.iter().cloned().collect::<Vec<_>>();
-                let range_vec = range.as_set()?.iter().cloned().collect::<Vec<_>>();
+                let domain_vec = domain.as_set_iter()?.collect::<Vec<_>>();
+                let range_vec = range.as_set_iter()?.collect::<Vec<_>>();
 
                 let nindices = domain_vec.len();
                 let nvalues = range_vec.len();
@@ -726,19 +843,15 @@ impl Value {
                         )
                     })?;
 
-                let mut result_set = ImmutableSet::new();
-
-                for i in 0..nmaps {
+                Box::new((0..nmaps).map(move |i| {
                     let mut pairs = Vec::with_capacity(nindices);
                     let mut index = i;
                     for key in domain_vec.iter() {
                         pairs.push((key.clone(), range_vec[index % nvalues].clone()));
                         index /= nvalues;
                     }
-                    result_set.insert(Value::map(ImmutableMap::from_iter(pairs)));
-                }
-
-                Cow::Owned(result_set)
+                    Value::map(ImmutableMap::from_iter(pairs))
+                }))
             }
             ValueRef::InfiniteInt => Err(QuintError::new(
                 "QNT501",
@@ -749,7 +862,8 @@ impl Value {
                 "Infinite set Nat is non-enumerable",
             ))?,
             _ => panic!("Expected set"),
-        })
+        };
+        Ok(Either::Right(generated))
     }
 
     /// Convert a map value to a map. Panics if the wrong type is given, which
@@ -860,6 +974,7 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self.view() {
             ValueRef::Int(n) => write!(f, "{n}"),
+            ValueRef::BigInt(n) => write!(f, "{n}"),
             ValueRef::Bool(b) => write!(f, "{b}"),
             ValueRef::Str(s) => write!(f, "{s:?}"),
             ValueRef::Set(_)
@@ -868,8 +983,8 @@ impl fmt::Display for Value {
             | ValueRef::PowerSet(_)
             | ValueRef::MapSet(_, _) => {
                 write!(f, "Set(")?;
-                let set = self.as_set().expect("can't enumerate set for display");
-                for (i, elem) in set.iter().enumerate() {
+                let set = self.as_set_iter().expect("can't enumerate set for display");
+                for (i, elem) in set.enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
@@ -961,9 +1076,26 @@ mod tests {
             i64::MIN,
             i64::MAX,
         ] {
-            assert_eq!(Value::int(n).as_int(), n, "roundtrip of {n}");
+            assert_eq!(Value::int(n).as_i64(), Some(n), "roundtrip of {n}");
             assert!(matches!(Value::int(n).view(), ValueRef::Int(m) if m == n));
         }
+    }
+
+    #[test]
+    fn bigint_is_only_used_outside_i64() {
+        for n in [0, -1, I61_MAX, 1 << 60, i64::MIN, i64::MAX] {
+            let v = Value::bigint(BigInt::from(n));
+            assert_eq!(v, Value::int(n), "{n} as bigint");
+            assert_eq!(fxhash(&v), fxhash(&Value::int(n)), "hash of {n} as bigint");
+        }
+
+        let big = BigInt::from(i64::MAX) + 1u8;
+        let v = Value::bigint(big.clone());
+        assert!(matches!(v.view(), ValueRef::BigInt(n) if *n == big));
+        assert_eq!(v.as_i64(), None);
+        assert_eq!(v.as_bigint(), big);
+        assert_eq!(v, Value::bigint(big.clone()));
+        assert_eq!(fxhash(&v), fxhash(&Value::bigint(big)));
     }
 
     #[test]
@@ -987,6 +1119,57 @@ mod tests {
         assert_ne!(fxhash(&Value::int(0)), fxhash(&Value::bool(false)));
         assert!(Value::bool(true).as_bool());
         assert!(!Value::bool(false).as_bool());
+    }
+
+    #[test]
+    fn equal_maps_have_same_hash_regardless_of_insertion_order() {
+        // `{1, 4}` and `{2, 3}` collide in imbl's 32-bit HAMT hash, so the
+        // order the keys are stored in depends on the insertion order
+        let entries = [
+            (iset(&[1, 4]), Value::int(1)),
+            (iset(&[2, 3]), Value::int(2)),
+        ];
+        let forward = Value::map(entries.iter().cloned().collect());
+        let backward = Value::map(entries.iter().rev().cloned().collect());
+        assert_eq!(forward, backward);
+        assert_eq!(fxhash(&forward), fxhash(&backward));
+    }
+
+    #[test]
+    fn set_hashes_depend_on_more_than_size_and_sum() {
+        // All subsets of 1..=10: many of them share the size and the sum
+        let subsets: Vec<Value> = (0..1u32 << 10)
+            .map(|mask| {
+                let ints: Vec<i64> = (1..=10).filter(|i| mask & (1 << (i - 1)) != 0).collect();
+                iset(&ints)
+            })
+            .collect();
+        let hashes: std::collections::HashSet<u64> = subsets.iter().map(fxhash).collect();
+        assert_eq!(hashes.len(), subsets.len());
+    }
+
+    #[test]
+    fn empty_lazy_sets_are_equal() {
+        let empty = iset(&[]);
+        let empties = [
+            empty.clone(),
+            Value::interval(5, 3),
+            Value::interval(9, 1),
+            Value::cross_product(vec![empty.clone(), iset(&[1])]),
+            Value::cross_product(vec![iset(&[2]), empty.clone()]),
+            Value::map_set(iset(&[1]), empty.clone()),
+            Value::map_set(iset(&[2]), empty.clone()),
+        ];
+        for a in &empties {
+            for b in &empties {
+                assert_eq!(a, b, "{a:?} == {b:?}");
+            }
+        }
+        // `setOfMaps(Set(), range)` is `Set(Map())` for any range
+        assert_eq!(
+            Value::map_set(empty.clone(), iset(&[1])),
+            Value::map_set(empty.clone(), iset(&[2]))
+        );
     }
 
     /// Clones and drops of a heap value must balance the refcount; miri

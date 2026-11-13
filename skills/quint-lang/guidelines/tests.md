@@ -35,10 +35,10 @@ Run with:
 quint test systemTest.qnt --main systemTest --match basicTest
 ```
 
-> **Naming gotcha:** by default `quint test` runs only `run` definitions whose name **ends in
-> `Test`** (e.g. `basicTest`). A `run` named otherwise (`happyPath`, `testBasic`, `checkQuorum`) is
-> **silently skipped** — no error, no output, exit 0 — which reads as "passed." Either suffix the
-> name with `Test`, or select it explicitly with `--match <name>` (or `--match '.*'` for all).
+> **Naming:** by default `quint test` runs only definitions whose names **end in
+> `Test`** (e.g. `basicTest`). A `run` named otherwise (`happyPath`, `testBasic`, `checkQuorum`)
+> is not selected. Suffix the name with `Test`, or select it with `--match <name>` (or
+> `--match '.*'` for all). If nothing matches, `quint test` reports that and exits non-zero.
 
 ---
 

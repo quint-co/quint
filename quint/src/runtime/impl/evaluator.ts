@@ -231,17 +231,15 @@ export class Evaluator {
 
             const stepResult = stepEval(this.ctx).mapLeft(error => (failure = error))
             if (!isTrue(stepResult)) {
-              traceLengths.push(this.trace.get().length)
-
               // The run cannot be extended. In some cases, this may indicate a deadlock.
               // Since we are doing random simulation, it is very likely
               // that we have not generated good values for extending
               // the run. Hence, do not report an error here, but simply
-              // drop the run. Otherwise, we would have a lot of false
+              // end the run. Otherwise, we would have a lot of false
               // positives, which look like deadlocks but they are not.
+              // The run and its length are recorded once, after this loop.
 
               this.recorder.onUserOperatorReturn(stepApp, [], stepResult)
-              this.recorder.onRunReturn(right(rv.mkBool(true)), this.trace.get())
               break
             }
 

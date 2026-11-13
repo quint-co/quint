@@ -1,4 +1,26 @@
+import JSONbig from 'json-bigint'
+
 import { QuintError } from './quintError'
+
+// json-bigint 1.0.0 rejects every key that contains "constructor". Preserve
+// those keys, then reject only the exact name. `__proto__` stays rejected by
+// the library's default protoAction ('error'), including nested keys.
+const jsonBig = JSONbig({ constructorAction: 'preserve' })
+
+/**
+ * Parse JSON that may contain Quint names such as `constructorPanicked`.
+ *
+ * Number handling matches the default `JSONbig.parse`: integers longer than
+ * 15 digits are bignumber.js values, shorter ones stay JavaScript numbers.
+ */
+export function parseJsonBig(text: string): any {
+  return jsonBig.parse(text, (key, value) => {
+    if (key === 'constructor') {
+      throw new SyntaxError('Object contains forbidden constructor property')
+    }
+    return value
+  })
+}
 
 // Preprocess troublesome types so they are represented in JSON.
 //

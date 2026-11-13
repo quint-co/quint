@@ -43,8 +43,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.evaluator == 'true' }}
     runs-on: ubuntu-latest
+    # Read-only on purpose: fork PRs never get a write token on `pull_request`.
+    # The comment is posted by benchmark-comment.yml from the uploaded artifact.
     permissions:
-      pull-requests: write
       contents: read
     defaults:
       run:
@@ -66,22 +67,34 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
 
-      # --- Run benchmarks on main (baseline) ---
-      - name: Checkout main branch
-        run: git checkout main
+      # Branch names of fork PRs don't exist in this repo, so we work with SHAs.
+      # HEAD is the merge of the PR into its base, and HEAD^1 is that base.
+      - name: Record commits to compare
+        id: commits
+        run: |
+          echo "pr=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            echo "base=${{ github.event.merge_group.base_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "base=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Install Quint (main)
+      # --- Run benchmarks on base (baseline) ---
+      - name: Checkout base commit
+        run: git checkout ${{ steps.commits.outputs.base }}
+
+      - name: Install Quint (base)
         run: cd ../quint && npm ci && npm run compile && npm link
 
-      - name: Build benchmarks (main)
+      - name: Build benchmarks (base)
         run: cargo build --release --benches
 
-      - name: Run benchmarks (main)
+      - name: Run benchmarks (base)
         run: cargo criterion --message-format=json > baseline_results.json
 
       # --- Run benchmarks on PR branch ---
-      - name: Checkout PR branch
-        run: git checkout ${{ github.head_ref }}
+      - name: Checkout PR commit
+        run: git checkout ${{ steps.commits.outputs.pr }}
 
       - name: Install Quint (PR)
         run: cd ../quint && npm ci && npm run compile && npm link
@@ -96,6 +109,9 @@ jobs:
       - name: Process benchmark results
         id: benchmark-processing
         uses: actions/github-script@v7
+        env:
+          # A benchmark slower than this (in %) fails the check
+          REGRESSION_THRESHOLD: 10
         with:
           script: |
             const fs = require('fs');
@@ -136,12 +152,18 @@ jobs:
             comment += '| Benchmark | Main | PR | Change |\n';
             comment += '|-----------|------|-----|--------|\n';
 
+            const threshold = Number(process.env.REGRESSION_THRESHOLD);
+            const regressions = [];
+
             for (const name of allBenchmarks) {
               const baseTime = baseline.get(name);
               const currTime = current.get(name);
 
               if (baseTime != null && currTime != null) {
                 const changePercent = ((currTime - baseTime) / baseTime) * 100;
+                if (changePercent > threshold) {
+                  regressions.push(`${name} (+${changePercent.toFixed(1)}%)`);
+                }
                 let changeStr;
                 if (Math.abs(changePercent) < 2) {
                   changeStr = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
@@ -158,20 +180,28 @@ jobs:
               }
             }
 
-            core.setOutput('benchmark-comment', comment);
+            if (regressions.length > 0) {
+              comment += `\n:x: ${regressions.length} benchmark(s) regressed by more than ${threshold}%.\n`;
+            }
 
-      - name: Find existing comment
-        uses: peter-evans/find-comment@v3
-        id: find-comment
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: "Benchmark Results"
+            await core.summary.addRaw(comment).write();
+            fs.writeFileSync('benchmark-comment.md', comment);
+            fs.writeFileSync('pr-number', String(context.payload.pull_request?.number ?? ''));
+            core.setOutput('regressions', regressions.join(', '));
 
-      - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Upload comment for benchmark-comment.yml
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.benchmark-processing.outputs.benchmark-comment }}
-          edit-mode: replace
+          name: benchmark-comment
+          path: |
+            benchmark-comment.md
+            pr-number
+
+      - name: Fail on significant regressions
+        if: steps.benchmark-processing.outputs.regressions != ''
+        env:
+          REGRESSIONS: ${{ steps.benchmark-processing.outputs.regressions }}
+        run: |
+          echo "::error::Benchmarks regressed by more than the threshold: $REGRESSIONS"
+          exit 1

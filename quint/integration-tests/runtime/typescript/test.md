@@ -85,13 +85,21 @@ bash -
       --main=gradualPonziTest \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
-### OK on test with the default module
+### Default module is found when it has no tests
 
 See [#1195](https://github.com/informalsystems/quint/issues/1195).
+The file's only module is named `t`, not the filename. Resolving that module
+must not report `QNT405`. The module defines no tests, so `quint test` reports
+that nothing matched and exits non-zero (#2056).
 
-<!-- !test exit 0 -->
-<!-- !test check test the default module -->
+<!-- !test exit 1 -->
+<!-- !test in test the default module -->
     quint test --backend=typescript ./testFixture/_1050diffName.qnt
+
+<!-- !test err test the default module -->
+```
+error: no tests matched. By default, quint test runs definitions whose names end with "Test". Use --match to select other names (for example, --match '.*')
+```
 
 ### Tests works as expected
 
@@ -532,4 +540,113 @@ rm NoExpectTest.itf.json WithExpectTest.itf.json
 ```
 6
 6
+```
+
+### No tests matched
+
+Regression test for [#2056](https://github.com/quint-co/quint/issues/2056).
+Without `--match`, `quint test` runs definitions whose names end with `Test`.
+When that filter (or an explicit `--match`) selects nothing, the command must
+say so and exit non-zero instead of looking like a passing suite.
+
+<!-- !test exit 1 -->
+<!-- !test in no tests matched -->
+    quint test --backend=typescript --main=trap1 ./testFixture/noMatchingTests.qnt
+
+<!-- !test err no tests matched -->
+```
+error: no tests matched. By default, quint test runs definitions whose names end with "Test". Use --match to select other names (for example, --match '.*')
+```
+
+### Default match runs names ending in Test
+
+<!-- !test exit 0 -->
+<!-- !test in default test match -->
+```
+output=$(quint test --backend=typescript --seed=1 --main=withDefaultTest ./testFixture/noMatchingTests.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out default test match -->
+```
+
+  withDefaultTest
+    ok runOneTest passed 1 test(s)
+
+  1 passing (duration)
+```
+
+### Explicit --match runs a name that does not end in Test
+
+<!-- !test exit 0 -->
+<!-- !test in explicit match -->
+```
+output=$(quint test --backend=typescript --seed=1 --main=trap1 --match=runOne ./testFixture/noMatchingTests.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out explicit match -->
+```
+
+  trap1
+    ok runOne passed 1 test(s)
+
+  1 passing (duration)
+```
+
+### Explicit --match that selects nothing fails
+
+<!-- !test exit 1 -->
+<!-- !test in match selects nothing -->
+    quint test --backend=typescript --main=withDefaultTest --match=doesNotExist ./testFixture/noMatchingTests.qnt
+
+<!-- !test err match selects nothing -->
+```
+error: no tests matched --match 'doesNotExist'. By default, quint test runs definitions whose names end with "Test". Use --match to select other names (for example, --match '.*')
+```
+
+### No tests matched is included in `--out`
+
+`--out` suppresses stderr, so the diagnostic has to be in the JSON `errors`
+array. Empty `passed`, `failed`, and `ignored` arrays are not enough to tell
+this failure from a run that never recorded a result.
+
+<!-- !test exit 1 -->
+<!-- !test in no tests matched is reported in --out -->
+```
+quint test --backend=typescript --main=trap1 --out=no-match-out.json ./testFixture/noMatchingTests.qnt 2>no-match-out.err || status=$?
+jq -c '{explanation: .errors[0].explanation, passed, failed, ignored}' no-match-out.json || exit 3
+if [ -s no-match-out.err ]; then
+  cat no-match-out.err >&2
+  exit 2
+fi
+rm no-match-out.json no-match-out.err
+exit "${status:-0}"
+```
+
+<!-- !test out no tests matched is reported in --out -->
+```
+{"explanation":"no tests matched. By default, quint test runs definitions whose names end with \"Test\". Use --match to select other names (for example, --match '.*')","passed":[],"failed":[],"ignored":[]}
+```
+
+<!-- !test exit 1 -->
+<!-- !test in match selects nothing is reported in --out -->
+```
+quint test --backend=typescript --main=withDefaultTest --match=doesNotExist --out=no-match-match-out.json ./testFixture/noMatchingTests.qnt 2>no-match-match-out.err || status=$?
+jq -c '{explanation: .errors[0].explanation, passed, failed, ignored}' no-match-match-out.json || exit 3
+if [ -s no-match-match-out.err ]; then
+  cat no-match-match-out.err >&2
+  exit 2
+fi
+rm no-match-match-out.json no-match-match-out.err
+exit "${status:-0}"
+```
+
+<!-- !test out match selects nothing is reported in --out -->
+```
+{"explanation":"no tests matched --match 'doesNotExist'. By default, quint test runs definitions whose names end with \"Test\". Use --match to select other names (for example, --match '.*')","passed":[],"failed":[],"ignored":[]}
 ```

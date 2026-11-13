@@ -18,18 +18,18 @@ import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
 import { LookupDefinition, LookupTable } from '../names/base'
-import { reviveQuintError } from '../jsonHelper'
+import { parseJsonBig, reviveQuintError } from '../jsonHelper'
 import { ItfState, ItfValue, diagnosticsOfItf, ofItf, pendingDiagnosticsOfItf } from '../itf'
 import { Presets, SingleBar } from 'cli-progress'
 import readline from 'readline'
 import { spawn } from 'child_process'
-import { QuintError, isQuintError } from '../quintError'
+import { QuintError } from '../quintError'
 import { TestResult } from '../runtime/testing'
 import { List } from 'immutable'
 import { nameWithNamespaces } from '../runtime/impl/builder'
 import { Either, left, right } from '@sweet-monads/either'
 import { getRustEvaluatorPath } from './binaryManager'
-import { bigintCheckerReplacer } from './helpers'
+import { rustEvaluatorReplacer } from './helpers'
 
 export type ParsedQuint = {
   modules: QuintModule[]
@@ -114,7 +114,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed: Outcome = JSONbig.parse(output)
+      const parsed: Outcome = parseJsonBig(output)
       parsed.errors = parsed.errors.map(reviveQuintError)
 
       // Convert traces to ITF and ensure seed is bigint Note: When a
@@ -200,7 +200,7 @@ export class CommandWrapper {
     const output = result.value
 
     try {
-      const parsed: TestResult = JSONbig.parse(output)
+      const parsed: TestResult = parseJsonBig(output)
       parsed.errors = parsed.errors.map(reviveQuintError)
 
       // Convert seed to bigint
@@ -257,7 +257,7 @@ export class CommandWrapper {
     }
 
     try {
-      const parsed = JSONbig.parse(result.value)
+      const parsed = parseJsonBig(result.value)
       const values: ItfValue[] = []
       for (const r of parsed.results) {
         if (r.error) {
@@ -283,17 +283,7 @@ export class CommandWrapper {
     const exe = await getRustEvaluatorPath()
     const args = [command]
 
-    // Serialize input with BigInt validation
-    let inputStr: string
-    try {
-      inputStr = JSONbig.stringify(input, bigintCheckerReplacer)
-    } catch (error) {
-      // If replacer throws a QuintError for out-of-bounds integers, return it
-      if (isQuintError(error)) {
-        return left(error)
-      }
-      throw error
-    }
+    const inputStr = JSONbig.stringify(input, rustEvaluatorReplacer)
 
     debugLog(this.verbosityLevel, `Starting Rust evaluator with command: ${command}`)
 

@@ -129,8 +129,6 @@ export type ErrorCode =
   | 'QNT516'
   /* QNT517: Rust evaluator killed by signal */
   | 'QNT517'
-  /* QNT600: Integer literal is outside the supported range for the Rust evaluator */
-  | 'QNT600'
   /* QNT601: Integer overflow in the rust evaluator */
   | 'QNT601'
 

@@ -581,6 +581,49 @@ rm run-with-n-traces-itf-violation*.itf.json
 "violation"
 ```
 
+### Run writes each run once when runs cannot be extended
+
+Regression test: a run that ends because `step` is disabled is recorded only once.
+With `--n-traces` equal to `--max-samples`, every run is written exactly once.
+
+<!-- !test in run with n-traces writes each run once -->
+```
+quint run --backend=typescript --out-itf=run-each-run-once.itf.json --n-traces=10 --max-samples=10 \
+  --max-steps=10 --seed=0x2 --verbosity=0 ./testFixture/simulator/stopCounter.qnt
+ls run-each-run-once*.itf.json | wc -l | tr -d ' '
+for f in run-each-run-once*.itf.json; do jq -c '.states' $f; done | sort -u | wc -l | tr -d ' '
+rm run-each-run-once*.itf.json
+```
+
+<!-- !test out run with n-traces writes each run once -->
+```
+10
+10
+```
+
+### Trace length statistics count each run once
+
+Regression test: when some runs cannot be extended and others reach `--max-steps`,
+the trace length statistics agree with the written traces, one per run.
+
+<!-- !test in run trace statistics count each run once -->
+```
+quint run --backend=typescript --out-itf=run-stats-once.itf.json --n-traces=20 --max-samples=20 \
+  --max-steps=2 --seed=0x2 ./testFixture/simulator/stopCounter.qnt \
+  | sed -n 's/^Trace length statistics: //p' > run-stats-once-printed.txt
+for f in run-stats-once*.itf.json; do jq '.states | length' $f; done \
+  | awk 'NR == 1 { min = $1; max = $1 }
+         { sum += $1; if ($1 < min) min = $1; if ($1 > max) max = $1 }
+         END { printf "max=%d, min=%d, average=%.2f\n", max, min, sum / NR }' > run-stats-once-written.txt
+diff run-stats-once-printed.txt run-stats-once-written.txt && echo "statistics match the written traces"
+rm run-stats-once*.itf.json run-stats-once-printed.txt run-stats-once-written.txt
+```
+
+<!-- !test out run trace statistics count each run once -->
+```
+statistics match the written traces
+```
+
 ### run fails on invalid seed
 
 <!-- !test exit 1 -->

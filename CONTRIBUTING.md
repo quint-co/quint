@@ -6,6 +6,7 @@ Quint, whether it is by reporting issues, suggesting features, or writing code.
 ## Table of Contents
 
 - [Note on AI\-assisted contributions](#note-on-ai-assisted-contributions)
+- [Licensing and Intellectual Property](#licensing-and-intellectual-property)
 - [Source code structure](#source-code-structure)
 - [Developer docs](#developer-docs)
 - [Dependencies](#dependencies)
@@ -56,6 +57,24 @@ locally and check that it works as you expect it to.
 AI-assisted PRs which do not meet all of the
 above requirements may be closed at any time by maintainers.
 
+## Licensing and Intellectual Property
+
+Quint is an open-source project licensed under the [Apache License
+2.0](./LICENSE).
+
+By submitting a contribution to this repository, you agree that:
+
+- Your contribution is submitted under the Apache License 2.0, including the
+  applicable copyright and patent licenses.
+- You have the necessary rights and permissions to submit your contribution,
+  including any required authorization from your employer or other rights
+  holders.
+- Your contribution does not knowingly infringe the intellectual property rights
+  of others.
+
+Please do not submit proprietary code or third-party materials unless you have
+the necessary permissions and their licenses are compatible with this project.
+
 ## Source code structure
 
 This repository hosts all Quint pieces:
@@ -68,8 +87,6 @@ This repository hosts all Quint pieces:
 - [vscode/quint-vscode/server](./vscode/quint-vscode/server) Quint's Language
   Server (LSP)
 - [docs](./docs) source code for Quint's website
-- [tlc](./tlc) scripts for running the TLC model checker with Quint specs, while
-  we don't have proper integration
 
 ## Developer docs
 
@@ -612,7 +629,7 @@ the Rust evaluator and the VSCode extension + the language server.
 
   This will trigger the release and publication of the package to npm and
   GitHub.
-  
+
 ### Evaluator
 
 The evaluator is the latest addition to the Quint repository, and it's release

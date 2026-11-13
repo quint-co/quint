@@ -142,7 +142,11 @@ jobs:
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - run: npm install -g txm
+      # Wait until the Apalache server accepts connections before running the
+      # suite: Quint tries the server once and otherwise starts its own on the
+      # same port, so parallel tests would race for it.
       - name: Verification integration tests
+        shell: bash
         run: |
           cd ./quint
           make -C .. apalache
@@ -150,7 +154,13 @@ jobs:
           mkdir -p ~/.quint/apalache-dist-$VERSION
           cp -r _build/apalache ~/.quint/apalache-dist-$VERSION/
           _build/apalache/bin/apalache-mc server &
-          sleep 5
+          server=$!
+          trap 'kill "$server"' EXIT
+          for _ in $(seq 120); do
+            (exec 3<>/dev/tcp/localhost/8822) 2>/dev/null && break
+            sleep 1
+          done
+          (exec 3<>/dev/tcp/localhost/8822) 2>/dev/null
           npm run verification-integration
         env:
           GH_TOKEN: ${{ github.token }}

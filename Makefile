@@ -4,6 +4,13 @@
 # @file
 # @version 0.1
 
+# Print the command that links the compiled extension into VSCode
+ifeq ($(OS),Windows_NT)
+PRINT_VSCODE_LINK = $(info New-Item -ItemType Junction -Path "$$env:USERPROFILE\.vscode\extensions\informal.quint-vscode" -Target "$(subst /,\,$(CURDIR))\vscode\quint-vscode")
+else
+PRINT_VSCODE_LINK = echo "ln -s $(PWD)/vscode/quint-vscode/ $(HOME)/.vscode/extensions/informal.quint-vscode"
+endif
+
 .PHONY: vscode quint local tutorials docs all apalache examples ./examples/README.md
 
 all: vscode
@@ -18,7 +25,7 @@ vscode: quint
 	cd vscode/quint-vscode; npm install; npm run compile
 	@echo ""
 	@echo "To install the compiled extension in VSCode, run this once:"
-	@echo "ln -s $(PWD)/vscode/quint-vscode/ $(HOME)/.vscode/extensions/informal.quint-vscode"
+	@$(PRINT_VSCODE_LINK)
 
 # Build quint and vscode from the sources without publishing them with npm
 local: quint
@@ -27,7 +34,7 @@ local: quint
 	cd vscode/quint-vscode; npm install; npm run compile
 	@echo ""
 	@echo "To install the compiled extension in VSCode, run this once:"
-	@echo "ln -s $(PWD)/vscode/quint-vscode/ $(HOME)/.vscode/extensions/informal.quint-vscode"
+	@$(PRINT_VSCODE_LINK)
 
 # Generate the tutorials
 tutorials:

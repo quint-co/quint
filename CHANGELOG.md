@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
+
+### Changed
+
+- The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
+- The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
+- With the Rust backend, a `--seed` from a previous version can produce a different trace in this version for specs that pick from `setOfMaps` with `oneOf`.
+
+### Deprecated
+### Removed
+### Fixed
+
+- A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
+- `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0. With `--out`, that diagnostic is included in the JSON `errors` array (#2056)
+- Fixed `flatten` in the Rust evaluator silently returning an empty set for infinite inner sets, e.g. `Set(Int).flatten()`. It now reports `QNT501`
+- Fixed the Rust backend treating equal values as different: sets with different representations as set elements and map keys (e.g. `Set(1.to(3), Set(1, 2, 3)).size()` returned 2 and `Map(2.to(4) -> 1).get(Set(2, 3, 4))` failed), maps with keys added in a different order as set elements, and empty `tuples` and `setOfMaps` built from different sets (e.g. `tuples(Set(), Set(1)) == tuples(Set(2), Set())` returned `false`). Map keys are no longer normalized, which speeds up map operations (#1633)
+
+### Security
+
+## v0.33.1 -- 2026-10-28
+
+### Added
 ### Changed
 
 - Upgraded the default Apalache version to 0.62.4.
@@ -16,10 +39,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Rust backend output parsing accepts variable names that contain `constructor`, such as `constructorPanicked`, and still rejects the exact `constructor` key (#2041)
 - The REPL now resolves `import ... from` paths relative to the loaded file instead of the working directory, so `quint -r dir/spec.qnt` works when `spec.qnt` imports other files (#1449)
 - The REPL now discards definitions from inputs rejected by static analysis. Before, they stayed in the lookup table and made the REPL crash with `invalid IR reference: type constructor ... has no type definition` after an unknown type alias was used, or repeat a type application error on every later input
+- Fixed `quint run` recording a run twice when `step` cannot be extended. Such runs were written twice with `--n-traces` and `--out-itf`, the shortest traces were dropped when `--n-traces` equals `--max-samples`, and the trace length statistics counted them twice
+- Fixed the Rust evaluator counting runs that cannot be extended or that violate an invariant twice in the trace length statistics
+- Fixed the Rust evaluator failing to start on Linux systems with GLIBC older than 2.39, such as Ubuntu 20.04 and 22.04, with ``version `GLIBC_2.39' not found``. Quint now uses Rust evaluator v0.7.1, whose Linux binaries only require GLIBC 2.31 (#2051)
+- Fixed launching the Apalache server on Windows, which failed with `EINVAL` on Node.js 18.20.2, 20.12.2, 21.7.2 and newer (#2009)
+- Fixed launching the Apalache server on Windows when the Quint home directory (by default, the user's home directory) contains spaces
+- Quint now stops the Apalache server it started when it receives SIGTERM or SIGHUP. Before, the server kept running and held its port
+- Fixed `Cannot find module 'protobufjs/ext/descriptor'` when Quint is installed globally with pnpm (#2009)
+- The Emacs plugins (`quint-mode.el` and `lsp-quint.el`) now declare `lexical-binding`, so Emacs 31 no longer warns about a missing `lexical-binding` cookie when loading them (#2042)
 
 ### Security
+
+- Updated `adm-zip` 0.5→0.6 to fix vulnerabilities in zip parsing and extraction, used when installing the Rust evaluator on Windows (#2050)
 
 ## v0.33.0 -- 2026-09-28
 

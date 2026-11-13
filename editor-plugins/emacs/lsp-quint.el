@@ -1,4 +1,4 @@
-;;; lsp-quint.el --- Quint LSP Client settings
+;;; lsp-quint.el --- Quint LSP Client settings  -*- lexical-binding: t; -*-
 ;;;
 ;; Copyright (C) 2023 Gabriela Moreira
 

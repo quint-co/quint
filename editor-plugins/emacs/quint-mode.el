@@ -1,4 +1,4 @@
-;;; quint-mode.el --- Major mode for editing Quint
+;;; quint-mode.el --- Major mode for editing Quint  -*- lexical-binding: t; -*-
 
 ;; Author: Gabriela Moreira (gabriela@informal.systems)
 ;; URL: https://github.com/informalsystems/quint

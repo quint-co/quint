@@ -1,0 +1,57 @@
+name: Benchmark comment
+
+# Posts the comment produced by the Benchmark workflow. It runs in the context of
+# the base repository, so it has a write token even for PRs opened from forks.
+# It never checks out or runs PR code: it only reads the uploaded artifact.
+on:
+  workflow_run:
+    workflows: [Benchmark]
+    types: [completed]
+
+jobs:
+  comment:
+    name: Post benchmark comment
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Download benchmark comment
+        id: download
+        continue-on-error: true # No artifact when the evaluator didn't change
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-comment
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read PR number
+        id: pr
+        if: steps.download.outcome == 'success'
+        run: |
+          number=$(cat pr-number)
+          # The artifact comes from untrusted code, so only accept a number
+          if ! [[ "$number" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid PR number in artifact"
+            exit 1
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Find existing comment
+        if: steps.pr.outputs.number
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ steps.pr.outputs.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "Benchmark Results"
+
+      - name: Create or update comment
+        if: steps.pr.outputs.number
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          body-path: benchmark-comment.md
+          edit-mode: replace

@@ -301,3 +301,42 @@ fn tictactoe_best_traces_quality_order() {
         );
     }
 }
+
+/// Simulates `fixtures/stop_counter.qnt`, storing every run, and checks that
+/// the trace length statistics count each run once
+fn assert_trace_statistics_count_each_run_once(inv: &str) {
+    let file_path: &Path = Path::new("fixtures/stop_counter.qnt");
+
+    let parsed = helpers::parse_from_path(file_path, "init", "step", Some(inv), None).unwrap();
+    // Some runs cannot be extended after the first step, others reach the last step
+    let samples = 100;
+    let config = SimulationConfig {
+        steps: 2,
+        samples,
+        n_traces: samples,
+        seed: Some(0x42),
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+    };
+    let result = parsed.simulate(config, progress::no_report()).unwrap();
+    assert_eq!(result.best_traces.len(), samples);
+
+    let lengths: Vec<usize> = result.best_traces.iter().map(|t| t.states.len()).collect();
+    assert!(lengths.contains(&2) && lengths.contains(&3));
+
+    let stats = result.trace_statistics;
+    let average = lengths.iter().sum::<usize>() as f64 / lengths.len() as f64;
+    assert_eq!(stats.average_trace_length, average);
+    assert_eq!(stats.min_trace_length, *lengths.iter().min().unwrap());
+    assert_eq!(stats.max_trace_length, *lengths.iter().max().unwrap());
+}
+
+#[test]
+fn trace_statistics_count_runs_that_cannot_be_extended_once() {
+    assert_trace_statistics_count_each_run_once("alwaysHolds");
+}
+
+#[test]
+fn trace_statistics_count_violating_runs_once() {
+    assert_trace_statistics_count_each_run_once("notStopped");
+}
