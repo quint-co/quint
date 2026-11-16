@@ -184,10 +184,8 @@ impl Value {
 
     pub fn to_itf(&self) -> itf::Value {
         match self.view() {
-            // The TypeScript side parses JSON numbers longer than 15 digits as
-            // bignumber.js values instead of integers, so those are written as
-            // `#bigint`, the standard ITF encoding of integers
-            ValueRef::Int(i) if i.unsigned_abs() < 10u64.pow(15) => itf::Value::Number(i),
+            // https://apalache-mc.org/docs/adr/015adr-trace.html:
+            // every integer, small or big, to be written as `#bigint`
             ValueRef::Int(i) => itf::Value::BigInt(itf::value::BigInt::new(i)),
             ValueRef::BigInt(n) => itf::Value::BigInt(itf::value::BigInt::new(n.clone())),
             ValueRef::Bool(b) => itf::Value::Bool(b),
@@ -228,6 +226,24 @@ impl Value {
                 .collect(),
             ),
             ValueRef::Lambda(_, _) => panic!("Cannot convert Lambda to ITF"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// https://apalache-mc.org/docs/adr/015adr-trace.html
+    #[test]
+    fn ints_are_written_as_bigint() {
+        for n in [-1, 0, 1] {
+            let v = Value::int(n);
+            assert_eq!(
+                serde_json::to_string(&v.to_itf()).unwrap(),
+                format!(r##"{{"#bigint":"{n}"}}"##)
+            );
+            assert_eq!(Value::from_itf(v.to_itf()), v);
         }
     }
 }
