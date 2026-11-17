@@ -86,10 +86,16 @@ function validateArity(
 // NOTE: Assumes all type applications have been resolved by typeApplicationResolution first
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: SolvingFunctionType, table: LookupTable, types?: Map<bigint, TypeScheme>) {
+  constructor(
+    solvingFunction: SolvingFunctionType,
+    table: LookupTable,
+    types?: Map<bigint, TypeScheme>,
+    enforceConstVarMonomorphism: boolean = false
+  ) {
     this.solvingFunction = solvingFunction
     this.table = table
     this.freshVarGenerator = new FreshVarGenerator()
+    this.enforceConstVarMonomorphism = enforceConstVarMonomorphism
     if (types) {
       this.types = types
     }
@@ -109,8 +115,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   // Temporary type map only for types in scope for a certain declaration
   protected typesInScope: Map<bigint, TypeScheme> = new Map()
   // Types which should be considered "in scope" all the time
-  // Used for types of const and var defs, which are not polymorphic
+  // Used for types of const and var defs, which should not be polymorphic in flattened modules
   protected savedTypesInScope: Map<bigint, TypeScheme> = new Map()
+  // Flag to control whether const and var declarations should be treated as monomorphic
+  // This should be true only for flattened modules (where instances have been resolved)
+  protected enforceConstVarMonomorphism: boolean
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -279,9 +288,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   exitDecl(def: QuintDeclaration) {
-    if (def.kind == 'var' || def.kind == 'const') {
+    if (this.enforceConstVarMonomorphism && (def.kind == 'var' || def.kind == 'const')) {
       // Anything in scope should stay in scope after we exit,
-      // as we don't want polymorphism for consts and vars
+      // as we don't want polymorphism for consts and vars in flattened modules
       this.savedTypesInScope = new Map(this.typesInScope)
       return
     }
@@ -414,7 +423,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
 
-      if (def.kind === 'var' || def.kind === 'const') {
+      if (this.enforceConstVarMonomorphism && (def.kind === 'var' || def.kind === 'const')) {
         return this.fetchResult(id).map(t => t.type)
       }
 
