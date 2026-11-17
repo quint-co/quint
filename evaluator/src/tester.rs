@@ -68,6 +68,7 @@ impl TestCase {
             violation: false,
             seed,
         };
+        let mut ignored = false;
 
         for _ in 0..max_samples {
             let prev_rng_state = env.rand.get_state();
@@ -81,8 +82,8 @@ impl TestCase {
             trace.states = std::mem::take(&mut env.trace);
 
             match test_result {
-                Ok(result) => {
-                    if !result.as_bool() {
+                Ok(result) => match result.as_bool_opt() {
+                    Some(false) => {
                         let error =
                             QuintError::new("QNT511", &format!("Test {test_name} returned false"))
                                 .with_reference(test_def_id);
@@ -90,10 +91,16 @@ impl TestCase {
                         trace.violation = true;
                         break;
                     }
-                    if env.rand.get_state() == prev_rng_state {
+                    Some(true) => {
+                        if env.rand.get_state() == prev_rng_state {
+                            break;
+                        }
+                    }
+                    None => {
+                        ignored = true;
                         break;
                     }
-                }
+                },
                 Err(e) => {
                     errors.push(e);
                     break;
@@ -101,7 +108,9 @@ impl TestCase {
             }
         }
 
-        let status = if errors.is_empty() {
+        let status = if ignored {
+            TestStatus::Ignored
+        } else if errors.is_empty() {
             TestStatus::Passed
         } else {
             TestStatus::Failed
