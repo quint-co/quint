@@ -386,6 +386,9 @@ Options:
   --apalache-config      path to an additional Apalache configuration file (in
                          JSON)                                           [string]
   --tlc-config           path to a TLC configuration file (in JSON)      [string]
+  --emit-dir             write a ready-to-check TLC directory instead of
+                         running a checker                               [string]
+  --constraint           TLA+ state constraint, only with --emit-dir     [string]
   --verbosity            control how much output is produced (0 to 5)
                                                             [number] [default: 2]
 ```
@@ -442,6 +445,34 @@ TLC runtime can be configured via `--tlc-config` with a JSON file:
   "workers": "auto"
 }
 ```
+
+### Emitting a directory for TLC
+
+To run TLC yourself, for example under another tool or with your own Java
+options, `--emit-dir` compiles the specification to TLA+ and writes everything
+TLC needs into a directory, without starting a checker:
+
+```sh
+quint verify myspec.qnt --emit-dir out --invariants safe other
+```
+
+The directory holds the compiled module `<Module>.tla`, the standard modules it
+imports (`Apalache.tla`, `Variants.tla`, `Option.tla`), a module
+`<Module>_Quint.tla` that extends it, and `<Module>_Quint.cfg`. Run TLC on the
+latter two:
+
+```sh
+cd out && java -cp apalache.jar tlc2.TLC -config myspec_Quint.cfg myspec_Quint.tla
+```
+
+Each name given to `--invariants` is defined in the extending module as
+`q_inv_<name>` and listed as its own `INVARIANT` in the configuration, instead
+of the combined `q_inv`, so TLC reports which invariant was violated. Names are
+added only when `--emit-dir` is used; a normal `--backend tlc` run is unchanged.
+
+`--constraint <expression>` adds a TLA+ state constraint to the emitted
+directory (`q_constraint`, listed as `CONSTRAINT`), for example to bound a
+model. It is an error without `--emit-dir`.
 
 ### Output
 

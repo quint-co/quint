@@ -385,7 +385,6 @@ const verifyCmd = {
       .option('server-endpoint', {
         desc: 'Apalache server endpoint hostname:port',
         type: 'string',
-        default: 'localhost:8822',
       })
       .option('backend', {
         desc: 'the backend to use for verification',
@@ -397,7 +396,10 @@ const verifyCmd = {
         desc: 'path to a TLC configuration file (in JSON)',
         type: 'string',
       })
+      .option('emit-dir', { desc: 'write a ready-to-check directory instead of running a checker', type: 'string' })
+      .option('constraint', { desc: 'TLA+ state constraint', type: 'string' })
       .coerce('server-endpoint', (arg: string) => {
+        if (arg === undefined) return undefined
         const errorOrEndpoint = parseServerEndpoint(arg)
         if (errorOrEndpoint.isLeft()) {
           throw new Error(errorOrEndpoint.value)
@@ -413,6 +415,9 @@ const verifyCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) => {
+    if (!args.serverEndpoint && !args.emitDir) {
+      args.serverEndpoint = { hostname: 'localhost', port: 8822 }
+    }
     if (args.verbosity === undefined) {
       args.verbosity = args.backend === 'tlc' ? 3 : verbosity.defaultLevel
     }
