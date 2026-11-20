@@ -524,6 +524,20 @@ export function quintRepl(
   let shouldExitAfterReplInput = false
   // Promise chain to serialize line processing (Rust evaluator can only handle one request at a time)
   let lineProcessingChain = Promise.resolve()
+  // Set when readline closes, e.g., when piped stdin ends while lines are
+  // still being processed.
+  let readlineClosed = false
+
+  // Show the prompt. From Node.js 24 on, `rl.prompt()` throws ERR_USE_AFTER_CLOSE
+  // once readline is closed, so in that case we write the prompt ourselves.
+  // This keeps the output of piped input the same across Node.js versions.
+  function showPrompt() {
+    if (readlineClosed) {
+      out(rl.getPrompt())
+    } else {
+      rl.prompt()
+    }
+  }
 
   // Helper to shutdown the evaluator and exit cleanly
   async function shutdownAndExit() {
@@ -545,13 +559,14 @@ export function quintRepl(
     lineProcessingChain = lineProcessingChain
       .then(async () => {
         await consumeLine(line)
-        rl.prompt()
+        showPrompt()
       })
       .catch(err => {
         // Handle errors in line processing
         out(chalk.red(`Error processing line: ${err}\n`))
       })
   }).on('close', async () => {
+    readlineClosed = true
     // If we're processing replInput commands, or initialization hasn't completed,
     // or we have queued lines, defer the exit. This prevents a race condition
     // where piped stdin triggers 'close' before the async initialization completes.
@@ -600,10 +615,10 @@ export function quintRepl(
     initializationComplete = true
     if (lineQueue.length > 0) {
       // Show initial prompt before processing queued lines
-      rl.prompt()
+      showPrompt()
       for (const queuedLine of lineQueue) {
         await consumeLine(queuedLine)
-        rl.prompt()
+        showPrompt()
       }
     }
     lineQueue.length = 0
@@ -615,7 +630,7 @@ export function quintRepl(
       return
     }
 
-    rl.prompt()
+    showPrompt()
   })().catch(err => {
     out(chalk.red(`Error in Rust REPL server: ${err}\n`))
     exit()

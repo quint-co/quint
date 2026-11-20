@@ -1,6 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert, expect } from 'chai'
 import { once } from 'events'
+import * as readline from 'readline'
 import { PassThrough, Writable } from 'stream'
 import { Buffer } from 'buffer'
 import chalk from 'chalk'
@@ -963,5 +964,35 @@ describe('repl ok', () => {
       |... `
     )
     await assertRepl(input, output)
+  })
+
+  it('piped input that ends before the REPL is initialized', async () => {
+    // From Node.js 24 on, `rl.prompt()` throws once readline is closed, which
+    // happens as soon as piped stdin ends. Simulate that on any Node.js version.
+    const proto = readline.Interface.prototype as any
+    const originalPrompt = proto.prompt
+    proto.prompt = function (this: any, ...args: any[]) {
+      if (this.closed) {
+        throw Object.assign(new Error('readline was closed'), { code: 'ERR_USE_AFTER_CLOSE' })
+      }
+      return originalPrompt.apply(this, args)
+    }
+    const savedChalkLevel = chalk.level
+    chalk.level = 0
+    try {
+      const output = new ToStringWritable()
+      const input = new PassThrough()
+      const exited = new Promise<void>(resolve => {
+        quintRepl(input, output, { verbosity: 2, backend: 'rust' }, resolve)
+      })
+      // like `echo "1 + 1\nSet(2 + 3)" | quint`
+      input.end('1 + 1\nSet(2 + 3)\n')
+      await exited
+
+      expect(output.buffer).to.equal(`${banner}\n>>> 2\n>>> Set(5)\n>>> \n`)
+    } finally {
+      proto.prompt = originalPrompt
+      chalk.level = savedChalkLevel
+    }
   })
 })
