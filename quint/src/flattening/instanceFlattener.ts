@@ -14,7 +14,7 @@
 
 import { compact, flow } from 'lodash'
 import { IdGenerator } from '../idGenerator'
-import { IRTransformer, transformModule } from '../ir/IRTransformer'
+import { IRTransformer, transformDefinition, transformModule } from '../ir/IRTransformer'
 import { addNamespaceToDefinition } from '../ir/namespacer'
 import { QuintApp, QuintDeclaration, QuintModule, QuintName, isDef } from '../ir/quintIr'
 import { LookupTable, builtinNames } from '../names/base'
@@ -126,8 +126,10 @@ class InstanceFlattener implements IRTransformer {
     const newName = [this.currentModuleName!, decl.qualifiedName ?? protoModule.name].join('::')
 
     decl.overrides.forEach(([param, expr]) => {
-      // Find dependencies of `expr` and add those to the new module
-      newModuleDecls.push(...dependentDefinitions(expr, this.lookupTable))
+      // Find dependencies of `expr` and add those to the new module. Their names must be updated the same way as the
+      // names of the instantiated module, so references to definitions imported from instances point to them.
+      const dependencies = dependentDefinitions(expr, this.lookupTable)
+      newModuleDecls.push(...dependencies.map(d => transformDefinition(this, d) as QuintDeclaration))
 
       // Add a definition for the parameter, which replaces the constant in the proto module.
       newModuleDecls.push({

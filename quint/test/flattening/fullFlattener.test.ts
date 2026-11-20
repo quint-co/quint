@@ -250,4 +250,35 @@ describe('flattenModules', () => {
 
     assertFlattenedModule(text)
   })
+
+  // Regression test for https://github.com/informalsystems/quint/issues/1418
+  // `file1` is an override of an instance parameter, and refers to `Listed`, which is both imported from `T` and
+  // brought in again by the instance. The copied `file1` must refer to the instance's `Listed`.
+  describe('can flatten an instance override that refers to a name the instance also imports (#1418)', () => {
+    const text = `module T {
+      type State = | Listed
+      type File = { state: State }
+      def listed(files: int -> File): Set[int] =
+        files.keys().filter(x => files.get(x).state == Listed)
+    }
+
+    module Spec {
+      import T.*
+      const init_files: int -> File
+      var files: int -> File
+      action init = all { files' = init_files }
+      action step = {
+        nondet file_id = oneOf(listed(files))
+        files' = files
+      }
+    }
+
+    module Simple {
+      import T.*
+      pure val file1: File = { state: Listed }
+      import Spec(init_files = Map(1 -> file1)).*
+    }`
+
+    assertFlattenedModule(text)
+  })
 })
