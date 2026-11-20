@@ -57,8 +57,46 @@ describe('processApalacheResult', () => {
       assert.include(printed, '[{1, 2} → {FALSE, TRUE}]')
     }
     const output = chunks.join('')
-    assert.include(output, '[{1, 2} → {FALSE, TRUE}]')
+    assert.include(output, '<unserializable: [{1, 2} → {FALSE, TRUE}]>')
     assert.include(output, '[violation]')
     assert.notInclude(output, 'unsupported operator')
+  })
+
+  it('skips the Rust invariant check when the last state has #unserializable values', async () => {
+    const trace: ItfTrace = {
+      vars: ['v'],
+      states: [{ v: { '#set': [{ '#unserializable': '[{1, 2} → {FALSE, TRUE}]' }] } }],
+    }
+    const res: ApalacheResult<void> = left({
+      explanation: 'found a counterexample',
+      errors: [],
+      traces: [trace],
+    })
+    const stage: TracingStage = {
+      stage: 'running',
+      args: {},
+      path: 's_maps.qnt',
+      sourceCode: new Map(),
+    }
+
+    const warnings: string[] = []
+    const write = process.stdout.write
+    const warn = console.warn
+    process.stdout.write = (() => true) as typeof process.stdout.write
+    console.warn = ((msg?: unknown) => {
+      warnings.push(String(msg))
+    }) as typeof console.warn
+    let result
+    try {
+      // Without the check, the Rust evaluator would be spawned and panic on the state.
+      result = await processApalacheResult(res, 0, 2, stage, ['inv'], [], new Map())
+    } finally {
+      process.stdout.write = write
+      console.warn = warn
+    }
+
+    assert.isTrue(result.isLeft())
+    assert.lengthOf(warnings, 1)
+    assert.include(warnings[0], 'Apalache could not serialize')
   })
 })
