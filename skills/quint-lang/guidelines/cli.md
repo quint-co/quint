@@ -131,7 +131,7 @@ A `[FAIL]` shows which `.expect()` failed and the state at failure.
 
 ## `quint verify` — Apalache (Exhaustive)
 
-Checks invariants across **all** reachable states up to `--max-steps`. Requires Java (OpenJDK).
+Checks invariants across **all** reachable states up to `--max-steps`. Requires Java 21 or later (Apalache 0.62.x).
 
 ```bash
 quint verify spec.qnt \
