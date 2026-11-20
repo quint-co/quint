@@ -68,7 +68,10 @@ export function prettyQuintEx(ex: QuintEx): Doc {
       return richtext(chalk.green, `"${ex.value}"`)
 
     case 'name':
-      return text(ex.name)
+      // In a value, a name only comes from an ITF `#unserializable` value:
+      // Apalache's raw text for something it could not serialize. Mark it so
+      // it is not mistaken for Quint syntax.
+      return richtext(chalk.gray, `<unserializable: ${ex.name}>`)
 
     case 'app':
       switch (ex.opcode) {

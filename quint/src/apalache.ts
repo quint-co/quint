@@ -544,10 +544,14 @@ export function apalacheSpawnCommand(
  * (for example while printing a counterexample) would otherwise end the
  * process with status 0 and no error. Call this from that listener and from
  * the verify command's promise chain.
+ *
+ * Errors that reach this point are unexpected, so the stack frames are printed
+ * after the message to keep them debuggable.
  */
 export function exitWithError(err: unknown): never {
   const message = err instanceof Error && err.message.length > 0 ? err.message : String(err)
-  console.error(`error: ${message}`)
+  const frames = err instanceof Error && err.stack ? err.stack.split('\n').filter(l => /^\s+at /.test(l)) : []
+  console.error([`error: ${message}`, ...frames].join('\n'))
   return process.exit(1)
 }
 
@@ -591,11 +595,9 @@ export function stopWithQuint(apalache: ChildProcess, shell: boolean, verbosityL
   process.on('SIGUSR1', exitHandler)
   process.on('SIGUSR2', exitHandler)
   // This listener replaces Node's default crash. Report the error and exit
-  // non-zero; otherwise Quint exits 0 once the event loop drains.
-  process.on('uncaughtException', (err: unknown) => {
-    exitHandler()
-    exitWithError(err)
-  })
+  // non-zero; otherwise Quint exits 0 once the event loop drains. Apalache is
+  // stopped by the 'exit' listener above, which `process.exit` triggers.
+  process.on('uncaughtException', exitWithError)
   process.on('SIGTERM', () => {
     exitHandler()
     process.exit(143)

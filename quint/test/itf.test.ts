@@ -177,4 +177,41 @@ describe('ofItfNormalized', () => {
       assert.equal(unserializable.name, '[{1, 2} → {FALSE, TRUE}]')
     }
   })
+
+  it('normalizes the other values next to an #unserializable value', () => {
+    const itf: ItfTrace = {
+      vars: ['v', 'c', 'b', 'a'],
+      states: [
+        {
+          v: { '#unserializable': '[{1, 2} → {FALSE, TRUE}]' },
+          c: {
+            '#map': [
+              ['c', { '#bigint': '3' }],
+              ['b', { '#bigint': '2' }],
+              ['a', { '#bigint': '1' }],
+            ],
+          },
+          b: { c: { '#bigint': '3' }, b: { '#bigint': '2' }, a: { '#bigint': '1' } },
+          a: { '#set': [{ '#bigint': '3' }, { '#bigint': '2' }, { '#bigint': '1' }] },
+        },
+      ],
+    }
+
+    const [state] = ofItfNormalized(itf)
+    assert(state.kind === 'app' && state.opcode === 'Rec')
+    const expected = buildExpression(`{
+  a: Set(1, 2, 3),
+  b: { a: 1, b: 2, c: 3 },
+  c: Map("a" -> 1, "b" -> 2, "c" -> 3)
+}`)
+    assert(expected.kind === 'app')
+    // fields are sorted, with the unserializable `v` kept raw at the end
+    assert.equal(state.args.length, expected.args.length + 2)
+    assert(
+      zip(state.args.slice(0, expected.args.length), expected.args).every(([a, b]) => quintExAreEqual(a, b)),
+      'expected the serializable values to be normalized'
+    )
+    assert.deepInclude(state.args[expected.args.length], { kind: 'str', value: 'v' })
+    assert.deepInclude(state.args[expected.args.length + 1], { kind: 'name', name: '[{1, 2} → {FALSE, TRUE}]' })
+  })
 })

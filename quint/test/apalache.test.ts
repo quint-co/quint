@@ -44,9 +44,12 @@ function runVerifyExit(mode: 'uncaught' | 'cli'): Promise<{ code: number | null;
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['-r', 'ts-node/register', join(__dirname, 'scripts/verifyExitOnError.ts')], {
       cwd: join(__dirname, '..'),
-      env: { ...process.env, QUINT_VERIFY_EXIT_MODE: mode },
+      // Skip type-checking: the subprocess loads the whole CLI and must finish
+      // well within the mocha timeout.
+      env: { ...process.env, QUINT_VERIFY_EXIT_MODE: mode, TS_NODE_TRANSPILE_ONLY: 'true' },
     })
     let stderr = ''
+    // Kill the child before the mocha timeout, so its stderr reaches the assertion.
     const timer = setTimeout(() => child.kill('SIGKILL'), 20000)
     child.stderr.on('data', chunk => {
       stderr += chunk.toString()
@@ -67,17 +70,17 @@ describe('verify exits non-zero after Apalache handlers are installed (#2074)', 
   const errorLine = 'error: forced reporting failure'
 
   it('reports an unhandled rejection from the uncaughtException listener', async function () {
-    this.timeout(20000)
+    this.timeout(30000)
     const { code, stderr } = await runVerifyExit('uncaught')
     expect(code, stderr).to.equal(1)
     expect(countOf(stderr, errorLine), stderr).to.equal(1)
-    // exitHandler runs in the listener and again on process exit.
-    expect(countOf(stderr, 'shutdown'), stderr).to.equal(2)
-    expect(stderr.indexOf('shutdown'), stderr).to.be.lessThan(stderr.indexOf(errorLine))
+    // The listener exits, and Apalache is stopped once, from the process 'exit' hook.
+    expect(countOf(stderr, 'shutdown'), stderr).to.equal(1)
+    expect(stderr.indexOf(errorLine), stderr).to.be.lessThan(stderr.indexOf('shutdown'))
   })
 
   it('reports a verify-promise rejection once via .catch(exitWithError)', async function () {
-    this.timeout(20000)
+    this.timeout(30000)
     const { code, stderr } = await runVerifyExit('cli')
     expect(code, stderr).to.equal(1)
     expect(countOf(stderr, errorLine), stderr).to.equal(1)
@@ -89,7 +92,7 @@ describe('verify exits non-zero after Apalache handlers are installed (#2074)', 
 })
 
 describe('exitWithError', () => {
-  it('prints the error on stderr and exits non-zero (#2074)', () => {
+  it('prints the error and its stack frames on stderr and exits non-zero (#2074)', () => {
     const exit = process.exit
     const error = console.error
     const messages: string[] = []
@@ -102,7 +105,15 @@ describe('exitWithError', () => {
       }) as typeof console.error
 
       expect(() => exitWithError(new Error('Cannot convert Rec("v") to a runtime value'))).to.throw('exit 1')
-      expect(messages).to.deep.equal(['error: Cannot convert Rec("v") to a runtime value'])
+      expect(messages).to.have.length(1)
+      const [first, ...frames] = messages[0].split('\n')
+      expect(first).to.equal('error: Cannot convert Rec("v") to a runtime value')
+      expect(frames).to.not.be.empty
+      frames.forEach(f => expect(f).to.match(/^\s+at /))
+
+      messages.length = 0
+      expect(() => exitWithError('plain failure')).to.throw('exit 1')
+      expect(messages).to.deep.equal(['error: plain failure'])
     } finally {
       process.exit = exit
       console.error = error

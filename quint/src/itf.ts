@@ -221,12 +221,58 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
  * @returns An array of its states as normalized quint expressions
  */
 export function ofItfNormalized(itf: ItfTrace): QuintEx[] {
-  return ofItf(itf).map(ex => {
-    const value = fromQuintEx(ex)
-    // `#unserializable` ITF values are `name` expressions, which are not runtime
-    // values. Keep them so a counterexample can still be printed.
-    return value.isJust() ? rv.toQuintEx(value.value) : ex
-  })
+  return ofItf(itf).map(normalizeItfExpr)
+}
+
+/**
+ * Normalize an expression produced by `ofItf`, keeping `#unserializable`
+ * values as they are.
+ *
+ * `#unserializable` ITF values are `name` expressions, which are not runtime
+ * values. When a sub-expression contains one, normalize its siblings
+ * individually, so only the unserializable leaves stay raw.
+ */
+function normalizeItfExpr(ex: QuintEx): QuintEx {
+  const value = fromQuintEx(ex)
+  if (value.isJust()) {
+    return rv.toQuintEx(value.value)
+  }
+  switch (ex.kind) {
+    case 'name':
+      return ex
+    case 'app': {
+      const args = ex.args.map(normalizeItfExpr)
+      if (ex.opcode !== 'Rec') {
+        return { ...ex, args }
+      }
+      // Sort the fields by name, as `rv.mkRecord` does
+      const fields = chunk(args, 2).sort(([a], [b]) => {
+        const ka = a.kind === 'str' ? a.value : ''
+        const kb = b.kind === 'str' ? b.value : ''
+        return ka < kb ? -1 : ka > kb ? 1 : 0
+      })
+      return { ...ex, args: fields.flat() }
+    }
+    default:
+      // `ofItf` produces no other kinds; fail as the plain round trip would
+      return rv.toQuintEx(rv.fromQuintEx(ex))
+  }
+}
+
+/**
+ * Whether an ITF value contains a `#unserializable` value anywhere inside it.
+ */
+export function hasUnserializable(value: ItfValue): boolean {
+  if (value === null || typeof value !== 'object') {
+    return false
+  }
+  if (Array.isArray(value)) {
+    return value.some(hasUnserializable)
+  }
+  if (isUnserializable(value)) {
+    return true
+  }
+  return Object.values(value).some(v => hasUnserializable(v as ItfValue))
 }
 
 export function ofItfValue(value: ItfValue, getId: () => bigint): QuintEx {
