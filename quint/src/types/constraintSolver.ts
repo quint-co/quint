@@ -223,6 +223,15 @@ function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
     )
   }
 
+  // Don't inline a parameterized alias that was referenced with no arguments.
+  // Its body still uses the declared parameter names, so binding those names
+  // from two instantiations throws while composing substitutions. The missing
+  // arguments are reported at the reference by TypeApplicationResolver; keep
+  // solving the rest of the constraints instead of cascading a unify error.
+  if ((aliasValue.params?.length ?? 0) > 0) {
+    return right([])
+  }
+
   return unify(table, aliasValue.type, t2)
 }
 
