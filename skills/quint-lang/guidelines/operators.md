@@ -129,6 +129,10 @@ p.iff(q)           // true when p and q have the same truth value
 a.orKeep(vars)     // a is true, OR all vars in vars are unchanged
 a.mustChange(vars) // a is true AND at least one var in vars changed
 
+// Action properties (temporal definitions only): orKeep/mustChange accept next(...)
+always((next(x) > x).orKeep(x))  // TLA+ [][x' > x]_x
+always((Inc or Reset).orKeep(x)) // actions as relations between current and next state
+
 // Action enablement
 enabled(a)         // true when action a's preconditions are satisfiable
 
@@ -138,6 +142,8 @@ a.strongFair(vars) // if a is infinitely often enabled, it eventually fires
 ```
 
 The `vars` argument is a **`Set` of state variables**, so every variable in it must have the **same type** (e.g. `Set(votes, committed)` where both are `Set[int]`). To cover differently-typed variables, group cohesive state into one record variable and pass `Set(localState)`, or pass `Set(theOneVar)`. The official examples use a single variable: `Next.weakFair(Set(x))`.
+
+In temporal definitions, actions are relations between the current and next state: they may appear as arguments of `not`, `==`, `exists`, `forall`, `if`-`else` and set operators, and may take `next(...)` arguments. Inside actions this composition is not allowed: combine with `all { }`/`any { }` and use `nondet` instead of `exists`. Check action and temporal properties with `quint verify --backend tlc`, non-interactively with stdin closed; the default Apalache backend stops at an interactive prompt on temporal properties. Invariants stay with Apalache (bounded, symbolic) or the simulator. A false property such as `always((next(x) < x).orKeep(x))` produces a counterexample.
 
 ### Fairness in practice
 
