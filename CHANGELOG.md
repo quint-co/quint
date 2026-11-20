@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- `quint typecheck` reports an arity error when a parameterized type is used with no arguments (for example `o: Option` instead of `o: Option[a]`), instead of crashing with an internal unification error (#2006)
 - A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
 - `quint test` exits with an error when no definitions match. Previously, a run that selected nothing (including `quint test FILE` with no names ending in `Test`, the default filter) printed only the module name and exited 0. With `--out`, that diagnostic is included in the JSON `errors` array (#2056)
 - Fixed `flatten` in the Rust evaluator silently returning an empty set for infinite inner sets, e.g. `Set(Int).flatten()`. It now reports `QNT501`
