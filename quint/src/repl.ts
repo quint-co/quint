@@ -43,6 +43,8 @@ import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { NameResolver } from './names/resolver'
 import { LookupTable } from './names/base'
 import { diffRuntimeValueDoc } from './runtime/impl/runtimeValueDiff'
+import { builtinNames } from './names/base'
+import { completeQuint } from './replCompletion'
 
 // tunable settings
 export const settings = {
@@ -204,6 +206,14 @@ class ReplState {
   }
 }
 
+// Names that can be used in the current REPL scope, for tab-completion
+function definedNames(state: ReplState): string[] {
+  const defined = [...state.nameResolver.collector.definitionsByName.entries()]
+    .filter(([name, defs]) => defs.length > 0 && !name.startsWith('__') && !name.startsWith('q::'))
+    .map(([name]) => name)
+  return defined.concat(builtinNames)
+}
+
 // The default exit terminates the process.
 // Since it is inconvenient for testing, do not use it in tests :)
 function defaultExit() {
@@ -243,16 +253,18 @@ export function quintRepl(
     }
     out(chalk.gray('\nType ".exit" to exit, or ".help" for more information\n'))
   }
+  // the state
+  const rng = options.seed !== undefined ? newRng(options.seed) : newRng()
+  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator, undefined, undefined, out)
+
   // create a readline interface
   const rl = readline.createInterface({
     input,
     output,
     prompt: prompt(settings.prompt),
+    // read `state` lazily: `.load` replaces the name resolver
+    completer: (line: string) => completeQuint(line, definedNames(state)),
   })
-
-  // the state
-  const rng = options.seed !== undefined ? newRng(options.seed) : newRng()
-  const state: ReplState = new ReplState(options.verbosity, rng, useRustEvaluator, undefined, undefined, out)
 
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -413,7 +425,8 @@ export function quintRepl(
             out(`${r('.seed')}[=<number>]\tSet or get the random seed.\n`)
             out('\nType an expression and press Enter to evaluate it.\n')
             out('When the REPL switches to multiline mode "...", finish it with an empty line.\n')
-            out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL\n')
+            out('\nPress Tab to complete names and commands.\n')
+            out('Press Ctrl+C to abort current expression, Ctrl+D to exit the REPL\n')
             break
 
           case 'exit':

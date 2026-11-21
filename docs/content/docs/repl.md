@@ -42,6 +42,7 @@ Type ".exit" to exit, or ".help" for more information
 ```
 
 You can type `.help` and then press `<ENTER>` for supported REPL commands.
+The REPL also offers basic tab completion for names, keywords and REPL commands.
 
 ## 3. Preloading definitions
 
