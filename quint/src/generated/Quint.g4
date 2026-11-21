@@ -93,6 +93,8 @@ qualifier : 'val'
           | 'run'
           | 'temporal'
           | 'nondet'
+          | INVARIANT
+          | OBSERVATION
           ;
 
 importMod : 'import' name '.' identOrStar (FROM fromSource)?
@@ -322,7 +324,7 @@ identifier : LOW_ID
                this.notifyErrorListeners(err)
              };
 
-keywordAsID : FROM | AS | SET | LIST;
+keywordAsID : FROM | AS | SET | LIST | INVARIANT | OBSERVATION;
 reserved: AND
     | OR
     | IFF
@@ -371,6 +373,8 @@ IMPORT          :   'import';
 EXPORT          :   'export';
 FROM            :   'from';
 AS              :   'as';
+INVARIANT       :   'invariant';
+OBSERVATION     :   'observation';
 
 // An identifier starting with lowercase
 LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+);

@@ -10,7 +10,7 @@ function quintHljs(hljs) {
   const n = {
     keyword: [
       'module', 'import', 'from', 'export', 'as', 'type', 'assume', 'const', 'var',
-      'val', 'def', 'pure', 'nondet', 'action', 'temporal', 'run',
+      'val', 'def', 'pure', 'nondet', 'action', 'temporal', 'run', 'invariant', 'observation',
       'all', 'any', 'if', 'else'
     ],
     literal: [

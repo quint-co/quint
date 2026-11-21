@@ -59,6 +59,8 @@ export type ErrorCode =
   | 'QNT015'
   /* QNT016: Duplicated field on record */
   | 'QNT016'
+  /* QNT017: 'invariant' and 'observation' definitions must be at the top level of a module */
+  | 'QNT017'
   /* QNT098: Cyclic imports */
   | 'QNT098'
   /* QNT099: Found cyclic definitions */

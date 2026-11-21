@@ -32,6 +32,7 @@ import { verbosity } from './verbosity'
 
 import { version } from './version'
 import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
+import { propertyFlagConflicts } from './cliHelpers'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -55,12 +56,33 @@ const compileOpts = (yargs: any) =>
       type: 'string',
     })
     .option('invariant', {
-      desc: 'the invariants to check, separated by commas',
+      desc: 'the invariants to check, separated by commas, instead of the invariant definitions of the main module',
       type: 'string',
     })
     .option('temporal', {
       desc: 'the temporal properties to check, separated by commas',
       type: 'string',
+    })
+
+// Options that turn off the main module's `invariant` definitions, and that select its observations
+const propertyOpts = (yargs: any) =>
+  yargs
+    .option('no-invariant', {
+      desc: 'check no invariants, including the invariant definitions of the main module',
+      type: 'boolean',
+      default: false,
+    })
+    .option('observation', {
+      desc: 'observation to look for: a definition name or an expression. The command stops at the first trace that reaches one, and fails if none is reached. Can be given several times',
+      type: 'array',
+      // One value per flag, so that `--observation obs spec.qnt` leaves the input file alone
+      nargs: 1,
+      default: [],
+    })
+    .option('no-observation', {
+      desc: 'report no observations, including the observation definitions of the main module',
+      type: 'boolean',
+      default: false,
     })
 
 // Chain async CLIProcedures
@@ -247,7 +269,7 @@ const runCmd = {
   command: 'run <input>',
   desc: 'Simulate a Quint specification and (optionally) check invariants',
   builder: (yargs: any) =>
-    defaultOpts(yargs)
+    propertyOpts(defaultOpts(yargs))
       .option('main', {
         desc: 'name of the main module (by default, computed from filename)',
         type: 'string',
@@ -286,19 +308,19 @@ const runCmd = {
         default: 'step',
       })
       .option('invariants', {
-        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        desc: 'space separated list of invariants to check (definition names), instead of the invariant definitions of the main module. All invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
         default: [],
       })
       .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression. Can be used together with --invariants',
+        desc: 'invariant to check, instead of the invariant definitions of the main module: a definition name or an expression. Can be used together with --invariants',
         type: 'string',
-        default: 'true',
       })
       .option('witnesses', {
-        desc: 'space separated list of witnesses to report on (counting for how many traces the witness is true)',
+        desc: 'space separated list of expressions to report on (counting for how many traces each one is true)',
         type: 'array',
         default: [],
+        deprecated: 'declare observation definitions, or use --observation',
       })
       .option('hide', {
         desc: 'space separated list of variable names to hide from the terminal output (does not affect ITF output)',
@@ -343,11 +365,11 @@ const verifyCmd = {
   command: 'verify <input>',
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
-    compileOpts(yargs)
+    propertyOpts(compileOpts(yargs))
       .option('init', { default: 'init' })
       .option('step', { default: 'step' })
       .option('invariants', {
-        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        desc: 'space separated list of invariants to check (definition names), instead of the invariant definitions of the main module. All invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
         default: [],
       })
@@ -435,6 +457,11 @@ const docsCmd = {
 
 // Perform parser input validation.
 const validate = (argv: any, opts: any) => {
+  // yargs parses `--invariant x --no-invariant` as a repeated `--invariant`, so conflicts are reported first
+  const conflicts = propertyFlagConflicts(argv)
+  if (conflicts.length > 0) {
+    throw new Error(conflicts.join('\n'))
+  }
   // Validate that only array options can be specified more than once.
   for (const key in argv) {
     if (key == 'commands' && (argv['_'][0] || 'repl') === 'repl') {

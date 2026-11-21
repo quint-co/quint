@@ -19,6 +19,7 @@ fn run_in_rust(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
 

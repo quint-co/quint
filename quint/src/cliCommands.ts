@@ -52,8 +52,11 @@ import {
   cliErr,
   findMainModule,
   handleMainModuleError,
+  maybePrintCheckedInvariants,
   maybePrintCounterExample,
-  maybePrintWitnesses,
+  maybePrintObservations,
+  maybePrintObserved,
+  notObservedErr,
   outputJson,
   outputTestErrors,
   outputTestResults,
@@ -64,12 +67,15 @@ import {
   writeToJson,
 } from './cliReporting'
 import {
+  declaredProperties,
   deriveVerbosity,
   getInvariants,
+  getObservations,
   guessMainModule,
   isMatchingTest,
   mkErrorMessage,
   noTestsMatchedMessage,
+  observationInvariantName,
   toExpr,
 } from './cliHelpers'
 import { fail } from 'assert'
@@ -100,8 +106,8 @@ interface OutputStage {
   passed?: string[]
   failed?: string[]
   ignored?: string[]
-  // Possible results from 'run'
-  status?: 'ok' | 'violation' | 'failure' | 'error'
+  // Possible results from 'run' and 'verify'
+  status?: 'ok' | 'violation' | 'observed' | 'not observed' | 'failure' | 'error'
   trace?: QuintEx[]
   seed?: bigint
   /* Docstrings by definition name by module name */
@@ -139,6 +145,12 @@ export interface TypecheckedStage extends ParsedStage {
 
 export interface CompiledStage extends TypecheckedStage, AnalysisOutput {
   mainModule: QuintModule
+  /** The invariants that `q::inv` is the conjunction of */
+  invariants: string[]
+  /** The observations that `observationInvariantName(i)` is the negation of */
+  observations: string[]
+  /** The indices in `observations` of the `--observation` names */
+  stoppingObservations: number[]
 }
 
 export interface TestedStage extends LoadedStage {
@@ -401,8 +413,21 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   // We use:
   // - 'invariantString' as the combined invariant string for the simulator to check
   // - 'individualInvariants' for reporting which specific invariants were violated
-  const [invariantString, invariantsList] = getInvariants(prev.args)
+  const [invariantString, invariantsList] = getInvariants(prev.args, declaredProperties(prev, mainName, 'invariant'))
   const individualInvariants = invariantsList.length > 0 ? invariantsList : ['true']
+
+  const { allObservations, stoppingObservations } = getObservations(
+    prev.args,
+    declaredProperties(prev, mainName, 'observation')
+  )
+  const stopping = stoppingObservations.map(i => allObservations[i])
+  if (prev.args.witnesses.length > 0) {
+    console.warn(
+      chalk.yellow(
+        'Warning: --witnesses is deprecated. Declare observation definitions in the spec, or use --observation to stop at the first trace that reaches one.'
+      )
+    )
+  }
 
   const options: SimulatorOptions = {
     init: prev.args.init,
@@ -424,7 +449,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const argsParsingResult = mergeInMany([
     toExpr(prev, prev.args.init, { kind: 'action', flag: 'init' }),
     toExpr(prev, prev.args.step, { kind: 'action', flag: 'step' }),
-    ...[invariantString, ...prev.args.witnesses].map(e => toExpr(prev, e)),
+    ...[invariantString, ...allObservations].map(e => toExpr(prev, e)),
   ])
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
@@ -432,7 +457,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       errors: argsParsingResult.value.map(mkErrorMessage(new Map())),
     })
   }
-  const [init, step, invariant, ...witnesses] = argsParsingResult.value
+  const [init, step, invariant, ...observations] = argsParsingResult.value
 
   let outcome: Outcome
   if (prev.args.backend == 'rust') {
@@ -454,13 +479,14 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         init,
         step,
         invariants: individualInvariantsResult.value,
-        witnesses: witnesses,
+        observations,
       },
       prev.path,
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
       nThreads,
+      stoppingObservations,
       prev.args.seed,
       prev.args.mbt,
       options.onTrace
@@ -472,7 +498,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       init,
       step,
       invariant,
-      witnesses,
+      observations,
+      stoppingObservations,
       prev.args.maxSamples,
       prev.args.maxSteps,
       prev.args.nTraces ?? 1,
@@ -481,6 +508,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
 
   const elapsedMs = Date.now() - startMs
+  const timing = chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
 
   simulator.seed = outcome.bestTraces[0]?.seed
   const states = outcome.bestTraces[0]?.states
@@ -495,11 +523,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   switch (outcome.status) {
     case 'error':
       if (verbosity.hasResults(verbosityLevel)) {
-        console.log(
-          chalk.red(`[error]`) +
-            ' Runtime error ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
-        )
+        console.log(chalk.red(`[error]`) + ' Runtime error ' + timing)
       }
       return cliErr('Runtime error', {
         ...simulator,
@@ -509,20 +533,58 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         errors: outcome.errors.map(mkErrorMessage(prev.sourceMap)),
       })
 
-    case 'ok':
-      if (verbosity.hasResults(verbosityLevel)) {
-        console.log(
-          chalk.green('[ok]') +
-            ' No violation found ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
+    case 'ok': {
+      if (stopping.length > 0) {
+        const notObserved = notObservedErr(
+          verbosityLevel,
+          { ...simulator, trace: states },
+          stopping,
+          'No trace reached',
+          timing,
+          'You may increase --max-samples and --max-steps.'
         )
+        maybePrintCheckedInvariants(verbosityLevel, invariantsList)
+        maybePrintObservations(verbosityLevel, outcome, allObservations)
+        return notObserved
+      }
+
+      const unobserved = allObservations.filter((_, i) => outcome.observingTraces[i] === 0)
+      if (verbosity.hasResults(verbosityLevel)) {
+        if (unobserved.length > 0) {
+          console.log(
+            chalk.yellow('[warning]') +
+              ' No violation found, but no trace reached ' +
+              unobserved.map(o => chalk.yellow(o)).join(', ') +
+              ' ' +
+              timing
+          )
+        } else {
+          console.log(chalk.green('[ok]') + ' No violation found ' + timing)
+        }
         if (verbosity.hasHints(verbosityLevel)) {
           console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
         }
       }
-      maybePrintWitnesses(verbosityLevel, outcome, prev.args.witnesses)
+      maybePrintCheckedInvariants(verbosityLevel, invariantsList)
+      maybePrintObservations(verbosityLevel, outcome, allObservations)
+
+      return right({
+        ...simulator,
+        status: outcome.status,
+        trace: states,
+      })
+    }
+
+    case 'observed':
+      maybePrintObserved(
+        verbosityLevel,
+        outcome.stoppedByObservations.map(i => allObservations[i]),
+        timing
+      )
+      maybePrintCheckedInvariants(verbosityLevel, invariantsList)
+      maybePrintObservations(verbosityLevel, outcome, allObservations)
 
       return right({
         ...simulator,
@@ -532,11 +594,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
     case 'violation':
       if (verbosity.hasResults(verbosityLevel)) {
-        console.log(
-          chalk.red(`[violation]`) +
-            ' Found an issue ' +
-            chalk.gray(`(${elapsedMs}ms at ${Math.round((1000 * outcome.samples) / elapsedMs)} traces/second).`)
-        )
+        console.log(chalk.red(`[violation]`) + ' Found an issue ' + timing)
 
         // Use Rust-provided violated invariants if available, otherwise fall back to TS evaluation
         // Only print individual violations when there are multiple invariants
@@ -551,7 +609,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         console.log(chalk.gray('Use --verbosity=3 to show executions.'))
       }
 
-      maybePrintWitnesses(verbosityLevel, outcome, prev.args.witnesses)
+      maybePrintObservations(verbosityLevel, outcome, allObservations)
 
       return cliErr('Invariant violated', {
         ...simulator,
@@ -601,10 +659,22 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     extraDefsAsText.push(`action q::${flag} = ${name}`)
   }
 
-  const [invariantString, invariantsList] = getInvariants(typechecked.args)
+  const [invariantString, invariantsList] = getInvariants(
+    typechecked.args,
+    declaredProperties(typechecked, mainName, 'invariant')
+  )
   if (invariantsList.length > 0) {
     extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   }
+
+  const { allObservations, stoppingObservations } = getObservations(
+    typechecked.args,
+    declaredProperties(typechecked, mainName, 'observation')
+  )
+  allObservations.forEach((observation, i) => {
+    extraDefsAsText.push(`val ${observationInvariantName(i)} = not(${observation})`)
+  })
+  const properties = { invariants: invariantsList, observations: allObservations, stoppingObservations }
 
   if (args.inductiveInvariant) {
     extraDefsAsText.push(`val q::inductiveInv = ${args.inductiveInvariant}`)
@@ -637,6 +707,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
       // Early return with the original (unflattened) module and its fields
       return right({
         ...typechecked,
+        ...properties,
         mainModule: main,
         main: mainName,
         stage: 'compiling',
@@ -659,6 +730,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   return right({
     ...typechecked,
     ...flattenedAnalysis,
+    ...properties,
     mainModule: flatMain,
     table: flattenedTable,
     main: mainName,

@@ -344,6 +344,10 @@ pub enum OpQualifier {
     Run,
     #[serde(rename = "temporal")]
     Temporal,
+    #[serde(rename = "invariant")]
+    Invariant,
+    #[serde(rename = "observation")]
+    Observation,
 }
 
 /// (De)serialization of integer literals, which can be arbitrarily large. The
@@ -519,6 +523,25 @@ mod tests {
             }
             Err(e) => {
                 panic!("Deserialization failed: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn invariant_and_observation_definitions_are_not_mistaken_for_lambda_parameters() {
+        let json = r#"{
+            "1":{"id":1,"kind":"def","name":"inv","qualifier":"invariant","expr":{"id":3,"kind":"bool","value":true},"depth":0},
+            "2":{"id":2,"kind":"def","name":"obs","qualifier":"observation","expr":{"id":4,"kind":"bool","value":true},"depth":0}
+        }"#;
+
+        let table: LookupTable = serde_json::from_str(json).unwrap();
+
+        for (id, qualifier) in [(1, OpQualifier::Invariant), (2, OpQualifier::Observation)] {
+            match table.get(&id) {
+                Some(LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d))) => {
+                    assert_eq!(d.qualifier, qualifier)
+                }
+                other => panic!("entry {id} deserialized as {other:?}"),
             }
         }
     }

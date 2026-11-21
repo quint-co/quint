@@ -23,7 +23,7 @@ import { QuintError } from '../../quintError'
 import { RuntimeValue, rv } from './runtimeValue'
 import { builtinLambda, builtinValue, lazyBuiltinLambda, lazyOps } from './builtins'
 import { CachedValue, Context, Register } from './Context'
-import { QuintApp, QuintEx, QuintVar } from '../../ir/quintIr'
+import { QuintApp, QuintEx, QuintVar, evaluationQualifier } from '../../ir/quintIr'
 import { LookupDefinition, LookupTable } from '../../names/base'
 import { NamedRegister, VarStorage, initialRegisterValue } from './VarStorage'
 import { List } from 'immutable'
@@ -369,7 +369,7 @@ function buildDefWithMemo(builder: Builder, def: LookupDefinition): EvalFunction
   // For top-level value definitions, we can cache the resulting value, as long as we are careful with state changes.
   const statefulCachingCondition =
     def.kind === 'def' &&
-    (def.qualifier === 'pureval' || def.qualifier === 'val') &&
+    (def.qualifier === 'pureval' || evaluationQualifier(def.qualifier) === 'val') &&
     (def.depth === undefined || def.depth === 0)
 
   if (!statefulCachingCondition) {
@@ -382,7 +382,7 @@ function buildDefWithMemo(builder: Builder, def: LookupDefinition): EvalFunction
 
   // Construct a cached value object (a register with optional value)
   const cachedValue: CachedValue = { value: undefined }
-  if (def.qualifier === 'val') {
+  if (evaluationQualifier(def.qualifier) === 'val') {
     // This definition may use variables, so we need to clear the cache when they change
     builder.varStorage.cachesToClear.push(cachedValue)
   }

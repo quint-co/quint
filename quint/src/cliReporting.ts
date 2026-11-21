@@ -18,7 +18,7 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { DebugMessage, ItfState, ofItfNormalized, toItf } from './itf'
+import { DebugMessage, ItfState, ItfTrace, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left, right } from '@sweet-monads/either'
 import { cwd } from 'process'
@@ -62,26 +62,113 @@ export function maybePrintCounterExample(
 }
 
 /**
- * Print witnesses if the appropriate verbosity is set.
+ * Print how many traces reach each observation, if the appropriate verbosity is set.
  *
  * @param verbosityLevel The verbosity level.
  * @param outcome The simulation outcome.
- * @param witnesses The list of witnesses.
+ * @param observations The list of observations.
  */
-export function maybePrintWitnesses(verbosityLevel: number, outcome: Outcome, witnesses: string[]): void {
-  if (verbosity.hasWitnessesOutput(verbosityLevel)) {
-    if (outcome.witnessingTraces.length > 0) {
-      console.log(chalk.green('Witnesses:'))
+export function maybePrintObservations(verbosityLevel: number, outcome: Outcome, observations: string[]): void {
+  if (verbosity.hasObservationsOutput(verbosityLevel)) {
+    if (outcome.observingTraces.length > 0) {
+      console.log(chalk.green('Observations:'))
     }
-    outcome.witnessingTraces.forEach((n, i) => {
+    outcome.observingTraces.forEach((n, i) => {
       const percentage = chalk.gray(`(${(((1.0 * n) / outcome.samples) * 100).toFixed(2)}%)`)
       console.log(
-        `${chalk.yellow(witnesses[i])} was witnessed in ${chalk.green(n)} trace(s) out of ${
+        `${chalk.yellow(observations[i])} was observed in ${chalk.green(n)} trace(s) out of ${
           outcome.samples
         } explored ${percentage}`
       )
     })
   }
+}
+
+/** Print whether a model checker reached each observation, if the appropriate verbosity is set. */
+export function maybePrintObservationReachability(
+  verbosityLevel: number,
+  observations: string[],
+  reached: boolean[]
+): void {
+  if (!verbosity.hasObservationsOutput(verbosityLevel) || observations.length === 0) {
+    return
+  }
+  console.log(chalk.green('Observations:'))
+  observations.forEach((observation, i) => {
+    if (reached[i]) {
+      console.log(`${chalk.yellow(observation)} was observed`)
+    } else {
+      console.log(`${chalk.yellow(observation)} was ${chalk.red('not observed')}`)
+    }
+  })
+}
+
+/**
+ * Print the invariants that a run checked and found no violation of, if the appropriate verbosity is set.
+ * The invariants are collected from the spec when no flag selects them, so the user cannot tell them from
+ * the command line alone.
+ */
+export function maybePrintCheckedInvariants(verbosityLevel: number, invariants: string[]): void {
+  if (verbosity.hasHints(verbosityLevel) && invariants.length > 0) {
+    console.log(chalk.gray(`Checked invariants: ${invariants.join(', ')}`))
+  }
+}
+
+/** The time since `startMs`, as a model checker's result line ends with it. */
+export function elapsed(startMs: number): string {
+  return chalk.gray(`(${Date.now() - startMs}ms).`)
+}
+
+/** Print that the observations `observed`, given with `--observation`, stopped a run. */
+export function maybePrintObserved(verbosityLevel: number, observed: string[], timing: string): void {
+  if (verbosity.hasResults(verbosityLevel)) {
+    const reached = observed.map(o => chalk.yellow(o)).join(', ')
+    console.log(chalk.green('[observed]') + ` Observed ${reached}, which stopped the run ` + timing)
+  }
+}
+
+/**
+ * Report a run that reached none of the observations given with `--observation`.
+ *
+ * @param summary what was not found, e.g. `No trace reached`, followed by the observations
+ * @param hint how to search further, printed with the hints
+ */
+export function notObservedErr(
+  verbosityLevel: number,
+  stage: TracingStage,
+  observations: string[],
+  summary: string,
+  timing: string,
+  hint?: string
+): CLIProcedure<TracingStage> {
+  if (verbosity.hasResults(verbosityLevel)) {
+    const names = observations.map(o => chalk.yellow(o)).join(', ')
+    console.log(chalk.red('[not observed]') + ` ${summary} ${names} ` + timing)
+    if (hint && verbosity.hasHints(verbosityLevel)) {
+      console.log(chalk.gray(hint))
+    }
+  }
+  return cliErr(observations.length > 1 ? 'Observations not reached' : 'Observation not reached', {
+    ...stage,
+    status: 'not observed',
+    errors: [],
+  })
+}
+
+/**
+ * Report a model checker run that was stopped by `--observation`: print its counterexample,
+ * which reaches the observations `observed`, and succeed with status `observed`.
+ */
+export function processObservedResult(
+  trace: ItfTrace | undefined,
+  observed: string[],
+  startMs: number,
+  verbosityLevel: number,
+  stage: TracingStage
+): CLIProcedure<TracingStage> {
+  const states = printAndSaveTrace(stage, verbosityLevel, trace)
+  maybePrintObserved(verbosityLevel, observed, elapsed(startMs))
+  return right({ ...stage, status: 'observed', errors: [], trace: states })
 }
 
 /**

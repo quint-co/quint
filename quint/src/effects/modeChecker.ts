@@ -17,7 +17,7 @@ import { isDeepStrictEqual as isEqual } from 'node:util'
 import { qualifierToString } from '../ir/IRprinting'
 import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef, evaluationQualifier } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
@@ -92,9 +92,10 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    const [mode, explanation] = modeForEffect(effect, def.qualifier)
+    const qualifier = evaluationQualifier(def.qualifier)
+    const [mode, explanation] = modeForEffect(effect, qualifier)
 
-    if (mode === def.qualifier) {
+    if (mode === qualifier) {
       return
     }
 
@@ -115,7 +116,18 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    if (isMoreGeneral(mode, def.qualifier)) {
+    if (isMoreGeneral(mode, qualifier) && qualifier !== def.qualifier) {
+      // Replacing the qualifier of an `invariant` or `observation` would drop its role, so no fix is offered
+      this.errors.set(def.id, {
+        code: 'QNT200',
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
+          def.qualifier,
+          mode
+        )}, but operator \`${def.name}\` ${explanation}.`,
+        reference: def.id,
+        data: {},
+      })
+    } else if (isMoreGeneral(mode, qualifier)) {
       this.errors.set(def.id, {
         code: 'QNT200',
         message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
@@ -127,7 +139,8 @@ export class ModeChecker implements IRVisitor {
           fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
         },
       })
-    } else {
+    } else if (qualifier === def.qualifier) {
+      // Suggesting a more specific qualifier for an `invariant` or `observation` would drop its role
       this.suggestions.set(def.id, mode)
     }
   }
@@ -167,6 +180,8 @@ function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
     case 'puredef':
       return 'may not interact with state variables'
     case 'val':
+    case 'invariant':
+    case 'observation':
       if (expectedMode === 'def') {
         return 'may not have parameters'
       } else {

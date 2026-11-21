@@ -735,7 +735,7 @@ impl Interpreter {
             init: init_ex,
             step: step_ex,
             invariants: vec![inv_ex],
-            witnesses: vec![],
+            observations: vec![],
             table: self.table.clone(),
         };
 
@@ -757,6 +757,7 @@ impl Interpreter {
                     seed,
                     store_metadata: false,
                     verbosity: env.verbosity,
+                    stopping_observations: Default::default(),
                 },
                 no_report(),
             ) {
@@ -886,7 +887,11 @@ enum Cache {
 /// good interfaces for that.
 fn can_cache(def: &LookupDefinition) -> Cache {
     if let LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d)) = def {
-        if d.qualifier == OpQualifier::Val && d.depth.is_none_or(|x| x == 0) {
+        if matches!(
+            d.qualifier,
+            OpQualifier::Val | OpQualifier::Invariant | OpQualifier::Observation
+        ) && d.depth.is_none_or(|x| x == 0)
+        {
             return Cache::ForState;
         }
         if d.qualifier == OpQualifier::PureVal && d.depth.is_none_or(|x| x == 0) {

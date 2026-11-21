@@ -28,28 +28,29 @@ val no_negatives = ADDRESSES.forall(addr => balances.get(addr) >= 0)
 
 ## Non-properties to find interesting scenarios
 
-While invariants are things that need to hold on **every** state, sometimes we want to check that something is true in **some** state - a sort of sanity check. For that, we define witness properties.
+While invariants are things that need to hold on **every** state, sometimes we want to check that something is true in **some** state - a sort of sanity check. For that, we define observations.
 
 <Callout type="warning" emoji="🚧️">
-  Quint's built-in support for witness properties is under design. Expect more features in the near future.
+  Quint's built-in support for observations is under design. Expect more features in the near future.
 </Callout>
 
-There are currently two ways to define and check witness properties:
-1. Through the `--witnesses` flag of the simulator
-2. Through an invariant (`--invariant`) of the simulator (or the model checker, but you probably won't need it)
+There are currently three ways to define and check observations:
+1. Through an `observation` definition, which the simulator counts and the model checkers search for
+2. Through the `--observation` flag, with which a trace that reaches the observation is shown
+3. Through an invariant (`--invariant`) of the simulator (or the model checker, but you probably won't need it)
 
-### Counting interesting traces with `--witnesses`
+### Counting interesting traces with `observation` definitions
 For (1), you define something that you want to be possible:
 
 ```quint
-val alice_more_than_bob = balances.get("alice") > balances.get("bob")
+observation alice_more_than_bob = balances.get("alice") > balances.get("bob")
 ```
 
 The example above states that it should be possible for Alice to have more balance than Bob. This for sure won't be true for every possible state, but it needs to hold for some of them.
 
-Let's ask the simulator to check this witness:
+Let's ask the simulator to check this observation:
 ```sh
-quint run gettingStarted.qnt --witnesses=alice_more_than_bob --max-steps=5
+quint run gettingStarted.qnt --max-steps=5
 ```
 
 Quint reports:
@@ -57,8 +58,8 @@ Quint reports:
 [32m[ok][39m No violation found [90m(599ms).[39m
 [90mYou may increase --max-samples and --max-steps.[39m
 [90mUse --verbosity to produce more (or less) output.[39m
-[32mWitnesses:[39m
-[33malice_more_than_bob[39m was witnessed in [32m7094[39m trace(s) out of 10000 explored [90m(70.94%)[39m
+[32mObservations:[39m
+[33malice_more_than_bob[39m was observed in [32m7094[39m trace(s) out of 10000 explored [90m(70.94%)[39m
 [90mUse --seed=0x1c8a2137939c73 to reproduce.[39m
 ```
 
@@ -68,9 +69,21 @@ And that informs us that, in most executions, there is a state where Alice has a
   This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios.
 </Callout>
 
+When an `observation` definition is never reached, the simulator prints a warning in place of `[ok]`, but the run does not fail. `quint verify` searches for every `observation` definition once the invariants hold, and it reports the ones that are not reached in the same way.
+
+### Inspecting interesting traces with `--observation`
+
+If we concretely want to see a trace that reaches our property, we can ask the simulator to stop at the first trace that reaches it:
+
+```sh
+quint run gettingStarted.qnt --observation=alice_more_than_bob --max-steps=5
+```
+
+Quint prints that trace, which ends at the first state where the property holds, followed by `[observed] Observed alice_more_than_bob, which stopped the run`. When no trace reaches the property, the run fails with `[not observed]`. The property can also be given as an expression, such as `--observation='balances.get("alice") > 50'`.
+
 ### Inspecting interesting traces with `--invariant`
 
-If we concretely want to see the trace witnessing our property, we can negate that property (add a `not` in front of it) and ask the simulator to check that as an invariant. This is like asking the simulator "is the property false in all states?" to which it may reply "no! Here's a scenario in where it is true".
+Another way to see a trace that reaches our property is to negate it (add a `not` in front of it) and ask the simulator to check that as an invariant. This is like asking the simulator "is the property false in all states?" to which it may reply "no! Here's a scenario in where it is true".
 
 ```sh
 quint run gettingStarted.qnt --invariant="not(alice_more_than_bob)" --max-steps=5

@@ -15,6 +15,8 @@ use std::cell::RefCell;
 use std::fmt;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 /// Simulation input that depends on the typescript Quint tool.
 #[derive(Serialize, Deserialize, Clone)]
@@ -24,7 +26,7 @@ pub struct ParsedQuint {
     /// Individual invariants to check. These will be combined with AND during simulation,
     /// but evaluated separately to report which specific invariants were violated.
     pub invariants: Vec<QuintEx>,
-    pub witnesses: Vec<QuintEx>,
+    pub observations: Vec<QuintEx>,
     pub table: LookupTable,
 }
 
@@ -42,6 +44,18 @@ pub struct SimulationConfig {
     pub store_metadata: bool,
     /// Verbosity level for output
     pub verbosity: Verbosity,
+    /// Observations whose first trace ends the simulation
+    pub stopping_observations: StoppingObservations,
+}
+
+/// Observations whose first trace, unless it also violates an invariant, ends the
+/// simulation and is the only one reported. Only applies before any violation is found.
+#[derive(Clone, Default)]
+pub struct StoppingObservations {
+    /// Indices into [`ParsedQuint::observations`]
+    pub indices: Vec<usize>,
+    /// Set by the simulation that stops; every simulation sharing it stops before its next sample
+    pub stopped: Arc<AtomicBool>,
 }
 
 /// Simulation output.
@@ -50,8 +64,11 @@ pub struct SimulationResult {
     pub best_traces: Vec<Trace>,
     pub trace_statistics: TraceStatistics,
     pub samples: usize,
-    pub witnessing_traces: Vec<usize>,
+    pub observing_traces: Vec<usize>,
     pub violated_invariants: Vec<usize>,
+    /// The stopping observations reached by the only trace in `best_traces`, when
+    /// one of them ended the simulation; empty otherwise
+    pub stopped_by_observations: Vec<usize>,
 }
 
 /// Simulation error that includes context about when the error occurred.
@@ -112,6 +129,10 @@ impl ParsedQuint {
     /// If `step` returns false, we continue, as that just means we failed to progress
     /// in a specific setting.
     ///
+    /// Observations are evaluated at every state, before the invariant. While no
+    /// violation has been found, a trace that satisfies the invariant at a state
+    /// where it has reached a stopping observation ends there and ends the simulation.
+    ///
     /// If `seed` is provided, it will be used to initialize the random number generator
     /// for reproducibility. Otherwise, a random seed will be generated.
     #[allow(clippy::result_large_err)]
@@ -145,6 +166,7 @@ impl ParsedQuint {
             n_traces,
             seed,
             store_metadata,
+            stopping_observations,
             ..
         } = config;
 
@@ -181,14 +203,14 @@ impl ParsedQuint {
             interpreter.create_nondet_picks();
         }
 
-        // Compile witnesses and initialize tracking
-        let compiled_witnesses: Vec<_> = self
-            .witnesses
+        // Compile observations and initialize tracking
+        let compiled_observations: Vec<_> = self
+            .observations
             .iter()
-            .map(|w| interpreter.compile(w))
+            .map(|o| interpreter.compile(o))
             .collect();
-        let mut witnessing_traces = vec![0; self.witnesses.len()];
-        let mut trace_witnessed = vec![false; self.witnesses.len()];
+        let mut observing_traces = vec![0; self.observations.len()];
+        let mut trace_observed = vec![false; self.observations.len()];
 
         // Have one extra space as we insert first and then pop if we have too many traces
         let mut best_traces = Vec::with_capacity(n_traces + 1);
@@ -196,11 +218,17 @@ impl ParsedQuint {
         let mut errors_found: usize = 0;
         let mut violated_invariants: Vec<usize> = vec![];
 
+        let mut samples_run = samples;
         for sample_number in 1..=samples {
+            if stopping_observations.stopped.load(Ordering::Relaxed) {
+                samples_run = sample_number - 1;
+                break;
+            }
             reporter.next_sample();
             let seed = env.rand.get_state();
-            trace_witnessed.fill(false);
-            let mut remaining = compiled_witnesses.len();
+            trace_observed.fill(false);
+            let mut remaining = compiled_observations.len();
+            let mut stopped_by_observation = false;
 
             // Clear storage so that metadata left by a previous sample's
             // failed step attempt is not recorded into this sample's initial
@@ -217,20 +245,20 @@ impl ParsedQuint {
                     // Shift the state and record it in the trace
                     env.shift();
 
-                    // Evaluate witnesses after each step and skip if all satisfied
+                    // Evaluate observations after each step and skip if all satisfied
                     if remaining > 0 {
-                        for i in 0..trace_witnessed.len() {
-                            // Skip if this witness is already satisfied in a previous step
-                            if trace_witnessed[i] {
+                        for i in 0..trace_observed.len() {
+                            // Skip if this observation is already satisfied in a previous step
+                            if trace_observed[i] {
                                 continue;
                             }
 
-                            if let Ok(result) = compiled_witnesses[i].execute(env) {
+                            if let Ok(result) = compiled_observations[i].execute(env) {
                                 if result.as_bool() {
-                                    trace_witnessed[i] = true;
-                                    witnessing_traces[i] += 1;
+                                    trace_observed[i] = true;
+                                    observing_traces[i] += 1;
                                     remaining -= 1;
-                                    // early break if all witnesses are satisfied.
+                                    // early break if all observations are satisfied.
                                     if remaining == 0 {
                                         break;
                                     }
@@ -241,6 +269,16 @@ impl ParsedQuint {
 
                     if !invariant.execute(env)?.as_bool() {
                         return Ok(false);
+                    }
+
+                    if errors_found == 0
+                        && stopping_observations
+                            .indices
+                            .iter()
+                            .any(|&i| trace_observed[i])
+                    {
+                        stopped_by_observation = true;
+                        return Ok(true);
                     }
 
                     if step_number != steps + 1 && !step.execute(env)?.as_bool() {
@@ -266,12 +304,16 @@ impl ParsedQuint {
                             best_traces,
                             trace_statistics: get_trace_statistics(&trace_lengths),
                             samples: sample_number,
-                            witnessing_traces,
+                            observing_traces,
                             violated_invariants: vec![],
+                            stopped_by_observations: vec![],
                         });
                     }
 
                     trace_lengths.push(env.trace.len());
+                    if stopped_by_observation {
+                        best_traces.clear();
+                    }
                     insert_sorted_by_quality(
                         &mut best_traces,
                         Trace {
@@ -282,6 +324,24 @@ impl ParsedQuint {
                         n_traces.max(1),
                         verbosity,
                     );
+
+                    if stopped_by_observation {
+                        stopping_observations.stopped.store(true, Ordering::Relaxed);
+                        return Ok(SimulationResult {
+                            result: true,
+                            best_traces,
+                            trace_statistics: get_trace_statistics(&trace_lengths),
+                            samples: sample_number,
+                            observing_traces,
+                            violated_invariants: vec![],
+                            stopped_by_observations: stopping_observations
+                                .indices
+                                .iter()
+                                .copied()
+                                .filter(|&i| trace_observed[i])
+                                .collect(),
+                        });
+                    }
 
                     if !success {
                         errors_found += 1;
@@ -309,8 +369,9 @@ impl ParsedQuint {
                                 best_traces,
                                 trace_statistics: get_trace_statistics(&trace_lengths),
                                 samples: sample_number,
-                                witnessing_traces,
+                                observing_traces,
                                 violated_invariants,
+                                stopped_by_observations: vec![],
                             });
                         }
                     }
@@ -358,9 +419,10 @@ impl ParsedQuint {
             result: errors_found == 0,
             best_traces,
             trace_statistics: get_trace_statistics(&trace_lengths),
-            samples,
-            witnessing_traces,
+            samples: samples_run,
+            observing_traces,
             violated_invariants: vec![],
+            stopped_by_observations: vec![],
         })
     }
 }

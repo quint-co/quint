@@ -1065,3 +1065,150 @@ quint verify --backend tlc --main=notes --temporal=rareWorldResilientViolated ./
 ```
 error: found a counterexample
 ```
+
+## Invariant and observation definitions
+
+These tests use [properties.qnt](../testFixture/simulator/properties.qnt), in
+which `n` counts from 0 to 4. The declared invariants hold, the observation
+`two` is reached, and the observation `negative` is never reached.
+
+### Apalache checks the declared invariants and searches for the declared observations
+
+<!-- !test in apalache declared properties -->
+```
+quint verify --max-steps=3 ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache declared properties -->
+```
+[ok] No violation found (duration).
+[warning] No trace reached negative: no trace of up to 3 steps reaches it.
+Observations:
+two was observed
+negative was not observed
+```
+
+### Apalache reports a violated declared invariant
+
+<!-- !test in apalache declared invariant violated -->
+```
+quint verify --max-steps=3 --main=importsProperties ./testFixture/simulator/properties.qnt | grep -e '^\[violation\]' -e '❌' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache declared invariant violated -->
+```
+[violation] Found an issue (duration).
+  ❌ belowTwo
+```
+
+### Apalache checks nothing with `--no-invariant` and `--no-observation`
+
+<!-- !test in apalache no properties -->
+```
+quint verify --max-steps=3 --main=importsProperties --no-invariant --no-observation ./testFixture/simulator/properties.qnt | grep -e '^\[' | grep -v '^\[Apalache\]' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache no properties -->
+```
+[ok] No violation found (duration).
+```
+
+### Apalache stops at the first trace that reaches an `--observation`
+
+<!-- !test in apalache observation stops -->
+```
+quint verify --max-steps=3 --observation two ./testFixture/simulator/properties.qnt | grep -e '^\[' | grep -v '^\[Apalache\]' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache observation stops -->
+```
+[State 0] { n: 0 }
+[State 1] { n: 1 }
+[State 2] { n: 2 }
+[observed] Observed two, which stopped the run (duration).
+```
+
+### Apalache fails when no trace reaches an `--observation`
+
+<!-- !test in apalache observation not reached -->
+```
+quint verify --max-steps=3 --observation negative ./testFixture/simulator/properties.qnt 2>&1 | grep -e '^\[not observed\]' -e '^error' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache observation not reached -->
+```
+[not observed] No trace of up to 3 steps reached negative (duration).
+error: Observation not reached
+```
+
+### Apalache reports a violated invariant over an `--observation` reached in the same state
+
+<!-- !test in apalache violation precedes observation -->
+```
+quint verify --max-steps=3 --main=importsProperties --observation two ./testFixture/simulator/properties.qnt | grep -e '^\[violation\]' -e '^\[observed\]' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache violation precedes observation -->
+```
+[violation] Found an issue (duration).
+```
+
+### Apalache rejects `--observation` with `--inductive-invariant`
+
+<!-- !test in apalache observation with inductive invariant -->
+```
+quint verify --inductive-invariant=nonNegative --observation two ./testFixture/simulator/properties.qnt 2>&1 | grep '^error'
+```
+
+<!-- !test out apalache observation with inductive invariant -->
+```
+error: --observation cannot be combined with --inductive-invariant
+```
+
+### TLC checks the declared invariants and searches for the declared observations
+
+<!-- !test in tlc declared properties -->
+```
+quint verify --backend tlc --verbosity 2 ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out tlc declared properties -->
+```
+[ok] No violation found (duration).
+[warning] No trace reached negative: no reachable state satisfies it.
+Observations:
+two was observed
+negative was not observed
+```
+
+### TLC reports a violated declared invariant
+
+<!-- !test check tlc declared invariant violated -->
+```
+quint verify --backend tlc --verbosity 2 --main=importsProperties ./testFixture/simulator/properties.qnt | grep '^\[violation\]'
+```
+
+### TLC stops at the first state that reaches an `--observation`
+
+<!-- !test in tlc observation stops -->
+```
+quint verify --backend tlc --verbosity 2 --observation two ./testFixture/simulator/properties.qnt | grep -e '^\[observed\]' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out tlc observation stops -->
+```
+[observed] Observed two, which stopped the run (duration).
+```
+
+### TLC fails when no reachable state satisfies an `--observation`
+
+<!-- !test in tlc observation not reached -->
+```
+quint verify --backend tlc --verbosity 2 --observation negative ./testFixture/simulator/properties.qnt 2>&1 | grep -e '^\[not observed\]' -e '^error' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out tlc observation not reached -->
+```
+[not observed] No reachable state satisfies negative (duration).
+error: Observation not reached
+```

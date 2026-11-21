@@ -9,15 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `invariant` and `observation` definitions, which are `val`s that `quint run` and `quint verify` collect by name. Every `invariant` of the main module is checked, and every `observation` is reported as reached or not, including the ones that the main module imports unqualified (`import P.*`). `invariant` and `observation` can still be used as names
+- `--observation O` for `quint run` and `quint verify` stops at the first trace that reaches `O` and reports it with the status `observed`. When no `--observation` is reached, the command fails with exit code 1
+- `--no-invariant` and `--no-observation` turn the declared invariants and observations off
+- `quint verify` searches for each `observation` definition once the invariants hold, with at most one more model checker run per observation, plus one
 - The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
 
 ### Changed
 
+- `--invariant` and `--invariants` replace the `invariant` definitions of the main module, which are checked when neither is given. `quint run` prints the invariants that it checked at verbosity 2 and above
+- Observation counts are printed at verbosity 2 and above, under `Observations:`, as `<observation> was observed in <n> trace(s)`
+- The TypeScript simulator evaluates observations in the initial state too, as the Rust simulator does
 - The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
 - The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
 - With the Rust backend, a `--seed` from a previous version can produce a different trace in this version for specs that pick from `setOfMaps` with `oneOf`.
 
 ### Deprecated
+
+- `--witnesses` for `quint run`. An `observation` definition is counted without a flag, and a trace that reaches an observation is shown with `--observation`
+
 ### Removed
 ### Fixed
 

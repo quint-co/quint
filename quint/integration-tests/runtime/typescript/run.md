@@ -282,6 +282,7 @@ An example execution:
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
+Checked invariants: n < 100
 Use --seed=0x11 --backend=typescript to reproduce.
 ```
 
@@ -678,24 +679,23 @@ error: [QNT405] Main module invalid not found
 error: Argument error
 ```
 
-### Prints witnesses counts
+### Prints the counts of the deprecated `--witnesses`
 
 <!-- !test exit 0 -->
 <!-- !test in witnesses -->
 ```
-output=$(quint run --backend=typescript ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 --verbosity=1)
+output=$(quint run --backend=typescript ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x2b442ab439177 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
+echo "$output" | grep -e "deprecated" -e "^Observations:" -e "was observed"
 exit $exit_code
 ```
 
 <!-- !test out witnesses -->
 ```
-[ok] No violation found (duration).
-Witnesses:
-won(X) was witnessed in 99 trace(s) out of 100 explored (99.00%)
-stalemate was witnessed in 1 trace(s) out of 100 explored (1.00%)
-Use --seed=0x2b442ab439177 --backend=typescript to reproduce.
+Warning: --witnesses is deprecated. Declare observation definitions in the spec, or use --observation to stop at the first trace that reaches one.
+Observations:
+won(X) was observed in 99 trace(s) out of 100 explored (99.00%)
+stalemate was observed in 1 trace(s) out of 100 explored (1.00%)
 ```
 
 ### Run produces normal output on `--out-itf` with default verbosity

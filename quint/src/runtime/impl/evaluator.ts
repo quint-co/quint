@@ -28,7 +28,7 @@ import { zerog } from '../../idGenerator'
 import { List } from 'immutable'
 import { Builder, buildDef, buildExpr, nameWithNamespaces } from './builder'
 import { Presets, SingleBar } from 'cli-progress'
-import { Outcome, SimulationTrace, getTraceStatistics } from '../../simulation'
+import { Outcome, SimulationStatus, SimulationTrace, getTraceStatistics, traceStatus } from '../../simulation'
 import assert from 'assert'
 import { TraceHook } from '../../cliReporting'
 
@@ -156,6 +156,9 @@ export class Evaluator {
    * @param init - The initial expression to evaluate.
    * @param step - The step expression to evaluate repeatedly.
    * @param inv - The invariant expression to check after each step.
+   * @param observations - The observation expressions to count the traces of.
+   * @param stoppingObservations - The indices of the observations whose first trace, unless it
+   *   also violates the invariant, stops the simulation and is the one reported.
    * @param nruns - The number of simulation runs to perform.
    * @param nsteps - The number of steps to perform in each simulation run.
    * @param ntraces - The number of error traces to collect before stopping the simulation.
@@ -166,7 +169,8 @@ export class Evaluator {
     init: QuintEx,
     step: QuintEx,
     inv: QuintEx,
-    witnesses: QuintEx[],
+    observations: QuintEx[],
+    stoppingObservations: number[],
     nruns: number,
     nsteps: number,
     ntraces: number,
@@ -189,16 +193,36 @@ export class Evaluator {
     const initEval = buildExpr(this.builder, init)
     const stepEval = buildExpr(this.builder, step)
     const invEval = buildExpr(this.builder, inv)
-    const witnessesEvals = witnesses.map(w => buildExpr(this.builder, w))
-    const witnessingTraces = new Array(witnesses.length).fill(0)
+    const observationEvals = observations.map(o => buildExpr(this.builder, o))
+    const observingTraces = new Array(observations.length).fill(0)
     const traceLengths: number[] = []
+    let stoppedBy: number[] = []
 
     let runNo = 0
-    for (; errorsFound < ntraces && !failure && runNo < nruns; runNo++) {
+    for (; errorsFound < ntraces && !failure && stoppedBy.length === 0 && runNo < nruns; runNo++) {
       const elapsedSeconds = (Date.now() - startTime) / 1000
       const speed = Math.round(runNo / elapsedSeconds)
       progressBar.update(runNo, { speed })
-      const traceWitnessed = new Array(witnesses.length).fill(false)
+      const traceObserved = new Array(observations.length).fill(false)
+      // Records the observations that hold in the current state, and returns whether one of them stops
+      // the simulation, which only happens before any violation is found. An observation that fails to
+      // evaluate ends the simulation with its error. As in the Rust simulator, an observation is no longer
+      // evaluated once the trace has reached it.
+      const checkObservations = (): boolean => {
+        observationEvals.forEach((observationEval, i) => {
+          if (traceObserved[i] || failure) {
+            return
+          }
+          const result = observationEval(this.ctx)
+          if (result.isLeft()) {
+            failure = result.value
+          } else if (isTrue(result)) {
+            traceObserved[i] = true
+          }
+        })
+        stoppedBy = errorsFound === 0 && !failure ? stoppingObservations.filter(i => traceObserved[i]) : []
+        return stoppedBy.length > 0
+      }
 
       this.recorder.onRunCall()
       this.reset()
@@ -213,14 +237,16 @@ export class Evaluator {
       } else {
         this.shift()
 
+        const observedAtInit = checkObservations()
         const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
         this.recorder.onUserOperatorReturn(initApp, [], invResult)
         if (!isTrue(invResult)) {
+          stoppedBy = []
           errorsFound++
           traceLengths.push(this.trace.get().length)
         } else {
           // check all { step, shift(), inv } in a loop
-          for (let i = 0; errorsFound < ntraces && !failure && i < nsteps; i++) {
+          for (let i = 0; errorsFound < ntraces && !failure && !observedAtInit && i < nsteps; i++) {
             const stepApp: QuintApp = {
               id: 0n,
               kind: 'app',
@@ -245,23 +271,21 @@ export class Evaluator {
 
             this.shift()
 
-            witnessesEvals.forEach((witnessEval, i) => {
-              const witnessResult = witnessEval(this.ctx)
-              if (isTrue(witnessResult)) {
-                traceWitnessed[i] = true
-              }
-            })
-
+            const observed = checkObservations()
             const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
-            if (!isTrue(invResult)) {
-              errorsFound++
-            }
             this.recorder.onUserOperatorReturn(stepApp, [], invResult)
+            if (!isTrue(invResult)) {
+              // A violation in the same trace takes precedence over a stopping observation
+              stoppedBy = []
+              errorsFound++
+            } else if (observed) {
+              break
+            }
           }
 
-          traceWitnessed.forEach((witnessed, i) => {
-            if (witnessed) {
-              witnessingTraces[i] = witnessingTraces[i] + 1
+          traceObserved.forEach((observed, i) => {
+            if (observed) {
+              observingTraces[i] = observingTraces[i] + 1
             }
           })
 
@@ -270,9 +294,21 @@ export class Evaluator {
       }
 
       const outcome = failure ? left(failure) : right(rv.mkBool(errorsFound == 0))
+      if (stoppedBy.length > 0) {
+        // The observing trace is the one reported, whatever the traces kept so far
+        this.recorder.clearBestTraces()
+      }
       this.recorder.onRunReturn(outcome, this.trace.get())
     }
     progressBar.stop()
+
+    const status: SimulationStatus = failure
+      ? 'error'
+      : errorsFound > 0
+      ? 'violation'
+      : stoppedBy.length > 0
+      ? 'observed'
+      : 'ok'
 
     const results: Either<QuintError[], SimulationTrace[]> = mergeInMany(
       this.recorder.bestTraces.map((trace, index) => {
@@ -283,11 +319,10 @@ export class Evaluator {
         const quintExResult = maybeEvalResult.value.toQuintEx(zerog)
         assert(quintExResult.kind === 'bool', 'invalid simulation produced non-boolean value ')
         const simulationSucceeded = quintExResult.value
-        const status = simulationSucceeded ? 'ok' : 'violation'
         const states = trace.frame.args.map(e => e.toQuintEx(zerog))
 
         if (onTrace !== undefined) {
-          onTrace(index, status, this.varNames(), states)
+          onTrace(index, traceStatus({ result: simulationSucceeded }, status), this.varNames(), states)
         }
 
         return right({ states, result: simulationSucceeded, seed: trace.seed })
@@ -299,10 +334,11 @@ export class Evaluator {
     let traces = results.isRight() ? results.value : []
 
     return {
-      status: failure ? 'error' : errorsFound == 0 ? 'ok' : 'violation',
+      status,
       errors: failure ? [failure, ...runtimeErrors] : runtimeErrors,
       bestTraces: traces,
-      witnessingTraces,
+      observingTraces,
+      stoppedByObservations: status === 'observed' ? stoppedBy : [],
       samples: runNo,
       traceStatistics: getTraceStatistics(traceLengths),
       violatedInvariants: [],
@@ -467,10 +503,10 @@ export class Evaluator {
     let result: Outcome
     if (expr.opcode === 'q::testOnce') {
       const [nsteps, ntraces, init, step, inv] = expr.args
-      result = this.simulate(init, step, inv, [], 1, toNumber(nsteps), toNumber(ntraces))
+      result = this.simulate(init, step, inv, [], [], 1, toNumber(nsteps), toNumber(ntraces))
     } else {
       const [nruns, nsteps, ntraces, init, step, inv] = expr.args
-      result = this.simulate(init, step, inv, [], toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
+      result = this.simulate(init, step, inv, [], [], toNumber(nruns), toNumber(nsteps), toNumber(ntraces))
     }
 
     if (result.status === 'error') {

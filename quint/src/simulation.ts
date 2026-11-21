@@ -40,7 +40,11 @@ export interface SimulationTrace {
   seed: bigint
 }
 
-export type SimulationStatus = 'ok' | 'violation' | 'error'
+/**
+ * `observed`: the simulation stopped at a trace that reaches an observation
+ * given with `--observation`. The Rust simulator's output carries the same values.
+ */
+export type SimulationStatus = 'ok' | 'violation' | 'observed' | 'error'
 
 /** The outcome of a simulation
  */
@@ -48,10 +52,23 @@ export interface Outcome {
   status: SimulationStatus
   errors: QuintError[]
   bestTraces: SimulationTrace[]
-  witnessingTraces: number[]
+  observingTraces: number[]
+  /** When `status` is `observed`, the indices of the stopping observations that its trace reaches */
+  stoppedByObservations: number[]
   samples: number
   traceStatistics: TraceStatistics
   violatedInvariants: number[]
+}
+
+/** The status that a simulation trace is reported with, e.g. in the ITF `#meta` */
+export function traceStatus(
+  trace: { result: boolean },
+  outcomeStatus: SimulationStatus
+): 'ok' | 'violation' | 'observed' {
+  if (!trace.result) {
+    return 'violation'
+  }
+  return outcomeStatus === 'observed' ? 'observed' : 'ok'
 }
 
 export interface TraceStatistics {

@@ -289,6 +289,7 @@ An example execution:
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
+Checked invariants: n < 100
 Use --seed=0x1d4c5 --backend=rust to reproduce.
 ```
 
@@ -444,24 +445,23 @@ Use --seed=SEED --backend=rust to reproduce.
 error: Runtime error
 ```
 
-### Prints witnesses counts
+### Prints the counts of the deprecated `--witnesses`
 
 <!-- !test exit 0 -->
 <!-- !test in witnesses -->
 ```
-output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 --verbosity=1)
+output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
+echo "$output" | grep -e "deprecated" -e "^Observations:" -e "was observed"
 exit $exit_code
 ```
 
 <!-- !test out witnesses -->
 ```
-[ok] No violation found (duration).
-Witnesses:
-won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
-stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
-Use --seed=0x198d --backend=rust to reproduce.
+Warning: --witnesses is deprecated. Declare observation definitions in the spec, or use --observation to stop at the first trace that reaches one.
+Observations:
+won(X) was observed in 96 trace(s) out of 100 explored (96.00%)
+stalemate was observed in 4 trace(s) out of 100 explored (4.00%)
 ```
 
 ### Prints violated invariants when multiple invariants are given 

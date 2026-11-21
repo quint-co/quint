@@ -229,6 +229,15 @@ Options:
   --help         Show help                                             [boolean]
   --version      Show version number                                   [boolean]
   --out          output file (suppresses all console output)            [string]
+  --no-invariant check no invariants, including the invariant definitions of
+                 the main module                      [boolean] [default: false]
+  --observation  observation to look for: a definition name or an expression.
+                 The command stops at the first trace that reaches one, and
+                 fails if none is reached. Can be given several times
+                                                           [array] [default: []]
+  --no-observation
+                 report no observations, including the observation definitions
+                 of the main module                   [boolean] [default: false]
   --main         name of the main module (by default, computed from filename)
                                                                         [string]
   --out-itf      output the trace in the Informal Trace Format to file, e.g.,
@@ -242,14 +251,18 @@ Options:
                                                           [number] [default: 20]
   --init         name of the initializer action       [string] [default: "init"]
   --step         name of the step action              [string] [default: "step"]
-  --invariants   space separated list of invariants to check (definition names).
-                 When specified, all invariants are combined with AND and
-                 checked together, with detailed reporting of which ones were
-                 violated                                  [array] [default: []]
-  --invariant    invariant to check: a definition name or an expression. Can be
-                 used together with --invariants      [string] [default: "true"]
-  --witnesses    space separated list of witnesses to report on (counting for
-                 how many traces the witness is true)      [array] [default: []]
+  --invariants   space separated list of invariants to check (definition
+                 names), instead of the invariant definitions of the main
+                 module. All invariants are combined with AND and checked
+                 together, with detailed reporting of which ones were violated
+                                                           [array] [default: []]
+  --invariant    invariant to check, instead of the invariant definitions of
+                 the main module: a definition name or an expression. Can be
+                 used together with --invariants                        [string]
+  --witnesses    space separated list of expressions to report on (counting
+                 for how many traces each one is true)
+     [deprecated: declare observation definitions, or use --observation] [array]
+                                                                   [default: []]
   --hide         space separated list of variable names to hide from the terminal
                  output (does not affect ITF output)       [array] [default: []]
   --seed         random seed to use for non-deterministic choice        [string]
@@ -282,6 +295,47 @@ Options:
    ```
 
    The errors and warnings are written in the format of [ADR002][].
+
+### Invariants and observations
+
+When no flag selects invariants, every `invariant` definition of the main
+module is checked. The rules for the flags are listed below.
+
+ - `--invariant` and `--invariants` replace the `invariant` definitions, and
+   `--invariant true` checks no invariant.
+ - `--no-invariant` checks no invariant.
+ - Every `observation` definition is counted, and the counts are printed at
+   verbosity 2 and above. When an `observation` definition is never reached, a
+   warning is printed, and the exit code stays 0.
+ - The run stops at the first trace that reaches an `--observation`, and that
+   trace is reported with the status `observed`. When no `--observation` is
+   reached, the run fails with exit code 1. The `observation` definitions are
+   still counted in both cases, but they give no warning.
+ - A violated invariant takes precedence over a reached `--observation`, even
+   when both happen in the same state.
+ - `--no-observation` counts no observation.
+ - An observation that fails to evaluate ends the run with a runtime error, as
+   an invariant does.
+ - `--witnesses` is deprecated. Its expressions are counted like `observation`
+   definitions.
+
+`--no-invariant` is rejected together with `--invariant` or `--invariants`.
+`--no-observation` is rejected together with `--observation` or `--witnesses`.
+
+For example, a spec is assumed that declares the invariant `noOverdraft` and
+the observations `aliceRich` and `bobBroke`. The table shows the outcome of
+four commands when `bobBroke` is never reached.
+
+| Command                                         | Invariants that are checked | Result                                    | Exit code |
+| ----------------------------------------------- | --------------------------- | ----------------------------------------- | --------- |
+| `quint run spec.qnt`                            | `noOverdraft`               | A warning that `bobBroke` is not reached  | 0         |
+| `quint run spec.qnt --invariant 'total == 200'` | `total == 200`              | A warning that `bobBroke` is not reached  | 0         |
+| `quint run spec.qnt --observation aliceRich`    | `noOverdraft`               | A trace that ends where `aliceRich` holds | 0         |
+| `quint run spec.qnt --observation bobBroke`     | `noOverdraft`               | `[not observed]`                          | 1         |
+
+The definitions that the main module imports unqualified, as in `import P.*`,
+are collected too. The definitions of a qualified import, such as `import P as
+p`, are not collected.
 
 ### The `--mbt` flag
 When this flag is given, the Quint simulator will keep track of two additional
@@ -368,15 +422,27 @@ Options:
   --step                 name of the step action       [string] [default: "step"]
   --backend              the backend to use for verification
                                         [string] [choices: "apalache", "tlc"] [default: "apalache"]
-  --invariant            the invariants to check, separated by commas    [string]
+  --invariant            the invariants to check, separated by commas, instead
+                         of the invariant definitions of the main module [string]
   --inductive-invariant  inductive invariant to check (Apalache only). Can be
                          used together with ordinary invariants.         [string]
   --temporal             the temporal properties to check, separated by commas
                                                                          [string]
   --invariants           space separated list of invariants to check (definition
-                         names). When specified, all invariants are combined with
-                         AND and checked together, with detailed reporting of
-                         which ones were violated           [array] [default: []]
+                         names), instead of the invariant definitions of the
+                         main module. All invariants are combined with AND and
+                         checked together, with detailed reporting of which ones
+                         were violated                     [array] [default: []]
+  --no-invariant         check no invariants, including the invariant
+                         definitions of the main module
+                                                      [boolean] [default: false]
+  --observation          observation to look for: a definition name or an
+                         expression. The command stops at the first trace that
+                         reaches one, and fails if none is reached. Can be given
+                         several times                     [array] [default: []]
+  --no-observation       report no observations, including the observation
+                         definitions of the main module
+                                                      [boolean] [default: false]
   --out-itf              output the trace in the Informal Trace Format to file
                          (Apalache only, suppresses all console output)  [string]
   --max-steps            the maximum number of steps in every trace (Apalache
@@ -461,6 +527,26 @@ contains an error message in JSON:
    ```
 
    The errors and warnings are written in the format of [ADR002][].
+
+### Invariants and observations
+
+The invariants are selected as in [`quint run`](#invariants-and-observations).
+When no `--observation` is given and the invariants hold, each `observation`
+definition is searched for in more model checker runs. An observation `O` is
+searched for by checking the invariant `not(O)`, and a counterexample marks
+every observation that it reaches. With `n` observations, at most `n + 1` more
+runs are needed.
+
+An observation that is never reached gives a warning, and the exit code stays
+0. With Apalache, an observation is reported as not reached when no trace of up
+to `--max-steps` steps reaches it.
+
+An `--observation` is checked in the first run as the invariant `not(O)`. The
+run stops at the first trace that reaches it, and the run fails with exit code
+1 when no trace reaches it. The `observation` definitions are not searched for
+in that case, since every search takes another model checker run. They are not
+searched for with `--inductive-invariant` either, and `--inductive-invariant`
+is rejected together with `--observation`.
 
 ## Command lint
 

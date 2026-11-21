@@ -4,8 +4,19 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ErrResult, outputResult, parse, runTests, stage, typecheck } from '../src/cliCommands'
-import { isMatchingTest, noTestsMatchedMessage, toExpr } from '../src/cliHelpers'
+import { ErrResult, compile, outputResult, parse, runTests, stage, typecheck } from '../src/cliCommands'
+import {
+  declaredProperties,
+  getInvariants,
+  getObservations,
+  isMatchingTest,
+  noTestsMatchedMessage,
+  observationInvariantName,
+  propertyFlagConflicts,
+  toExpr,
+} from '../src/cliHelpers'
+import { expressionToString } from '../src/ir/IRprinting'
+import { firstPassInvariants } from '../src/verify'
 
 const exModule = `
 module exModule {
@@ -278,5 +289,228 @@ describe('runTests when no definitions match', () => {
       process.exit = exit
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+})
+
+// A module with two `invariant` definitions and two `observation` definitions
+const propertiesModule = `
+module propertiesModule {
+  var x: int
+
+  action init = x' = 0
+  action step = x' = x + 1
+
+  invariant xNonNegative = x >= 0
+  invariant xBelowHundred = x < 100
+  observation xIsPositive = x > 0
+  observation xIsTen = x == 10
+}
+`
+
+// Main modules that bring the properties of a module in by importing it, by
+// instantiating it, and by instantiating it under a qualifier
+const importingModules = `
+${propertiesModule}
+
+module param {
+  const N: int
+  var y: int
+
+  action init = y' = 0
+  action step = y' = y + 1
+
+  invariant yBelowN = y < N
+  observation yIsOne = y == 1
+}
+
+module viaImport {
+  import propertiesModule.*
+}
+
+module viaInstance {
+  import param(N = 3).*
+}
+
+module viaQualifiedInstance {
+  import param(N = 3) as p
+
+  invariant pStarted = p::y >= 0
+}
+`
+
+async function parseAndTypecheck(path: string, src: string) {
+  const parsed = await parse({ args: {}, path, sourceCode: new Map([[path, src]]), stage: 'loading' as stage })
+  return parsed.asyncChain(typecheck)
+}
+
+describe('declaredProperties', () => {
+  it('collects the invariants and observations that the main module declares, in declaration order', async () => {
+    const tc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+    assert.deepEqual(declaredProperties(tc, 'propertiesModule', 'invariant'), ['xNonNegative', 'xBelowHundred'])
+    assert.deepEqual(declaredProperties(tc, 'propertiesModule', 'observation'), ['xIsPositive', 'xIsTen'])
+  })
+
+  it('collects the properties of a module imported with .*', async () => {
+    const tc = (await parseAndTypecheck('mocked/importing', importingModules)).unwrap()
+    assert.deepEqual(declaredProperties(tc, 'viaImport', 'invariant'), ['xNonNegative', 'xBelowHundred'])
+    assert.deepEqual(declaredProperties(tc, 'viaImport', 'observation'), ['xIsPositive', 'xIsTen'])
+  })
+
+  it('collects the properties of an instance imported with .*', async () => {
+    const tc = (await parseAndTypecheck('mocked/importing', importingModules)).unwrap()
+    assert.deepEqual(declaredProperties(tc, 'viaInstance', 'invariant'), ['yBelowN'])
+    assert.deepEqual(declaredProperties(tc, 'viaInstance', 'observation'), ['yIsOne'])
+  })
+
+  it('leaves out the properties of a qualified instance, keeping the main module own ones', async () => {
+    const tc = (await parseAndTypecheck('mocked/importing', importingModules)).unwrap()
+    assert.deepEqual(declaredProperties(tc, 'viaQualifiedInstance', 'invariant'), ['pStarted'])
+    assert.deepEqual(declaredProperties(tc, 'viaQualifiedInstance', 'observation'), [])
+  })
+})
+
+describe('getInvariants', () => {
+  const declared = ['xNonNegative', 'xBelowHundred']
+
+  it('checks the declared invariants when no invariant is given', () => {
+    assert.deepEqual(getInvariants({ invariants: [] }, declared), [
+      'xNonNegative and xBelowHundred',
+      ['xNonNegative', 'xBelowHundred'],
+    ])
+  })
+
+  it('checks nothing without declared or given invariants', () => {
+    assert.deepEqual(getInvariants({}), ['true', []])
+  })
+
+  it('replaces the declared invariants with --invariant and --invariants', () => {
+    assert.deepEqual(getInvariants({ invariant: 'x < 5' }, declared), ['x < 5', ['x < 5']])
+    assert.deepEqual(getInvariants({ invariants: ['xBelowHundred'] }, declared), ['xBelowHundred', ['xBelowHundred']])
+    assert.deepEqual(getInvariants({ invariant: 'x < 5', invariants: ['xNonNegative'] }, declared)[1], [
+      'x < 5',
+      'xNonNegative',
+    ])
+  })
+
+  it('checks nothing with --invariant true', () => {
+    assert.deepEqual(getInvariants({ invariant: 'true' }, declared), ['true', []])
+  })
+
+  it('checks nothing with --no-invariant, which yargs parses as invariant: false', () => {
+    assert.deepEqual(getInvariants({ invariant: false }, declared), ['true', []])
+  })
+
+  it('checks nothing with --no-invariant=true, which yargs parses as noInvariant', () => {
+    assert.deepEqual(getInvariants({ noInvariant: true }, declared), ['true', []])
+  })
+})
+
+describe('getObservations', () => {
+  const declared = ['xIsPositive', 'xIsTen']
+
+  it('counts the declared observations, and stops at none', () => {
+    assert.deepEqual(getObservations({ observation: [] }, declared), {
+      allObservations: ['xIsPositive', 'xIsTen'],
+      stoppingObservations: [],
+    })
+  })
+
+  it('adds the --witnesses and --observation names after the declared ones, and stops at the --observation names', () => {
+    assert.deepEqual(getObservations({ witnesses: ['counted'], observation: ['stopper', 'xIsTen'] }, declared), {
+      allObservations: ['xIsPositive', 'xIsTen', 'counted', 'stopper'],
+      stoppingObservations: [3, 1],
+    })
+  })
+
+  it('counts an observation once when it is declared and given', () => {
+    assert.deepEqual(
+      getObservations({ witnesses: ['xIsPositive'], observation: ['xIsPositive', 'xIsPositive'] }, declared),
+      {
+        allObservations: ['xIsPositive', 'xIsTen'],
+        stoppingObservations: [0],
+      }
+    )
+  })
+
+  it('counts nothing with --no-observation, which yargs parses as observation: [false]', () => {
+    assert.deepEqual(getObservations({ observation: [false] }, declared), {
+      allObservations: [],
+      stoppingObservations: [],
+    })
+  })
+
+  it('counts nothing with --no-observation=true, which yargs parses as noObservation', () => {
+    assert.deepEqual(getObservations({ noObservation: true }, declared), {
+      allObservations: [],
+      stoppingObservations: [],
+    })
+  })
+})
+
+describe('propertyFlagConflicts', () => {
+  it('accepts flags that do not contradict each other', () => {
+    assert.deepEqual(propertyFlagConflicts({ invariant: 'inv', observation: ['obs'] }), [])
+    assert.deepEqual(propertyFlagConflicts({ invariant: false, observation: [false] }), [])
+  })
+
+  it('rejects --no-invariant with an invariant, in either order', () => {
+    const conflict = ['--no-invariant cannot be combined with --invariant or --invariants']
+    assert.deepEqual(propertyFlagConflicts({ invariant: ['inv', false] }), conflict)
+    assert.deepEqual(propertyFlagConflicts({ invariant: [false, 'inv'] }), conflict)
+    assert.deepEqual(propertyFlagConflicts({ invariant: false, invariants: ['inv'] }), conflict)
+    assert.deepEqual(propertyFlagConflicts({ noInvariant: true, invariant: 'inv' }), conflict)
+  })
+
+  it('rejects --no-observation with an observation', () => {
+    const conflict = ['--no-observation cannot be combined with --observation or --witnesses']
+    assert.deepEqual(propertyFlagConflicts({ observation: ['obs', false] }), conflict)
+    assert.deepEqual(propertyFlagConflicts({ observation: [false], witnesses: ['obs'] }), conflict)
+  })
+})
+
+describe('compiling the invariants and observations to check', () => {
+  it('records what it compiles, with the invariant not(O) for each observation O', async () => {
+    const tc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+    const compiled = (await compile({ ...tc, args: { observation: ['x == 3'] } })).unwrap()
+
+    assert.deepEqual(compiled.invariants, ['xNonNegative', 'xBelowHundred'])
+    assert.deepEqual(compiled.observations, ['xIsPositive', 'xIsTen', 'x == 3'])
+    assert.deepEqual(compiled.stoppingObservations, [2])
+    const defs = new Map(
+      compiled.mainModule.declarations.flatMap(d => (d.kind === 'def' ? [[d.name, expressionToString(d.expr)]] : []))
+    )
+    assert.equal(defs.get('q::inv'), 'and(and(xNonNegative, xBelowHundred))')
+    assert.equal(defs.get(observationInvariantName(0)), 'not(xIsPositive)')
+    assert.equal(defs.get(observationInvariantName(2)), 'not(eq(x, 3))')
+  })
+
+  it('checks the invariants and the --observation names in the first model checker run', async () => {
+    const stoppingTc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+    const stopping = (await compile({ ...stoppingTc, args: { observation: ['x == 3'] } })).unwrap()
+    assert.deepEqual(firstPassInvariants(stopping), ['q::inv', observationInvariantName(2)])
+
+    // Without invariants and `--observation` names, the declared observations are only searched for afterwards
+    const countingTc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+    const counting = (await compile({ ...countingTc, args: { invariant: false } })).unwrap()
+    assert.deepEqual(firstPassInvariants(counting), [])
+  })
+
+  it('compiles the invariants and observations of an imported instance', async () => {
+    const tc = (await parseAndTypecheck('mocked/importing', importingModules)).unwrap()
+    const compiled = (await compile({ ...tc, args: { main: 'viaInstance' } })).unwrap()
+
+    assert.deepEqual(compiled.invariants, ['yBelowN'])
+    assert.deepEqual(compiled.observations, ['yIsOne'])
+  })
+
+  it('compiles no observation invariants with --no-observation', async () => {
+    const tc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+    const compiled = (await compile({ ...tc, args: { observation: [false] } })).unwrap()
+
+    assert.deepEqual(compiled.observations, [])
+    assert.notInclude(
+      compiled.mainModule.declarations.map(d => (d.kind === 'def' ? d.name : '')),
+      observationInvariantName(0)
+    )
   })
 })
