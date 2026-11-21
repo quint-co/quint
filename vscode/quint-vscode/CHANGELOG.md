@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Highlighting, outline and renaming for the `invariant` and `observation` definitions
+
 ### Changed
 ### Deprecated
 ### Removed

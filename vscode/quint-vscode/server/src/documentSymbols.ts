@@ -20,6 +20,8 @@ function symbolKind(def: QuintOpDef | QuintConst | QuintVar): SymbolKind {
           return SymbolKind.Function
         case 'val':
         case 'pureval':
+        case 'invariant':
+        case 'observation':
           return SymbolKind.Field
         case 'action':
           return SymbolKind.Event
