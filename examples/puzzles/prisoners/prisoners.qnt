@@ -119,7 +119,7 @@ module prisoners {
     temporal liveness = eventually(done)
 
     // A state invariant that lets one prove safety. 
-    val countInv = {
+    invariant countInv = {
         val oneIfUp = if (switchAUp) 1 else 0
         val totalSwitched = {
             nonCounters.fold(0, (sum, p) => (sum + timesSwitched.get(p)))

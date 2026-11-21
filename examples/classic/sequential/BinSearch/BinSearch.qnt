@@ -139,15 +139,15 @@ module BinSearch {
             returnValue < 0
 
     // What we expect from the search when it is finished (it does not hold).
-    val Postcondition =
+    invariant Postcondition =
         isTerminated implies ReturnValueIsCorrect
 
     // What we expect from the search when it is finished.
-    val PostconditionSorted =
+    invariant PostconditionSorted =
         isTerminated implies (not(InputIsSorted) or ReturnValueIsCorrect)
 
     // We know the exact number of steps to show termination.
-    val Termination =
+    invariant Termination =
         (nSteps >= INT_WIDTH) implies isTerminated
 
     // By showing that the interval [low, high] is contracting,
@@ -158,7 +158,7 @@ module BinSearch {
        not(next(isTerminated)) implies (next(low) > low or next(high) < high)
 
     // Make sure that INPUT_SEQ is accessed within its bounds
-    val InBounds =
+    invariant InBounds =
       val mid = low.iadd(high.iadd(-low) / 2)
       // collect the conditions of IF-THEN-ELSE
       { not(isTerminated) implies

@@ -136,25 +136,26 @@ module simplePonziTest {
       .fail()
   }
 
-  // Check this invariant to make sure that no account goes negative:
+  // This invariant makes sure that no account goes negative. Check it with:
   //
-  // $ quint run --invariant=noNegativeInv --main=simplePonziTest simplePonzi.qnt
+  // $ quint run --main=simplePonziTest simplePonzi.qnt
   //
   // By looking at the code, do you think noNegativeInv holds true?
-  val noNegativeInv = {
+  invariant noNegativeInv = {
     addr.forall(a => evmState.balances.get(a) >= 0)
   }
 
-  // The property every Ponzi schemer believes should hold true:
-  // There will be always another person who invests more into the game.
+  // Every Ponzi schemer believes there will be always another person who
+  // invests more into the game. This observation is the end of the game:
+  // nobody can invest anymore.
   //
-  // Check this invariant and read a counterexample:
+  // Read an example execution that reaches it:
   //
-  // $ quint run --invariant=progressInv --main=simplePonziTest simplePonzi.qnt
-  val progressInv = {
-    addr.exists(someone =>
+  // $ quint run simplePonzi.qnt --main=simplePonziTest --observation=noProgress
+  observation noProgress = {
+    not(addr.exists(someone =>
       val newAmount = (11 * ponziState.currentInvestment / 10) + 1
       receive(evmState, ponziState, someone, newAmount).error == ""
-    )
+    ))
   }
 }

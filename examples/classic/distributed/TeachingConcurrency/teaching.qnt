@@ -19,7 +19,7 @@
  * satisfies this property because it maintains an inductive invariant
  *
  * Run in verifier with:
- *   quint verify teaching.qnt --inductive-invariant IndInv --invariant correctness
+ *   quint verify teaching.qnt --inductive-invariant IndInv
  */
 module teaching {
   type Location =
@@ -63,7 +63,7 @@ module teaching {
       state' = state
 
 
-  val correctness =
+  invariant correctness =
     processes.forall(i => state.get(i).pc == End)
       implies
         processes.exists(i => state.get(i).y == 1)
@@ -72,7 +72,7 @@ module teaching {
     val local_states = tuples(Set(0, 1), domain, Set(Start, Middle, End)).map(((x, y, pc)) => { x: x, y: y, pc: pc })
     state.in(processes.setOfMaps(local_states))
 
-  def IndInv = and {
+  invariant IndInv = and {
     TypeOK,
     correctness,
     processes.forall(i =>

@@ -12,35 +12,23 @@
 // and test it with the simulator.
 //
 // 1. To execute the unit tests in REPL, type the following:
-// $ quint repl
-// >>> .load ics23.qnt
-// >>> import ics23test.*
+// $ quint repl -r ics23.qnt::ics23test
 // >>> allTests
 //
 // REPL should display 'true'.
 //
-// 2. To execute simple PBT-like tests for 1000 runs of length up to 10 steps
-// in REPL, type the following:
-// $ quint repl
-// >>> .load ics23.qnt
-// >>> import ics23pbt.*
-// >>> _test(1000, 10, "Init", "Next", "TestVerify")
-// >>> _test(1000, 10, "Init", "Next", "TestNonMem")
+// 2. To find examples of successful membership and non-membership
+// verification in runs of up to 10 steps, type the following:
+// $ quint run ics23.qnt --main=ics23pbt --init=Init --step=Next --max-steps=10 --observation=MembershipVerified
+// $ quint run ics23.qnt --main=ics23pbt --init=Init --step=Next --max-steps=10 --observation=NonMembershipVerified
 //
-// If REPL displays 'false', it has found an example,
-// which can be inspected with q::lastTrace.
+// Each run stops at the first example and prints it.
 //
-// 3. To execute advanced PBT-like tests for 1000 runs in REPL,
-// type the following:
-// $ quint repl
-// >>> .load ics23.qnt
-// >>> import trees.*
-// >>> _test(1000, 1, "Init", "Next", "NonMemInv")
-// >>> _test(1000, 1, "Init", "Next", "MemInv")
+// 3. To check the membership and non-membership invariants on 1000 random
+// trees, type the following:
+// $ quint run ics23.qnt --main=trees --init=Init --step=Next --max-steps=1 --max-samples=1000
 //
-// If REPL displays 'false', it has found an example,
-// which can be inspected with q::lastTrace. We expect these tests to
-// always return 'true'. Otherwise, this indicates an invariant violation.
+// We expect no violation. Otherwise, this indicates an invariant violation.
 //
 // Igor Konnov, Informal Systems, 2022
 
@@ -546,21 +534,19 @@ module ics23pbt {
     },
   }
 
-  /// by checking this invariant, we may produce an example of when
   /// verifyMembership succeeds
-  val TestVerify = {
+  observation MembershipVerified = {
     val root = existsCalculate(nonMemProof.left)
-    not(verifyMembership(root,
-      nonMemProof.left, inputKey, nonMemProof.left.value))
+    verifyMembership(root,
+      nonMemProof.left, inputKey, nonMemProof.left.value)
   }
 
-  /// by checking this invariant, we may produce an example of when
   /// verifyNonMembership succeeds
-  val TestNonMem = or {
-    lessThan(inputKey, nonMemProof.left.key),
-    lessThan(nonMemProof.right.key, inputKey),
+  observation NonMembershipVerified = and {
+    not(lessThan(inputKey, nonMemProof.left.key)),
+    not(lessThan(nonMemProof.right.key, inputKey)),
     val root = existsCalculate(nonMemProof.left)
-    not(verifyNonMembership(root, nonMemProof, inputKey))
+    verifyNonMembership(root, nonMemProof, inputKey)
   }
 }
 
@@ -760,16 +746,12 @@ module trees {
   /// The invariant of membership verification:
   /// If the input key belongs to the leafs,
   /// we should be able to prove its membership.
-  val MemInv = or {
+  invariant MemInv = or {
     not(inputKey.in(tree.leafs.keys())),
     val proof = leafToExistsProof(inputKey)
     val root = existsCalculate(proof)
     verifyMembership(root, proof, [inputKey], proof.value)
   }
-
-  /// check this property to produce an example of where MemInv is violated
-  val MemExample =
-    not(MemInv)
 
   // A few lemmas for NonMemInv:
   // MemberShouldFalsify, NonMemberInTheMiddle, NonMemberLeft, NonMemberRight
@@ -831,7 +813,7 @@ module trees {
 
   // The invariant of non-membership verification.
   // Consider all possible positions of the input key and the left/right keys.
-  val NonMemInv =
+  invariant NonMemInv =
     def proofOrNil(key) = {
       if (tree.leafs.keys().contains(key))
         leafToExistsProof(key)
@@ -849,10 +831,6 @@ module trees {
       inputKey < rightKey and not(isNil(lproof.key)),
       inputKey > leftKey and not(isNil(rproof.key)),
     }
-
-  /// check this property to produce an example of where NonMemInv is violated
-  val NonMemExample =
-    not(NonMemInv)
 
   /// Predicate isTree(t) is true iff t defines an ordered binary tree starting
   /// with 1. It's probably hard to read. However, it is what one has to specify

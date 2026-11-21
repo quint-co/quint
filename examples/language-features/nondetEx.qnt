@@ -25,13 +25,13 @@ module nondetEx {
     }
 
   // this must be an invariant
-  val mirrorInv = all {
+  invariant mirrorInv = all {
     y == -x
   }
 
-  // this invariant must be false, unless the value of v is frozen
-  val falseInv = all {
-    oldDelta == delta
+  // this must be observed, unless the value of v is frozen
+  observation deltaChanges = all {
+    oldDelta != delta
   }
 
   run mirrorTest =

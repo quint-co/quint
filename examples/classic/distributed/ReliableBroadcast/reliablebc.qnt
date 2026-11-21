@@ -14,7 +14,7 @@
  * Deliver m
  *
  * Run in verifier with:
- *   quint verify reliablebc.qnt --inductive-invariant IndInv --invariant invariant
+ *   quint verify reliablebc.qnt --inductive-invariant IndInv
  *
  * Josef Widder, Informal Systems, 2025
  */
@@ -147,7 +147,7 @@ module reliablebc {
         system.get(p).s == Delivered(v) implies
           network.filter(m => m.sender == p).size() == Proc.size()))
 
-  def invariant = safety and reliability
+  invariant correctness = safety and reliability
 
   //
   // Inductive invariant
@@ -185,7 +185,7 @@ module reliablebc {
     network.forall(m => (m.receiver > 1 and m.sender != initial_sender)
       implies {sender: m.sender, receiver: m.receiver -1, payload: m.payload}.in(network))
 
-  def IndInv = and {
+  invariant IndInv = and {
     TypeOK,
     sender_in_good_state,
     number_of_sent_messages_matches,

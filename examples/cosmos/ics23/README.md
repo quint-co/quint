@@ -16,9 +16,7 @@ This is a formal specification and invariants of [ICS23 Spec][] in Quint and TLA
 **Unit tests.** You can use Quint REPL to run basic unit tests as follows:
 
 ```sh
-$ quint repl
->>> .load ics23.qnt
->>> import ics23test.*
+$ quint repl -r ics23.qnt::ics23test
 >>> allTests
 ```
 
@@ -26,22 +24,15 @@ $ quint repl
 examples of successful membership and non-membership verification as follows:
 
 ```sh
-$ quint repl
->>> .load ics23.qnt
->>> import ics23pbt.*
->>> _test(1000, 10, "Init", "Next", "TestVerify")
->>> _test(1000, 10, "Init", "Next", "TestNonMem")
+$ quint run ics23.qnt --main=ics23pbt --init=Init --step=Next --max-steps=10 --observation=MembershipVerified
+$ quint run ics23.qnt --main=ics23pbt --init=Init --step=Next --max-steps=10 --observation=NonMembershipVerified
 ```
 
 **Randomized invariant checking.** Finally, you can check membership and
 non-membership invariants with the random simulator:
 
 ```sh
-$ quint repl
->>> .load ics23.qnt
->>> import trees.*
->>> _test(1000, 1, "Init", "Next", "NonMemInv")
->>> _test(1000, 1, "Init", "Next", "MemInv")
+$ quint run ics23.qnt --main=trees --init=Init --step=Next --max-steps=1 --max-samples=1000
 ```
 
 ## TLA+ specification

@@ -83,7 +83,8 @@ module mafia {
 
     action init = all {
         pure val roles = Set(Mafia, Citizen)
-        nondet role_by_player = PLAYERS.setOfMaps(roles).oneOf()
+        // every game has both mafias and citizens
+        nondet role_by_player = PLAYERS.setOfMaps(roles).filter(m => m.values() == roles).oneOf()
         players_to_features' = PLAYERS.mapBy(p => { name: p, role: role_by_player.get(p), status: Alive, voted: false }),
         game_phase' = Night,  // Start with the Night phase
         game_status' = Pending,  // Game is in Pending status
@@ -175,7 +176,7 @@ module mafia {
     }
 
     /// Invariant to ensure the game status correctly reflects the state of the game
-    val correct_game_status = and {
+    invariant correct_game_status = and {
         game_status == Done(Citizen) implies mafias_dead,
         game_status == Done(Mafia) implies citizens_dead,
         game_status == Pending implies not((mafias_dead) or (citizens_dead))
@@ -183,7 +184,7 @@ module mafia {
 
     /// Invariant to check with a specific ratio, mafias outnumber the citizens and will always win the game.
     // Here because there are three players, having two mafias guarantee they win.
-    val win_ratio = {
+    invariant win_ratio = {
         (PLAYERS.filter(p => players_to_features.get(p).role == Mafia).size() >= 2) implies not (game_status == Done(Citizen))
     }
 }

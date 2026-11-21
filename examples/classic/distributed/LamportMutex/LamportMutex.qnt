@@ -164,7 +164,9 @@ module LamportMutex {
   val ClockConstraint = Proc.forall(p => (clock.get(p) <= maxClock))
 
   /* No channel ever contains more than three messages. In fact, no channel
-     ever contains more than one message of the same type, as proved below.*/
+     ever contains more than one message of the same type, as proved below.
+     This translation violates it, so it is not declared as an invariant:
+       quint verify LamportMutex.qnt --main LamportMutex_3_10 --init Init --step Next --invariant BoundedNetwork --max-steps 5 */
   val BoundedNetwork = Proc.forall(p =>
     Proc.forall(q => 
       network.get(p).get(q).length() <= 3
@@ -172,7 +174,7 @@ module LamportMutex {
   )
 
   // The main safety property of mutual exclusion.
-  val Mutex = crit.forall(p => crit.forall(q => p == q))
+  invariant Mutex = crit.forall(p => crit.forall(q => p == q))
 }
 
 module LamportMutex_3_10 {

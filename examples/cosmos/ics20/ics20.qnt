@@ -672,10 +672,10 @@ module ics20Test {
    * **************************************************************************/
 
   // To check in random simulator:
-  // $ quint run --main=ics20Test --invariant=BalanceNonNegative ics20.qnt
+  // $ quint run --main=ics20Test --backend=typescript ics20.qnt
 
   // The balance of all denominations in all accounts is always non-negative.
-  val BalanceNonNegative = CHAINS.forall(chain =>
+  invariant BalanceNonNegative = CHAINS.forall(chain =>
       USER_ACCOUNTS.forall(addr =>
         chainStates.get(chain).bank.getBalances(addr).getBalance(ATOM) >= 0
     )

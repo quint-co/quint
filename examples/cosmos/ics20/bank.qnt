@@ -396,16 +396,15 @@ module bankTests {
    * **************************************************************************/
 
   // To check in random simulator:
-  // $ quint run --main=bankTests --invariant=BalanceNonNegative bank.qnt
-  // $ quint run --main=bankTests --invariant=NonExistantAccountsOrCoinsAreZero bank.qnt
+  // $ quint run --main=bankTests --backend=typescript bank.qnt
   //
   // To verify in model-checker:
-  // $ quint verify --max-steps=3 --main=bankTests --invariant=BalanceNonNegative,NonExistantAccountsOrCoinsAreZero bank.qnt
+  // $ quint verify --max-steps=3 --main=bankTests bank.qnt
 
   // An invariant for `getBalances` and `getBalance`:
   //   - Unknown accounts report 0 tokens of each denomination.
   //   - Accounts not holding a denomination report 0 tokens.
-  val NonExistantAccountsOrCoinsAreZero =
+  invariant NonExistantAccountsOrCoinsAreZero =
     Addresses.forall(addr =>
       Denoms.forall(denom =>
         val addrNotInAccounts = not(addr.in(state.keys()))
@@ -416,7 +415,7 @@ module bankTests {
     )
 
   // The balance of all denominations in all accounts is always non-negative.
-  val BalanceNonNegative = not(error) implies
+  invariant BalanceNonNegative = not(error) implies
     Addresses.forall(addr =>
       Denoms.forall(denom =>
         state.getBalances(addr).getBalance(denom) >= 0

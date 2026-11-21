@@ -279,12 +279,12 @@ module erc20Tests {
     }
 
     // check the following invariants via:
-    // quint run --verbosity=3 --main=erc20Tests --invariant=noOverflowsInv erc20.qnt
-    val totalSupplyInv = isTotalSupplyCorrect(erc20State)
+    // quint run --verbosity=3 --main=erc20Tests --backend=typescript erc20.qnt
+    invariant totalSupplyInv = isTotalSupplyCorrect(erc20State)
 
-    val zeroAddressInv = isZeroAddressEmpty(erc20State)
+    invariant zeroAddressInv = isZeroAddressEmpty(erc20State)
 
-    val noOverflowsInv = isNoOverflows(erc20State)
+    invariant noOverflowsInv = isNoOverflows(erc20State)
 
     // Randomized tests that test whether postconditions holds true.
 
@@ -473,34 +473,33 @@ module mempool {
         }
 
     /**
-    * No transferFrom should be possible, while there is a pending approval
-    * for a smaller amount. This invariant is violated, as explained in:
+    * A transferFrom succeeds while there is a pending approval for a smaller
+    * amount. We would like this to be impossible, but it is not, as explained in:
     *
     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
     *
-    * We can check this invariant with the Quint simulator:
+    * We can find an example with the Quint simulator:
     *
-    * quint run --max-samples=1000000 --max-steps=6 \
-    *   --invariant=NoTransferFromWhileApproveInFlight --main=mempool erc20.qnt
+    * quint run erc20.qnt --main=mempool --backend=typescript --max-steps=6 \
+    *   --seed=0x183578c376baaf --observation=transferFromWhileApproveInFlight
+    *
+    * Without the seed, finding one takes up to a million samples (--max-samples=1000000).
     */
-    val noTransferFromWhileApproveInFlight = {
-        val badExample = all {
-            lastTx.kind == "transferFrom",
-            lastTx.amount > 0,
-            lastTx.status == "success",
-            mempool.exists(tx => all {
-                tx.kind == "approve",
-                tx.sender == lastTx.fromAddr,
-                tx.spender == lastTx.sender,
-                tx.amount < lastTx.amount,
-                tx.amount > 0,
-            })
-        }
-        not(badExample)
+    observation transferFromWhileApproveInFlight = all {
+        lastTx.kind == "transferFrom",
+        lastTx.amount > 0,
+        lastTx.status == "success",
+        mempool.exists(tx => all {
+            tx.kind == "approve",
+            tx.sender == lastTx.fromAddr,
+            tx.spender == lastTx.sender,
+            tx.amount < lastTx.amount,
+            tx.amount > 0,
+        })
     }
     
     /**
-     * A test that demonstrates that the above invariant may be violated.
+     * A test that demonstrates that the above observation is reachable.
      * Yes, we have copied it from the simulator output.
      */
     run transferFromWhileApproveInFlightTest = {

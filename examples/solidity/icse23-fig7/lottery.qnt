@@ -316,30 +316,25 @@ module lotteryMempool {
             }
         }
 
-    // This state invariant captures the key desired property:
+    // This observation violates the key desired property:
     // No user can buy tickets while the lottery contract is in the drawing phase,
     // and there is a draw transaction in the mempool.
-    // This invariant does not hold true. See the test lotteryMultiBuyTest below,
-    // or run:
-    // $ quint run --max-samples 100000 --max-steps 5 --invariant noBuyInDrawingInv --main lotteryMempool lottery.qnt
-    val noBuyInDrawingInv = {
+    // It is reachable. See the test lotteryMultiBuyTest below, or run:
+    // $ quint run lottery.qnt --main lotteryMempool --backend typescript --max-steps 10 --seed 0x29f8e808eeaff --observation buyInDrawing
+    observation buyInDrawing = {
         // note that there may be multiple "draw" transactions in flight
         val winningIds =
             mempool.filter(tx => tx.kind == "draw" and tx.sender == lotteryState.owner)
               .map(tx => tx.id)
-        // if there are some winning ids, and the contract is in the drawing phase
         and {
+            // there are some winning ids, and the contract is in the drawing phase
             lotteryState.drawingPhase,
             winningIds != Set(),
-        } implies
-        // then nobody could buy anything in this state
-        or {
-            // it's fine if the transaction was rejected
-            lastTx.status != "success",
-            // or it was not a buying transaction
-            lastTx.kind != "buy" and lastTx.kind != "multiBuy",
-            // or the buyer did not guess the winning id anyhow
-            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) == Set()
+            // a buying transaction succeeded
+            lastTx.status == "success",
+            lastTx.kind == "buy" or lastTx.kind == "multiBuy",
+            // and the buyer bought a winning id
+            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) != Set()
         }
     }
 }

@@ -160,20 +160,19 @@ module tictactoe {
 
   /* Invariants */
 
-  /// X has not won. This does not hold, as X wins most of the times.
-  val XHasNotWon = not(won(X))
+  /// O has not won. This holds, as O can only achieve a draw, and every run
+  /// checks it.
+  invariant OHasNotWon = not(won(O))
 
-  /// O has not won. This should hold, as O can only achieve a draw.
-  val OHasNotWon = not(won(O))
+  /* Observations */
 
-  /// It's not a stalemate if one player has won or the board is not filled
-  /// Check with `quint run --invariant=NotStalemate tictactoe.qnt`
-  val NotStalemate = not(stalemate)
+  /// X has won, which happens most of the times. See such a game with
+  /// `quint run tictactoe.qnt --observation=XWon`
+  observation XWon = won(X)
 
-  /// OHasNotWon is our default invariant for running the simulator/verifier
-  /// as it is the only invariant that holds. Check `NotStalemate` for an
-  /// interesting counterexample.
-  val inv = OHasNotWon
+  /// The game can end in a draw (stalemate). See such a game with
+  /// `quint run tictactoe.qnt --observation=stalemateReachable`
+  observation stalemateReachable = stalemate
 
   /// This is not always true, as if O picks the right moves, the game will
   /// result in a stalemate.

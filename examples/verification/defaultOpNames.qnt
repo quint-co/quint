@@ -17,16 +17,17 @@ module defaultOpNames {
   // quint verify --step myStep ./defaultOpNames.qnt
   action myStep = true
 
-  // There is no default name for invariants.
-  // These must be specified using the --invariant flag
-  // E.g.,
+  // There is no default name for invariants. Every definition qualified with
+  // `invariant` is checked, with no flag:
   //
-  // quint verify --invariant inv ./defaultOpNames.qnt
-  def inv = true
+  // quint verify ./defaultOpNames.qnt
+  invariant inv = true
 
-  // Multiple invariants can be specified by separating them with a comma
+  // Other definitions are checked as invariants with the --invariant flag,
+  // or the --invariants flag for several of them
   // E.g.,
   //
-  // quint verify --invariant inv,inv2 ./defaultOpNames.qnt
+  // quint verify ./defaultOpNames.qnt --invariants inv2 inv3
   def inv2 = true
+  def inv3 = true
 }

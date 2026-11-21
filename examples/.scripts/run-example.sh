@@ -152,7 +152,10 @@ get_verify_args () {
   elif [[ "$file" == "cosmos/tendermint/TendermintModels.qnt" ]] ; then
     args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
   elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
-    args="--init=Init --step=Next"
+    # TLC, as Apalache rejects the non-constant ranges of the declared invariants
+    args="--init=Init --step=Next --backend tlc"
+  elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
+    args="--max-steps=2" # the declared invariants take Apalache minutes per step
   elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   elif [[ "$file" == "classic/distributed/TeachingConcurrency/teaching.qnt" ]] ; then
@@ -179,6 +182,10 @@ main_flag=$(get_main "${file}")
 test_args=$(get_test_args "${file}")
 tests=$(result test "${test_args} ${main_flag}" "${file}")
 verify_args=$(get_verify_args "${file}")
-verify=$(result verify "--max-steps=3 ${verify_args} ${main_flag}" "${file}")
+# --max-steps can be given only once, so a spec's own bound replaces the default
+if [[ "$verify_args" != *--max-steps* ]] ; then
+  verify_args="--max-steps=3 ${verify_args}"
+fi
+verify=$(result verify "${verify_args} ${main_flag}" "${file}")
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
