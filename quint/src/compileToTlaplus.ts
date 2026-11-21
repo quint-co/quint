@@ -13,8 +13,20 @@
  * @module
  */
 
+import net from 'net'
 import { ApalacheResult, ServerEndpoint, connect } from './apalache'
 import { postprocessTlaplus } from './tlaplusPostprocessing'
+
+export function freeServerEndpoint(): Promise<ServerEndpoint> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer()
+    server.on('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const port = (server.address() as net.AddressInfo).port
+      server.close(err => (err ? reject(err) : resolve({ hostname: '127.0.0.1', port })))
+    })
+  })
+}
 
 /**
  * Get apalache to convert quint parse data into TLA+
@@ -42,7 +54,11 @@ export async function compileToTlaplus(
       content: parseDataJson,
     },
   }
-  const connectionResult = await connect(serverEndpoint, apalacheVersion, verbosityLevel)
+  const connectionResult = await connect(
+    serverEndpoint ?? (await freeServerEndpoint()),
+    apalacheVersion,
+    verbosityLevel
+  )
   const tlaResult = await connectionResult.asyncChain(conn => conn.tla(config))
   return tlaResult.map(postprocessTlaplus)
 }

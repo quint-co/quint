@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `quint verify --emit-dir DIR` compiles the specification to TLA+ and writes a directory that TLC can check (the compiled module, the standard modules it imports, a module that extends it and a `.cfg`), instead of running a checker. With it, each name in `--invariants` is also defined as `q_inv_<name>` and listed as its own `INVARIANT` (instead of the combined `q_inv`), so TLC names the violated one, and the new `--constraint EXPR` adds a TLA+ state constraint. Without `--emit-dir` nothing changes
 - The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
 
 ### Changed

@@ -675,8 +675,12 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
 
+  if (prev.args.constraint && !prev.args.emitDir) {
+    return cliErr('State constraints require --emit-dir', { ...verifying, errors: [] })
+  }
+
   // Warn when using temporal properties with Apalache, which has only experimental support
-  if (prev.args.temporal && prev.args.backend !== 'tlc') {
+  if (prev.args.temporal && prev.args.backend !== 'tlc' && !prev.args.emitDir) {
     console.warn(
       chalk.yellow(
         '\n  WARNING: Apalache has experimental support for temporal properties and might give incorrect results.\n' +
@@ -694,7 +698,7 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
     }
   }
 
-  if (prev.args.backend === 'tlc') {
+  if (prev.args.backend === 'tlc' || prev.args.emitDir) {
     return verifyWithTlcBackend(prev, verifying, verbosityLevel)
   }
   return verifyWithApalacheBackend(prev, verifying, verbosityLevel)
