@@ -37,10 +37,12 @@ export function toExpr(
     return left({ code: 'QNT501', message: `Expected ${input} to be a valid expression` })
   }
 
+  // The resolver keeps the errors of earlier expressions, which are not this expression's
+  const knownErrors = prev.resolver.errors.length
   prev.resolver.switchToModule(mainName)
   walkExpression(prev.resolver, parseResult.expr)
-  if (prev.resolver.errors.length > 0) {
-    return left(prev.resolver.errors[0])
+  if (prev.resolver.errors.length > knownErrors) {
+    return left(prev.resolver.errors[knownErrors])
   }
 
   // When used as --init or --step, the resolved name must be an action.
@@ -187,6 +189,33 @@ export function getObservations(
   const stoppingObservations = stopping.map(o => allObservations.indexOf(o))
 
   return { allObservations, stoppingObservations }
+}
+
+/**
+ * The flag that gives each invariant and observation on the command line, by
+ * expression, so that an expression that does not resolve can be blamed on its flag.
+ */
+export function propertyFlags(args: InvariantArgs & ObservationArgs): Map<string, string> {
+  return new Map([
+    ...givenInvariants(args).map((e): [string, string] => [e, '--invariant']),
+    ...(args.invariants ?? []).map((e): [string, string] => [e, '--invariants']),
+    ...(args.witnesses ?? []).map((e): [string, string] => [e, '--witnesses']),
+    ...explicitObservations(args).map((e): [string, string] => [e, '--observation']),
+  ])
+}
+
+/**
+ * Like `toExpr`, for an invariant or observation. When the expression is given
+ * with a flag (see `propertyFlags`), an error names that flag.
+ */
+export function propertyExpr(
+  prev: TypecheckedStage,
+  flag: string | undefined,
+  input: string
+): Either<QuintError, QuintEx> {
+  return toExpr(prev, input).mapLeft(error =>
+    flag ? { ...error, message: `${error.message} (given with ${flag})` } : error
+  )
 }
 
 /**

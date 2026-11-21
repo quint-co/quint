@@ -12,10 +12,13 @@ import {
   isMatchingTest,
   noTestsMatchedMessage,
   observationInvariantName,
+  propertyExpr,
   propertyFlagConflicts,
+  propertyFlags,
   toExpr,
 } from '../src/cliHelpers'
 import { expressionToString } from '../src/ir/IRprinting'
+import { QuintError } from '../src/quintError'
 import { firstPassInvariants } from '../src/verify'
 
 const exModule = `
@@ -444,6 +447,43 @@ describe('getObservations', () => {
       allObservations: [],
       stoppingObservations: [],
     })
+  })
+})
+
+describe('resolving the properties given on the command line', () => {
+  it('maps each expression to the flag that gives it', () => {
+    const flags = propertyFlags({
+      invariant: 'x > 0',
+      invariants: ['xNonNegative'],
+      witnesses: ['x == 1'],
+      observation: ['xIsTen', false],
+    })
+    assert.deepEqual(
+      [...flags.entries()],
+      [
+        ['x > 0', '--invariant'],
+        ['xNonNegative', '--invariants'],
+        ['x == 1', '--witnesses'],
+        ['xIsTen', '--observation'],
+      ]
+    )
+  })
+
+  it('names the flag of an expression that does not resolve', async () => {
+    const tc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+
+    assert.equal(
+      (propertyExpr(tc, '--observation', 'xIsTwn').value as QuintError).message,
+      "Name 'xIsTwn' not found (given with --observation)"
+    )
+    assert.equal((propertyExpr(tc, undefined, 'xIsTwn').value as QuintError).message, "Name 'xIsTwn' not found")
+  })
+
+  it('reports no error of an earlier expression for an expression that resolves', async () => {
+    const tc = (await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap()
+
+    assert.isTrue(toExpr(tc, 'xIsTwn').isLeft())
+    assert.isTrue(toExpr(tc, 'xIsTen').isRight())
   })
 })
 

@@ -99,15 +99,10 @@ export async function verifyWithTlcBackend(
   )
 
   const stopping = prev.stoppingObservations.map(i => prev.observations[i])
+  const unreached = 'No reachable state satisfies'
   if (stopping.length > 0) {
     if (tlcResult.isRight()) {
-      return notObservedErr(
-        verbosityLevel,
-        verifying,
-        stopping,
-        'No reachable state satisfies',
-        chalk.gray(`(${Date.now() - startMs}ms).`)
-      )
+      return notObservedErr(verbosityLevel, verifying, stopping, unreached, elapsed(startMs))
     }
     const round = tlcObservationRound(tlcResult, prev.stoppingObservations)
     if (round.kind === 'reached') {
@@ -127,13 +122,6 @@ export async function verifyWithTlcBackend(
     }
     return tlcObservationRound(await runTlc(config, args.apalacheVersion, tlcRuntimeConfig, verbosityLevel), remaining)
   })
-  return reportObservationSearch(
-    search,
-    prev.observations,
-    verbosityLevel,
-    result.value,
-    'no reachable state satisfies it'
-  )
 }
 
 /**
@@ -169,23 +157,32 @@ export function firstPassInvariants(prev: CompiledStage): string[] {
  * one is reached: a failed search fails `verify`, and an observation that is not reached gives a warning. Nothing is
  * searched for when the first run failed, or when it looked for `--observation` names.
  *
- * @param unreachedNote why an observation that was not reached counts as not reachable
+ * @param backendTag the tag of the progress line, e.g. `[TLC]`
+ * @param unreached what was not found, e.g. `No reachable state satisfies`, followed by the observations
+ * @param runRound checks the invariants `not(O_i)` for the given indices `i`
  */
 async function searchObservationsOnceVerified(
   prev: CompiledStage,
   verbosityLevel: number,
-  verified: TracingStage,
-  unreachedNote: string
-): CLIProcedure<TracingStage> {
+  verified: CLIProcedure<TracingStage>,
+  backendTag: string,
+  unreached: string,
+  runRound: (remaining: number[]) => Promise<ObservationRound>
+): Promise<CLIProcedure<TracingStage>> {
+  if (verified.isLeft() || prev.stoppingObservations.length > 0 || prev.observations.length === 0) {
+    return verified
+  }
+  if (verbosity.hasProgress(verbosityLevel)) {
+    console.log(chalk.green(backendTag) + ` Searching for observations: ${prev.observations.join(', ')}`)
+  }
+
+  const search = await searchObservations(prev.observations.length, runRound)
   if (search.isLeft()) {
     return cliErr(`observation search failed: ${search.value}`, { ...verified.value, errors: [] })
   }
   const unobserved = prev.observations.filter((_, i) => !search.value[i])
   if (unobserved.length > 0 && verbosity.hasResults(verbosityLevel)) {
-    console.log(
-      chalk.yellow('[warning]') +
-        ` No trace reached ${unobserved.map(o => chalk.yellow(o)).join(', ')}: ${unreachedNote}.`
-    )
+    console.log(chalk.yellow('[warning]') + ` ${unreached} ${unobserved.map(o => chalk.yellow(o)).join(', ')}.`)
   }
   maybePrintObservationReachability(verbosityLevel, prev.observations, search.value)
   return verified
@@ -245,7 +242,7 @@ export async function verifyWithApalacheBackend(
 
   // Parse individual invariants into QuintEx for Rust-based violation reporting.
   let invariantExprs: QuintEx[] | undefined
-  if (invariantsList.length > 1 || (invariantsList.length > 0 && (args.inductiveInvariant || stopping.length > 0))) {
+  if (invariantsList.length > 0) {
     const parsed = mergeInMany(invariantsList.map(inv => toExpr(prev, inv)))
     if (parsed.isRight()) {
       invariantExprs = parsed.value
@@ -327,16 +324,20 @@ export async function verifyWithApalacheBackend(
   const observationExprs = observationParsing.value
 
   const res = await verifyWithApalache(args.serverEndpoint, args.apalacheVersion, config, verbosityLevel)
+  const unreached = `No trace of up to ${args.maxSteps} steps reached`
   if (stopping.length > 0) {
     if (res.isRight()) {
-      return notObservedErr(
+      const result = notObservedErr(
         verbosityLevel,
         verifying,
         stopping,
-        `No trace of up to ${args.maxSteps} steps reached`,
-        chalk.gray(`(${Date.now() - startMs}ms).`),
-        'You may increase --max-steps.'
+        unreached,
+        chalk.gray(`(${Date.now() - startMs}ms).`)
       )
+      if (verbosity.hasHints(verbosityLevel)) {
+        console.log(chalk.gray('You may increase --max-steps.'))
+      }
+      return result
     }
     const stoppedBy = await apalacheStoppedBy(res, prev, observationExprs, invariantExprs, verbosityLevel)
     if (stoppedBy.isLeft()) {
@@ -362,13 +363,6 @@ export async function verifyWithApalacheBackend(
     const res = await verifyWithApalache(args.serverEndpoint, args.apalacheVersion, observationConfig, verbosityLevel)
     return apalacheObservationRound(res, remaining, observationExprs, prev.resolver.table, verbosityLevel)
   })
-  return reportObservationSearch(
-    search,
-    prev.observations,
-    verbosityLevel,
-    result.value,
-    `no trace of up to ${args.maxSteps} steps reaches it`
-  )
 }
 
 /**

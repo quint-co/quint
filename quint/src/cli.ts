@@ -64,26 +64,27 @@ const compileOpts = (yargs: any) =>
       type: 'string',
     })
 
-// Options that turn off the main module's `invariant` definitions, and that select its observations
-const propertyOpts = (yargs: any) =>
-  yargs
-    .option('no-invariant', {
-      desc: 'check no invariants, including the invariant definitions of the main module',
-      type: 'boolean',
-      default: false,
-    })
-    .option('observation', {
-      desc: 'observation to look for: a definition name or an expression. The command stops at the first trace that reaches one, and fails if none is reached. Can be given several times',
-      type: 'array',
-      // One value per flag, so that `--observation obs spec.qnt` leaves the input file alone
-      nargs: 1,
-      default: [],
-    })
-    .option('no-observation', {
-      desc: 'report no observations, including the observation definitions of the main module',
-      type: 'boolean',
-      default: false,
-    })
+// Options that turn off the main module's `invariant` definitions, and that select its observations. They are
+// declared right after `--invariants`, so that `--help` lists the property options together.
+const propertyOptions = {
+  'no-invariant': {
+    desc: 'check no invariants, including the invariant definitions of the main module',
+    type: 'boolean',
+    default: false,
+  },
+  observation: {
+    desc: 'observation to look for: a definition name or an expression. The command stops at the first trace that reaches one, and fails if none is reached. Can be given several times',
+    type: 'array',
+    // One value per flag, so that `--observation obs spec.qnt` leaves the input file alone
+    nargs: 1,
+    default: [],
+  },
+  'no-observation': {
+    desc: 'report no observations, including the observation definitions of the main module',
+    type: 'boolean',
+    default: false,
+  },
+}
 
 // Chain async CLIProcedures
 //
@@ -269,7 +270,7 @@ const runCmd = {
   command: 'run <input>',
   desc: 'Simulate a Quint specification and (optionally) check invariants',
   builder: (yargs: any) =>
-    propertyOpts(defaultOpts(yargs))
+    defaultOpts(yargs)
       .option('main', {
         desc: 'name of the main module (by default, computed from filename)',
         type: 'string',
@@ -316,6 +317,7 @@ const runCmd = {
         desc: 'invariant to check, instead of the invariant definitions of the main module: a definition name or an expression. Can be used together with --invariants',
         type: 'string',
       })
+      .options(propertyOptions)
       .option('witnesses', {
         desc: 'space separated list of expressions to report on (counting for how many traces each one is true)',
         type: 'array',
@@ -365,7 +367,7 @@ const verifyCmd = {
   command: 'verify <input>',
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
-    propertyOpts(compileOpts(yargs))
+    compileOpts(yargs)
       .option('init', { default: 'init' })
       .option('step', { default: 'step' })
       .option('invariants', {
@@ -373,6 +375,7 @@ const verifyCmd = {
         type: 'array',
         default: [],
       })
+      .options(propertyOptions)
       .option('inductive-invariant', {
         desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
         type: 'string',
@@ -487,6 +490,15 @@ const validate = (argv: any, opts: any) => {
   return true
 }
 
+// An unknown word after `--observation a` is most likely a second observation, which the flag does not take
+function observationListHint(msg: string): string {
+  const unknown = msg.match(/^Unknown arguments?: (.*)$/)?.[1].split(', ') ?? []
+  const args = process.argv.slice(2)
+  const isObservation = (arg: string) => arg === '--observation' || arg.startsWith('--observation=')
+  const afterObservation = unknown.some(u => args.indexOf(u) > 0 && args.slice(0, args.indexOf(u)).some(isObservation))
+  return afterObservation ? '\nGive --observation once per observation, as in --observation a --observation b' : ''
+}
+
 function coerceSeed(seedText: string): BigInt {
   // since yargs does not has a type for big integers,
   // we do it with a fallback
@@ -511,6 +523,15 @@ async function main() {
     .command(docsCmd)
     .demandCommand(1)
     .check(validate)
+    .fail((msg: string | null | undefined, err: Error | undefined) => {
+      // yargs passes no message for an error that a command handler rejects with, whose stack is worth keeping
+      if (msg === null || msg === undefined) {
+        console.error(err)
+      } else {
+        console.error(msg + observationListHint(msg))
+      }
+      process.exit(1)
+    })
     .version(version)
     .strict()
     .parse()

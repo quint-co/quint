@@ -284,7 +284,12 @@ export class CommandWrapper {
     input: any,
     progress?: { format: string; total: number }
   ): Promise<Either<QuintError, string>> {
-    const exe = await getRustEvaluatorPath()
+    let exe: string
+    try {
+      exe = await getRustEvaluatorPath()
+    } catch (err: any) {
+      return left({ code: 'QNT516', message: err.message })
+    }
     const args = [command]
 
     const inputStr = JSONbig.stringify(input, rustEvaluatorReplacer)

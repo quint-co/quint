@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--invariant` and `--invariants` replace the `invariant` definitions of the main module, which are checked when neither is given. `quint run` prints the invariants that it checked at verbosity 2 and above
 - Observation counts are printed at verbosity 2 and above, under `Observations:`, as `<observation> was observed in <n> trace(s)`
+- `quint run` and `quint verify` name the violated invariant even when they check only one
 - The TypeScript simulator evaluates observations in the initial state too, as the Rust simulator does
 - The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
 - The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- A runtime error in an expression given on the command line, such as `--invariant`, is printed without the message "Something unexpected happened during error reconstruction"
+- An expression given with `--invariant`, `--invariants`, `--observation` or `--witnesses` that does not resolve is reported with the flag that gives it. An error in one expression is no longer reported again for a later expression that resolves
 - `quint typecheck` reports an arity error when a parameterized type is used with no arguments (for example `o: Option` instead of `o: Option[a]`), instead of crashing with an internal unification error (#2006)
 - A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
 - The REPL no longer fails with `readline was closed` on Node.js 24 when its input is piped, e.g. `echo "1 + 1" | quint`

@@ -76,6 +76,8 @@ import {
   mkErrorMessage,
   noTestsMatchedMessage,
   observationInvariantName,
+  propertyExpr,
+  propertyFlags,
   toExpr,
 } from './cliHelpers'
 import { fail } from 'assert'
@@ -443,14 +445,29 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     numberOfTraces: prev.args.nTraces,
     onTrace: prepareOnTrace(prev.args.input, prev.args.outItf, prev.args.nTraces, prev.args.mbt),
   }
+  if (stopping.length > 0) {
+    // A run that looks for an observation writes no trace that neither reaches it nor violates an invariant
+    const writeTrace = options.onTrace!
+    options.onTrace = (index, status, ...rest) => {
+      if (status !== 'ok') {
+        writeTrace(index, status, ...rest)
+      }
+    }
+  }
 
   const recorder = newTraceRecorder(options.verbosity, options.rng, options.numberOfTraces)
 
-  const argsParsingResult = mergeInMany([
-    toExpr(prev, prev.args.init, { kind: 'action', flag: 'init' }),
-    toExpr(prev, prev.args.step, { kind: 'action', flag: 'step' }),
-    ...[invariantString, ...allObservations].map(e => toExpr(prev, e)),
-  ])
+  // Each property is resolved on its own first, so that an error names the flag that gave it
+  const flags = propertyFlags(prev.args)
+  const argsParsingResult = mergeInMany(
+    [...invariantsList, ...allObservations].map(e => propertyExpr(prev, flags.get(e), e))
+  ).chain(() =>
+    mergeInMany([
+      toExpr(prev, prev.args.init, { kind: 'action', flag: 'init' }),
+      toExpr(prev, prev.args.step, { kind: 'action', flag: 'step' }),
+      ...[invariantString, ...allObservations].map(e => toExpr(prev, e)),
+    ])
+  )
   if (argsParsingResult.isLeft()) {
     return cliErr('Argument error', {
       ...simulator,
@@ -516,7 +533,9 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const pendingDiagnostics = outcome.bestTraces[0]?.pendingDiagnostics
   const frames = recorder.bestTraces[0]?.frame?.subframes
 
-  if (states && states.length > 0) {
+  // A run that reached none of its `--observation` names has no trace worth showing
+  const notObserved = outcome.status === 'ok' && stopping.length > 0
+  if (states && states.length > 0 && !notObserved) {
     maybePrintCounterExample(verbosityLevel, states, diagnostics, frames, prev.args.hide || [], pendingDiagnostics)
   }
 
@@ -534,18 +553,14 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       })
 
     case 'ok': {
-      if (stopping.length > 0) {
-        const notObserved = notObservedErr(
-          verbosityLevel,
-          { ...simulator, trace: states },
-          stopping,
-          'No trace reached',
-          timing,
-          'You may increase --max-samples and --max-steps.'
-        )
+      if (notObserved) {
+        const result = notObservedErr(verbosityLevel, simulator, stopping, 'No trace reached', timing)
         maybePrintCheckedInvariants(verbosityLevel, invariantsList)
+        if (verbosity.hasHints(verbosityLevel)) {
+          console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+        }
         maybePrintObservations(verbosityLevel, outcome, allObservations)
-        return notObserved
+        return result
       }
 
       const unobserved = allObservations.filter((_, i) => outcome.observingTraces[i] === 0)
@@ -561,13 +576,13 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         } else {
           console.log(chalk.green('[ok]') + ' No violation found ' + timing)
         }
-        if (verbosity.hasHints(verbosityLevel)) {
-          console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
-          console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
-          console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
-        }
       }
       maybePrintCheckedInvariants(verbosityLevel, invariantsList)
+      if (verbosity.hasHints(verbosityLevel)) {
+        console.log(chalk.gray(showTraceStatistics(outcome.traceStatistics)))
+        console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+        console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+      }
       maybePrintObservations(verbosityLevel, outcome, allObservations)
 
       return right({
@@ -597,11 +612,10 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         console.log(chalk.red(`[violation]`) + ' Found an issue ' + timing)
 
         // Use Rust-provided violated invariants if available, otherwise fall back to TS evaluation
-        // Only print individual violations when there are multiple invariants
-        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0 && individualInvariants.length > 1) {
-          printViolatedInvariantsByIndex(outcome.violatedInvariants, individualInvariants)
+        if (prev.args.backend === 'rust' && outcome.violatedInvariants.length > 0) {
+          printViolatedInvariantsByIndex(outcome.violatedInvariants, invariantsList)
         } else {
-          printViolatedInvariants(states[states.length - 1], individualInvariants, prev)
+          printViolatedInvariants(states[states.length - 1], invariantsList, prev)
         }
       }
 
@@ -671,6 +685,21 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     typechecked.args,
     declaredProperties(typechecked, mainName, 'observation')
   )
+
+  // Each property is resolved on its own first, so that an error names the flag that gave it. An `--invariant` may
+  // list several invariants separated by commas, which `and` takes as arguments.
+  const flags = propertyFlags(args)
+  const propertiesResult = mergeInMany([
+    ...invariantsList.map(e => propertyExpr(typechecked, flags.get(e), `and(${e})`)),
+    ...allObservations.map(e => propertyExpr(typechecked, flags.get(e), e)),
+  ])
+  if (propertiesResult.isLeft()) {
+    return cliErr('Argument error', {
+      ...typechecked,
+      errors: propertiesResult.value.map(mkErrorMessage(new Map())),
+    })
+  }
+
   allObservations.forEach((observation, i) => {
     extraDefsAsText.push(`val ${observationInvariantName(i)} = not(${observation})`)
   })

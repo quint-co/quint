@@ -229,15 +229,6 @@ Options:
   --help         Show help                                             [boolean]
   --version      Show version number                                   [boolean]
   --out          output file (suppresses all console output)            [string]
-  --no-invariant check no invariants, including the invariant definitions of
-                 the main module                      [boolean] [default: false]
-  --observation  observation to look for: a definition name or an expression.
-                 The command stops at the first trace that reaches one, and
-                 fails if none is reached. Can be given several times
-                                                           [array] [default: []]
-  --no-observation
-                 report no observations, including the observation definitions
-                 of the main module                   [boolean] [default: false]
   --main         name of the main module (by default, computed from filename)
                                                                         [string]
   --out-itf      output the trace in the Informal Trace Format to file, e.g.,
@@ -259,6 +250,15 @@ Options:
   --invariant    invariant to check, instead of the invariant definitions of
                  the main module: a definition name or an expression. Can be
                  used together with --invariants                        [string]
+  --no-invariant check no invariants, including the invariant definitions of
+                 the main module                      [boolean] [default: false]
+  --observation  observation to look for: a definition name or an expression.
+                 The command stops at the first trace that reaches one, and
+                 fails if none is reached. Can be given several times
+                                                           [array] [default: []]
+  --no-observation
+                 report no observations, including the observation definitions
+                 of the main module                   [boolean] [default: false]
   --witnesses    space separated list of expressions to report on (counting
                  for how many traces each one is true)
      [deprecated: declare observation definitions, or use --observation] [array]
@@ -310,7 +310,8 @@ module is checked. The rules for the flags are listed below.
  - The run stops at the first trace that reaches an `--observation`, and that
    trace is reported with the status `observed`. When no `--observation` is
    reached, the run fails with exit code 1. The `observation` definitions are
-   still counted in both cases, but they give no warning.
+   still counted in both cases, but they give no warning. A run that reaches no
+   `--observation` writes no trace with `--out-itf`, and it prints none either.
  - A violated invariant takes precedence over a reached `--observation`, even
    when both happen in the same state.
  - `--no-observation` counts no observation.

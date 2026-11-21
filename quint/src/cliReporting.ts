@@ -131,22 +131,17 @@ export function maybePrintObserved(verbosityLevel: number, observed: string[], t
  * Report a run that reached none of the observations given with `--observation`.
  *
  * @param summary what was not found, e.g. `No trace reached`, followed by the observations
- * @param hint how to search further, printed with the hints
  */
 export function notObservedErr(
   verbosityLevel: number,
   stage: TracingStage,
   observations: string[],
   summary: string,
-  timing: string,
-  hint?: string
+  timing: string
 ): CLIProcedure<TracingStage> {
   if (verbosity.hasResults(verbosityLevel)) {
     const names = observations.map(o => chalk.yellow(o)).join(', ')
     console.log(chalk.red('[not observed]') + ` ${summary} ${names} ` + timing)
-    if (hint && verbosity.hasHints(verbosityLevel)) {
-      console.log(chalk.gray(hint))
-    }
   }
   return cliErr(observations.length > 1 ? 'Observations not reached' : 'Observation not reached', {
     ...stage,
@@ -169,6 +164,27 @@ export function processObservedResult(
   const states = printAndSaveTrace(stage, verbosityLevel, trace)
   maybePrintObserved(verbosityLevel, observed, elapsed(startMs))
   return right({ ...stage, status: 'observed', errors: [], trace: states })
+}
+
+/**
+ * Print a model checker's counterexample, if the appropriate verbosity is set, and write it to the `--out-itf` file.
+ *
+ * @returns the states of the counterexample, if there is one
+ */
+function printAndSaveTrace(
+  stage: TracingStage,
+  verbosityLevel: number,
+  itfTrace: ItfTrace | undefined
+): QuintEx[] | undefined {
+  if (itfTrace === undefined) {
+    return undefined
+  }
+  const states = ofItfNormalized(itfTrace)
+  maybePrintCounterExample(verbosityLevel, states, [], [], stage.args.hide || [])
+  if (stage.args.outItf) {
+    writeToJson(stage.args.outItf, itfTrace)
+  }
+  return states
 }
 
 /**
@@ -197,10 +213,6 @@ export function printViolatedInvariantsByIndex(violatedIndices: number[], invari
  * @param prev The previous stage context.
  */
 export function printViolatedInvariants(state: QuintEx, invariants: string[], prev: any): void {
-  if (invariants.length <= 1 && prev.args.inductiveInvariant === undefined) {
-    return
-  }
-
   const evaluator = new Evaluator(prev.resolver.table, newTraceRecorder(0, newRng()), newRng(), false)
 
   for (const inv of invariants) {
@@ -281,23 +293,15 @@ export async function processApalacheResult(
   }
 
   const err = res.value
-  const trace: QuintEx[] | undefined = err.traces ? ofItfNormalized(err.traces[0]) : undefined
+  const trace = printAndSaveTrace(stage, verbosityLevel, err.traces?.[0])
   const status = trace !== undefined ? 'violation' : 'failure'
 
-  if (trace !== undefined) {
-    maybePrintCounterExample(verbosityLevel, trace, [], [], stage.args.hide || [])
-
-    if (verbosity.hasResults(verbosityLevel)) {
-      console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-      const itfStates = err.traces?.[0]?.states
-      const lastItfState = itfStates?.[itfStates.length - 1]
-      if (invariantExprs && table && lastItfState) {
-        await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
-      }
-    }
-
-    if (stage.args.outItf && err.traces) {
-      writeToJson(stage.args.outItf, err.traces[0])
+  if (trace !== undefined && verbosity.hasResults(verbosityLevel)) {
+    console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+    const itfStates = err.traces?.[0]?.states
+    const lastItfState = itfStates?.[itfStates.length - 1]
+    if (invariantExprs && table && lastItfState) {
+      await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
     }
   }
   return left({

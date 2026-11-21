@@ -148,6 +148,7 @@ An example execution:
 [State 4] { n: 5 }
 
 [violation] Found an issue (duration).
+  ❌ inv
 ```
 
 ### Variant violations write ITF to file when `--out-itf` is specified
@@ -1082,7 +1083,7 @@ quint verify --max-steps=3 ./testFixture/simulator/properties.qnt | grep -e '^\[
 <!-- !test out apalache declared properties -->
 ```
 [ok] No violation found (duration).
-[warning] No trace reached negative: no trace of up to 3 steps reaches it.
+[warning] No trace of up to 3 steps reached negative.
 Observations:
 two was observed
 negative was not observed
@@ -1175,7 +1176,7 @@ quint verify --backend tlc --verbosity 2 ./testFixture/simulator/properties.qnt 
 <!-- !test out tlc declared properties -->
 ```
 [ok] No violation found (duration).
-[warning] No trace reached negative: no reachable state satisfies it.
+[warning] No reachable state satisfies negative.
 Observations:
 two was observed
 negative was not observed

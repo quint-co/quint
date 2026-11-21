@@ -64,15 +64,14 @@ exec bash -
     [State 4] { n: 4 }
     [State 5] { n: 4 }
     [warning] No violation found, but no trace reached negative (duration).
+    Checked invariants: nonNegative, belowFive
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
-    Checked invariants: nonNegative, belowFive
     Observations:
     two was observed in 10 trace(s) out of 10 explored (100.00%)
     negative was observed in 0 trace(s) out of 10 explored (0.00%)
     exit code: 0
-
 ### A violated declared invariant fails the run, and imported definitions are collected
 
 `importsProperties` imports the definitions of `properties` with
@@ -122,15 +121,14 @@ The run finds no violation, since `belowTwo` is not checked.
     [State 4] { n: 4 }
     [State 5] { n: 4 }
     [warning] No violation found, but no trace reached negative (duration).
+    Checked invariants: nonNegative
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
-    Checked invariants: nonNegative
     Observations:
     two was observed in 10 trace(s) out of 10 explored (100.00%)
     negative was observed in 0 trace(s) out of 10 explored (0.00%)
     exit code: 0
-
 ### `--invariants` replaces the declared invariants too
 
 <!-- !test in invariants replace declared ones -->
@@ -145,12 +143,11 @@ The run finds no violation, since `belowTwo` is not checked.
     [State 4] { n: 4 }
     [State 5] { n: 4 }
     [ok] No violation found (duration).
+    Checked invariants: nonNegative, belowFive
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
-    Checked invariants: nonNegative, belowFive
     exit code: 0
-
 ### `--invariant true` checks no invariant
 
 <!-- !test in invariant true -->
@@ -256,22 +253,14 @@ run looked for `two` only.
     run_both --observation=negative
 
 <!-- !test out observation not reached -->
-    An example execution:
-    [State 0] { n: 0 }
-    [State 1] { n: 1 }
-    [State 2] { n: 2 }
-    [State 3] { n: 3 }
-    [State 4] { n: 4 }
-    [State 5] { n: 4 }
     [not observed] No trace reached negative (duration).
-    You may increase --max-samples and --max-steps.
     Checked invariants: nonNegative, belowFive
+    You may increase --max-samples and --max-steps.
     Observations:
     two was observed in 10 trace(s) out of 10 explored (100.00%)
     negative was observed in 0 trace(s) out of 10 explored (0.00%)
     error: Observation not reached
     exit code: 1
-
 ### A violated invariant takes precedence over an `--observation` reached in the same state
 
 `belowTwo` is violated in the state where `two` is first reached.
@@ -341,6 +330,18 @@ run looked for `two` only.
 <!-- !test out observed itf status -->
     ["observed",["0","1","2"]]
 
+### An `--observation` that is never reached writes no trace
+
+<!-- !test in unreached observation writes no trace -->
+    quint run --observation negative --seed=0x1 --max-samples=10 --out-itf=unreached.itf.json \
+      ./testFixture/simulator/properties.qnt > /dev/null
+    echo "exit code: $?"
+    ls unreached*.itf.json 2> /dev/null | wc -l
+
+<!-- !test out unreached observation writes no trace -->
+    exit code: 1
+    0
+
 ## Turning observations off
 
 ### `--no-observation` counts no observation
@@ -357,12 +358,11 @@ run looked for `two` only.
     [State 4] { n: 4 }
     [State 5] { n: 4 }
     [ok] No violation found (duration).
+    Checked invariants: nonNegative, belowFive
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
-    Checked invariants: nonNegative, belowFive
     exit code: 0
-
 ### `--witnesses` is deprecated, and its expressions are counted without stopping the run
 
 <!-- !test in deprecated witnesses -->
@@ -386,6 +386,32 @@ run looked for `two` only.
     negative was observed in 0 trace(s) out of 10 explored (0.00%)
     n == 1 was observed in 10 trace(s) out of 10 explored (100.00%)
     exit code: 0
+
+## Mistakes in flags
+
+### A property that does not resolve is reported with the flag that gives it
+
+<!-- !test in property typo names its flag -->
+    run_both --observation=tow
+    run_both --invariants nonNegative belowFiv
+
+<!-- !test out property typo names its flag -->
+    error: [QNT404] Name 'tow' not found (given with --observation)
+    error: Argument error
+    exit code: 1
+    error: [QNT404] Name 'belowFiv' not found (given with --invariants)
+    error: Argument error
+    exit code: 1
+
+### `--observation` takes one observation, and is given once per observation
+
+<!-- !test in observation takes one value -->
+    run_both --observation two negative
+
+<!-- !test out observation takes one value -->
+    Unknown argument: negative
+    Give --observation once per observation, as in --observation a --observation b
+    exit code: 1
 
 ## Conflicting flags
 

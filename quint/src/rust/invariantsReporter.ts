@@ -35,19 +35,7 @@ export async function findViolatedInvariants(
   exprs: QuintEx[],
   verbosityLevel: number
 ): Promise<Either<QuintError, number[]>> {
-  const wrapper = new CommandWrapper(verbosityLevel)
-  const evalResults = await wrapper.evaluateAtState(state, table, exprs)
-
-  if (evalResults.isLeft()) {
-    return left(evalResults.value)
-  }
-
-  const violatedIndices = evalResults.value
-    .map((value, i) => ({ value, i }))
-    .filter(({ value }) => value === false)
-    .map(({ i }) => i)
-
-  return right(violatedIndices)
+  return indicesEvaluatingTo(false, state, table, exprs, verbosityLevel)
 }
 
 /**

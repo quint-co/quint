@@ -343,7 +343,8 @@ reached or not reached. The definitions are collected from the main module,
 together with the definitions that it imports unqualified, as in `import P.*`.
 The flags are described for [`quint run`](./quint#invariants-and-observations).
 
-An `invariant` or `observation` definition must be at the top level of a module,
+An `invariant` or `observation` definition must be Boolean, since it is
+evaluated as a condition on each state. It must also be at the top level of a module,
 since a nested definition would never be collected. The words `invariant` and
 `observation` can still be used as names, for example in `val invariant = ...`
 or as a record field.

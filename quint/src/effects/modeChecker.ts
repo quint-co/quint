@@ -116,28 +116,27 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    if (isMoreGeneral(mode, qualifier) && qualifier !== def.qualifier) {
-      // Replacing the qualifier of an `invariant` or `observation` would drop its role, so no fix is offered
+    if (isMoreGeneral(mode, qualifier)) {
+      // Replacing the qualifier of an `invariant` or `observation` would drop its role, so no replacement is offered
+      const replaceable = qualifier === def.qualifier
       this.errors.set(def.id, {
         code: 'QNT200',
         message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
           def.qualifier,
           mode
-        )}, but operator \`${def.name}\` ${explanation}.`,
+        )}, but operator \`${def.name}\` ${explanation}.${
+          replaceable ? ` Use ${qualifierToString(mode)} instead.` : ''
+        }`,
         reference: def.id,
-        data: {},
-      })
-    } else if (isMoreGeneral(mode, qualifier)) {
-      this.errors.set(def.id, {
-        code: 'QNT200',
-        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
-          def.qualifier,
-          mode
-        )}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
-        reference: def.id,
-        data: {
-          fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
-        },
+        data: replaceable
+          ? {
+              fix: {
+                kind: 'replace',
+                original: qualifierToString(def.qualifier),
+                replacement: qualifierToString(mode),
+              },
+            }
+          : {},
       })
     } else if (qualifier === def.qualifier) {
       // Suggesting a more specific qualifier for an `invariant` or `observation` would drop its role

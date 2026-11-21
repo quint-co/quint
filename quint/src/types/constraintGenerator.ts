@@ -313,6 +313,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       if (def.typeAnnotation) {
         this.constraints.push({ kind: 'eq', types: [t.type, def.typeAnnotation], sourceId: def.id })
       }
+      // The CLI evaluates an `invariant` or an `observation` as a condition on each state
+      if (isPropertyQualifier(def.qualifier)) {
+        this.constraints.push({ kind: 'eq', types: [t.type, { kind: 'bool' }], sourceId: def.id })
+      }
     })
 
     const tvs_before = this.tvs.get(def.id)!

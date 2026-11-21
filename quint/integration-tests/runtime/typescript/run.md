@@ -149,6 +149,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x308623f2a4957 --backend=typescript to reproduce.
 error: Invariant violated
@@ -183,6 +184,7 @@ An example execution:
 [State 4] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x308623f2a4957 --backend=typescript to reproduce.
 error: Invariant violated
@@ -221,6 +223,7 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0xcc198528dea8b --backend=typescript to reproduce.
 error: Invariant violated
@@ -248,6 +251,7 @@ An example execution:
 [State 1] { mbt::actionTaken: "withdraw" }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0xcc198528dea8b --backend=typescript to reproduce.
 error: Invariant violated
@@ -279,10 +283,10 @@ An example execution:
 [State 4] { n: 3 }
 
 [ok] No violation found (duration).
+Checked invariants: n < 100
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
-Checked invariants: n < 100
 Use --seed=0x11 --backend=typescript to reproduce.
 ```
 
@@ -341,6 +345,7 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
+  ❌ totalSupplyDoesNotOverflowInv
 Use --verbosity=3 to show executions.
 Use --seed=0x1e352e16100007 --backend=typescript to reproduce.
 error: Invariant violated
@@ -428,6 +433,7 @@ q::stepAndInvariant => false
 }
 
 [violation] Found an issue (duration).
+  ❌ totalSupplyDoesNotOverflowInv
 Use --verbosity=3 to show executions.
 Use --seed=0x136507ae9037f5 --backend=typescript to reproduce.
 error: Invariant violated

@@ -148,6 +148,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x308623f2a4983 --backend=rust to reproduce.
 error: Invariant violated
@@ -182,6 +183,7 @@ An example execution:
 [State 4] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x8 --backend=rust to reproduce.
 error: Invariant violated
@@ -220,6 +222,7 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0x1 --backend=rust to reproduce.
 error: Invariant violated
@@ -255,6 +258,7 @@ An example execution:
 [State 5] { mbt::actionTaken: "withdraw" }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0xcc198528dea8b --backend=rust to reproduce.
 error: Invariant violated
@@ -286,10 +290,10 @@ An example execution:
 [State 4] { n: 3 }
 
 [ok] No violation found (duration).
+Checked invariants: n < 100
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
-Checked invariants: n < 100
 Use --seed=0x1d4c5 --backend=rust to reproduce.
 ```
 
