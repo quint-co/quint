@@ -32,7 +32,7 @@ import { verbosity } from './verbosity'
 
 import { version } from './version'
 import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
-import { propertyFlagConflicts } from './cliHelpers'
+import { propertyFlagErrors } from './cliHelpers'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -64,7 +64,7 @@ const compileOpts = (yargs: any) =>
       type: 'string',
     })
 
-// Options that turn off the main module's `invariant` definitions, and that select its observations. They are
+// Options that turn off the main module's `invariant` definitions, and that look for observations. They are
 // declared right after `--invariants`, so that `--help` lists the property options together.
 const propertyOptions = {
   'no-invariant': {
@@ -78,11 +78,6 @@ const propertyOptions = {
     // One value per flag, so that `--observation obs spec.qnt` leaves the input file alone
     nargs: 1,
     default: [],
-  },
-  'no-observation': {
-    desc: 'report no observations, including the observation definitions of the main module',
-    type: 'boolean',
-    default: false,
   },
 }
 
@@ -376,6 +371,11 @@ const verifyCmd = {
         default: [],
       })
       .options(propertyOptions)
+      .option('search-observations', {
+        desc: 'once the invariants hold, search for each observation definition of the main module, with up to one more model checker run per observation',
+        type: 'boolean',
+        default: false,
+      })
       .option('inductive-invariant', {
         desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
         type: 'string',
@@ -460,10 +460,10 @@ const docsCmd = {
 
 // Perform parser input validation.
 const validate = (argv: any, opts: any) => {
-  // yargs parses `--invariant x --no-invariant` as a repeated `--invariant`, so conflicts are reported first
-  const conflicts = propertyFlagConflicts(argv)
-  if (conflicts.length > 0) {
-    throw new Error(conflicts.join('\n'))
+  // yargs parses `--invariant x --no-invariant` as a repeated `--invariant`, so these errors are reported first
+  const propertyErrors = propertyFlagErrors(argv)
+  if (propertyErrors.length > 0) {
+    throw new Error(propertyErrors.join('\n'))
   }
   // Validate that only array options can be specified more than once.
   for (const key in argv) {

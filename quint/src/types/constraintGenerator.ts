@@ -29,6 +29,7 @@ import {
   QuintStr,
   QuintVar,
   isAnnotatedDef,
+  isPropertyQualifier,
 } from '../ir/quintIr'
 import { QuintType, QuintVarType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'

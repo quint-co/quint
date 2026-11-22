@@ -256,9 +256,6 @@ Options:
                  The command stops at the first trace that reaches one, and
                  fails if none is reached. Can be given several times
                                                            [array] [default: []]
-  --no-observation
-                 report no observations, including the observation definitions
-                 of the main module                   [boolean] [default: false]
   --witnesses    space separated list of expressions to report on (counting
                  for how many traces each one is true)
      [deprecated: declare observation definitions, or use --observation] [array]
@@ -314,14 +311,12 @@ module is checked. The rules for the flags are listed below.
    `--observation` writes no trace with `--out-itf`, and it prints none either.
  - A violated invariant takes precedence over a reached `--observation`, even
    when both happen in the same state.
- - `--no-observation` counts no observation.
  - An observation that fails to evaluate ends the run with a runtime error, as
    an invariant does.
  - `--witnesses` is deprecated. Its expressions are counted like `observation`
    definitions.
 
 `--no-invariant` is rejected together with `--invariant` or `--invariants`.
-`--no-observation` is rejected together with `--observation` or `--witnesses`.
 
 For example, a spec is assumed that declares the invariant `noOverdraft` and
 the observations `aliceRich` and `bobBroke`. The table shows the outcome of
@@ -441,8 +436,9 @@ Options:
                          expression. The command stops at the first trace that
                          reaches one, and fails if none is reached. Can be given
                          several times                     [array] [default: []]
-  --no-observation       report no observations, including the observation
-                         definitions of the main module
+  --search-observations  once the invariants hold, search for each observation
+                         definition of the main module, with up to one more
+                         model checker run per observation
                                                       [boolean] [default: false]
   --out-itf              output the trace in the Informal Trace Format to file
                          (Apalache only, suppresses all console output)  [string]
@@ -532,22 +528,24 @@ contains an error message in JSON:
 ### Invariants and observations
 
 The invariants are selected as in [`quint run`](#invariants-and-observations).
-When no `--observation` is given and the invariants hold, each `observation`
-definition is searched for in more model checker runs. An observation `O` is
-searched for by checking the invariant `not(O)`, and a counterexample marks
-every observation that it reaches. With `n` observations, at most `n + 1` more
-runs are needed.
+The `observation` definitions are searched for only with
+`--search-observations`, since every search takes more model checker runs.
+Without the flag, a hint names the declared observations once the invariants
+hold.
 
-An observation that is never reached gives a warning, and the exit code stays
-0. With Apalache, an observation is reported as not reached when no trace of up
-to `--max-steps` steps reaches it.
+With `--search-observations`, each `observation` definition is searched for once
+the invariants hold. An observation `O` is searched for by checking the
+invariant `not(O)`, and a counterexample marks every observation that it
+reaches. With `n` observations, at most `n` more runs are needed. An
+observation that is never reached gives a warning, and the exit code stays 0.
+With Apalache, an observation is reported as not reached when no trace of up to
+`--max-steps` steps reaches it.
 
 An `--observation` is checked in the first run as the invariant `not(O)`. The
 run stops at the first trace that reaches it, and the run fails with exit code
-1 when no trace reaches it. The `observation` definitions are not searched for
-in that case, since every search takes another model checker run. They are not
-searched for with `--inductive-invariant` either, and `--inductive-invariant`
-is rejected together with `--observation`.
+1 when no trace reaches it. `--search-observations` is rejected together with
+`--observation`, and both flags are rejected together with
+`--inductive-invariant`.
 
 ## Command lint
 

@@ -77,13 +77,15 @@ export function formatError(
   message: ErrorMessage,
   lineOffset: Maybe<number> = just(1)
 ): string {
-  if (message.locs.length === 0) {
+  // An expression given on the command line has a location, but no source text to show
+  const locs = message.locs.filter(loc => code.has(loc.source) && finders.has(loc.source))
+  if (locs.length === 0) {
     return `error: ${message.explanation}`
   }
 
   try {
     // Format the primary error location
-    let output = message.locs.reduce((output, loc) => {
+    let output = locs.reduce((output, loc) => {
       const text = code.get(loc.source)!
       const finder = finders.get(loc.source)!
 

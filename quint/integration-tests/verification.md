@@ -1073,11 +1073,24 @@ These tests use [properties.qnt](../testFixture/simulator/properties.qnt), in
 which `n` counts from 0 to 4. The declared invariants hold, the observation
 `two` is reached, and the observation `negative` is never reached.
 
-### Apalache checks the declared invariants and searches for the declared observations
+### Apalache checks the declared invariants, and names the declared observations without searching for them
+
+<!-- !test in apalache declared invariants -->
+```
+quint verify --max-steps=3 ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e 'search-observations' | sed -e 's/([0-9]*ms)/(duration)/'
+```
+
+<!-- !test out apalache declared invariants -->
+```
+[ok] No violation found (duration).
+Use --search-observations to search for the observations two, negative.
+```
+
+### Apalache searches for the declared observations with `--search-observations`
 
 <!-- !test in apalache declared properties -->
 ```
-quint verify --max-steps=3 ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
+quint verify --max-steps=3 --search-observations ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
 ```
 
 <!-- !test out apalache declared properties -->
@@ -1102,11 +1115,11 @@ quint verify --max-steps=3 --main=importsProperties ./testFixture/simulator/prop
   ❌ belowTwo
 ```
 
-### Apalache checks nothing with `--no-invariant` and `--no-observation`
+### Apalache checks no invariant with `--no-invariant`
 
 <!-- !test in apalache no properties -->
 ```
-quint verify --max-steps=3 --main=importsProperties --no-invariant --no-observation ./testFixture/simulator/properties.qnt | grep -e '^\[' | grep -v '^\[Apalache\]' | sed -e 's/([0-9]*ms)/(duration)/'
+quint verify --max-steps=3 --main=importsProperties --no-invariant ./testFixture/simulator/properties.qnt | grep -e '^\[' | grep -v '^\[Apalache\]' | sed -e 's/([0-9]*ms)/(duration)/'
 ```
 
 <!-- !test out apalache no properties -->
@@ -1166,11 +1179,25 @@ quint verify --inductive-invariant=nonNegative --observation two ./testFixture/s
 error: --observation cannot be combined with --inductive-invariant
 ```
 
-### TLC checks the declared invariants and searches for the declared observations
+### Apalache rejects `--search-observations` with `--inductive-invariant` or `--observation`
+
+<!-- !test in apalache search observations with inductive invariant -->
+```
+quint verify --inductive-invariant=nonNegative --search-observations ./testFixture/simulator/properties.qnt 2>&1 | grep '^error'
+quint verify --observation two --search-observations ./testFixture/simulator/properties.qnt 2>&1 | cat
+```
+
+<!-- !test out apalache search observations with inductive invariant -->
+```
+error: --search-observations cannot be combined with --inductive-invariant
+--search-observations cannot be combined with --observation
+```
+
+### TLC searches for the declared observations with `--search-observations`
 
 <!-- !test in tlc declared properties -->
 ```
-quint verify --backend tlc --verbosity 2 ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
+quint verify --backend tlc --verbosity 2 --search-observations ./testFixture/simulator/properties.qnt | grep -e '^\[ok\]' -e '^\[warning\]' -e '^Observations:' -e 'observed$' | sed -e 's/([0-9]*ms)/(duration)/'
 ```
 
 <!-- !test out tlc declared properties -->

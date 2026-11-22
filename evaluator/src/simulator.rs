@@ -253,15 +253,13 @@ impl ParsedQuint {
                                 continue;
                             }
 
-                            if let Ok(result) = compiled_observations[i].execute(env) {
-                                if result.as_bool() {
-                                    trace_observed[i] = true;
-                                    observing_traces[i] += 1;
-                                    remaining -= 1;
-                                    // early break if all observations are satisfied.
-                                    if remaining == 0 {
-                                        break;
-                                    }
+                            if compiled_observations[i].execute(env)?.as_bool() {
+                                trace_observed[i] = true;
+                                observing_traces[i] += 1;
+                                remaining -= 1;
+                                // early break if all observations are satisfied.
+                                if remaining == 0 {
+                                    break;
                                 }
                             }
                         }

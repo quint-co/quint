@@ -147,18 +147,13 @@ export function getInvariants(args: InvariantArgs, declared: string[] = []): [st
 }
 
 /**
- * The arguments that select observations. yargs parses `--no-observation` as
- * `observation: [false]`, and `--no-observation=true` as `noObservation: true`.
+ * The arguments that select observations. yargs parses `--no-observation`,
+ * which is not an option, as `observation: [false]`.
  */
 export interface ObservationArgs {
   observation?: (string | false)[] | false
   witnesses?: string[]
-  noObservation?: boolean
-}
-
-/** Whether `--no-observation` is given. */
-function isNoObservation(args: ObservationArgs): boolean {
-  return args.noObservation === true || args.observation === false || (args.observation ?? []).includes(false)
+  searchObservations?: boolean
 }
 
 function explicitObservations(args: ObservationArgs): string[] {
@@ -168,8 +163,7 @@ function explicitObservations(args: ObservationArgs): string[] {
 /**
  * Collect the observations that a command counts: the main module's declared
  * `observation` definitions, the deprecated `--witnesses`, then the
- * `--observation` names, without duplicates. `--no-observation` turns them all
- * off.
+ * `--observation` names, without duplicates.
  *
  * @param declared The `observation` definitions of the main module (see `declaredProperties`).
  * @returns the observations, and the indices in `allObservations` of the
@@ -180,10 +174,6 @@ export function getObservations(
   args: ObservationArgs,
   declared: string[] = []
 ): { allObservations: string[]; stoppingObservations: number[] } {
-  if (isNoObservation(args)) {
-    return { allObservations: [], stoppingObservations: [] }
-  }
-
   const stopping = [...new Set(explicitObservations(args))]
   const allObservations = [...new Set([...declared, ...(args.witnesses ?? []), ...stopping])]
   const stoppingObservations = stopping.map(o => allObservations.indexOf(o))
@@ -219,19 +209,22 @@ export function propertyExpr(
 }
 
 /**
- * Check that `--no-invariant` and `--no-observation` are not combined with the
- * flags that select what they turn off, since yargs would otherwise let the
- * last flag win.
+ * Check the property flags for combinations that yargs accepts but that cannot
+ * be honoured. `--no-invariant` with `--invariant` would otherwise let the last
+ * flag win, and `--no-observation` would be read as an empty `--observation`.
  *
- * @returns an error message for each conflict
+ * @returns an error message for each combination
  */
-export function propertyFlagConflicts(args: InvariantArgs & ObservationArgs): string[] {
+export function propertyFlagErrors(args: InvariantArgs & ObservationArgs): string[] {
   return [
     ...(isNoInvariant(args) && explicitInvariants(args).length > 0
       ? ['--no-invariant cannot be combined with --invariant or --invariants']
       : []),
-    ...(isNoObservation(args) && (explicitObservations(args).length > 0 || (args.witnesses?.length ?? 0) > 0)
-      ? ['--no-observation cannot be combined with --observation or --witnesses']
+    ...(args.observation === false || (args.observation ?? []).includes(false)
+      ? ['Unknown argument: no-observation']
+      : []),
+    ...(args.searchObservations && explicitObservations(args).length > 0
+      ? ['--search-observations cannot be combined with --observation']
       : []),
   ]
 }

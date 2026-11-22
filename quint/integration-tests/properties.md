@@ -17,7 +17,6 @@ The rules that the tests check are listed below.
 - `--observation` stops the run at the first trace that reaches it. When no
   `--observation` is reached, the run fails with exit code 1.
 - A violated invariant takes precedence over a reached `--observation`.
-- `--no-observation` counts no observation.
 
 These tests run with the Rust backend integration tests, since they need the
 Rust evaluator that is built from this repository.
@@ -132,7 +131,7 @@ The run finds no violation, since `belowTwo` is not checked.
 ### `--invariants` replaces the declared invariants too
 
 <!-- !test in invariants replace declared ones -->
-    run_both --main=importsProperties --invariants nonNegative belowFive --no-observation
+    run_both --main=importsProperties --invariants nonNegative belowFive
 
 <!-- !test out invariants replace declared ones -->
     An example execution:
@@ -142,16 +141,19 @@ The run finds no violation, since `belowTwo` is not checked.
     [State 3] { n: 3 }
     [State 4] { n: 4 }
     [State 5] { n: 4 }
-    [ok] No violation found (duration).
+    [warning] No violation found, but no trace reached negative (duration).
     Checked invariants: nonNegative, belowFive
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
+    Observations:
+    two was observed in 10 trace(s) out of 10 explored (100.00%)
+    negative was observed in 0 trace(s) out of 10 explored (0.00%)
     exit code: 0
 ### `--invariant true` checks no invariant
 
 <!-- !test in invariant true -->
-    run_both --main=importsProperties --invariant=true --no-observation
+    run_both --main=importsProperties --invariant=true
 
 <!-- !test out invariant true -->
     An example execution:
@@ -161,12 +163,14 @@ The run finds no violation, since `belowTwo` is not checked.
     [State 3] { n: 3 }
     [State 4] { n: 4 }
     [State 5] { n: 4 }
-    [ok] No violation found (duration).
+    [warning] No violation found, but no trace reached negative (duration).
     Trace length statistics: max=6, min=6, average=6.00
     You may increase --max-samples and --max-steps.
     Use --verbosity to produce more (or less) output.
+    Observations:
+    two was observed in 10 trace(s) out of 10 explored (100.00%)
+    negative was observed in 0 trace(s) out of 10 explored (0.00%)
     exit code: 0
-
 ### `--no-invariant` checks no invariant, and the observations are still counted
 
 <!-- !test in no invariant -->
@@ -342,27 +346,8 @@ run looked for `two` only.
     exit code: 1
     0
 
-## Turning observations off
+## Deprecated flags
 
-### `--no-observation` counts no observation
-
-<!-- !test in no observation -->
-    run_both --no-observation
-
-<!-- !test out no observation -->
-    An example execution:
-    [State 0] { n: 0 }
-    [State 1] { n: 1 }
-    [State 2] { n: 2 }
-    [State 3] { n: 3 }
-    [State 4] { n: 4 }
-    [State 5] { n: 4 }
-    [ok] No violation found (duration).
-    Checked invariants: nonNegative, belowFive
-    Trace length statistics: max=6, min=6, average=6.00
-    You may increase --max-samples and --max-steps.
-    Use --verbosity to produce more (or less) output.
-    exit code: 0
 ### `--witnesses` is deprecated, and its expressions are counted without stopping the run
 
 <!-- !test in deprecated witnesses -->
@@ -403,6 +388,17 @@ run looked for `two` only.
     error: Argument error
     exit code: 1
 
+### `--no-observation` is not an option
+
+The declared observations are always counted, since counting them never fails a run.
+
+<!-- !test in no observation is not an option -->
+    run_both --no-observation
+
+<!-- !test out no observation is not an option -->
+    Unknown argument: no-observation
+    exit code: 1
+
 ### `--observation` takes one observation, and is given once per observation
 
 <!-- !test in observation takes one value -->
@@ -425,16 +421,4 @@ run looked for `two` only.
     --no-invariant cannot be combined with --invariant or --invariants
     exit code: 1
     --no-invariant cannot be combined with --invariant or --invariants
-    exit code: 1
-
-### `--no-observation` cannot be combined with `--observation` or `--witnesses`
-
-<!-- !test in no observation with observation -->
-    run_both --observation=two --no-observation
-    run_both --no-observation --witnesses two
-
-<!-- !test out no observation with observation -->
-    --no-observation cannot be combined with --observation or --witnesses
-    exit code: 1
-    --no-observation cannot be combined with --observation or --witnesses
     exit code: 1

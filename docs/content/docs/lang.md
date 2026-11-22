@@ -338,8 +338,9 @@ The following table defines this precisely.
 
 An `invariant` or an `observation` is a `val` that is collected by name by
 `quint run` and `quint verify`. Every `invariant` is checked in every state,
-unless invariants are selected with a flag. Every `observation` is reported as
-reached or not reached. The definitions are collected from the main module,
+unless invariants are selected with a flag. `quint run` counts the traces that
+reach each `observation`, and `quint verify` searches for each one with
+`--search-observations`. The definitions are collected from the main module,
 together with the definitions that it imports unqualified, as in `import P.*`.
 The flags are described for [`quint run`](./quint#invariants-and-observations).
 

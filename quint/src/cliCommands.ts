@@ -681,9 +681,10 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   }
 
+  // The declared observations are compiled only to be searched for, which `verify` does with `--search-observations`
   const { allObservations, stoppingObservations } = getObservations(
     typechecked.args,
-    declaredProperties(typechecked, mainName, 'observation')
+    args.searchObservations ? declaredProperties(typechecked, mainName, 'observation') : []
   )
 
   // Each property is resolved on its own first, so that an error names the flag that gave it. An `--invariant` may

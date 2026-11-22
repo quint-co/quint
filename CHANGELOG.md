@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `invariant` and `observation` definitions, which are `val`s that `quint run` and `quint verify` collect by name. Every `invariant` of the main module is checked, and every `observation` is reported as reached or not, including the ones that the main module imports unqualified (`import P.*`). `invariant` and `observation` can still be used as names
 - `--observation O` for `quint run` and `quint verify` stops at the first trace that reaches `O` and reports it with the status `observed`. When no `--observation` is reached, the command fails with exit code 1
-- `--no-invariant` and `--no-observation` turn the declared invariants and observations off
-- `quint verify` searches for each `observation` definition once the invariants hold, with at most one more model checker run per observation, plus one
+- `--no-invariant` turns the declared invariants off
+- `quint verify --search-observations` searches for each `observation` definition once the invariants hold, with at most one more model checker run per observation
 - The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
 
 ### Changed

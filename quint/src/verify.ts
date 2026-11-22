@@ -30,7 +30,15 @@ import {
   processObservedResult,
   processTlcResult,
 } from './cliReporting'
-import { PLACEHOLDERS, loadApalacheConfig, mkErrorMessage, observationInvariantName, toExpr } from './cliHelpers'
+import {
+  PLACEHOLDERS,
+  declaredProperties,
+  guessMainModule,
+  loadApalacheConfig,
+  mkErrorMessage,
+  observationInvariantName,
+  toExpr,
+} from './cliHelpers'
 import { verbosity } from './verbosity'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { ObservationRound, searchObservations } from './observationSearch'
@@ -155,7 +163,8 @@ export function firstPassInvariants(prev: CompiledStage): string[] {
 /**
  * Search for the observations of `prev` once the first model checker run verified the spec, and report whether each
  * one is reached: a failed search fails `verify`, and an observation that is not reached gives a warning. Nothing is
- * searched for when the first run failed, or when it looked for `--observation` names.
+ * searched for when the first run failed, or when it looked for `--observation` names. Without
+ * `--search-observations`, `prev` has no observations, and a hint names the declared ones.
  *
  * @param backendTag the tag of the progress line, e.g. `[TLC]`
  * @param unreached what was not found, e.g. `No reachable state satisfies`, followed by the observations
@@ -169,7 +178,14 @@ async function searchObservationsOnceVerified(
   unreached: string,
   runRound: (remaining: number[]) => Promise<ObservationRound>
 ): Promise<CLIProcedure<TracingStage>> {
-  if (verified.isLeft() || prev.stoppingObservations.length > 0 || prev.observations.length === 0) {
+  if (verified.isLeft() || prev.stoppingObservations.length > 0) {
+    return verified
+  }
+  if (prev.observations.length === 0) {
+    const declared = declaredProperties(prev, guessMainModule(prev), 'observation')
+    if (declared.length > 0 && verbosity.hasHints(verbosityLevel)) {
+      console.log(chalk.gray(`Use --search-observations to search for the observations ${declared.join(', ')}.`))
+    }
     return verified
   }
   if (verbosity.hasProgress(verbosityLevel)) {
@@ -250,8 +266,9 @@ export async function verifyWithApalacheBackend(
   }
 
   if (args.inductiveInvariant) {
-    if (stopping.length > 0) {
-      return cliErr('--observation cannot be combined with --inductive-invariant', { ...verifying, errors: [] })
+    if (stopping.length > 0 || args.searchObservations) {
+      const flag = stopping.length > 0 ? '--observation' : '--search-observations'
+      return cliErr(`${flag} cannot be combined with --inductive-invariant`, { ...verifying, errors: [] })
     }
     const hasOrdinaryInvariant = invariantsList.length > 0
     const nPhases = hasOrdinaryInvariant ? 3 : 2
@@ -327,13 +344,7 @@ export async function verifyWithApalacheBackend(
   const unreached = `No trace of up to ${args.maxSteps} steps reached`
   if (stopping.length > 0) {
     if (res.isRight()) {
-      const result = notObservedErr(
-        verbosityLevel,
-        verifying,
-        stopping,
-        unreached,
-        chalk.gray(`(${Date.now() - startMs}ms).`)
-      )
+      const result = notObservedErr(verbosityLevel, verifying, stopping, unreached, elapsed(startMs))
       if (verbosity.hasHints(verbosityLevel)) {
         console.log(chalk.gray('You may increase --max-steps.'))
       }

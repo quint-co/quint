@@ -8,7 +8,7 @@ import { Callout } from 'nextra/components'
 
 The main way to interact with a Quint model is by checking properties. The [simulator](./simulator) can be used to increase the confidence on a property, and [model checkers](./model-checkers) can be used to formally verify them. Properties can also be used to query the model and understand it better, finding interesting scenarios.
 
-## Actual properties
+## Properties
 
 Thinking about a system's properties is not an easy task, but can often be useful to increase understanding in many ways. Writing those properties in Quint enables using the tools (simulator or model checkers) to check that property, or to find out where it doesn't hold and adjust the model or the expectations about it.
 
@@ -21,93 +21,23 @@ A system might have safety and/or liveness properties.
 It is much easier to write and check safety properties, which can be written as invariants. Liveness properties require temporal formulas, which often rely on assumptions about fairness to be useful, and that may require some hours of study time if you are not familiar already. Also, there are other, more practical, ways to convince ourselves that good things are happening (see below). Safety properties go a long way, start with those. Writing a safety property is as simple as writing a boolean expression:
 
 ```quint
-val no_negatives = ADDRESSES.forall(addr => balances.get(addr) >= 0)
+invariant no_negatives = ADDRESSES.forall(addr => balances.get(addr) >= 0)
 ```
 
 `balances` in this expression (considering the model from the [Getting Started](./getting-started) guide) is a state variable. While checking `no_negatives` as an invariant, Quint's tools will check this expression on every state, meaning it will evaluate it for different values of `balances` and expect it to always be true. It needs to be true in the initial state and in every possible state that comes from it - it cannot *vary*, as it is an *invariant*.
 
-## Non-properties to find interesting scenarios
-
-While invariants are things that need to hold on **every** state, sometimes we want to check that something is true in **some** state - a sort of sanity check. For that, we define observations.
-
-<Callout type="warning" emoji="🚧️">
-  Quint's built-in support for observations is under design. Expect more features in the near future.
-</Callout>
-
-There are currently three ways to define and check observations:
-1. Through an `observation` definition, which the simulator counts and the model checkers search for
-2. Through the `--observation` flag, with which a trace that reaches the observation is shown
-3. Through an invariant (`--invariant`) of the simulator (or the model checker, but you probably won't need it)
-
-### Counting interesting traces with `observation` definitions
-For (1), you define something that you want to be possible:
-
-```quint
-observation alice_more_than_bob = balances.get("alice") > balances.get("bob")
-```
-
-The example above states that it should be possible for Alice to have more balance than Bob. This for sure won't be true for every possible state, but it needs to hold for some of them.
-
-Let's ask the simulator to check this observation:
-```sh
-quint run gettingStarted.qnt --max-steps=5
-```
-
-Quint reports:
-```ansi
-[32m[ok][39m No violation found [90m(599ms).[39m
-[90mYou may increase --max-samples and --max-steps.[39m
-[90mUse --verbosity to produce more (or less) output.[39m
-[32mObservations:[39m
-[33malice_more_than_bob[39m was observed in [32m7094[39m trace(s) out of 10000 explored [90m(70.94%)[39m
-[90mUse --seed=0x1c8a2137939c73 to reproduce.[39m
-```
-
-And that informs us that, in most executions, there is a state where Alice has a larger balance than that of Bob.
-
-<Callout>
-  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios.
-</Callout>
-
-When an `observation` definition is never reached, the simulator prints a warning in place of `[ok]`, but the run does not fail. `quint verify` searches for every `observation` definition once the invariants hold, and it reports the ones that are not reached in the same way.
-
-### Inspecting interesting traces with `--observation`
-
-If we concretely want to see a trace that reaches our property, we can ask the simulator to stop at the first trace that reaches it:
-
-```sh
-quint run gettingStarted.qnt --observation=alice_more_than_bob --max-steps=5
-```
-
-Quint prints that trace, which ends at the first state where the property holds, followed by `[observed] Observed alice_more_than_bob, which stopped the run`. When no trace reaches the property, the run fails with `[not observed]`. The property can also be given as an expression, such as `--observation='balances.get("alice") > 50'`.
-
-### Inspecting interesting traces with `--invariant`
-
-Another way to see a trace that reaches our property is to negate it (add a `not` in front of it) and ask the simulator to check that as an invariant. This is like asking the simulator "is the property false in all states?" to which it may reply "no! Here's a scenario in where it is true".
-
-```sh
-quint run gettingStarted.qnt --invariant="not(alice_more_than_bob)" --max-steps=5
-```
-
-Quint reports:
-```ansi
-[90mAn example execution:[39m
-[90m[39m
-[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
-
-[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m9[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
-
-[31m[violation][39m Found an issue [90m(8ms).[39m
-[90mUse --verbosity=3 to show executions.[39m
-[90mUse --seed=0xa0bbf64f2c03 to reproduce.[39m
-error: Invariant violated
-```
-
-Although it says "Invariant violated", this is exactly what we wanted: an example where Alice has more balance than Bob.
+Since `no_negatives` is declared with `invariant`, `quint run` and `quint verify` check it without any flag.
 
 ### Using multiple invariants with `--invariants`
 
-If you want to check multiple invariants at once and determine which ones are violated, you can use the `--invariants` option:
+A spec can declare several invariants, and the tools check all of them and report which ones are violated. To check only some of them, or invariants that are not declared with `invariant`, list them with the `--invariants` option, which replaces the declared ones. For example, the following two properties are written as plain `val`s, next to `no_negatives`:
+
+```quint
+val accounts_match = balances.keys() == ADDRESSES
+val total_positive = ADDRESSES.fold(0, (sum, addr) => sum + balances.get(addr)) > 0
+```
+
+All three are listed with `--invariants`:
 
 ```sh
 quint run bank.qnt --invariants no_negatives accounts_match total_positive
@@ -120,15 +50,14 @@ Quint will check all three invariants and report which specific ones are violate
 [90m[39m
 [[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
 
-[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m-63[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
-
-[31m[violation][39m Found an issue [90m(44ms).[39m
-[31m  ❌ no_negatives[39m
+[31m[violation][39m Found an issue [90m(34ms at 588 traces/second).[39m
 [31m  ❌ total_positive[39m
 [90mUse --verbosity=3 to show executions.[39m
-[90mUse --seed=0x4e85b3a53f7ef to reproduce.[39m
+[90mUse --seed=0x2165520c39f5b7d8 --backend=rust to reproduce.[39m
 error: Invariant violated
 ```
+
+Only `total_positive` is violated, since every balance is zero in the initial state.
 
 This makes it easier to identify which specific properties are being violated when you have multiple invariants to check.
 
@@ -137,6 +66,79 @@ The `--invariants` option also works with the `verify` command, allowing you to 
 ```sh
 quint verify bank.qnt --invariants no_negatives accounts_match total_positive
 ```
+
+## Observations
+
+While invariants are things that need to hold on **every** state, sometimes we want to check that something is true in **some** state. This is a sort of sanity check, or reachability check. For that, we define observations.
+
+There are currently two ways to assess reachability of observations with Quint:
+1. For every `observation` definition in the model, the simulator counts the traces that reach it. Model checkers can also search for them with `--search-observations`.
+2. When passing `--observation` flag(s) to `quint run` or `quint verify`, the tools will report a trace where the last state satisfies the observation.
+
+### Observations are counted in all simulation runs
+For (1), you define something that you want to be possible:
+
+```quint
+observation alice_more_than_bob = balances.get("alice") > balances.get("bob")
+```
+
+The example above states that it should be possible for Alice to have more balance than Bob. This for sure won't be true for every possible state, but it needs to hold for some of them.
+
+No flag is needed to count it. The same run that checks the invariants counts the traces that reach each observation:
+```sh
+quint run bank.qnt --max-steps=5
+```
+
+Quint reports:
+```ansi
+[32m[ok][39m No violation found [90m(22ms at 454545 traces/second).[39m
+[90mChecked invariants: no_negatives[39m
+[90mTrace length statistics: max=6, min=6, average=6.00[39m
+[90mYou may increase --max-samples and --max-steps.[39m
+[90mUse --verbosity to produce more (or less) output.[39m
+[32mObservations:[39m
+[33malice_more_than_bob[39m was observed in [32m7114[39m trace(s) out of 10000 explored [90m(71.14%)[39m
+[90mUse --seed=0x18f966d3c3c86e1a --backend=rust to reproduce.[39m
+```
+
+And that informs us that, in most executions, there is a state where Alice has a larger balance than that of Bob.
+
+<Callout>
+  This is a way to find that "good things are happening" without a liveness property. It is not the same as a liveness property, but it's a practical alternative that is enough in many scenarios.
+</Callout>
+
+When an `observation` definition is never reached, the simulator prints a warning in place of `[ok]`, but the run does not fail. With `--search-observations`, `quint verify` searches for every `observation` definition once the invariants hold and reports the ones that are not reached in the same way. This is currently not very efficient in the model checkers, and therefore disabled by default. Using the simulator to show reachability should be enough. TLC has recently added [support for reachability checks](https://github.com/tlaplus/tlaplus/pull/1377) that can be integrated in the future.
+
+### Inspecting traces with `--observation`
+
+If we concretely want to see a trace that reaches our property, we can ask the simulator to stop at the first trace that reaches it:
+
+```sh
+quint run bank.qnt --observation=alice_more_than_bob --max-steps=5
+```
+
+Quint reports:
+```ansi
+[90mAn example execution:[39m
+[90m[39m
+[[1mState 0[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m0[39m) }
+
+[[1mState 1[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m82[39m) }
+
+[[1mState 2[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m0[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m35[39m) }
+
+[[1mState 3[22m] { balances[90m:[39m [32mMap[39m([32m"alice"[39m[90m ->[39m [33m62[39m, [32m"bob"[39m[90m ->[39m [33m0[39m, [32m"charlie"[39m[90m ->[39m [33m35[39m) }
+
+[32m[observed][39m Observed [33malice_more_than_bob[39m, which stopped the run [90m(13ms at 77 traces/second).[39m
+[90mChecked invariants: no_negatives[39m
+[32mObservations:[39m
+[33malice_more_than_bob[39m was observed in [32m1[39m trace(s) out of 1 explored [90m(100.00%)[39m
+[90mUse --seed=0xfcaa6dbf0e8c32f8 --backend=rust to reproduce.[39m
+```
+
+The trace ends at the first state where the property holds. When no trace reaches the property, the run fails with `[not observed]`. The property can also be given as an expression, such as `--observation='balances.get("alice") > 50'`.
+
+`quint verify` takes `--observation` as well. The model checker then reports a trace of up to `--max-steps` steps that reaches the observation. When no trace of that length reaches it, the run fails.
 
 ## Inductive Invariants
 

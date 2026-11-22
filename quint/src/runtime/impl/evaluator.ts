@@ -238,7 +238,7 @@ export class Evaluator {
         this.shift()
 
         const observedAtInit = checkObservations()
-        const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
+        const invResult = failure ? left(failure) : invEval(this.ctx).mapLeft(error => (failure = error))
         this.recorder.onUserOperatorReturn(initApp, [], invResult)
         if (!isTrue(invResult)) {
           stoppedBy = []
@@ -272,7 +272,7 @@ export class Evaluator {
             this.shift()
 
             const observed = checkObservations()
-            const invResult = invEval(this.ctx).mapLeft(error => (failure = error))
+            const invResult = failure ? left(failure) : invEval(this.ctx).mapLeft(error => (failure = error))
             this.recorder.onUserOperatorReturn(stepApp, [], invResult)
             if (!isTrue(invResult)) {
               // A violation in the same trace takes precedence over a stopping observation
@@ -283,14 +283,14 @@ export class Evaluator {
             }
           }
 
-          traceObserved.forEach((observed, i) => {
-            if (observed) {
-              observingTraces[i] = observingTraces[i] + 1
-            }
-          })
-
           traceLengths.push(this.trace.get().length)
         }
+
+        traceObserved.forEach((observed, i) => {
+          if (observed) {
+            observingTraces[i] = observingTraces[i] + 1
+          }
+        })
       }
 
       const outcome = failure ? left(failure) : right(rv.mkBool(errorsFound == 0))

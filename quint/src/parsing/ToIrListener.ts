@@ -17,6 +17,7 @@ import {
   QuintOpDef,
   QuintStr,
   isAnnotatedDef,
+  isPropertyQualifier,
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
