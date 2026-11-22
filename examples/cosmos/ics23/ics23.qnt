@@ -340,15 +340,10 @@ module ics23test {
 
   // test data
   val a = [5]
-  val b = [6]
-  val c = [7]
-  val d = [8]
   val ab = [5, 6]
   val ba = [6, 5]
   val abc = [5, 6, 7]
   val abcd = [5, 6, 7, 8]
-
-  val allStrings = Set([], a, ab, ba, abc, abcd, [1], [2], [3], [4])
 
   val test1 = {
     existsCalculate({

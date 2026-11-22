@@ -19,11 +19,9 @@ module LamportMutex {
   assume maxClockType = maxClock.in(Nat)
 
   val Proc = 1.to(N)
-  val Clock = Nat.exclude(Set(0))
 
   /* For model checking, add ClockConstraint as a state constraint to ensure
-  a finite state space and override the definition of Clock by
-  1 .. maxClock+1 so that TLC can evaluate the definition of Message. */
+  a finite state space. */
 
   // local clock of each process
   var clock: int -> int
@@ -40,8 +38,6 @@ module LamportMutex {
   def ReqMessage(c) = { mtype: "req", clock: c }
   val AckMessage = { mtype: "ack", clock: 0 }
   val RelMessage = { mtype: "rel", clock: 0 }
-
-  val Message = Set(AckMessage, RelMessage).union(Clock.map(c => ReqMessage(c)))
 
   action Init = all {
       clock' = Proc.mapBy(p => 0),

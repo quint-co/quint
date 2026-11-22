@@ -240,8 +240,6 @@ module bakery {
   observation someone_critical =
     processes.filter(x => op.get(x) == Critical).size() > 0
 
-  def small_witness = processes.filter(x => num.get(x) > 100).size() < 2
-
   /// adaptation of Lamport's before function.
   def before(i,j) = and {
     num.get(i) > 0, // i is competing and has finished writing

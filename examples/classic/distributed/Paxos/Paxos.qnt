@@ -86,12 +86,6 @@ module Paxos {
   (* retransmitted if lost) to guarantee progress.                           *)
   (***************************************************************************/
 
-  val vars = (maxBal, maxVBal, maxVal, msgs)
-    /*************************************************************************
-     * It is convenient to define some identifier to be the tuple of all     *
-     * variables.  I like to use the identifier `vars'.                      *
-     *************************************************************************/
-
   /***************************************************************************)
   (* The type invariant and initial predicate.                               *)
   (***************************************************************************/
