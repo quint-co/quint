@@ -15,7 +15,7 @@ module KSetAgreementConsensus {
 
   const K: int
 
-  val kSetAgreement = {
+  invariant kSetAgreement = {
     // Get all decided values (excluding None) and ensure they are unique
     val decidedValues = Procs.exclude(crashed).map(p => procState.get(p).decision).filter(v => v != None)
   
@@ -25,7 +25,7 @@ module KSetAgreementConsensus {
 }
 
 module KSetProperValues {
-  // quint run --main KSetProperValues --invariant kSetAgreement KSetAgreementConsensus.qnt
+  // quint run KSetAgreementConsensus.qnt --main KSetProperValues
   // quint test --main KSetProperValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(NUM_PPROCESSES = 8, MAX_FAULTS = 3, ACTUAL_FAULTS = 3, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 
@@ -37,9 +37,8 @@ module KSetProperValues {
 }
 
 module KSetBadValues {
-  // quint run KSetAgreementConsensus.qnt --main KSetBadValues --invariant kSetAgreement --max-steps 8
-  // The command above should fail, but it might take a few minutes (and extra samples) to find a violation
-  // Use --seed=0x12d0977afd37f0 to find it (generated in quint v0.23.0)
+  // quint run KSetAgreementConsensus.qnt --main KSetBadValues --max-steps 8 --seed=0x53723b1f7cb2114e
+  // The command above fails. Without the seed, it takes about a million samples (--max-samples 1000000) to find a violation
   // quint test --main=KSetBadValues KSetAgreementConsensus.qnt
   import KSetAgreementConsensus(NUM_PPROCESSES = 8, MAX_FAULTS = 3, ACTUAL_FAULTS = 4, K = 2, MAX_ROUNDS = (3/2 + 1)).*
 

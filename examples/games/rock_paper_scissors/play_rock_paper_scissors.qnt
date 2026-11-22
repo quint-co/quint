@@ -54,7 +54,7 @@ module rock_paper_scissors {
     }
 
     /// Invariant to check if the game status matches the expected winner
-    val winInv = and {
+    invariant winInv = and {
         status == Winner(PLAYER1) implies beats(p1State, p2State),
         status == Winner(PLAYER2) implies beats(p2State, p1State),
     }

@@ -176,6 +176,11 @@ export interface TraceRecorder extends ExecutionListener {
   clear: () => void
 
   /**
+   * Forget the best traces recorded so far, keeping the trace being recorded
+   */
+  clearBestTraces: () => void
+
+  /**
    * The best recorded traces.
    */
   bestTraces: Trace[]
@@ -216,10 +221,14 @@ class TraceRecorderImpl implements TraceRecorder {
   }
 
   clear() {
-    this.bestTraces = []
+    this.clearBestTraces()
     const bottom = this.newBottomFrame()
     this.currentFrame = bottom
     this.frameStack = [bottom]
+  }
+
+  clearBestTraces() {
+    this.bestTraces = []
   }
 
   onUserOperatorCall(app: QuintApp) {

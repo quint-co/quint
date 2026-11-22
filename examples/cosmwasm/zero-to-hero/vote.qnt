@@ -452,8 +452,8 @@ module state {
   // Invariant: An admin is always set in the contract's config.
   //
   // To check:
-  // quint run --main=state --invariant=alwaysAdmin vote.qnt
-  val alwaysAdmin = state.config.admin != None
+  // quint run vote.qnt --main=state
+  invariant alwaysAdmin = state.config.admin != None
 
   // Return true iff `pred(e)` is true for all elements `e` of `list`.
   pure def listForall(list: List[a], pred: a => bool): bool = {
@@ -465,18 +465,18 @@ module state {
     list.foldl(true, (b, elem) => { if (pred(elem)) b else false })
   }
 
-  // Invariant: The ballots in `ballots` sum up to the aggregated votes in
-  //            `polls[id].options`.
+  // Observation: The ballots in `ballots` do not sum up to the aggregated votes
+  //              in `polls[id].options`.
   //
-  // To check:
-  // quint run --main=state --invariant=invBallotsMatchPolls vote.qnt
+  // To find an example:
+  // quint run vote.qnt --main=state --observation=ballotsMismatchPolls
   //
-  // Note: This invariant DOES NOT hold in the current implementation / spec.
-  //       Can you guess why?
+  // Note: We would like this to be unreachable, but it is reachable in the
+  //       current implementation / spec. Can you guess why?
   //       [`execute_vote` allows to replace a poll in `polls` without nuking
   //        already submitted ballots in `ballots`.]
-  val invBallotsMatchPolls = {
-    state.polls.keys().forall(poll_id =>
+  observation ballotsMismatchPolls = {
+    not(state.polls.keys().forall(poll_id =>
       // sum the votes in `ballots` into a map `question -> num_votes`:
       val affected_ballot_keys = state.ballots.keys().filter(k => k._2 == poll_id)
       val summed_ballots = affected_ballot_keys.fold(Map(), (m, k) =>
@@ -496,19 +496,19 @@ module state {
           summed_ballots.get(optionKey) == optionSum
         }
       )
-    )
+    ))
   }
 
-  // Invariant: The aggregated votes for all options of all polls are greater 0.
+  // Observation: The aggregated votes for some option of some poll are negative.
   //
-  // To check:
-  // quint run --main=state --invariant=invAllBallotsPositive vote.qnt
+  // To find an example:
+  // quint run vote.qnt --main=state --observation=someBallotNegative
   //
-  // Note: This invariant DOES NOT hold in the current implementation / spec.
-  //       Can you guess why?
+  // Note: We would like this to be unreachable, but it is reachable in the
+  //       current implementation / spec. Can you guess why?
   //       [`execute_vote` allows to replace a poll in `polls` without nuking
   //        already submitted ballots in `ballots`, but `execute_vote` adjusts
   //        the sum differently based on whether such a ballot is present.]
-  val invAllBallotsPositive = query_all_polls(state).polls.listForall(poll =>
-                                poll.options.listForall2(opt => opt._2 >= 0))
+  observation someBallotNegative = not(query_all_polls(state).polls.listForall(poll =>
+                                     poll.options.listForall2(opt => opt._2 >= 0)))
 }

@@ -79,10 +79,10 @@ export const verbosity = {
   },
 
   /**
-   * Shall the tool output witnesses counts.
+   * Shall the tool output how often observations were reached.
    */
-  hasWitnessesOutput: (level: number): boolean => {
-    return level >= 1
+  hasObservationsOutput: (level: number): boolean => {
+    return level >= 2
   },
 
   /**

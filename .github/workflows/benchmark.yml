@@ -89,6 +89,16 @@ jobs:
       - name: Build benchmarks (base)
         run: cargo build --release --benches
 
+      # `quint run` uses the evaluator version pinned in binaryManager.ts,
+      # which may not be released yet, so the one built from this commit is
+      # installed under that version.
+      - name: Install Rust evaluator locally (base)
+        run: |
+          cargo build --release
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " ../quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
+
       - name: Run benchmarks (base)
         run: cargo criterion --message-format=json > baseline_results.json
 
@@ -101,6 +111,13 @@ jobs:
 
       - name: Build benchmarks (PR)
         run: cargo build --release --benches
+
+      - name: Install Rust evaluator locally (PR)
+        run: |
+          cargo build --release
+          VERSION=$(grep "QUINT_EVALUATOR_VERSION = " ../quint/src/rust/binaryManager.ts | sed "s/.*'\(.*\)'/\1/")
+          mkdir -p ~/.quint/rust-evaluator-$VERSION
+          cp target/release/quint_evaluator ~/.quint/rust-evaluator-$VERSION/
 
       - name: Run benchmarks (PR)
         run: cargo criterion --message-format=json > benchmark_results.json

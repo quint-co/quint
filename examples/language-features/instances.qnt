@@ -42,5 +42,5 @@ module instances {
   }
 
   // The two variables should increment independently
-  val inv = V1::counter == 0 or V2::counter > V1::counter
+  invariant inv = V1::counter == 0 or V2::counter > V1::counter
 }

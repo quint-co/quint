@@ -161,7 +161,7 @@ module two_phase_commit {
   }
 
   /// Two resource managers have not arrived at conflicting decisions
-  val inv = RM::consistencyInv(resourceManagers)
+  invariant inv = RM::consistencyInv(resourceManagers)
 }
 
 module two_phase_commit_tests {

@@ -195,12 +195,12 @@ module gradualPonziTest {
       .fail()
   }
 
-  // Check this invariant to make sure that no account goes negative:
+  // This invariant makes sure that no account goes negative. Check it with:
   //
-  // $ quint run --invariant=noNegativeInv --main=gradualPonziTest gradualPonzi.qnt
+  // $ quint run --main=gradualPonziTest gradualPonzi.qnt
   //
   // By looking at the code, do you think noNegativeInv holds true?
-  val noNegativeInv = {
+  invariant noNegativeInv = {
     addr.forall(a => evmState.balances.get(a) >= 0)
   }
 
@@ -223,35 +223,28 @@ module gradualPonziTest {
       })
   }
 
-  // The property every Ponzi schemer believes should hold true:
-  // There will be always another person who invests more into the game.
+  // Every Ponzi schemer believes there will be always another person who
+  // invests more into the game. This observation is the end of the game:
+  // nobody can invest anymore.
   //
-  // Check this invariant and inspect an example execution:
+  // Inspect an example execution that reaches it:
   //
-  // $ quint run --invariant=progressInv --main=gradualPonziTest gradualPonzi.qnt
-  //
-  // If quint has not reported a violation, try:
-  //
-  // $ quint run --invariant=progressInv --main=gradualPonziTest --max-steps=50 --seed=0x8272b36d6a57f gradualPonzi.qnt
-  //
-  // It is quite hard for `quint run` to find a violation to this property.
-  // In contrast, `quint verify` finds it in a few seconds.
-  val progressInv = {
-    userAddr.exists(someone =>
+  // $ quint run gradualPonzi.qnt --main=gradualPonziTest --observation=noProgress
+  observation noProgress = {
+    not(userAddr.exists(someone =>
       receive(evmState, ponziState, someone, MINIMUM_INVESTMENT).error == ""
-    )
+    ))
   }
 
   /* EXERCISE: add gas fees on every action.
-     Think about progressInv. Does it still hold true? */
+     Think about noProgress. How does it change? */
 
 
-  // There should be no left over tokens on the contract balance.
-  //
-  // This invariant is violated due to rounding errors:
-  // $ quint run --invariant=noLeftoversInv --main=gradualPonziTest gradualPonzi.qnt
-  val noLeftoversInv = {
+  // There should be no left over tokens on the contract balance, but there
+  // are, due to rounding errors. Inspect an example with:
+  // $ quint run gradualPonzi.qnt --main=gradualPonziTest --observation=leftovers
+  observation leftovers = {
     val sumRewards = addr.fold(0, (s, a) => s + ponziState.rewards.get(a))
-    sumRewards == evmState.balances.get("contract")
+    sumRewards != evmState.balances.get("contract")
   }
 }

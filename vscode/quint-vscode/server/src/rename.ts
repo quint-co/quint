@@ -23,6 +23,8 @@ export function getDeclRegExp(decl: QuintDef): RegExp {
         case 'action':
         case 'run':
         case 'temporal':
+        case 'invariant':
+        case 'observation':
           return RegExp(`(${decl.qualifier})\\s+(${decl.name})`)
         case 'pureval':
           return RegExp(`(pure\\s+val)\\s+(${decl.name})`)

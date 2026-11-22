@@ -108,7 +108,7 @@ module two_phase_commit {
   }
 
   /// Two resource managers have not arrived at conflicting decisions
-  val consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
+  invariant consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
     not(RM::states.get(r1) == Committed and RM::states.get(r2) == Aborted)
   )
 }

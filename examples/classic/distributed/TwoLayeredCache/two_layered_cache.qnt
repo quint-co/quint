@@ -9,8 +9,7 @@
   * Check with:
   *   quint verify \
   *     two_layered_cache.qnt \
-  *     --invariant=readAfterWrite,writeAfterWrite \
-  *     --temporal=agreement \
+  *     --temporal=agreement
   *
   * Or with TLC using the `check_with_tlc.sh` script from this repo:
   *   sh check_with_tlc.sh \
@@ -211,7 +210,7 @@ module two_layered_cache {
     //**********************************************************
 
     // Read the latest write
-    val readAfterWrite: bool = {
+    invariant readAfterWrite: bool = {
         val idx = history.indices()
         idx.forall(i => {
             idx.forall(j => {
@@ -224,7 +223,7 @@ module two_layered_cache {
     }
 
     // Later write must contain a greater value
-    val writeAfterWrite: bool = {
+    invariant writeAfterWrite: bool = {
         val idx = history.indices()
         idx.forall(i => {
             idx.forall(j => {

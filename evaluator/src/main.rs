@@ -16,7 +16,8 @@ use quint_evaluator::evaluator::evaluate_at_state;
 use quint_evaluator::ir::{LookupDefinition, LookupTable, QuintError, QuintEx};
 use quint_evaluator::progress;
 use quint_evaluator::simulator::{
-    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, TraceStatistics,
+    ParsedQuint, SimulationConfig, SimulationError, SimulationResult, StoppingObservations,
+    TraceStatistics,
 };
 use quint_evaluator::tester::{TestCase, TestResult, TestStatus};
 use quint_evaluator::trace_quality::{insert_sorted_by_quality, TraceQuality};
@@ -125,6 +126,9 @@ struct SimulateInput {
     #[serde(default)]
     mbt: bool,
     verbosity: Verbosity,
+    /// Indices of the observations whose first trace ends the simulation
+    #[serde(default)]
+    stopping_observations: Vec<usize>,
 }
 
 #[derive(Eq, PartialEq, Serialize)]
@@ -133,6 +137,8 @@ enum SimulationStatus {
     #[serde(rename = "ok")]
     Success,
     Violation,
+    /// A stopping observation ended the simulation
+    Observed,
     Error,
 }
 
@@ -144,7 +150,9 @@ struct SimOutput {
     errors: Vec<QuintError>,
     best_traces: Vec<SimulationTrace>,
     trace_statistics: TraceStatistics,
-    witnessing_traces: Vec<usize>,
+    observing_traces: Vec<usize>,
+    /// When `status` is `observed`, the stopping observations its trace reaches
+    stopped_by_observations: Vec<usize>,
     samples: usize,
     violated_invariants: Vec<usize>,
 }
@@ -281,6 +289,7 @@ fn run_simulation(args: RunArgs) -> eyre::Result<()> {
         seed: args.seed,
         store_metadata: args.mbt,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
 
@@ -321,6 +330,7 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         seed,
         mbt,
         verbosity,
+        stopping_observations,
         ..
     } = serde_json::from_reader(io::stdin())?;
 
@@ -334,6 +344,10 @@ fn simulate_from_stdin() -> eyre::Result<()> {
         seed,
         store_metadata: mbt,
         verbosity,
+        stopping_observations: StoppingObservations {
+            indices: stopping_observations,
+            ..Default::default()
+        },
     };
     let outcome = if nthreads > 1 && seed.is_none() {
         simulate_in_parallel(source, parsed, config, nthreads)
@@ -427,6 +441,7 @@ fn simulate_in_parallel(
         seed: _,
         store_metadata: mbt,
         verbosity,
+        stopping_observations,
     } = config;
     assert!(nthreads > 1, "nthreads must be > 1");
     nthreads = nthreads.min(nruns); //avoid spawning threads with no work
@@ -457,6 +472,8 @@ fn simulate_in_parallel(
 
         let reporter = Arc::clone(&reporter_thread.reporter);
         let source = Arc::clone(&source);
+        // Shares the stop flag: the first thread to reach a stopping observation stops the others
+        let stopping_observations = stopping_observations.clone();
         let out_tx = out_tx.clone();
 
         let thread = std::thread::Builder::new()
@@ -469,6 +486,7 @@ fn simulate_in_parallel(
                     seed: None,
                     store_metadata: mbt,
                     verbosity,
+                    stopping_observations,
                 };
                 let result = parsed.simulate(config, reporter);
                 let outcome = to_sim_output(source, result);
@@ -480,30 +498,33 @@ fn simulate_in_parallel(
     }
 
     let mut samples = 0;
-    let mut aggregated_witnesses = vec![];
+    let mut aggregated_observations = vec![];
     let mut merged_best_traces: Vec<SimulationTrace> = Vec::new();
     let mut last_trace_statistics;
     let mut final_status = SimulationStatus::Success;
     let mut final_errors: Vec<QuintError> = Vec::new();
+    // The traces and stopping observations of the first thread a stopping observation ended
+    let mut observed: Option<(Vec<SimulationTrace>, Vec<usize>)> = None;
 
     loop {
         let outcome = out_rx.recv().expect("closed channel");
         samples += outcome.samples;
         last_trace_statistics = outcome.trace_statistics;
 
-        // Accumulate witness counts from all threads
-        if aggregated_witnesses.is_empty() {
-            aggregated_witnesses = outcome.witnessing_traces;
+        // Accumulate observation counts from all threads
+        if aggregated_observations.is_empty() {
+            aggregated_observations = outcome.observing_traces;
         } else {
-            for (agg, count) in aggregated_witnesses
+            for (agg, count) in aggregated_observations
                 .iter_mut()
-                .zip(&outcome.witnessing_traces)
+                .zip(&outcome.observing_traces)
             {
                 *agg += count;
             }
         }
 
-        // Escalate status: Error > Violation > Success
+        let mut best_traces = outcome.best_traces;
+        // Escalate status: Error > Violation > Observed > Success
         match outcome.status {
             SimulationStatus::Error => {
                 final_status = SimulationStatus::Error;
@@ -512,11 +533,18 @@ fn simulate_in_parallel(
             SimulationStatus::Violation if final_status != SimulationStatus::Error => {
                 final_status = SimulationStatus::Violation;
             }
+            SimulationStatus::Observed if final_status == SimulationStatus::Success => {
+                final_status = SimulationStatus::Observed;
+                observed = Some((
+                    std::mem::take(&mut best_traces),
+                    outcome.stopped_by_observations,
+                ));
+            }
             _ => {}
         }
 
         // Merge best_traces using the same quality criteria as the threads
-        for trace in outcome.best_traces {
+        for trace in best_traces {
             insert_sorted_by_quality(&mut merged_best_traces, trace, ntraces, verbosity);
         }
 
@@ -526,12 +554,17 @@ fn simulate_in_parallel(
         }
     }
 
+    let (best_traces, stopped_by_observations) = match observed {
+        Some(observed) if final_status == SimulationStatus::Observed => observed,
+        _ => (merged_best_traces, vec![]),
+    };
     SimOutput {
         status: final_status,
         errors: final_errors,
-        best_traces: merged_best_traces,
+        best_traces,
         trace_statistics: last_trace_statistics,
-        witnessing_traces: aggregated_witnesses,
+        observing_traces: aggregated_observations,
+        stopped_by_observations,
         samples,
         violated_invariants: vec![],
     }
@@ -576,21 +609,25 @@ fn to_sim_output(
                 result,
                 best_traces,
                 trace_statistics,
-                witnessing_traces,
+                observing_traces,
                 samples,
                 violated_invariants,
+                stopped_by_observations,
             } = result;
 
             SimOutput {
                 samples,
                 trace_statistics,
-                witnessing_traces,
+                observing_traces,
                 violated_invariants,
-                status: if result {
+                status: if !result {
+                    SimulationStatus::Violation
+                } else if stopped_by_observations.is_empty() {
                     SimulationStatus::Success
                 } else {
-                    SimulationStatus::Violation
+                    SimulationStatus::Observed
                 },
+                stopped_by_observations,
                 best_traces: best_traces
                     .into_iter()
                     .map(|t| SimulationTrace {
@@ -623,7 +660,8 @@ fn to_sim_output(
                     states: trace
                         .to_itf_with_pending_diagnostics(source.to_string(), pending_diagnostics),
                 }],
-                witnessing_traces: vec![],
+                observing_traces: vec![],
+                stopped_by_observations: vec![],
                 violated_invariants: vec![],
             }
         }

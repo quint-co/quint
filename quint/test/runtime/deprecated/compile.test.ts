@@ -9,10 +9,15 @@ import { fileSourceResolver } from '../../../src/parsing/sourceResolver'
 import { QuintEx, parseExpressionOrDeclaration, quintErrorToString, walkExpression } from '../../../src'
 import { parse } from '../../../src/parsing/quintParserFrontend'
 import { Evaluator } from '../../../src/runtime/impl/evaluator'
+import { Outcome } from '../../../src/simulation'
+import { TraceHook } from '../../../src/cliReporting'
 import { Either, left } from '@sweet-monads/either'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
+
+// A seed whose first samples of `step = any { n' = n + 1, n' = n + 2 }` never reach `n == 1`
+const SEED_WITH_UNOBSERVED_SAMPLES_FIRST = 2n
 
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
@@ -1121,4 +1126,158 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('strongFair(true, [])', undefined)
     })
   })
+
+  describe('simulating with stopping observations', () => {
+    const counter = `var n: int
+       action init = n' = 0
+       action step = n' = n + 1`
+
+    it('ends the simulation at the first state that reaches a stopping observation, and reports that trace', () => {
+      const outcome = simulateIn(counter, { observations: ['n == 0', 'n == 3'], stoppingObservations: [1] })
+
+      assert.equal(outcome.status, 'observed')
+      assert.equal(outcome.samples, 1)
+      assert.deepEqual(outcome.stoppedByObservations, [1])
+      assert.deepEqual(
+        outcome.bestTraces.map(t => t.states.map(expressionToString)),
+        [['Rec("n", 0)', 'Rec("n", 1)', 'Rec("n", 2)', 'Rec("n", 3)']]
+      )
+    })
+
+    it('ends the trace at the initial state when a stopping observation holds there', () => {
+      const outcome = simulateIn(counter, { observations: ['n == 0'], stoppingObservations: [0] })
+
+      assert.equal(outcome.status, 'observed')
+      assert.deepEqual(outcome.bestTraces[0].states.map(expressionToString), ['Rec("n", 0)'])
+    })
+
+    it('reports a violation in the trace that reaches a stopping observation instead', () => {
+      const outcome = simulateIn(counter, { inv: 'n < 3', observations: ['n == 3'], stoppingObservations: [0] })
+
+      assert.equal(outcome.status, 'violation')
+      assert.deepEqual(outcome.stoppedByObservations, [])
+    })
+
+    it('reports a violation in the initial state even when a stopping observation holds there', () => {
+      const outcome = simulateIn(counter, { inv: 'n > 0', observations: ['n == 0'], stoppingObservations: [0] })
+
+      assert.equal(outcome.status, 'violation')
+      assert.deepEqual(outcome.stoppedByObservations, [])
+      assert.deepEqual(outcome.bestTraces[0].states.map(expressionToString), ['Rec("n", 0)'])
+    })
+
+    it('hands the trace that reached a stopping observation to the trace hook as observed', () => {
+      const hooked: string[] = []
+
+      simulateIn(counter, {
+        observations: ['n == 2'],
+        stoppingObservations: [0],
+        onTrace: (_index, status) => hooked.push(status),
+      })
+
+      assert.deepEqual(hooked, ['observed'])
+    })
+
+    it('reports a runtime error in an observation, whether it stops the run or is only counted', () => {
+      for (const stoppingObservations of [[0], []]) {
+        const outcome = simulateIn(counter, { observations: ['Map(1 -> 2).get(n) == 2'], stoppingObservations })
+
+        assert.equal(outcome.status, 'error')
+        assert.include(outcome.errors[0].message, 'non-existing key')
+      }
+    })
+
+    it('counts the observations of a trace whose initial state violates the invariant', () => {
+      const outcome = simulateIn(counter, { inv: 'n > 0', observations: ['n == 0'], stoppingObservations: [] })
+
+      assert.equal(outcome.status, 'violation')
+      assert.deepEqual(outcome.observingTraces, [1])
+    })
+
+    it('runs every sample when the observations are only counted, including in the initial state', () => {
+      const outcome = simulateIn(counter, { observations: ['n == 0', 'n == 3'], stoppingObservations: [] })
+
+      assert.equal(outcome.status, 'ok')
+      assert.equal(outcome.samples, 10)
+      assert.deepEqual(outcome.observingTraces, [10, 10])
+    })
+
+    it('runs every sample when no trace reaches a stopping observation', () => {
+      const outcome = simulateIn(counter, { observations: ['n == 10'], stoppingObservations: [0] })
+
+      assert.equal(outcome.status, 'ok')
+      assert.equal(outcome.samples, 10)
+      assert.deepEqual(outcome.observingTraces, [0])
+    })
+
+    it('ignores stopping observations once a violation is found, when more violations are wanted', () => {
+      const outcome = simulateIn(counter, {
+        inv: 'n != 2',
+        observations: ['n == 3'],
+        stoppingObservations: [0],
+        ntraces: 2,
+      })
+
+      assert.equal(outcome.status, 'violation')
+      assert.equal(outcome.samples, 2, 'the second violation is found in the second sample')
+    })
+
+    it('reports the trace that reached a stopping observation over the longer traces sampled before it', () => {
+      // A sample reaches n == 1 only when its first step adds 1; the others run all 5 steps
+      const hopping = `var n: int
+         action init = n' = 0
+         action step = any { n' = n + 1, n' = n + 2 }`
+
+      const outcome = simulateIn(hopping, {
+        observations: ['n == 1'],
+        stoppingObservations: [0],
+        seed: SEED_WITH_UNOBSERVED_SAMPLES_FIRST,
+      })
+
+      assert.equal(outcome.status, 'observed')
+      assert.isAbove(outcome.samples, 1, 'the seed samples traces that never reach n == 1 first')
+      assert.deepEqual(outcome.bestTraces[0].states.map(expressionToString), ['Rec("n", 0)', 'Rec("n", 1)'])
+    })
+  })
 })
+
+// Simulate `init` and `step` of `context` 10 times for 5 steps, checking `inv` and the observations,
+// until `ntraces` (by default 1) violations are found
+function simulateIn(
+  context: string,
+  opts: {
+    inv?: string
+    observations: string[]
+    stoppingObservations: number[]
+    onTrace?: TraceHook
+    ntraces?: number
+    seed?: bigint
+  }
+): Outcome {
+  const mockLookupPath = fileSourceResolver(new Map()).lookupPath('/', './mock')
+  const { resolver, sourceMap } = parse(idGen, '<test>', mockLookupPath, `module contextM { ${context} }`)
+  const toEx = (text: string): QuintEx => {
+    const result = parseExpressionOrDeclaration(text, '<input>', idGen, sourceMap)
+    if (result.kind !== 'expr') {
+      assert.fail(`Expected an expression, found ${result.kind}`)
+    }
+    walkExpression(resolver, result.expr)
+    return result.expr
+  }
+  const [init, step, inv, ...observations] = ['init', 'step', opts.inv ?? 'true', ...opts.observations].map(toEx)
+  assert.isEmpty(resolver.errors, resolver.errors.map(quintErrorToString).join(', '))
+
+  const rng = newRng(opts.seed)
+  const evaluator = new Evaluator(resolver.table, newTraceRecorder(0, rng), rng)
+  return evaluator.simulate(
+    init,
+    step,
+    inv,
+    observations,
+    opts.stoppingObservations,
+    10,
+    5,
+    opts.ntraces ?? 1,
+    opts.onTrace
+  )
+}

@@ -17,6 +17,7 @@ import {
   QuintOpDef,
   QuintStr,
   isAnnotatedDef,
+  isPropertyQualifier,
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
@@ -182,6 +183,16 @@ export class ToIrListener implements QuintListener {
   exitLetIn(ctx: p.LetInContext) {
     const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
     const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+
+    if (def.kind === 'def' && isPropertyQualifier(def.qualifier)) {
+      // The CLI collects these definitions from the top level only, so a nested one would never be checked
+      this.errors.push({
+        code: 'QNT017',
+        message: `'${def.qualifier}' definitions must be at the top level of a module`,
+        reference: def.id,
+        data: {},
+      })
+    }
 
     // Check if what we popped is a destructuring temp variable
     if (def.kind === 'def' && def.name.startsWith('quintDestructTemp')) {

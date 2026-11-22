@@ -18,7 +18,7 @@ import os from 'os'
 import chalk from 'chalk'
 import { rustEvaluatorDir } from '../config'
 
-export const QUINT_EVALUATOR_VERSION = 'v0.7.1'
+export const QUINT_EVALUATOR_VERSION = 'v0.8.0'
 
 interface GitHubRelease {
   tag_name: string
@@ -194,6 +194,25 @@ async function exists(filePath: string): Promise<boolean> {
     .catch(() => false)
 }
 
+/**
+ * Explain how to build the evaluator `version` when it has no release on GitHub. This happens to a quint built from
+ * the main branch, which may pin an evaluator that is newer than the latest release.
+ */
+function unreleasedEvaluatorMessage(version: string): string {
+  const { executable } = inferAssetAndExecutableNames(os.platform(), os.arch())
+  const evaluatorDir = rustEvaluatorDir(version)
+  return [
+    `Rust evaluator ${version} is not released yet. A quint built from the main branch may need an evaluator that is`,
+    'newer than the latest release. Build it from your clone of the quint repository, and copy it to the folder',
+    'where quint looks for it, by running these commands from the root of the clone:',
+    '',
+    '  cd evaluator',
+    '  cargo build --release',
+    `  mkdir -p ${evaluatorDir}`,
+    `  cp target/release/${executable} ${evaluatorDir}/`,
+  ].join('\n')
+}
+
 class GitHubClient {
   async fetch(url: string, accept: string): Promise<Response> {
     const options: any = {
@@ -207,7 +226,7 @@ class GitHubClient {
 
     const response = await fetch(url, options)
     if (!response.ok) {
-      throw new Error(`Failed to fetch from GitHub: ${response.statusText}`)
+      throw Object.assign(new Error(`Failed to fetch from GitHub: ${response.statusText}`), { status: response.status })
     }
 
     return response
@@ -220,7 +239,10 @@ class GitHubClient {
     try {
       const response = await this.fetch(url, 'application/vnd.github.v3+json')
       return (await response.json()) as GitHubRelease
-    } catch (err) {
+    } catch (err: any) {
+      if (err.status === 404) {
+        throw new Error(unreleasedEvaluatorMessage(version))
+      }
       throw new Error(`Release ${version} not found: ${err}`)
     }
   }

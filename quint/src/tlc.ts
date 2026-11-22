@@ -59,7 +59,8 @@ function isViolationExitCode(code: number): boolean {
 export interface TlcConfig {
   tlaCode: string
   moduleName: string
-  hasInvariant: boolean
+  /** Quint names of the invariants to check, e.g. `q::inv` */
+  invariants: string[]
   hasTemporal: boolean
 }
 
@@ -67,15 +68,22 @@ export type TlcError = {
   explanation: string
   errors: ErrorMessage[]
   isViolation: boolean
+  /** Quint name of the violated invariant, when TLC reported one */
+  violatedInvariant?: string
 }
 
 export type TlcResult<T> = Either<TlcError, T>
 
-function generateCfg(config: TlcConfig): string {
+// Apalache's TLA+ output spells a Quint name `q::inv` as `q_inv`
+function tlaName(quintName: string): string {
+  return quintName.replace('::', '_')
+}
+
+export function generateCfg(config: TlcConfig): string {
   let cfg = `INIT q_init\nNEXT q_step\n`
 
-  if (config.hasInvariant) {
-    cfg += `INVARIANT q_inv\n`
+  for (const invariant of config.invariants) {
+    cfg += `INVARIANT ${tlaName(invariant)}\n`
   }
   if (config.hasTemporal) {
     cfg += `PROPERTY q_temporalProps\n`
@@ -91,8 +99,17 @@ function findApalacheJar(apalacheVersion: string): Either<string, string> {
   return left(`Apalache JAR not found at ${jarPath}. Run 'quint verify' with Apalache backend first to download it.`)
 }
 
-function tlcErr(explanation: string, isViolation: boolean): TlcError {
-  return { explanation, errors: [], isViolation }
+function tlcErr(explanation: string, isViolation: boolean, violatedInvariant?: string): TlcError {
+  return { explanation, errors: [], isViolation, violatedInvariant }
+}
+
+/**
+ * The Quint name of the invariant that TLC reports as violated in its output, if
+ * it is one of `invariants`.
+ */
+export function findViolatedInvariant(tlcOutput: string, invariants: string[]): string | undefined {
+  const match = tlcOutput.match(/Invariant (\S+) is violated/)
+  return match ? invariants.find(inv => tlaName(inv) === match[1]) : undefined
 }
 
 export async function verify(
@@ -134,7 +151,9 @@ export async function verify(
       tlaFile,
     ])
 
+    let stdout = ''
     proc.stdout.on('data', data => {
+      stdout += data.toString()
       if (verbosityLevel >= TLC_OUTPUT_VERBOSITY) {
         process.stdout.write(data.toString())
       }
@@ -152,7 +171,7 @@ export async function verify(
       if (code === TLC_EXIT_SUCCESS) {
         resolve(right(undefined))
       } else if (code !== null && isViolationExitCode(code)) {
-        resolve(left(tlcErr('found a counterexample', true)))
+        resolve(left(tlcErr('found a counterexample', true, findViolatedInvariant(stdout, config.invariants))))
       } else {
         resolve(left(tlcErr('TLC error (see output above)', false)))
       }

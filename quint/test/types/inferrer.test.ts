@@ -412,6 +412,24 @@ module B {
     )
   })
 
+  it('requires invariants and observations to be Boolean', () => {
+    const [okErrors, types] = inferTypesForDefs(['var n: int', 'invariant inv = n >= 0', 'observation obs = n == 2'])
+    assert.isEmpty(okErrors, `Should find no errors, found: ${[...okErrors.values()].map(errorTreeToString)}`)
+    assert.includeMembers(
+      [...types.values()].map(t => typeSchemeToString(t)),
+      ['bool']
+    )
+
+    for (const def of ['invariant inv = n + 1', 'observation obs = n']) {
+      const [errors] = inferTypesForDefs(['var n: int', def])
+      assert.deepEqual(
+        [...errors.values()].map(e => errorTreeToString(e).split('\n')[0]),
+        ["Couldn't unify int and bool"],
+        def
+      )
+    }
+  })
+
   it('checks correct polymorphic types', () => {
     const defs = [
       'type Option[a] = Some(a) | None',

@@ -581,7 +581,7 @@ module Tendermint {
   //******************************** PROPERTIES  ***************************************
 
   // the safety property -- agreement
-  val Agreement =
+  invariant Agreement =
     tuples(Corr, Corr).forall( ((p, q)) =>
       or {
         decision.get(p) == NilValue,
@@ -590,7 +590,7 @@ module Tendermint {
     })
 
   // the protocol validity
-  val Validity =
+  invariant Validity =
     Corr.forall(p =>
       decision.get(p).in((ValidValues.union(Set(NilValue))))
     )
@@ -600,7 +600,7 @@ module Tendermint {
        1. There is no fork, that is, Agreement holds true.
        2. A subset of faulty processes demonstrates equivocation or amnesia.
    */
-  val Accountability = or {
+  invariant Accountability = or {
       Agreement,
       powerset(Faulty).exists(Detectable => and {
           size(Detectable) >= THRESHOLD1,
@@ -608,55 +608,55 @@ module Tendermint {
       })
   }
 
-  //****************** FALSE INVARIANTS TO PRODUCE EXAMPLES ***********************
+  //********************** OBSERVATIONS TO PRODUCE EXAMPLES **************************
 
-  // This property is violated. You can check it to see how amnesic behavior
-  // appears in the evidence variable.
-  val NoAmnesia =
-      Faulty.forall(p => not(AmnesiaBy(p)))
+  // A faulty process demonstrates amnesia. Observe it to see how amnesic
+  // behavior appears in the evidence variable.
+  observation Amnesia =
+      Faulty.exists(p => AmnesiaBy(p))
 
-  // This property is violated. You can check it to see an example of equivocation.
-  val NoEquivocation =
-      Faulty.forall(p => not(EquivocationBy(p)))
+  // A faulty process equivocates.
+  observation Equivocation =
+      Faulty.exists(p => EquivocationBy(p))
 
-  // This property is violated. You can check it to see an example of agreement.
-  // It is not exactly ~Agreement, as we do not want to see the states where
+  // Two correct processes decide on the same value. This is not exactly
+  // Agreement, as we do not want to see the states where
   // decision.get(p) = NilValue
-  val NoAgreement =
-    tuples(Corr, Corr).forall( ((p, q)) =>
+  observation DecidedAgreement =
+    tuples(Corr, Corr).exists( ((p, q)) =>
       and {
         p != q,
         decision.get(p) != NilValue,
-        decision.get(q) != NilValue
-      } implies (decision.get(p) != decision.get(q))
+        decision.get(q) != NilValue,
+        decision.get(p) == decision.get(q),
+      }
     )
-  // Either agreement holds, or the faulty processes indeed demonstrate amnesia.
-  // This property is violated. A counterexample should demonstrate equivocation.
-  val AgreementOrAmnesia =
-      Agreement or Faulty.forall(p => AmnesiaBy(p))
 
-  // We expect this property to be violated. It shows us a protocol run,
-  // where one faulty process demonstrates amnesia without equivocation.
-  // However, the absence of amnesia
-  // is a tough constraint for Apalache. It has not reported a counterexample
+  // Agreement is violated, but not every faulty process demonstrates amnesia.
+  // An example should demonstrate equivocation.
+  observation DisagreementWithoutAllAmnesia =
+      not(Agreement) and Faulty.exists(p => not(AmnesiaBy(p)))
+
+  // Agreement is violated, and one faulty process demonstrates amnesia
+  // without equivocation. However, the absence of amnesia
+  // is a tough constraint for Apalache. It has not reported an example
   // for n=4,f=2, length <= 5.
-  val ShowMeAmnesiaWithoutEquivocation =
-      (not(Agreement) and Faulty.exists(p => not(EquivocationBy(p))))
-          implies Faulty.forall(p => not(AmnesiaBy(p)))
+  observation DisagreementWithAmnesiaWithoutEquivocation = and {
+      not(Agreement),
+      Faulty.exists(p => not(EquivocationBy(p))),
+      Faulty.exists(p => AmnesiaBy(p)),
+  }
 
-  // This property is violated on n=4,f=2, length=4 in less than 10 min.
-  // Two faulty processes may demonstrate amnesia without equivocation.
-  val AmnesiaImpliesEquivocation =
-      (Faulty.exists(p => AmnesiaBy(p)))
-        implies (Faulty.exists(q => EquivocationBy(q)))
+  // Faulty processes demonstrate amnesia, and none equivocates. Apalache
+  // finds it on n=4,f=2, length=4 in less than 10 min.
+  observation AmnesiaWithoutEquivocation =
+      Faulty.exists(p => AmnesiaBy(p))
+        and not(Faulty.exists(q => EquivocationBy(q)))
 
-  /*
-    This property is violated. You can check it to see that all correct processes
-    may reach MaxRound without making a decision.
-   */
-  val NeverUndecidedInMaxRound = (
+  // All correct processes reach MaxRound without making a decision.
+  observation UndecidedInMaxRound = (
       val AllInMax   = Corr.forall(p => round.get(p) == MaxRound)
       val AllDecided = Corr.forall(p => decision.get(p) != NilValue)
-      AllInMax implies AllDecided
+      AllInMax and not(AllDecided)
   )
 }

@@ -84,6 +84,8 @@ module ConsensusAlg {
   // Invariants
   //
 
+  // Not declared as an invariant: KSetAgreementConsensus exports this module,
+  // and its k-set agreement allows up to K different decisions.
   val agreement = Procs.exclude(crashed).forall(process1 => {
     Procs.exclude(crashed).forall(process2 => {
       (procState.get(process1).decision != None and procState.get(process2).decision != None)
@@ -94,7 +96,7 @@ module ConsensusAlg {
 
 
   /// If all processes have the same initial value, then this must be the only decision value
-  val validity = {
+  invariant validity = {
     val allProposalValues = Procs.map(process => procState.get(process).proposalValue)
 
     allProposalValues.size() == 1 implies
@@ -274,7 +276,7 @@ module ConsensusAlg {
 }
 
 module properValues {
-  // quint run --main properValues --invariant agreement ConsensusAlg.qnt
+  // quint run ConsensusAlg.qnt --main properValues --invariant agreement
   import ConsensusAlg(NUM_PPROCESSES = 6, MAX_FAULTS = 1, ACTUAL_FAULTS = 1, MAX_ROUNDS = 2).*
 
   run consensusRunTest =

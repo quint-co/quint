@@ -208,18 +208,19 @@ module utxo {
     }
 
   /// Property: supply should not change
-  val constant_supply =
+  invariant constant_supply =
     pure def token_supply(s: UTXOs): int =
       s.keys().fold(0, (acc, k) => acc + s.get(k).amount)
 
     state.token_supply() == INITIAL_SUPPLY
 
-  /// Broken Property: this is a bad implementation of the token supply function
-  /// it does not take into account that a user can have multiple UTXOs with the
-  /// same value (but different keys) simulation finds a counter example
-  val constant_supply_bad =
+  /// A bad implementation of the token supply function changes value: it does
+  /// not take into account that a user can have multiple UTXOs with the same
+  /// value (but different keys). See an example with
+  /// `quint run utxo.qnt --observation=bad_supply_changes`
+  observation bad_supply_changes =
     pure def token_supply_bad(s: UTXOs): int =
       s.values().fold(0, (acc, v) => acc + v.amount)
 
-    state.token_supply_bad() == INITIAL_SUPPLY
+    state.token_supply_bad() != INITIAL_SUPPLY
 }

@@ -19,6 +19,9 @@ module weakFairness {
 
   val vars = done
 
+  /// A state where `done` holds is reachable.
+  observation doneIsReachable = done
+
   // Holds with fairness: finish is constantly enabled when done=false, so weak
   // fairness forces it to eventually fire.
   temporal eventuallyDone = weakFair(finish, vars) implies eventually(done)

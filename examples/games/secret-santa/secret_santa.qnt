@@ -102,12 +102,14 @@ module secret_santa {
 
   /* PROPERTIES */
 
-  val everyone_gets_a_santa = empty(bowl) implies (participants == recipients)
+  invariant everyone_gets_a_santa = empty(bowl) implies (participants == recipients)
 
   val no_person_is_self_santa = santas.forall(santa =>
     get(recipient_for_santa, santa) != santa
   )
 
+  // `inv` and `safe_from_memorizers` hold for `step_with_reset` only:
+  // quint run secret_santa.qnt --main=quint_team_secret_santa --step=step_with_reset --invariants inv safe_from_memorizers
   val inv = (last_draw == Ok) implies no_person_is_self_santa
 
   /// true iff Gabriela can find out who is a Santa for someone.

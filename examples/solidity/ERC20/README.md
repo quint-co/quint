@@ -30,8 +30,15 @@ token][]. It contains three modules:
    simulator:
 
    ```sh
-   quint run --max-samples=1000000 --max-steps=7 --main=mempool \
-     --invariant=noTransferFromWhileApproveInFlight --verbosity=3 erc20.qnt
+   quint run erc20.qnt --main=mempool --backend=typescript --max-samples=1000000 \
+     --max-steps=6 --observation=transferFromWhileApproveInFlight --verbosity=3
+   ```
+
+   This takes minutes. To see an example right away, fix the seed:
+
+   ```sh
+   quint run erc20.qnt --main=mempool --backend=typescript --max-steps=6 \
+     --seed=0x183578c376baaf --observation=transferFromWhileApproveInFlight --verbosity=3
    ```
 
 ## Comparison to TLA+

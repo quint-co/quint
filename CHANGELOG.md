@@ -9,18 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `invariant` and `observation` definitions, which are `val`s that `quint run` and `quint verify` collect by name. Every `invariant` of the main module is checked, and every `observation` is reported as reached or not, including the ones that the main module imports unqualified (`import P.*`). `invariant` and `observation` can still be used as names
+- `--observation O` for `quint run` and `quint verify` stops at the first trace that reaches `O` and reports it with the status `observed`. When no `--observation` is reached, the command fails with exit code 1
+- `--no-invariant` turns the declared invariants off
+- `quint verify --search-observations` searches for each `observation` definition once the invariants hold, with at most one more model checker run per observation
 - The Rust backend now supports integers outside the 64-bit range, like the TypeScript backend, e.g. `2^256 - 1`. Before, integer literals outside the i64 range were rejected with `QNT600`, and overflow arithmetic failed with `QNT601` (#1995)
 
 ### Changed
 
+- `--invariant` and `--invariants` replace the `invariant` definitions of the main module, which are checked when neither is given. `quint run` prints the invariants that it checked at verbosity 2 and above
+- Observation counts are printed at verbosity 2 and above, under `Observations:`, as `<observation> was observed in <n> trace(s)`
+- `quint run` and `quint verify` name the violated invariant even when they check only one
+- The TypeScript simulator evaluates observations in the initial state too, as the Rust simulator does
 - The Rust backend no longer enumerates intervals, `tuples`, `powerset` and `setOfMaps` into a set when it only needs to iterate over them (`fold`, `exists`, `forall`, `map`, `filter`, `mapBy`, `flatten`, `setToMap`, `getOnlyElement`, and the domain of `setOfMaps(...).oneOf()`). `exists` and `forall` stop at the first match without building the set, so e.g. `1.to(30).powerset().exists(s => ...)` no longer runs out of memory
 - The Rust backend now iterates intervals in ascending order, e.g. `0.to(9).fold([], (acc, e) => acc.append(e))` returns `[0, 1, ..., 9]`. The order of `fold` over sets remains unspecified
 - With the Rust backend, a `--seed` from a previous version can produce a different trace in this version for specs that pick from `setOfMaps` with `oneOf`.
 
 ### Deprecated
+
+- `--witnesses` for `quint run`. An `observation` definition is counted without a flag, and a trace that reaches an observation is shown with `--observation`
+
 ### Removed
 ### Fixed
 
+- A runtime error in an expression given on the command line, such as `--invariant`, is printed without the message "Something unexpected happened during error reconstruction"
+- An expression given with `--invariant`, `--invariants`, `--observation` or `--witnesses` that does not resolve is reported with the flag that gives it. An error in one expression is no longer reported again for a later expression that resolves
 - `quint typecheck` reports an arity error when a parameterized type is used with no arguments (for example `o: Option` instead of `o: Option[a]`), instead of crashing with an internal unification error (#2006)
 - A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
 - The REPL no longer fails with `readline was closed` on Node.js 24 when its input is piped, e.g. `echo "1 + 1" | quint`

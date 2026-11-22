@@ -1,6 +1,10 @@
 use std::path::Path;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
-use quint_evaluator::{helpers, progress, simulator::SimulationConfig, Verbosity};
+use quint_evaluator::ir::{LookupDefinition, OpQualifier, QuintDeclaration};
+use quint_evaluator::simulator::{ParsedQuint, SimulationConfig, StoppingObservations};
+use quint_evaluator::{helpers, progress, Verbosity};
 
 #[test]
 fn tictactoe_ok() {
@@ -15,6 +19,7 @@ fn tictactoe_ok() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -36,6 +41,7 @@ fn tictactoe_violation() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -68,6 +74,7 @@ fn instances_ok() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -91,6 +98,7 @@ fn instance_overrides_ok() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -119,6 +127,7 @@ fn one_of_empty_set_ok() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
 
@@ -143,6 +152,7 @@ fn tictactoe_multiple_violations() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -171,6 +181,7 @@ fn tictactoe_n_traces_1_fast_return() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -198,6 +209,7 @@ fn mbt_initial_state_metadata_reset() {
         seed: Some(0x42),
         store_metadata: true,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -251,6 +263,7 @@ fn tictactoe_best_traces_quality_order() {
         seed: None,
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report());
     assert!(result.is_ok());
@@ -317,6 +330,7 @@ fn assert_trace_statistics_count_each_run_once(inv: &str) {
         seed: Some(0x42),
         store_metadata: false,
         verbosity: Verbosity::default(),
+        stopping_observations: Default::default(),
     };
     let result = parsed.simulate(config, progress::no_report()).unwrap();
     assert_eq!(result.best_traces.len(), samples);
@@ -339,4 +353,183 @@ fn trace_statistics_count_runs_that_cannot_be_extended_once() {
 #[test]
 fn trace_statistics_count_violating_runs_once() {
     assert_trace_statistics_count_each_run_once("notStopped");
+}
+
+/// A counter whose `step` always succeeds, with observations at n == 0 and
+/// n == 3, one that is never reached, and the invariant n < 3
+const COUNTER: &str = "module counter {
+  var n: int
+  action init = n' = 0
+  action step = n' = n + 1
+  val atStart = n == 0
+  observation atThree = n == 3
+  val negative = n < 0
+  invariant belowThree = n < 3
+  val checkBelowThree = belowThree
+  val seeThree = atThree
+  val missingKey = Map(1 -> 2).get(n) == 2
+}";
+
+fn counter(invariants: &[&str], observations: &[&str]) -> ParsedQuint {
+    let output = helpers::parse(COUNTER, None).expect("quint compile failed");
+    let expr = |name: &str| output.find_definition_by_name(name).unwrap().expr.clone();
+    ParsedQuint {
+        init: expr("init"),
+        step: expr("step"),
+        invariants: invariants.iter().map(|name| expr(name)).collect(),
+        observations: observations.iter().map(|name| expr(name)).collect(),
+        table: output.table.clone(),
+    }
+}
+
+fn stopping_at(indices: &[usize]) -> SimulationConfig {
+    SimulationConfig {
+        steps: 10,
+        samples: 100,
+        n_traces: 1,
+        seed: Some(1),
+        store_metadata: false,
+        verbosity: Verbosity::default(),
+        stopping_observations: StoppingObservations {
+            indices: indices.to_vec(),
+            ..Default::default()
+        },
+    }
+}
+
+#[test]
+fn a_stopping_observation_ends_the_simulation_at_the_first_state_that_reaches_it() {
+    let config = stopping_at(&[1]);
+    let stopped = Arc::clone(&config.stopping_observations.stopped);
+
+    let result = counter(&[], &["atStart", "atThree"])
+        .simulate(config, progress::no_report())
+        .unwrap();
+
+    assert!(result.result);
+    assert_eq!(result.samples, 1);
+    assert_eq!(result.stopped_by_observations, vec![1]);
+    assert_eq!(result.observing_traces, vec![1, 1]);
+    assert_eq!(result.best_traces.len(), 1);
+    assert!(!result.best_traces[0].violation);
+    // States n = 0, 1, 2, 3: the trace ends where `atThree` first holds
+    assert_eq!(result.best_traces[0].states.len(), 4);
+    assert!(
+        stopped.load(Ordering::Relaxed),
+        "simulations sharing the flag must see the stop"
+    );
+}
+
+#[test]
+fn a_stopping_observation_that_holds_initially_ends_the_trace_at_the_initial_state() {
+    let result = counter(&[], &["atStart", "atThree"])
+        .simulate(stopping_at(&[0, 1]), progress::no_report())
+        .unwrap();
+
+    assert!(result.result);
+    assert_eq!(result.samples, 1);
+    assert_eq!(result.stopped_by_observations, vec![0]);
+    assert_eq!(result.best_traces[0].states.len(), 1);
+}
+
+#[test]
+fn a_violation_in_the_state_that_reaches_a_stopping_observation_takes_precedence() {
+    let result = counter(&["belowThree"], &["atThree"])
+        .simulate(stopping_at(&[0]), progress::no_report())
+        .unwrap();
+
+    assert!(!result.result);
+    assert!(result.stopped_by_observations.is_empty());
+    assert_eq!(result.violated_invariants, vec![0]);
+    assert!(result.best_traces[0].violation);
+    assert_eq!(result.best_traces[0].states.len(), 4);
+}
+
+#[test]
+fn observations_that_are_not_stopping_do_not_end_the_simulation() {
+    let result = counter(&[], &["atStart", "atThree"])
+        .simulate(stopping_at(&[]), progress::no_report())
+        .unwrap();
+
+    assert!(result.result);
+    assert_eq!(result.samples, 100);
+    assert!(result.stopped_by_observations.is_empty());
+    assert_eq!(result.observing_traces, vec![100, 100]);
+    assert_eq!(result.best_traces[0].states.len(), 11);
+}
+
+#[test]
+fn an_unreachable_stopping_observation_runs_every_sample() {
+    let config = stopping_at(&[1]);
+    let stopped = Arc::clone(&config.stopping_observations.stopped);
+
+    let result = counter(&[], &["atStart", "negative"])
+        .simulate(config, progress::no_report())
+        .unwrap();
+
+    assert!(result.result);
+    assert_eq!(result.samples, 100);
+    assert!(result.stopped_by_observations.is_empty());
+    assert_eq!(result.observing_traces, vec![100, 0]);
+    assert_eq!(result.best_traces.len(), 1);
+    assert_eq!(result.best_traces[0].states.len(), 11);
+    assert!(!stopped.load(Ordering::Relaxed));
+}
+
+#[test]
+fn a_simulation_stops_before_its_next_sample_once_another_reached_a_stopping_observation() {
+    let config = stopping_at(&[0]);
+    config
+        .stopping_observations
+        .stopped
+        .store(true, Ordering::Relaxed);
+
+    let result = counter(&[], &["atThree"])
+        .simulate(config, progress::no_report())
+        .unwrap();
+
+    assert!(result.result);
+    assert_eq!(result.samples, 0);
+    assert!(result.best_traces.is_empty());
+    assert!(result.stopped_by_observations.is_empty());
+}
+
+#[test]
+fn a_runtime_error_in_an_observation_ends_the_simulation_with_that_error() {
+    for stopping in [&[0][..], &[][..]] {
+        let result =
+            counter(&[], &["missingKey"]).simulate(stopping_at(stopping), progress::no_report());
+
+        let Err(error) = result else {
+            panic!("an observation that fails to evaluate must fail the simulation")
+        };
+        assert!(
+            error.error.message.contains("non-existing key"),
+            "unexpected error: {}",
+            error.error.message
+        );
+    }
+}
+
+#[test]
+fn invariant_and_observation_definitions_are_re_evaluated_at_each_state() {
+    let parsed = counter(&["checkBelowThree"], &["seeThree"]);
+    let qualifier = |name: &str| {
+        parsed.table.values().find_map(|def| match def {
+            LookupDefinition::Definition(QuintDeclaration::QuintOpDef(d)) if d.name == name => {
+                Some(d.qualifier.clone())
+            }
+            _ => None,
+        })
+    };
+    assert_eq!(qualifier("belowThree"), Some(OpQualifier::Invariant));
+    assert_eq!(qualifier("atThree"), Some(OpQualifier::Observation));
+
+    let result = parsed
+        .simulate(stopping_at(&[]), progress::no_report())
+        .unwrap();
+
+    assert!(!result.result);
+    assert_eq!(result.observing_traces, vec![1]);
+    assert_eq!(result.best_traces[0].states.len(), 4);
 }

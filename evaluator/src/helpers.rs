@@ -99,7 +99,7 @@ pub fn parse_from_path(
             .unwrap()
             .expr
             .clone()],
-        witnesses: vec![],
+        observations: vec![],
         table: output.table,
     })
 }

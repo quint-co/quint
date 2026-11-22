@@ -112,7 +112,7 @@ module DiningPhilosophers {
     // Safety properties
 
     // INVARIANTS: Ensures type correctness of the state variables
-    val TypeOk = and {
+    invariant TypeOk = and {
       // Forks must be within the set of valid fork values
       forks.subseteq(philosophers.map(p => leftFork(p)).union(philosophers.map(p => rightFork(p)))),
 
@@ -120,7 +120,7 @@ module DiningPhilosophers {
       taken.forall(((p, f)) => p.in(philosophers) and f.in(forks)),
     }
 
-    val Safety = and {
+    invariant Safety = and {
       // No two adjacent philosophers can be eating at the same time
       philosophers.forall(p =>
         not(states.get(p) == Eating and states.get(rightPhilosopher(p)) == Eating)

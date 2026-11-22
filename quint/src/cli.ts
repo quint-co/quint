@@ -32,6 +32,7 @@ import { verbosity } from './verbosity'
 
 import { version } from './version'
 import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
+import { propertyFlagErrors } from './cliHelpers'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -55,13 +56,30 @@ const compileOpts = (yargs: any) =>
       type: 'string',
     })
     .option('invariant', {
-      desc: 'the invariants to check, separated by commas',
+      desc: 'the invariants to check, separated by commas, instead of the invariant definitions of the main module',
       type: 'string',
     })
     .option('temporal', {
       desc: 'the temporal properties to check, separated by commas',
       type: 'string',
     })
+
+// Options that turn off the main module's `invariant` definitions, and that look for observations. They are
+// declared right after `--invariants`, so that `--help` lists the property options together.
+const propertyOptions = {
+  'no-invariant': {
+    desc: 'check no invariants, including the invariant definitions of the main module',
+    type: 'boolean',
+    default: false,
+  },
+  observation: {
+    desc: 'observation to look for: a definition name or an expression. The command stops at the first trace that reaches one, and fails if none is reached. Can be given several times',
+    type: 'array',
+    // One value per flag, so that `--observation obs spec.qnt` leaves the input file alone
+    nargs: 1,
+    default: [],
+  },
+}
 
 // Chain async CLIProcedures
 //
@@ -286,19 +304,20 @@ const runCmd = {
         default: 'step',
       })
       .option('invariants', {
-        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        desc: 'space separated list of invariants to check (definition names), instead of the invariant definitions of the main module. All invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
         default: [],
       })
       .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression. Can be used together with --invariants',
+        desc: 'invariant to check, instead of the invariant definitions of the main module: a definition name or an expression. Can be used together with --invariants',
         type: 'string',
-        default: 'true',
       })
+      .options(propertyOptions)
       .option('witnesses', {
-        desc: 'space separated list of witnesses to report on (counting for how many traces the witness is true)',
+        desc: 'space separated list of expressions to report on (counting for how many traces each one is true)',
         type: 'array',
         default: [],
+        deprecated: 'declare observation definitions, or use --observation',
       })
       .option('hide', {
         desc: 'space separated list of variable names to hide from the terminal output (does not affect ITF output)',
@@ -347,9 +366,15 @@ const verifyCmd = {
       .option('init', { default: 'init' })
       .option('step', { default: 'step' })
       .option('invariants', {
-        desc: 'space separated list of invariants to check (definition names). When specified, all invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
+        desc: 'space separated list of invariants to check (definition names), instead of the invariant definitions of the main module. All invariants are combined with AND and checked together, with detailed reporting of which ones were violated',
         type: 'array',
         default: [],
+      })
+      .options(propertyOptions)
+      .option('search-observations', {
+        desc: 'once the invariants hold, search for each observation definition of the main module, with up to one more model checker run per observation',
+        type: 'boolean',
+        default: false,
       })
       .option('inductive-invariant', {
         desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
@@ -435,6 +460,11 @@ const docsCmd = {
 
 // Perform parser input validation.
 const validate = (argv: any, opts: any) => {
+  // yargs parses `--invariant x --no-invariant` as a repeated `--invariant`, so these errors are reported first
+  const propertyErrors = propertyFlagErrors(argv)
+  if (propertyErrors.length > 0) {
+    throw new Error(propertyErrors.join('\n'))
+  }
   // Validate that only array options can be specified more than once.
   for (const key in argv) {
     if (key == 'commands' && (argv['_'][0] || 'repl') === 'repl') {
@@ -458,6 +488,15 @@ const validate = (argv: any, opts: any) => {
     }
   }
   return true
+}
+
+// An unknown word after `--observation a` is most likely a second observation, which the flag does not take
+function observationListHint(msg: string): string {
+  const unknown = msg.match(/^Unknown arguments?: (.*)$/)?.[1].split(', ') ?? []
+  const args = process.argv.slice(2)
+  const isObservation = (arg: string) => arg === '--observation' || arg.startsWith('--observation=')
+  const afterObservation = unknown.some(u => args.indexOf(u) > 0 && args.slice(0, args.indexOf(u)).some(isObservation))
+  return afterObservation ? '\nGive --observation once per observation, as in --observation a --observation b' : ''
 }
 
 function coerceSeed(seedText: string): BigInt {
@@ -484,6 +523,15 @@ async function main() {
     .command(docsCmd)
     .demandCommand(1)
     .check(validate)
+    .fail((msg: string | null | undefined, err: Error | undefined) => {
+      // yargs passes no message for an error that a command handler rejects with, whose stack is worth keeping
+      if (msg === null || msg === undefined) {
+        console.error(err)
+      } else {
+        console.error(msg + observationListHint(msg))
+      }
+      process.exit(1)
+    })
     .version(version)
     .strict()
     .parse()

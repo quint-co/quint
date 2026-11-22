@@ -5,7 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Uses the Rust evaluator to determine which invariants are violated at a given state.
+ * Uses the Rust evaluator to determine which invariants are violated, or which
+ * observations hold, at a given state.
  *
  * @module
  */
@@ -34,6 +35,37 @@ export async function findViolatedInvariants(
   exprs: QuintEx[],
   verbosityLevel: number
 ): Promise<Either<QuintError, number[]>> {
+  return indicesEvaluatingTo(false, state, table, exprs, verbosityLevel)
+}
+
+/**
+ * Evaluate observation expressions at a given ITF state using the Rust evaluator,
+ * and return the indices of observations that evaluated to true.
+ *
+ * @param state - The state as a raw ITF value.
+ * @param table - The lookup table for name resolution.
+ * @param exprs - The parsed observation expressions.
+ * @param verbosityLevel - The verbosity level for logging.
+ *
+ * @returns Either an error or the indices of the observations that hold at the state.
+ */
+export async function findSatisfiedObservations(
+  state: ItfState,
+  table: LookupTable,
+  exprs: QuintEx[],
+  verbosityLevel: number
+): Promise<Either<QuintError, number[]>> {
+  return indicesEvaluatingTo(true, state, table, exprs, verbosityLevel)
+}
+
+/** The indices of the expressions that evaluate to `expected` at `state`, by the Rust evaluator. */
+async function indicesEvaluatingTo(
+  expected: boolean,
+  state: ItfState,
+  table: LookupTable,
+  exprs: QuintEx[],
+  verbosityLevel: number
+): Promise<Either<QuintError, number[]>> {
   const wrapper = new CommandWrapper(verbosityLevel)
   const evalResults = await wrapper.evaluateAtState(state, table, exprs)
 
@@ -41,10 +73,10 @@ export async function findViolatedInvariants(
     return left(evalResults.value)
   }
 
-  const violatedIndices = evalResults.value
+  const indices = evalResults.value
     .map((value, i) => ({ value, i }))
-    .filter(({ value }) => value === false)
+    .filter(({ value }) => value === expected)
     .map(({ i }) => i)
 
-  return right(violatedIndices)
+  return right(indices)
 }

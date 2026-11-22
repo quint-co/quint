@@ -63,13 +63,40 @@ export interface WithOptionalDoc {
  *    state variables, and definition parameters. This expression must contain
  *    at least one temporal operator.
  *
+ *  - invariant, observation: a `val` that the CLI collects by name, checking
+ *    an invariant in every state and reporting whether a state satisfying an
+ *    observation is reached.
+ *
  * A qualifier is purely a language feature that we introduced for convenience.
  * Given an operator definition, we can compute its qualifier automatically.
  * However, it is often hard for the specification reader to figure out the
  * TLA+ level of an expression. So we optimize specifications for the reader
  * by requiring an explicit qualifier.
  */
-export type OpQualifier = 'pureval' | 'puredef' | 'val' | 'def' | 'nondet' | 'action' | 'run' | 'temporal'
+export type OpQualifier =
+  | 'pureval'
+  | 'puredef'
+  | 'val'
+  | 'def'
+  | 'nondet'
+  | 'action'
+  | 'run'
+  | 'temporal'
+  | 'invariant'
+  | 'observation'
+
+/** Whether a qualifier marks a property that the CLI collects by name. */
+export function isPropertyQualifier(qualifier: OpQualifier): qualifier is 'invariant' | 'observation' {
+  return qualifier === 'invariant' || qualifier === 'observation'
+}
+
+/**
+ * The qualifier a definition is checked and evaluated as. An `invariant` or an
+ * `observation` is a `val`.
+ */
+export function evaluationQualifier(qualifier: OpQualifier): OpQualifier {
+  return isPropertyQualifier(qualifier) ? 'val' : qualifier
+}
 
 export interface QuintName extends WithId {
   /** Expressions kind ('name' -- name reference) */

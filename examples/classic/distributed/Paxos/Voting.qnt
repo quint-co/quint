@@ -114,7 +114,7 @@ val VotesSafe =
                  VotedFor(a, b, v) implies SafeAt(b, v)
     )
 
-val OneVote =
+invariant OneVote =
     tuples(Acceptor, Ballot, Value, Value).forall( ((a, b, v, w)) =>
               VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
     )
@@ -145,7 +145,7 @@ def ShowsSafeAt(Q, b, v) = and {
   )
 }
 
-val ShowsSafety =
+invariant ShowsSafety =
     all { TypeOK, VotesSafe, OneValuePerBallot } implies
     tuples(Quorum, Ballot, Value).forall( ((Q, b, v)) =>
         ShowsSafeAt(Q, b, v) implies SafeAt(b, v)
@@ -214,7 +214,7 @@ action Next = {
     }
 }
 
-val Inv = TypeOK and VotesSafe and OneValuePerBallot
+invariant Inv = TypeOK and VotesSafe and OneValuePerBallot
 
 //-----------------------------------------------------------------------------
 //THEOREM Invariance == Spec => []Inv

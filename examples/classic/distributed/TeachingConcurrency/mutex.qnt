@@ -7,7 +7,7 @@
  * [2]: https://lamport.azurewebsites.net/pubs/teaching-concurrency.pdf
  *
  * Run in verifier with:
- *   quint verify mutex.qnt --invariant=correctness --inductive-invariant=inv
+ *   quint verify mutex.qnt --inductive-invariant=inv
  */
 module mutex {
   type ProcessID = str
@@ -73,7 +73,7 @@ module mutex {
   }
 
   /// Inductive invariant
-  val inv = and {
+  invariant inv = and {
     typeOK,
     counter == processes.filter(p => local_memory.get(p).stage == Done).size(),
     processes.forall(p => {
@@ -83,10 +83,10 @@ module mutex {
   }
 
   /// Ordinary invariant. Check it using the inductive invariant:
-  ///   quint verify mutex.qnt --invariant=correctness --inductive-invariant=inv
+  ///   quint verify mutex.qnt --inductive-invariant=inv
   /// This is possible because the inductive invariant implies the ordinary invariant.
   /// You can see why by inspecting the second predicate in `inv`.
-  val correctness =
+  invariant correctness =
     processes.forall(p => local_memory.get(p).stage == Done)
       implies counter == processes.size()
 }

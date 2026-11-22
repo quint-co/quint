@@ -5,7 +5,7 @@
  * from the tla-apalache-workshop [1].
  *
  * Check with:
- *   quint verify clockSync6.qnt --invariant skew_inv --main clock_sync4
+ *   quint verify clockSync6.qnt --main clock_sync4
  *
  * [1]: https://github.com/informalsystems/tla-apalache-workshop/blob/main/examples/clock-sync/ClockSync6.tla
  */
@@ -165,7 +165,7 @@ module clock_sync {
 
   // Theorem 6.15 from AW04:
   // Algorithm achieves u * (1 - 1/n)-synchronization for n processors.
-  val skew_inv: bool = {
+  invariant skew_inv: bool = {
     val all_sync = states.values().forall(s => s.control_state == Sync)
 
     val bounded_skew = {

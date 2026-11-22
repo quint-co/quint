@@ -306,13 +306,21 @@ action advance(unit: int) =
 // a temporal formula that ensures that the timer variable never goes negative
 temporal neverNegative =
     always(timer >= 0)
+
+// a state property that should hold in every reachable state
+invariant timerNonNegative =
+    timer >= 0
+
+// a state that should be reachable
+observation timerAdvanced =
+    timer > 10
 ```
 
 
 *Grammar:*
 
 ```bnf
-("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
+("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal" | "invariant" | "observation")
     <identifier>["(" <identifier> [":" <type>] ("," ..."," <identifier> [":" <type>])* ")"] [":" <type>]
       "=" <expr> [";"]
 ```
@@ -320,12 +328,27 @@ temporal neverNegative =
 *Mode:* The mode depends on the mode of the expression in the right-hand side.
 The following table defines this precisely.
 
-| Qualifier              | Mode of `expr`                       | Mode of definition |
-| --------------------   | ------------------------------------ | ------------------ |
-| `pure val`, `pure def` | Stateless                            | Stateless          |
-| `val`, `def`           | State                                | State              |
-| `action`               | Action                               | Action             |
-| `temporal`             | Stateless, State, Temporal           | Temporal           |
+| Qualifier                  | Mode of `expr`                       | Mode of definition |
+| -------------------------- | ------------------------------------ | ------------------ |
+| `pure val`, `pure def`     | Stateless                            | Stateless          |
+| `val`, `def`               | State                                | State              |
+| `action`                   | Action                               | Action             |
+| `temporal`                 | Stateless, State, Temporal           | Temporal           |
+| `invariant`, `observation` | Stateless, State                     | State              |
+
+An `invariant` or an `observation` is a `val` that is collected by name by
+`quint run` and `quint verify`. Every `invariant` is checked in every state,
+unless invariants are selected with a flag. `quint run` counts the traces that
+reach each `observation`, and `quint verify` searches for each one with
+`--search-observations`. The definitions are collected from the main module,
+together with the definitions that it imports unqualified, as in `import P.*`.
+The flags are described for [`quint run`](./quint#invariants-and-observations).
+
+An `invariant` or `observation` definition must be Boolean, since it is
+evaluated as a condition on each state. It must also be at the top level of a module,
+since a nested definition would never be collected. The words `invariant` and
+`observation` can still be used as names, for example in `val invariant = ...`
+or as a record field.
 
 ### No recursive functions and operators
 

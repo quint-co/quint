@@ -32,41 +32,38 @@ and can be reproduced with the test:
     }
 ```
 
-We can also specify a state invariant that is broken by the above test:
+We can also specify an observation that the above test reaches:
 
 ```quint
-    val noBuyInDrawingInv = {
+    observation buyInDrawing = {
         // note that there may be multiple "draw" transactions in flight
         val winningIds =
             mempool.filter(tx => tx.kind == "draw" and tx.sender == lotteryState.owner)
               .map(tx => tx.id)
-        // if there are some winning ids, and the contract is in the drawing phase
         and {
+            // there are some winning ids, and the contract is in the drawing phase
             lotteryState.drawingPhase,
             winningIds != Set(),
-        } implies
-        // then nobody could buy anything in this state
-        or {
-            // it's fine if the transaction was rejected
-            lastTx.status != "success",
-            // or it was not a buying transaction
-            lastTx.kind != "buy" and lastTx.kind != "multiBuy",
-            // or the buyer did not guess the winning id anyhow
-            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) == Set()
+            // a buying transaction succeeded
+            lastTx.status == "success",
+            lastTx.kind == "buy" or lastTx.kind == "multiBuy",
+            // and the buyer bought a winning id
+            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) != Set()
         }
     }
 ```
 
-It's not a simple invariant. No wonder that automatic tools are not tuned
+It's not a simple property. No wonder that automatic tools are not tuned
 towards exactly this pattern. Instead of specifying a run with the steps
-leading to the bug, we can try to disprove this invariant in the random simulator:
+leading to the bug, we can try to reach this observation in the random simulator:
 
 ```sh
-quint run --max-samples 100000 --max-steps 5 \
-  --invariant noBuyInDrawingInv --main lotteryMempool lottery.qnt
+quint run lottery.qnt --main lotteryMempool --backend typescript \
+  --max-samples 100000 --max-steps 5 --observation buyInDrawing
 ```
 
-With a bit of luck, quint finds a violation in 29 seconds:
+With a bit of luck, quint finds an example in 29 seconds. To reproduce one
+right away, pass the seed that is reported, e.g. `--max-steps 10 --seed 0x29f8e808eeaff`:
 
 ```quint
 An example execution:

@@ -94,20 +94,21 @@ module river {
   }
 
   // the property that should be enforced in the puzzle
-  val safety = and {
+  invariant safety = and {
     isSafe(origin),
     isSafe(boat),
     isSafe(destination)
   }
 
-  // check this invariant to see a solution
-  val noSolution = or {
-    origin != Set(),
-    boat != Set(),
+  // everything is at the destination. See a solution with
+  // `quint run river.qnt --observation=solved`
+  observation solved = and {
+    origin == Set(),
+    boat == Set(),
   }
 
   // we cannot replicate the farmer, wolf, goat, and cabbage
-  val consistency = and {
+  invariant consistency = and {
     origin.intersect(destination) == Set(),
     origin.intersect(boat) == Set(),
     boat.intersect(destination) == Set(),

@@ -11,7 +11,7 @@
  * translations of Lamport's model
  *
  * Run in verifier with:
- *   quint verify bakery.qnt --main verification --inductive-invariant IndInv --invariant correctness
+ *   quint verify bakery.qnt --main verification --inductive-invariant IndInv
  *
  * Josef Widder, Informal Systems, 2025
  */
@@ -233,14 +233,12 @@ module bakery {
   action alone = process_step(1)
 
   /// Mutual exclusion. No two processes are in the critical section at the same time
-  def correctness =
+  invariant correctness =
     processes.filter(x => op.get(x) == Critical).size() <= 1
 
-  /// Witness that finds a scenario where a process is in the critical section
-  def no_critical_witness =
-    processes.filter(x => op.get(x) == Critical).size() == 0
-
-  def small_witness = processes.filter(x => num.get(x) > 100).size() < 2
+  /// A process is in the critical section
+  observation someone_critical =
+    processes.filter(x => op.get(x) == Critical).size() > 0
 
   /// adaptation of Lamport's before function.
   def before(i,j) = and {
@@ -270,6 +268,8 @@ module bakery {
     },
   }
 
+  // Not declared as an invariant: TypeOK enumerates DOMAIN, which is finite
+  // only in the verification instance
   def IndInv = and {
     TypeOK,
     correctness,
@@ -344,11 +344,11 @@ module verification {
   // processes enter the critical section.
 
   // run
-  // quint run bakery.qnt --main verification --invariant no_critical_witness --seed=0xcfde13003ffa3
+  // quint run bakery.qnt --main verification --observation someone_critical --max-steps=50
   // to see that even with this parameters a node can actually enter the critical section
 
   // run
-  // quint verify bakery.qnt --main verification --inductive-invariant IndInv --invariant correctness
+  // quint verify bakery.qnt --main verification --inductive-invariant IndInv
   // to prove mutual exclusion. It takes 90sec on my laptop.
 
   import bakery(
@@ -371,9 +371,8 @@ module simulation {
 module understanding {
   // The first of Lamport's conjuncts in the inductive invariant might be hard to understand.
   // run
-  // quint run bakery.qnt --main understanding --invariant "not(interesting_before)" --max-steps=50
+  // quint run bakery.qnt --main understanding --observation interesting_before --max-steps=100
   // to get scenarios where it is in play. Perhaps you can figure it out.
-  // Retry if random simulation doesn't report a violation trace
 
   import bakery(
     N = 3,
@@ -382,7 +381,7 @@ module understanding {
     ENFORCE_DOMAIN = false,
   ).*
 
-  def interesting_before =
+  observation interesting_before =
     (system.get(3).pc._1 == L14Wait and system.get(3).pc._3 == L3 and num.get(3) > 1) and
     val j = system.get(3).pc._2
     or {

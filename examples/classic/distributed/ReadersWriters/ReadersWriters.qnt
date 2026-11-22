@@ -125,13 +125,13 @@ module ReadersWriters {
   (* Invariants *)
   (**************/
   
-  val TypeOK = and {
+  invariant TypeOK = and {
       readers.subseteq(Actors),
       writers.subseteq(Actors),
-      waiting.in(allLists(tuples(Set("read", "write"), Actors)))
+      ToSet(waiting).subseteq(tuples(Set("read", "write"), Actors))
   }
   
-  val Safety = and {
+  invariant Safety = and {
       not(readers != Set() and writers != Set()),
       size(writers) <= 1
   }

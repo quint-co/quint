@@ -58,7 +58,7 @@
 			"patterns": [
 				{
 					"name": "storage.modifier.quint",
-					"match": "\\b(type|assume|const|var|val|nondet|def|pure|action|temporal|run)\\b"
+					"match": "\\b(type|assume|const|var|val|nondet|def|pure|action|temporal|run|invariant|observation)\\b"
 				},
 				{
 					"name": "storage.type.quint",

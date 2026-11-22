@@ -12,7 +12,7 @@ import {
 } from '../../src/parsing/quintParserFrontend'
 import { lf } from 'eol'
 import { newIdGenerator } from '../../src/idGenerator'
-import { collectIds } from '../util'
+import { collectIds, parseMockedModule } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { mkErrorMessage } from '../../src/cliHelpers'
 import { QuintError, isDef } from '../../src'
@@ -289,7 +289,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', 'invariant', 'observation', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -300,7 +300,7 @@ describe('syntax errors', () => {
     assert.equal(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', 'invariant', 'observation', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -374,7 +374,7 @@ describe('syntax errors', () => {
     assert.isAtLeast(errors.length, 1)
     assert.equal(
       errors[0].message,
-      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', DOCCOMMENT}`
+      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'val', 'pure', 'type', 'def', 'action', 'run', 'temporal', 'nondet', 'import', 'export', 'invariant', 'observation', DOCCOMMENT}`
     )
     assert.equal(errors[0].code, 'QNT000')
   })
@@ -459,6 +459,45 @@ type variable 'a' is unbound. To fix it, write
     assert.equal(errors.length, 1)
     assert.equal(errors[0].code, 'QNT016')
     assert.equal(errors[0].message, 'Fields foo, bar cannot be defined more than once')
+  })
+
+  it('error on an invariant or observation that is not at the top level', () => {
+    const code = `module nested { val a = { invariant b = true b } val c = { observation d = true d } }`
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.deepEqual(
+      errors.map(e => [e.code, e.message]),
+      [
+        ['QNT017', `'invariant' definitions must be at the top level of a module`],
+        ['QNT017', `'observation' definitions must be at the top level of a module`],
+      ]
+    )
+  })
+})
+
+describe('invariant and observation definitions', () => {
+  it('are parsed with their qualifiers', () => {
+    const { modules } = parseMockedModule(`module A { var x: int  invariant inv = x >= 0  observation obs = x == 2 }`)
+    assert.sameDeepMembers(
+      modules[0].declarations.flatMap(d => (isDef(d) && d.kind === 'def' ? [[d.qualifier, d.name]] : [])),
+      [
+        ['invariant', 'inv'],
+        ['observation', 'obs'],
+      ]
+    )
+  })
+
+  it('leave invariant and observation available as identifiers', () => {
+    const { modules } = parseMockedModule(
+      `module A { val invariant = 1  val observation = { invariant: 2, observation: 3 }  val sum = invariant + observation.observation }`
+    )
+    assert.deepEqual(
+      modules[0].declarations.flatMap(d => (isDef(d) && d.kind === 'def' ? [[d.qualifier, d.name]] : [])),
+      [
+        ['val', 'invariant'],
+        ['val', 'observation'],
+        ['val', 'sum'],
+      ]
+    )
   })
 })
 

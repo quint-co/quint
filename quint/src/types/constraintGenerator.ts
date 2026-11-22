@@ -29,6 +29,7 @@ import {
   QuintStr,
   QuintVar,
   isAnnotatedDef,
+  isPropertyQualifier,
 } from '../ir/quintIr'
 import { QuintType, QuintVarType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
@@ -312,6 +313,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.fetchResult(def.expr.id).map(t => {
       if (def.typeAnnotation) {
         this.constraints.push({ kind: 'eq', types: [t.type, def.typeAnnotation], sourceId: def.id })
+      }
+      // The CLI evaluates an `invariant` or an `observation` as a condition on each state
+      if (isPropertyQualifier(def.qualifier)) {
+        this.constraints.push({ kind: 'eq', types: [t.type, { kind: 'bool' }], sourceId: def.id })
       }
     })
 

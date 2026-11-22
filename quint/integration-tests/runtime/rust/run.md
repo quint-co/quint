@@ -27,7 +27,7 @@ bash -
 <!-- !test exit 1 -->
 <!-- !test check lottery - Run -->
     quint run --backend=rust --max-samples=10000 --max-steps=10 --seed=0x29f8e808de5ed \
-      --invariant=noBuyInDrawingInv --main=lotteryMempool \
+      --invariant="not(buyInDrawing)" --main=lotteryMempool \
       ../examples/solidity/icse23-fig7/lottery.qnt
 
 ### OK on run BinSearch
@@ -54,28 +54,28 @@ bash -
       --invariant=noNegativeInv --main=gradualPonziTest \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
-### FAIL on run gradualPonzi::progressInv
+### FAIL on run gradualPonzi::noProgress
 
 <!-- !test exit 1 -->
-<!-- !test check gradualPonzi - Run progressInv -->
-    quint run --backend=rust --invariant=progressInv --main=gradualPonziTest \
+<!-- !test check gradualPonzi - Run noProgress -->
+    quint run --backend=rust --invariant="not(noProgress)" --main=gradualPonziTest \
       --max-samples=1 --max-steps=50 \
       --seed=0x3154c258ec659ee6 \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
-### FAIL on run gradualPonzi::noLeftoversInv
+### FAIL on run gradualPonzi::leftovers
 
 <!-- !test exit 1 -->
-<!-- !test check gradualPonzi - Run noLeftoversInv -->
-    quint run --backend=rust --invariant=noLeftoversInv --main=gradualPonziTest \
+<!-- !test check gradualPonzi - Run leftovers -->
+    quint run --backend=rust --invariant="not(leftovers)" --main=gradualPonziTest \
       --seed=0x3154c258ec659ee6 \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
-### FAIL on run river::noSolution
+### FAIL on run river::solved
 
 <!-- !test exit 1 -->
-<!-- !test check river - Run noSolution -->
-    quint run --backend=rust --invariant=noSolution --seed=0x2fa6b93d1eef3 --max-samples=10000 \
+<!-- !test check river - Run solved -->
+    quint run --backend=rust --invariant="not(solved)" --seed=0x2fa6b93d1eef3 --max-samples=10000 \
       ../examples/puzzles/river/river.qnt
 
 ### OK on run river::safety
@@ -148,6 +148,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x308623f2a4983 --backend=rust to reproduce.
 error: Invariant violated
@@ -182,6 +183,7 @@ An example execution:
 [State 4] { mbt::actionTaken: "OnDivByThree", mbt::nondetPicks: {  }, n: 12 }
 
 [violation] Found an issue (duration).
+  ❌ n < 10
 Use --verbosity=3 to show executions.
 Use --seed=0x8 --backend=rust to reproduce.
 error: Invariant violated
@@ -220,6 +222,7 @@ An example execution:
 }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0x1 --backend=rust to reproduce.
 error: Invariant violated
@@ -255,6 +258,7 @@ An example execution:
 [State 5] { mbt::actionTaken: "withdraw" }
 
 [violation] Found an issue (duration).
+  ❌ no_negatives
 Use --verbosity=3 to show executions.
 Use --seed=0xcc198528dea8b --backend=rust to reproduce.
 error: Invariant violated
@@ -286,6 +290,7 @@ An example execution:
 [State 4] { n: 3 }
 
 [ok] No violation found (duration).
+Checked invariants: n < 100
 Trace length statistics: max=5, min=5, average=5.00
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
@@ -444,24 +449,25 @@ Use --seed=SEED --backend=rust to reproduce.
 error: Runtime error
 ```
 
-### Prints witnesses counts
+### Prints the counts of the deprecated `--witnesses`
 
 <!-- !test exit 0 -->
 <!-- !test in witnesses -->
 ```
-output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 --verbosity=1)
+output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --witnesses="won(X)" stalemate --max-samples=100 --seed=0x1 2>&1)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms.*)/(duration)/g'
+echo "$output" | grep -e "deprecated" -e "^Observations:" -e "was observed"
 exit $exit_code
 ```
 
 <!-- !test out witnesses -->
 ```
-[ok] No violation found (duration).
-Witnesses:
-won(X) was witnessed in 96 trace(s) out of 100 explored (96.00%)
-stalemate was witnessed in 4 trace(s) out of 100 explored (4.00%)
-Use --seed=0x198d --backend=rust to reproduce.
+Warning: --witnesses is deprecated. Declare observation definitions in the spec, or use --observation to stop at the first trace that reaches one.
+Observations:
+XWon was observed in 96 trace(s) out of 100 explored (96.00%)
+stalemateReachable was observed in 4 trace(s) out of 100 explored (4.00%)
+won(X) was observed in 96 trace(s) out of 100 explored (96.00%)
+stalemate was observed in 4 trace(s) out of 100 explored (4.00%)
 ```
 
 ### Prints violated invariants when multiple invariants are given 
@@ -471,7 +477,7 @@ Use --seed=0x198d --backend=rust to reproduce.
 ```
 output=$(quint run --backend=rust ../examples/games/tictactoe/tictactoe.qnt --invariants="not(won(X))" "not(stalemate)" --max-samples=100 --seed=0x2b442ab439177)
 exit_code=$?
-echo "$output" | tail -n4 | sed -e 's/([0-9]*ms.*)/(duration)/g'
+echo "$output" | tail -n7 | sed -e 's/([0-9]*ms.*)/(duration)/g'
 exit $exit_code
 ```
 
@@ -480,6 +486,9 @@ exit $exit_code
 [violation] Found an issue (duration).
   ❌ not(won(X))
 Use --verbosity=3 to show executions.
+Observations:
+XWon was observed in 1 trace(s) out of 1 explored (100.00%)
+stalemateReachable was observed in 0 trace(s) out of 1 explored (0.00%)
 Use --seed=0x2b442ab439177 --backend=rust to reproduce.
 ```
 

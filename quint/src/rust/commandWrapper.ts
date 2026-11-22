@@ -13,7 +13,7 @@
  * @module
  */
 import { QuintApp, QuintEx, QuintModule, QuintStr } from '../ir/quintIr'
-import { Outcome } from '../simulation'
+import { Outcome, traceStatus } from '../simulation'
 import { TraceHook } from '../cliReporting'
 import { debugLog } from '../verbosity'
 import JSONbig from 'json-bigint'
@@ -38,7 +38,7 @@ export type ParsedQuint = {
   init: QuintEx
   step: QuintEx
   invariants: QuintEx[]
-  witnesses: QuintEx[]
+  observations: QuintEx[]
 }
 
 export class CommandWrapper {
@@ -57,11 +57,12 @@ export class CommandWrapper {
    *
    * @param {ParsedQuint} parsed - The parsed Quint model.
    * @param {string} source - The source code of the Quint model.
-   * @param {QuintEx[]} witnesses - The witnesses for the simulation.
    * @param {number} nruns - The number of runs for the simulation.
    * @param {number} nsteps - The number of steps per run.
    * @param {number} ntraces - The number of traces to store.
    * @param {number} nthreads - The number of threads to use.
+   * @param {number[]} stoppingObservations - Indices of the `parsed` observations whose first trace stops the
+   *   simulation.
    * @param {bigint} [seed] - Optional seed for reproducibility.
    * @param {boolean} [mbt] - Whether to produce metadata for model-based testing.
    * @param {TraceHook} onTrace - A callback function to be called with trace information for each simulation run.
@@ -76,6 +77,7 @@ export class CommandWrapper {
     nsteps: number,
     ntraces: number,
     nthreads: number,
+    stoppingObservations: number[],
     seed?: bigint,
     mbt?: boolean,
     onTrace?: TraceHook
@@ -87,6 +89,7 @@ export class CommandWrapper {
       nsteps: nsteps,
       ntraces: ntraces,
       nthreads: nthreads,
+      stopping_observations: stoppingObservations,
       seed: seed,
       mbt: mbt ?? false,
       verbosity: this.verbosityLevel,
@@ -104,7 +107,8 @@ export class CommandWrapper {
         status: 'error',
         errors: [error],
         bestTraces: [],
-        witnessingTraces: [],
+        observingTraces: [],
+        stoppedByObservations: [],
         samples: 0,
         traceStatistics: { averageTraceLength: 0, minTraceLength: 0, maxTraceLength: 0 },
         violatedInvariants: [],
@@ -137,7 +141,7 @@ export class CommandWrapper {
         }
 
         parsed.bestTraces.forEach((trace: any, index: number) => {
-          const status = trace.result ? 'ok' : 'violation'
+          const status = traceStatus(trace, parsed.status)
           onTrace(index, status, vars, trace.states)
         })
       }
@@ -280,7 +284,12 @@ export class CommandWrapper {
     input: any,
     progress?: { format: string; total: number }
   ): Promise<Either<QuintError, string>> {
-    const exe = await getRustEvaluatorPath()
+    let exe: string
+    try {
+      exe = await getRustEvaluatorPath()
+    } catch (err: any) {
+      return left({ code: 'QNT516', message: err.message })
+    }
     const args = [command]
 
     const inputStr = JSONbig.stringify(input, rustEvaluatorReplacer)

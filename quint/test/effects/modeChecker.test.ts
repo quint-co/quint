@@ -56,6 +56,38 @@ describe('checkModes', () => {
     assert.deepEqual(suggestions.size, 0)
   })
 
+  it('checks invariants and observations as vals, without suggesting a qualifier that drops their role', () => {
+    const defs = [
+      `invariant inv = x > 0`,
+      `observation obs = y`,
+      `invariant pureInv = Set(1).size() > 0`,
+      `observation pureObs = 1 > 0`,
+    ]
+
+    const [errors, suggestions] = checkMockedDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+    assert.deepEqual(suggestions.size, 0)
+  })
+
+  it('finds mode errors for invariants and observations without offering a fix that drops their role', () => {
+    const defs = [`invariant inv = x' = 1`, `observation obs(p) = x > p`, `invariant eventually0 = always(x > 0)`]
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.deepEqual(
+      [...errors.values()].map(e => [e.message, e.data]),
+      [
+        ["invariant operators may only read state variables, but operator `inv` updates variables 'x'.", {}],
+        ['observation operators may not have parameters, but operator `obs` has 1 parameter.', {}],
+        [
+          "invariant operators may only read state variables, but operator `eventually0` performs temporal operations over variables 'x'.",
+          {},
+        ],
+      ]
+    )
+  })
+
   it('points to nondet when exists over an action is used in an action', () => {
     const defs = [`action a = Set(1, 2).exists(i => x' = i)`]
 

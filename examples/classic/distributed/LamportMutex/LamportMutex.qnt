@@ -19,11 +19,9 @@ module LamportMutex {
   assume maxClockType = maxClock.in(Nat)
 
   val Proc = 1.to(N)
-  val Clock = Nat.exclude(Set(0))
 
   /* For model checking, add ClockConstraint as a state constraint to ensure
-  a finite state space and override the definition of Clock by
-  1 .. maxClock+1 so that TLC can evaluate the definition of Message. */
+  a finite state space. */
 
   // local clock of each process
   var clock: int -> int
@@ -40,8 +38,6 @@ module LamportMutex {
   def ReqMessage(c) = { mtype: "req", clock: c }
   val AckMessage = { mtype: "ack", clock: 0 }
   val RelMessage = { mtype: "rel", clock: 0 }
-
-  val Message = Set(AckMessage, RelMessage).union(Clock.map(c => ReqMessage(c)))
 
   action Init = all {
       clock' = Proc.mapBy(p => 0),
@@ -164,7 +160,9 @@ module LamportMutex {
   val ClockConstraint = Proc.forall(p => (clock.get(p) <= maxClock))
 
   /* No channel ever contains more than three messages. In fact, no channel
-     ever contains more than one message of the same type, as proved below.*/
+     ever contains more than one message of the same type, as proved below.
+     This translation violates it, so it is not declared as an invariant:
+       quint verify LamportMutex.qnt --main LamportMutex_3_10 --init Init --step Next --invariant BoundedNetwork --max-steps 5 */
   val BoundedNetwork = Proc.forall(p =>
     Proc.forall(q => 
       network.get(p).get(q).length() <= 3
@@ -172,7 +170,7 @@ module LamportMutex {
   )
 
   // The main safety property of mutual exclusion.
-  val Mutex = crit.forall(p => crit.forall(q => p == q))
+  invariant Mutex = crit.forall(p => crit.forall(q => p == q))
 }
 
 module LamportMutex_3_10 {

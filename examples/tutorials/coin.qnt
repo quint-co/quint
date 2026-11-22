@@ -136,7 +136,7 @@ module coin {
     // One of the simplest properties is that all balances are within the uint range.
     // While it is automatically guaranteed by Solidity, our specification is using
     // big integers. Hence, it makes sense to check the range.
-    val balancesRangeInv: bool = 
+    invariant balancesRangeInv: bool = 
         ADDR.forall(a => isUInt(balances.get(a)))
 
     // It is desirable that the total supply of tokens fits into UInt.
@@ -201,7 +201,7 @@ module coin {
     // to run the random simulator for 10000 executions, each up to 10 actions,
     // execute the following in the command line:
     //
-    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
+    // $ quint run --backend=typescript --invariant totalSupplyDoesNotOverflowInv coin.qnt
 
 
 

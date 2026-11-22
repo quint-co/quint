@@ -125,7 +125,8 @@ module ewd840 {
 
   /* Non-properties, useful for validating the specification with `run` and `verify`. */
 
-  val TokenAlwaysBlack = tcolor == "black"
+  /// The token turns white, so it is not always black
+  observation TokenTurnsWhite = tcolor == "white"
 
   temporal NeverChangeColor = always((color' = color).orKeep(vars))
 
@@ -136,7 +137,7 @@ module ewd840 {
     color.get(0) == "white" and not(active.get(0))
   }
 
-  val TerminationDetection =
+  invariant TerminationDetection =
     terminationDetected implies Nodes.forall(i => not(active.get(i)))
 
   /// Liveness property: termination is eventually detected.
@@ -169,17 +170,16 @@ module ewd840 {
     step.weakFair(vars) implies AllNodesTerminateIfNoMessages
 
   /// Dijkstra's inductive invariant
-  /// Check that it is indeed inductive (together with TypeOK) with:
-  ///   quint verify ewd840.qnt --inductive-invariant "TypeOK and Inv" --main ewd840_3
-  /// Check that it is inductive and it implies the safety property TerminationDetection with:
-  ///   quint verify ewd840.qnt --invariant TerminationDetection --inductive-invariant "TypeOK and Inv" --main ewd840_3
+  /// Check that it is indeed inductive (together with TypeOK), and that it implies
+  /// the safety property TerminationDetection, with:
+  ///   quint verify ewd840.qnt --inductive-invariant IndInv --main ewd840_3
   val Inv = or {
     Nodes.forall(i => tpos < i implies not(active.get(i))),
     Nodes.exists(j => j <= tpos and color.get(j) == "black"),
     tcolor == "black",
   }
 
-  val IndInv = TypeOK and Inv
+  invariant IndInv = TypeOK and Inv
 }
 
 module ewd840_3 {

@@ -17,7 +17,7 @@ import { isDeepStrictEqual as isEqual } from 'node:util'
 import { qualifierToString } from '../ir/IRprinting'
 import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { OpQualifier, QuintApp, QuintDeclaration, QuintInstance, QuintOpDef, evaluationQualifier } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
@@ -92,9 +92,10 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    const [mode, explanation] = modeForEffect(effect, def.qualifier)
+    const qualifier = evaluationQualifier(def.qualifier)
+    const [mode, explanation] = modeForEffect(effect, qualifier)
 
-    if (mode === def.qualifier) {
+    if (mode === qualifier) {
       return
     }
 
@@ -115,19 +116,30 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    if (isMoreGeneral(mode, def.qualifier)) {
+    if (isMoreGeneral(mode, qualifier)) {
+      // Replacing the qualifier of an `invariant` or `observation` would drop its role, so no replacement is offered
+      const replaceable = qualifier === def.qualifier
       this.errors.set(def.id, {
         code: 'QNT200',
         message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
           def.qualifier,
           mode
-        )}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
+        )}, but operator \`${def.name}\` ${explanation}.${
+          replaceable ? ` Use ${qualifierToString(mode)} instead.` : ''
+        }`,
         reference: def.id,
-        data: {
-          fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
-        },
+        data: replaceable
+          ? {
+              fix: {
+                kind: 'replace',
+                original: qualifierToString(def.qualifier),
+                replacement: qualifierToString(mode),
+              },
+            }
+          : {},
       })
-    } else {
+    } else if (qualifier === def.qualifier) {
+      // Suggesting a more specific qualifier for an `invariant` or `observation` would drop its role
       this.suggestions.set(def.id, mode)
     }
   }
@@ -167,6 +179,8 @@ function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
     case 'puredef':
       return 'may not interact with state variables'
     case 'val':
+    case 'invariant':
+    case 'observation':
       if (expectedMode === 'def') {
         return 'may not have parameters'
       } else {
