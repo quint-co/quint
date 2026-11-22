@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.34.0 -- 2026-11-22
+
+### Added
 
 - `invariant` and `observation` definitions, which are `val`s that `quint run` and `quint verify` collect by name. Every `invariant` of the main module is checked, and every `observation` is reported as reached or not, including the ones that the main module imports unqualified (`import P.*`). `invariant` and `observation` can still be used as names
 - `--observation O` for `quint run` and `quint verify` stops at the first trace that reaches `O` and reports it with the status `observed`. When no `--observation` is reached, the command fails with exit code 1
