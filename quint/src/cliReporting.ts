@@ -18,7 +18,7 @@ import {
 } from './cliCommands'
 import { writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { DebugMessage, ItfState, ofItfNormalized, toItf } from './itf'
+import { DebugMessage, ItfState, hasUnserializable, ofItfNormalized, toItf } from './itf'
 import { addItfHeader, expandNamedOutputTemplate, expandOutputTemplate, mkErrorMessage, toExpr } from './cliHelpers'
 import { Either, left, right } from '@sweet-monads/either'
 import { cwd } from 'process'
@@ -205,7 +205,16 @@ export async function processApalacheResult(
       const itfStates = err.traces?.[0]?.states
       const lastItfState = itfStates?.[itfStates.length - 1]
       if (invariantExprs && table && lastItfState) {
-        await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
+        if (hasUnserializable(lastItfState)) {
+          // The Rust evaluator cannot load values Apalache did not serialize
+          console.warn(
+            chalk.yellow(
+              'Warning: could not determine violated invariants: the last state contains values Apalache could not serialize'
+            )
+          )
+        } else {
+          await printViolatedInvariantsWithRust(invariantsList, verbosityLevel, invariantExprs, table, lastItfState)
+        }
       }
     }
 

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- `quint verify` with the Apalache backend no longer exits 0 with no output when reporting a counterexample throws. The error is printed to stderr and the process exits non-zero. Values Apalache cannot serialize (`#unserializable`, such as a set of maps) are printed as `<unserializable: ...>` with Apalache's raw text, so the violation itself is reported (#2074)
 - `quint typecheck` reports an arity error when a parameterized type is used with no arguments (for example `o: Option` instead of `o: Option[a]`), instead of crashing with an internal unification error (#2006)
 - A doc comment placed at the end of a module, immediately before the closing `}`, is now accepted and ignored. Previously it failed to parse and hid other errors in the file (#2013)
 - The REPL no longer fails with `readline was closed` on Node.js 24 when its input is piped, e.g. `echo "1 + 1" | quint`
