@@ -340,11 +340,11 @@ run looked for `two` only.
     quint run --observation negative --seed=0x1 --max-samples=10 --out-itf=unreached.itf.json \
       ./testFixture/simulator/properties.qnt > /dev/null
     echo "exit code: $?"
-    ls unreached*.itf.json 2> /dev/null | wc -l
+    ls unreached*.itf.json 2> /dev/null || echo "no trace written"
 
 <!-- !test out unreached observation writes no trace -->
     exit code: 1
-    0
+    no trace written
 
 ## Deprecated flags
 
