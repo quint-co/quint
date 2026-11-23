@@ -499,7 +499,12 @@ function observationListHint(msg: string): string {
   return afterObservation ? '\nGive --observation once per observation, as in --observation a --observation b' : ''
 }
 
-function coerceSeed(seedText: string): BigInt {
+function coerceSeed(seedText: string | string[]): BigInt | string[] {
+  if (Array.isArray(seedText)) {
+    // --seed was given more than once. Leave it as is, so `validate` reports
+    // that, instead of failing to parse the values joined together.
+    return seedText
+  }
   // since yargs does not has a type for big integers,
   // we do it with a fallback
   try {
