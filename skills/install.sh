@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Install the Quint agent skills (quint-lang, quint-modeling) into the skills
+# Install the Quint agent skills (quint-lang, quint-modeling, quint-verification) into the skills
 # directory of a SKILL.md-compatible coding agent.
 #
 # Usage:
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/quint-co/quint.git"
-SKILLS=(quint-lang quint-modeling)
+SKILLS=(quint-lang quint-modeling quint-verification)
 
 # --- pretty output -----------------------------------------------------------
 if [ -t 1 ]; then

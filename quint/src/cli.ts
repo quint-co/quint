@@ -33,6 +33,7 @@ import { verbosity } from './verbosity'
 import { version } from './version'
 import { DEFAULT_APALACHE_VERSION_TAG, parseServerEndpoint } from './apalache'
 import { propertyFlagErrors } from './cliHelpers'
+import { veilCmd } from './veilCommand'
 
 const defaultOpts = (yargs: any) =>
   yargs.option('out', {
@@ -380,6 +381,24 @@ const verifyCmd = {
         desc: 'inductive invariant to check. Can be used together with ordinary invariants.',
         type: 'string',
       })
+      .option('proofs', {
+        desc: "with --backend veil, a Lean file whose theorem <property>_holds proves 'holds% <property>' for each of --invariants, that it holds in every reachable state, and 'holds_temporal% <property>' for each of --temporal, that every behavior satisfies it, for every value of the constants. A proof counts only on Lean's standard axioms. The file names each of these properties in its quint_module, and it may import the other Lean files of its folder",
+        type: 'string',
+      })
+      .option('trust-smt', {
+        desc: "with --proofs, also count a proof that rests on answers of the SMT solver that Lean's kernel does not check, which Veil gives unless the proof sets veil.smt.trust to false. A sorry, admit or stop written in a file of the proof still does not count",
+        type: 'boolean',
+        default: false,
+      })
+      .option('synthesize-invariant', {
+        desc: "with --backend veil, search with Veil's invariant synthesizer (#updr) for invariants that make the given invariant inductive, together with the invariants of --invariants, for every value of the constants. What it finds is printed as Veil writes it, and counts only when Veil certifies it with a theorem that Lean's kernel checks on Lean's standard axioms",
+        type: 'string',
+      })
+      .option('symbolic', {
+        desc: "with --backend veil, check the invariants with Veil's SMT solver in every execution of up to --max-steps steps, for every value of the constants. A counterexample is printed as Veil writes it. The solver tends to give up past about 10 steps",
+        type: 'boolean',
+        default: false,
+      })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file, e.g., out.itf.json (suppresses all console output)',
         type: 'string',
@@ -413,14 +432,19 @@ const verifyCmd = {
         default: 'localhost:8822',
       })
       .option('backend', {
-        desc: 'the backend to use for verification',
+        desc: "the backend to use for verification. 'veil' runs Veil's compiled model checker, which it downloads and builds on first use and which checks invariants on every core, and proves an --inductive-invariant with Veil's SMT backend",
         type: 'string',
-        choices: ['apalache', 'tlc'],
+        choices: ['apalache', 'tlc', 'veil'],
         default: 'apalache',
       })
       .option('tlc-config', {
         desc: 'path to a TLC configuration file (in JSON)',
         type: 'string',
+      })
+      .option('state-constraints', {
+        desc: 'space separated list of state constraint definition names of the main module (veil backend only). States failing the constraints are neither counted, checked against the invariants, nor explored further.',
+        type: 'array',
+        default: [],
       })
       .coerce('server-endpoint', (arg: string) => {
         const errorOrEndpoint = parseServerEndpoint(arg)
@@ -473,7 +497,9 @@ const validate = (argv: any, opts: any) => {
       // on positional arguments, thus making this special case necessary.
       continue
     }
-    if (key !== '_' && !opts.array.includes(key) && Array.isArray(argv[key])) {
+    // Yargs stores each option under its kebab-case name (e.g. "state-constraints") and under a camelCase alias
+    // (e.g. "stateConstraints"), which `opts.array` does not list. The kebab-case entry is checked instead.
+    if (key !== '_' && !/[A-Z]/.test(key) && !opts.array.includes(key) && Array.isArray(argv[key])) {
       throw new Error(`--${key} can not be specified more than once`)
     }
   }
@@ -521,6 +547,7 @@ async function main() {
     .command(testCmd)
     .command(verifyCmd)
     .command(docsCmd)
+    .command(veilCmd)
     .demandCommand(1)
     .check(validate)
     .fail((msg: string | null | undefined, err: Error | undefined) => {

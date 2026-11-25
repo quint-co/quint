@@ -116,7 +116,7 @@ function inlineAliasesInModule(quintModule: QuintModule, lookupTable: LookupTabl
  * @returns The transformed QuintType with all type aliases replaced with
  * their resolved types.
  */
-function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
+export function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
   const inliner = new AliasInliner(lookupTable)
   return transformType(inliner, type)
 }

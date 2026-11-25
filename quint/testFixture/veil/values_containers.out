@@ -1,0 +1,66 @@
+{"start":{"actionLabels":["step_"],"ideProtocol":1}}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":0,"distinctStates":2,"history":[],"queue":1,"statesFound":2}}},"elapsedMs":0,"isCancelled":false,"isRunning":true,"startTimeMs":112092958,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":1,"distinctStates":2,"history":[],"queue":0,"statesFound":2}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":112092958,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":1,"distinctStates":2,"history":[],"queue":0,"statesFound":2}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":112092958,"status":"Running..."}
+{"violation": {"violates": ["small"], "kind": "safety_failure"},
+ "trace":
+ {"theory": {"type": "Theory", "fields": [], "$veil": "record"},
+  "states":
+  [{"transition": "after_init",
+    "index": 0,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value": -1, "name": "n"},
+      {"value": {"entries": [{"value": 1, "key": "\"a\""}], "$veil": "map"},
+       "name": "m"},
+      {"value":
+       {"elements":
+        [{"type": "Msg",
+          "name": "Ping",
+          "args": [{"value": 4}],
+          "$veil": "ctor"},
+         {"type": "Msg", "name": "Pong", "args": [], "$veil": "ctor"}],
+        "$veil": "set"},
+       "name": "s"},
+      {"value":
+       {"type": "Msg",
+        "name": "Note",
+        "args":
+        [{"value":
+          {"type": "Rec_n_who",
+           "fields":
+           [{"value": 5, "name": "n"}, {"value": "\"b\"", "name": "who"}],
+           "$veil": "record"}}],
+        "$veil": "ctor"},
+       "name": "e"}],
+     "$veil": "record"}},
+   {"transition":
+    {"type": "Label", "name": "step_", "args": [], "$veil": "ctor"},
+    "index": 1,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value": 0, "name": "n"},
+      {"value":
+       {"entries": [{"value": 1, "key": "\"a\""}, {"value": 2, "key": "\"b\""}],
+        "$veil": "map"},
+       "name": "m"},
+      {"value":
+       {"elements":
+        [{"type": "Msg",
+          "name": "Ping",
+          "args": [{"value": -1}],
+          "$veil": "ctor"},
+         {"type": "Msg",
+          "name": "Ping",
+          "args": [{"value": 4}],
+          "$veil": "ctor"},
+         {"type": "Msg", "name": "Pong", "args": [], "$veil": "ctor"}],
+        "$veil": "set"},
+       "name": "s"},
+      {"value": {"type": "Msg", "name": "Pong", "args": [], "$veil": "ctor"},
+       "name": "e"}],
+     "$veil": "record"}}]},
+ "state_fingerprint": 5417318175234578599,
+ "result": "found_violation"}

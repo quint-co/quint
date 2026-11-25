@@ -1,0 +1,60 @@
+name: Veil Distribution Tests
+
+# The first run of `quint verify --backend veil` downloads about 750 MB and builds
+# Veil and its dependencies from source. So this workflow runs when what that
+# run depends on changes, and weekly for what changes outside the repository:
+# the downloads of elan, Lean, Veil and npm packages, and the runner images.
+# `quint/package.json` is watched because every release bumps its version.
+on:
+  pull_request:
+    paths:
+      - "lean/**"
+      - "quint/src/veil*.ts"
+      - "quint/src/verifyVeil.ts"
+      - "quint/src/download.ts"
+      - "quint/src/config.ts"
+      - "quint/package.json"
+      - "quint/integration-tests/distribution/veil.md"
+      - ".github/workflows/veil-distribution-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "lean/**"
+      - "quint/src/veil*.ts"
+      - "quint/src/verifyVeil.ts"
+      - "quint/src/download.ts"
+      - "quint/src/config.ts"
+      - "quint/package.json"
+      - "quint/integration-tests/distribution/veil.md"
+      - ".github/workflows/veil-distribution-tests.yml"
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  veil-distribution-integration-tests:
+    name: Veil Distribution Integration Tests
+    runs-on: ${{ matrix.operating-system }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - run: npm install -g txm
+      - name: Veil distribution integration tests
+        run: cd ./quint && npm run veil-distribution-integration

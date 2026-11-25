@@ -369,4 +369,38 @@ module basicSpells {
     assert(setByWithDefault(Map(1 -> 2, 2 -> 3), 1, x => x + 1, 0) == Map(1 -> 3, 2 -> 3)),
     assert(setByWithDefault(Map(1 -> 2, 2 -> 3), 3, x => x + 1, 0) == Map(1 -> 2, 2 -> 3, 3 -> 1)),
   }
+
+  /// The value inside an `Option`.
+  ///
+  /// - @param value: an option, which must be `Some`
+  /// - @returns the value of `Some`. On `None`, evaluation fails, as a map read at a missing key does.
+  pure def unwrap(value: Option[a]): a = {
+    match value {
+      | None => Map().get(value)
+      | Some(x) => x
+    }
+  }
+
+  run unwrapTest = all {
+    assert(unwrap(Some(3)) == 3),
+  }
+
+  /// The values of `f` that are `Some`, over the elements of a set.
+  ///
+  /// - @param s: a set
+  /// - @param f: a function from an element to an option
+  /// - @returns the set of `x` such that `f(e) == Some(x)` for an element `e` of `s`
+  pure def filterMap(s: Set[a], f: (a) => Option[b]): Set[b] = {
+    s.fold(Set(), (acc, e) => {
+      match f(e) {
+        | Some(x) => acc.union(Set(x))
+        | None => acc
+      }
+    })
+  }
+
+  run filterMapTest = all {
+    assert(filterMap(Set(1, 2, 3), k => if (k > 1) Some(10 * k) else None) == Set(20, 30)),
+    assert(filterMap(Set(1, 2), k => None) == Set()),
+  }
 }

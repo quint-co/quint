@@ -8,7 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint verify --backend veil` checks a spec with Veil's compiled model checker, which `quint` downloads and builds on first use, and which checks invariants on every core, as TLC does. With it, `--state-constraints` names the definitions that a state must satisfy to be explored
+- With `--backend veil`, `--inductive-invariant` is proved by Veil's SMT backend for every value of the constants. When static analysis allows it, `quint` adds the invariants `m.keys() == S` that rule out counterexamples at a key that a map lacks
+- `quint verify --backend veil --proofs <file>` checks a Lean file that proves each invariant of `--invariants` in every reachable state, and each temporal property of `--temporal` on every behavior, on Lean's standard axioms. `--trust-smt` also counts a proof that rests on answers of the SMT solver
+- `quint verify --backend veil --synthesize-invariant <name>` searches with Veil's `#updr` for invariants that make `<name>` inductive, and reports what Veil certifies
+- `quint verify --backend veil --symbolic` checks the invariants with Veil's SMT solver in every execution of up to `--max-steps` steps
+- `quint veil status` tells whether Veil is ready, and `quint veil install` sets it up ahead of the first check
+- The `quint-verification` agent skill, which plans and runs the verification of a spec
+- `unwrap` and `filterMap` in `basicSpells`
+
 ### Changed
+
+- When a command fails, the JSON that `--out` writes gives the reason in `message`
+
 ### Deprecated
 ### Removed
 ### Fixed

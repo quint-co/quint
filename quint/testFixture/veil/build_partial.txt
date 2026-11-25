@@ -1,0 +1,15 @@
+/mocked/workspace/QuintVerify_rec.lean:7:0: error: Error in action DiningPhilosophers_pickBothForks: Type mismatch
+  true
+has type
+  Bool
+but is expected to have type
+  Int → Bool
+/mocked/workspace/QuintVerify_rec.lean:7:0: error: Error in action DiningPhilosophers_eat: Type mismatch
+  true
+has type
+  Bool
+but is expected to have type
+  Int → Bool
+/mocked/workspace/QuintVerify_rec.lean:7:0: warning: you have not defined any invariants or temporal properties for this specification; did you forget?
+Built the compiled checker without running it (veil.modelChecker.buildOnly):
+VEIL_BUILD_ONLY {"binary":"/mocked/workspace/.lake/model_checkers/QuintVerify_rec_model_check_7554415527321413532","build_folder":"/mocked/workspace/.lake/model_checker_builds/QuintVerify_rec_model_check_7554415527321413532","c_bytes":754886,"cc_link_ms":40061,"emit_c_ms":613,"extract_ms":406}

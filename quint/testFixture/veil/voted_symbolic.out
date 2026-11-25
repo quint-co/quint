@@ -1,0 +1,2 @@
+{"caption":"","data":"Verification error","endPos":{"column":1,"line":14},"fileName":"QuintVerify.lean","isSilent":false,"keepFullRange":false,"kind":"[anonymous]","pos":{"column":0,"line":11},"severity":"error"}
+{"caption":"","data":"cvc5.Error.error \"Symbol 'true' not declared as a type\"","endPos":{"column":1,"line":14},"fileName":"QuintVerify.lean","isSilent":false,"keepFullRange":false,"kind":"[anonymous]","pos":{"column":0,"line":11},"severity":"error"}

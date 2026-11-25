@@ -1,6 +1,6 @@
 # Quint agent skills
 
-This folder contains [Agent Skills](https://github.com/anthropics/skills) for writing and reasoning about Quint specifications: a language reference (`quint-lang`) and a modeling guide (`quint-modeling`) for authoring `.qnt` files.
+This folder contains [Agent Skills](https://github.com/anthropics/skills) for writing and reasoning about Quint specifications: a language reference (`quint-lang`) and a modeling guide (`quint-modeling`) for authoring `.qnt` files. It also contains a verification guide (`quint-verification`), which plans and runs the checks and proofs of a spec's properties.
 
 The skills use the open `SKILL.md` format and work across agents that support it, including Claude Code, Cursor, OpenAI Codex CLI, and Gemini CLI.
 

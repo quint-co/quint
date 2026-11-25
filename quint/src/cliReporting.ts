@@ -163,7 +163,7 @@ export function processObservedResult(
 ): CLIProcedure<TracingStage> {
   const states = printAndSaveTrace(stage, verbosityLevel, trace)
   maybePrintObserved(verbosityLevel, observed, elapsed(startMs))
-  return right({ ...stage, status: 'observed', errors: [], trace: states })
+  return right({ ...stage, status: 'observed', errors: [], trace: states, reached: observed })
 }
 
 /**
@@ -268,6 +268,7 @@ export function processTlcResult(
  * @param invariantsList The list of invariants.
  * @param invariantExprs Optional parsed invariant expressions for Rust-based evaluation.
  * @param table Optional lookup table for Rust-based evaluation.
+ * @param bounded Whether the check was bounded by `--max-steps`, which a passing run then suggests raising.
  * @returns The processed result.
  */
 export async function processApalacheResult(
@@ -277,7 +278,8 @@ export async function processApalacheResult(
   stage: TracingStage,
   invariantsList: string[],
   invariantExprs?: QuintEx[],
-  table?: LookupTable
+  table?: LookupTable,
+  bounded: boolean = true
 ): Promise<CLIProcedure<TracingStage>> {
   const elapsedMs = Date.now() - startMs
 
@@ -285,7 +287,9 @@ export async function processApalacheResult(
     if (verbosity.hasResults(verbosityLevel)) {
       console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
       if (verbosity.hasHints(verbosityLevel)) {
-        console.log(chalk.gray('You may increase --max-steps.'))
+        if (bounded) {
+          console.log(chalk.gray('You may increase --max-steps.'))
+        }
         console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
       }
     }
@@ -295,6 +299,12 @@ export async function processApalacheResult(
   const err = res.value
   const trace = printAndSaveTrace(stage, verbosityLevel, err.traces?.[0])
   const status = trace !== undefined ? 'violation' : 'failure'
+  const loop = err.traces?.[0]?.loop
+  if (trace !== undefined && loop !== undefined && verbosity.hasStateOutput(verbosityLevel)) {
+    console.log(
+      chalk.gray(`The last state steps back to [State ${loop}], and the execution repeats from there forever.\n`)
+    )
+  }
 
   if (trace !== undefined && verbosity.hasResults(verbosityLevel)) {
     console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
@@ -369,6 +379,18 @@ const pickOutputStage = ({
   status,
   trace,
   seed,
+  invariants,
+  violated,
+  exploredStates,
+  elapsedMs,
+  reached,
+  inductionChecks,
+  proofs,
+  synthesis,
+  symbolic,
+  addedInvariants,
+  messages,
+  message,
   main,
 }: ProcedureStage) => {
   return {
@@ -386,6 +408,18 @@ const pickOutputStage = ({
     status,
     trace,
     seed,
+    invariants,
+    violated,
+    exploredStates,
+    elapsedMs,
+    reached,
+    inductionChecks,
+    proofs,
+    synthesis,
+    symbolic,
+    addedInvariants,
+    messages,
+    message,
     main,
   }
 }

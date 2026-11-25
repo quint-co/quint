@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ErrResult, compile, outputResult, parse, runTests, stage, typecheck } from '../src/cliCommands'
+import { CompiledStage, ErrResult, compile, outputResult, parse, runTests, stage, typecheck } from '../src/cliCommands'
 import {
   declaredProperties,
   getInvariants,
@@ -546,5 +546,36 @@ describe('compiling the invariants and observations to check', () => {
 
     assert.deepEqual(compiled.invariants, ['yBelowN'])
     assert.deepEqual(compiled.observations, ['yIsOne'])
+  })
+
+  it('keeps an instance for the Veil backend, which resolves it through the lookup table', async () => {
+    const tc = (await parseAndTypecheck('mocked/importing', importingModules)).unwrap()
+    const compiled = (
+      await compile({
+        ...tc,
+        args: { main: 'viaQualifiedInstance', init: 'p::init', step: 'p::step', backend: 'veil' },
+      })
+    ).unwrap()
+
+    const kinds = compiled.mainModule.declarations.map(d => d.kind)
+    assert.include(kinds, 'instance')
+    assert.notInclude(kinds, 'var')
+    assert.deepEqual(compiled.invariants, ['pStarted'])
+  })
+
+  it('leaves out their conjunction in a check of Lean proofs, whose spec is then the same for any invariants', async () => {
+    // `compile` adds its definitions to the module that it is given, so each one gets a module of its own.
+    const compileWith = async (args: object) =>
+      (await compile({ ...(await parseAndTypecheck('mocked/properties', propertiesModule)).unwrap(), args })).unwrap()
+    const proofs = { backend: 'veil', proofs: 'p.lean', invariants: ['xBelowHundred'] }
+    const compiled = await compileWith(proofs)
+    const checked = await compileWith({ ...proofs, invariants: ['xNonNegative', 'xBelowHundred'] })
+    const modelChecked = await compileWith({ ...proofs, proofs: undefined })
+    const names = (stage: CompiledStage) => stage.mainModule.declarations.map(d => (d.kind === 'def' ? d.name : ''))
+
+    assert.deepEqual(compiled.invariants, ['xBelowHundred'])
+    assert.notInclude(names(compiled), 'q::inv')
+    assert.deepEqual(names(compiled), names(checked))
+    assert.include(names(modelChecked), 'q::inv')
   })
 })

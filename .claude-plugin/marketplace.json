@@ -8,7 +8,7 @@
     {
       "name": "quint",
       "source": ".",
-      "description": "Language reference and modeling skills for the Quint specification language.",
+      "description": "Language reference, modeling and verification skills for the Quint specification language.",
       "category": "development"
     }
   ]

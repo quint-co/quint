@@ -1,0 +1,2 @@
+/mocked/workspace/QuintVerify_rec.lean:7:0: error: quint_module: an init with 2 branches; Veil's after_init is one program is not supported
+/mocked/workspace/QuintVerify_rec.lean:9:0: error: The specification of module unsupported has not been finalized. Please call #gen_spec first!
