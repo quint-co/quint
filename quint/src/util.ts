@@ -13,7 +13,6 @@
  */
 
 import JSONbig from 'json-bigint'
-import lodash from 'lodash'
 import { Maybe, none } from '@sweet-monads/maybe'
 
 /** Add this at the end of a switch statement or if/then sequence to enforce exhaustiveness checking
@@ -37,13 +36,10 @@ export function unreachable(object: never): never {
  * Raises `Error` if the arrays are not the same length
  */
 export function zip<A, B>(a: A[], b: B[]): [A, B][] {
-  return lodash.zip(a, b).map(([x, y]) => {
-    if (x === undefined || y === undefined) {
-      throw new Error('Illegal arguments to zip: array lengths unequal')
-    } else {
-      return [x, y]
-    }
-  })
+  if (a.length !== b.length) {
+    throw new Error('Illegal arguments to zip: array lengths unequal')
+  }
+  return Array.from(a, (x, i): [A, B] => [x, b[i]])
 }
 
 /** `findMap(xs)` is `just(y)` if there is an `x` in `xs` for which `f(x)` is `just(y)`

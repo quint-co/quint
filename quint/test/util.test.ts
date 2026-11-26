@@ -3,7 +3,23 @@ import { describe, it } from 'mocha'
 
 import { just, none } from '@sweet-monads/maybe'
 
-import { findMap, insertSorted } from '../src/util'
+import { findMap, insertSorted, zip } from '../src/util'
+
+describe('zip', () => {
+  it('accepts undefined elements in equally sized arrays', () => {
+    assert.deepEqual(zip([undefined, 1], ['a', undefined]), [[undefined, 'a'], [1, undefined]])
+  })
+
+  it('rejects unequal lengths even when the extra element is undefined', () => {
+    assert.throws(() => zip([undefined], []), 'array lengths unequal')
+    assert.throws(() => zip([], [undefined]), 'array lengths unequal')
+  })
+
+  it('handles empty arrays and sparse arrays', () => {
+    assert.deepEqual(zip([], []), [])
+    assert.deepEqual(zip(new Array<number>(1), ['a']), [[undefined, 'a']])
+  })
+})
 
 describe('findMap', () => {
   it('is none on empty iterable', () => {
