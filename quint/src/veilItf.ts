@@ -549,13 +549,31 @@ export function leanString(literal: string): Either<string, string> {
       case "'":
         out += e
         break
-      case 'x':
-        out += String.fromCodePoint(parseInt(body.slice(i + 1, i + 3), 16))
+      case 'x': {
+        const hex = body.slice(i + 1, i + 3)
+        if (!/^[0-9a-fA-F]{2}$/.test(hex)) {
+          return left(`invalid hexadecimal escape \\x${hex} in ${literal}`)
+        }
+        out += String.fromCodePoint(Number.parseInt(hex, 16))
         i += 2
         break
+      }
       case 'u': {
-        const close = body.indexOf('}', i)
-        out += String.fromCodePoint(parseInt(body.slice(i + 2, close), 16))
+        if (body[i + 1] !== '{') {
+          return left(`invalid Unicode escape \\u in ${literal}`)
+        }
+        const close = body.indexOf('}', i + 2)
+        const hex = body.slice(i + 2, close)
+        const codePoint = Number.parseInt(hex, 16)
+        if (
+          close === -1 ||
+          !/^[0-9a-fA-F]+$/.test(hex) ||
+          codePoint > 0x10ffff ||
+          (codePoint >= 0xd800 && codePoint <= 0xdfff)
+        ) {
+          return left(`invalid Unicode escape \\u{${hex}} in ${literal}`)
+        }
+        out += String.fromCodePoint(codePoint)
         i = close
         break
       }

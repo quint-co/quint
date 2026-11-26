@@ -263,6 +263,9 @@ function refusal(prev: CompiledStage): string | undefined {
     ['--synthesize-invariant', args.synthesizeInvariant !== undefined],
     ['--symbolic', args.symbolic === true],
   ]
+  if (args.inductiveInvariant && args.proofs !== undefined) {
+    return '--proofs cannot be combined with --inductive-invariant'
+  }
   for (const [flag] of given.slice(2).filter(([, on]) => on)) {
     const other = given.find(([f, on]) => on && f !== flag)
     if (other !== undefined) {
@@ -278,7 +281,7 @@ function refusal(prev: CompiledStage): string | undefined {
     const flag = prev.stoppingObservations.length > 0 ? '--observation' : '--search-observations'
     return `${flag} cannot be combined with ${instead}`
   }
-  if (args.temporal && (args.synthesizeInvariant !== undefined || args.symbolic)) {
+  if (args.temporal && (args.inductiveInvariant || args.synthesizeInvariant !== undefined || args.symbolic)) {
     return `--temporal cannot be combined with ${instead}`
   }
   if (args.trustSmt && !checksProofs(args)) {

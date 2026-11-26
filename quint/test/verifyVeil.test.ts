@@ -116,7 +116,15 @@ describe('the arguments that the Veil backend refuses before Veil is set up', ()
     )
   })
 
-  it('refuses to search for observations in a proof of an inductive invariant, as Apalache does', async () => {
+  it('refuses checks that an inductive-invariant proof would ignore', async () => {
+    assert.equal(
+      await refusal({ inductiveInvariant: 'xNonNegative', proofs: 'missing.lean' }),
+      '--proofs cannot be combined with --inductive-invariant'
+    )
+    assert.equal(
+      await refusal({ inductiveInvariant: 'xNonNegative', temporal: 'eventually(x == 2)' }),
+      '--temporal cannot be combined with --inductive-invariant'
+    )
     assert.equal(
       await refusal({ inductiveInvariant: 'x >= 0', searchObservations: true }),
       '--search-observations cannot be combined with --inductive-invariant'
@@ -183,15 +191,18 @@ describe('the arguments that the Veil backend refuses before Veil is set up', ()
     )
   })
 
-  it('refuses either option with another backend, before it starts', async () => {
-    for (const [args, flag] of [
-      [{ synthesizeInvariant: 'xNonNegative' }, '--synthesize-invariant'],
-      [{ symbolic: true }, '--symbolic'],
+  it('refuses every Veil-only option with another backend, before it starts', async () => {
+    for (const [args, message] of [
+      [{ synthesizeInvariant: 'xNonNegative' }, '--synthesize-invariant applies only to --backend veil'],
+      [{ symbolic: true }, '--symbolic applies only to --backend veil'],
+      [{ proofs: 'missing.lean' }, '--proofs applies only to --backend veil'],
+      [{ trustSmt: true }, '--trust-smt applies only to a Veil proof check'],
+      [{ stateConstraints: ['xNonNegative'] }, '--state-constraints applies only to --backend veil'],
     ] as const) {
-      const compiled = await compileCounter({ backend: 'apalache', ...args })
+      const compiled = await compileCounter({ backend: 'tlc', ...args })
       const result = await verifySpec(compiled)
 
-      assert.equal(result.isLeft() ? result.value.msg : 'verified', `${flag} applies only to --backend veil`)
+      assert.equal(result.isLeft() ? result.value.msg : 'verified', message)
     }
   })
 })

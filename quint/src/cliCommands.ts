@@ -838,11 +838,18 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
 
+  if (prev.args.trustSmt && prev.args.backend !== 'veil') {
+    return cliErr('--trust-smt applies only to a Veil proof check', { ...verifying, errors: [] })
+  }
   const veilOnly =
     prev.args.synthesizeInvariant !== undefined
       ? '--synthesize-invariant'
       : prev.args.symbolic
       ? '--symbolic'
+      : prev.args.proofs !== undefined
+      ? '--proofs'
+      : prev.args.stateConstraints && prev.args.stateConstraints.length > 0
+      ? '--state-constraints'
       : undefined
   if (veilOnly !== undefined && prev.args.backend !== 'veil') {
     return cliErr(`${veilOnly} applies only to --backend veil`, { ...verifying, errors: [] })

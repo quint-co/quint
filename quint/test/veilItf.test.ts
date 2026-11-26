@@ -500,6 +500,13 @@ describe('Lean string literals', () => {
     assert.isTrue(leanString('rm1').isLeft())
     assert.isTrue(leanString('"\\q"').isLeft())
   })
+
+  it('rejects malformed hexadecimal escapes without throwing', () => {
+    assert.doesNotThrow(() => leanString('"\\xzz"'))
+    assert.isTrue(leanString('"\\xzz"').isLeft())
+    assert.doesNotThrow(() => leanString('"\\u{110000}"'))
+    assert.isTrue(leanString('"\\u{110000}"').isLeft())
+  })
 })
 
 function fixture(name: string): string {
