@@ -16,7 +16,8 @@ The lines are counted without blank lines and comments.
 1. Name the supporting invariants. A property that is not inductive on its own needs invariants that
    make it inductive. Write each of them as a `val` in a copy of the spec, and model check them on a
    small instance with `quint verify` before any proof is written, since a proof of an invariant that
-   is violated never closes. Veil's invariant search, `#updr certify`, can propose them. The step route
+   is violated never closes. Veil's invariant synthesizer, which
+   `quint verify --backend veil --synthesize-invariant <p>` runs, can propose them. The step route
    states them again as the fields of a structure, and the spec is left as it is. The SMT route of
    step 4 reads them from the spec instead, so there each of them is a definition of the spec's main
    module, and its name is added to `(invariants := [...])` of `quint_module`.
@@ -83,7 +84,7 @@ theorem consistency_holds : holds% consistency := by
     (fun _ _ _ _ hP hst => inv_step hP hst) th st hr).consistency
 ```
 
-The whole proof is `lean/Examples/TwoPhaseCommitSteps.lean`. A larger spec, such as Raft, takes all the
+The whole proof is `lean/Tests/TwoPhaseCommitSteps.lean`. A larger spec, such as Raft, takes all the
 steps below.
 
 Each step below ends when its check holds.
@@ -179,7 +180,7 @@ theorem startElection_elect (h : ElectR S s) (hx : «HashicorpRaft::startElectio
 A temporal property `p` is proved with Veil's `prove_temporal_by [p]`, in the proof mode of Lentil, with
 the rules of `Quint.Liveness`. The example below is the proof of `liveness` of ewd840, Dijkstra's
 termination detection on a ring: once every node is inactive, node 0 eventually detects termination, as
-long as passing the token is weakly fair. The whole proof is `lean/Examples/TemporalProofs.lean`, in about
+long as passing the token is weakly fair. The whole proof is `lean/Tests/TemporalProofs.lean`, in about
 70 lines, and it holds for every number of nodes.
 
 Each step below ends when its check holds.

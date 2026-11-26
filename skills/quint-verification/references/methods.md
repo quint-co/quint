@@ -181,6 +181,12 @@ gave to each method:
   of the constants, and the report lists the invariants that were found so far.
   [How to Write Inductive Invariants](https://quint-lang.org/posts/inductive_invariants) explains the
   agent's search.
+- The fallback, for an invariant `p` that the plan gave to it: model check `p` on the instance, in the
+  same run as the other invariants and the observations. Unless the induction probe of `p` was refused,
+  which means that the SMT encoding does not load the spec, also run the bounded symbolic check:
+  `quint verify <spec> --backend veil --main <main> --invariants <p> --symbolic --max-steps 8`.
+  The result of `p` is `checked` on the instance, and `bounded` for every value of the constants when
+  the bounded symbolic check finds no violation.
 - Simulation, for the invariants and observations:
   `quint run <spec> --main <instance> --max-samples 10000 --invariants <invariants> --verbosity 2`.
   With no invariant, `--no-invariant` replaces `--invariants`. The observations are counted under

@@ -76,8 +76,10 @@ The methods need `quint verify --backend veil`, which downloads Lean and Veil at
    - its counterexample to induction differs from a reachable state in few variables.
 
    Lists, arithmetic on unbounded integers, nested collections and many interleaving actions make the
-   search a lot of work. These are signals, not thresholds, and the plan says in one sentence which way
-   the spec looks.
+   search a lot of work. These are signals, not thresholds. Whenever an invariant gets the synthesizer's
+   probe, the plan says in one sentence which way the spec looks. It says so even when the synthesizer
+   found a strengthening, because the run turns to the agent's search when the translation of the
+   clauses into Quint does not check.
 
    Whether the SMT solver is trusted is recommended from what the spec describes. For a protocol or a
    system at a high level, recommend trusting it, so that a Lean proof is checked with `--trust-smt`
@@ -113,7 +115,7 @@ kernel to check every answer instead, and the flag is left out."
 The fallback makes two bounded claims, which cover each other's gap. Model checking covers executions
 of any length for the values of the instance. The bounded symbolic check covers every value of the
 constants, for executions of up to 8 steps. It runs where the SMT encoding loads the spec, and the
-report gives both results.
+report gives both results. [methods.md](references/methods.md#runs) gives the commands of the fallback.
 
 ## Run
 
