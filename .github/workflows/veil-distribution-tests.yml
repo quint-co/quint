@@ -60,6 +60,12 @@ jobs:
       - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31
       - name: Install Quint dependencies
         run: nix develop .#lean -c bash -c 'cd quint && npm ci && chmod +x dist/src/cli.js && ln -sf ../../dist/src/cli.js node_modules/.bin/quint'
+      - name: Configure retries for Lake downloads
+        run: |
+          # Lake's cvc5 release download does not retry transient HTTP errors.
+          curl_home=$(mktemp -d "$RUNNER_TEMP/lake-curl.XXXXXX")
+          printf '%s\n' 'retry = 3' 'retry-max-time = 300' > "$curl_home/.curlrc"
+          printf 'CURL_HOME=%s\n' "$curl_home" >> "$GITHUB_ENV"
       - name: Lean tests
         run: nix develop .#lean -c make -C lean test
       - name: Veil CLI smoke tests
