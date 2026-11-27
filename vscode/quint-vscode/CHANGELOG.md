@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added rename of record fields (#2076)
+
 ### Changed
 ### Deprecated
 ### Removed

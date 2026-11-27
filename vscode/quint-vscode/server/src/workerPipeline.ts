@@ -12,8 +12,9 @@ import {
   WorkerResponse,
 } from './workerProtocol'
 
-export type CompilationResult = Pick<CompileSuccess, 'uri' | 'parsedData' | 'errors'>
-export type AnalysisResult = Pick<AnalyzeSuccess, 'uri' | 'analysisOutput' | 'docs' | 'errors'>
+// `content` is the document text that the result was computed from.
+export type CompilationResult = Pick<CompileSuccess, 'uri' | 'parsedData' | 'errors'> & { content: string }
+export type AnalysisResult = Pick<AnalyzeSuccess, 'uri' | 'analysisOutput' | 'docs' | 'errors'> & { content: string }
 
 export interface Callbacks {
   onParsingResult: (result: CompilationResult) => void
@@ -172,7 +173,7 @@ export class CompilationPipeline {
     }
 
     doc.parsedData = parsedData
-    this.callbacks.onParsingResult(result)
+    this.callbacks.onParsingResult({ ...result, content: doc.content })
 
     // LSP client will send a new doc once user fixes the errors.
     if (errors.length > 0) {
@@ -203,7 +204,7 @@ export class CompilationPipeline {
     }
 
     this.deleteDocument(doc.uri)
-    this.callbacks.onAnalysisResult(result)
+    this.callbacks.onAnalysisResult({ ...result, content: doc.content })
   }
 
   private handleAnalyzeFailed(result: AnalyzeFailed): void {

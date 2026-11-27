@@ -27,6 +27,7 @@ import {
   ProposedFeatures,
   ReferenceParams,
   RenameParams,
+  ResponseError,
   SignatureHelp,
   SignatureHelpParams,
   TextDocumentSyncKind,
@@ -54,7 +55,7 @@ import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { findReferencesAtPosition } from './references'
-import { getDeclRegExp } from './rename'
+import { CompiledDocument, checkParsedTextIsCurrent, findFieldRenameEdits, getDeclRegExp } from './rename'
 import { diagnosticsFromErrors, findBestMatchingResult, locToRange, stringToRegex } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 import { AnalysisResult, CompilationPipeline, CompilationResult } from './workerPipeline'
@@ -66,6 +67,10 @@ export class QuintLanguageServer {
   // Store auxiliary information by document
   private parsedDataByDocument: Map<DocumentUri, ParserPhase4> = new Map()
   private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
+
+  // The document text that the parsed data and analysis output were computed from
+  private parsedTextByDocument: Map<DocumentUri, string> = new Map()
+  private analyzedTextByDocument: Map<DocumentUri, string> = new Map()
 
   // Documentation entries by id, by document
   private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
@@ -384,16 +389,40 @@ export class QuintLanguageServer {
       return getDocumentSymbols(localModules, parsedData.sourceMap)
     })
 
-    connection.onRenameRequest((params: RenameParams): WorkspaceEdit | null => {
-      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
-      if (!parsedData) {
+    connection.onRenameRequest((params: RenameParams): WorkspaceEdit | ResponseError<void> | null => {
+      const uri = params.textDocument.uri
+      const parsedData = this.parsedDataByDocument.get(uri)
+      const parsedText = this.parsedTextByDocument.get(uri)
+      const document = documents.get(uri)
+      if (!parsedData || parsedText === undefined || !document) {
         return null
+      }
+
+      const compiled: CompiledDocument = {
+        parsedData,
+        parsedText,
+        analysisOutput: this.analysisOutputByDocument.get(uri),
+        analyzedText: this.analyzedTextByDocument.get(uri),
+      }
+      const staleError = checkParsedTextIsCurrent(compiled, document)
+      if (staleError) {
+        return staleError
+      }
+
+      const sourceFile = URI.parse(uri).path
+
+      // Record fields are not in the lookup table and need type information.
+      const fieldEdits = findFieldRenameEdits(compiled, document, sourceFile, params.position, params.newName)
+      if (fieldEdits instanceof ResponseError) {
+        return fieldEdits
+      }
+      if (fieldEdits) {
+        return { changes: { [uri]: fieldEdits } }
       }
 
       // Find the name under the cursor.
       const { modules, sourceMap, table } = parsedData
       const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
-      const sourceFile = URI.parse(params.textDocument.uri).path
       const result = findBestMatchingResult(sourceMap, results, params.position, sourceFile)
       if (!result) {
         return null
@@ -492,12 +521,15 @@ export class QuintLanguageServer {
     this.parsedDataByDocument.delete(uri)
     this.docsByDocument.delete(uri)
     this.analysisOutputByDocument.delete(uri)
+    this.parsedTextByDocument.delete(uri)
+    this.analyzedTextByDocument.delete(uri)
     this.pipeline.deleteDocument(uri)
   }
 
   private handleParsingResult(result: CompilationResult): void {
-    const { uri, parsedData, errors } = result
+    const { uri, parsedData, errors, content } = result
     this.parsedDataByDocument.set(uri, parsedData)
+    this.parsedTextByDocument.set(uri, content)
 
     const diagnosticsByFile = diagnosticsFromErrors(errors, parsedData.sourceMap)
     const sourceFile = URI.parse(uri).path
@@ -506,8 +538,9 @@ export class QuintLanguageServer {
   }
 
   private handleAnalysisResult(result: AnalysisResult): void {
-    const { uri, analysisOutput, docs, errors } = result
+    const { uri, analysisOutput, docs, errors, content } = result
     this.analysisOutputByDocument.set(uri, analysisOutput)
+    this.analyzedTextByDocument.set(uri, content)
     this.docsByDocument.set(uri, docs)
 
     const parsedData = this.parsedDataByDocument.get(uri)!
