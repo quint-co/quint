@@ -10,7 +10,7 @@ the module that gives the constants values.
 |----------------|-----------------------------------------|-----------------------|-----------------------|
 | model checking | invariants, temporal properties, observations | 120 s on the instance | 10 minutes for each run |
 | induction      | invariants                              | 120 s per invariant   | 5 minutes per invariant, and the search for a strengthening |
-| lean           | invariants, temporal properties         | none                  | 30 minutes for the check of the proofs |
+| lean           | invariants, temporal properties, pure function contracts | none                  | 30 minutes for the check of the proofs |
 | simulation     | invariants, observations                | 30 s, 1000 traces     | 10 minutes, 10000 traces |
 
 ## Probes
@@ -191,7 +191,8 @@ gave to each method:
   `quint run <spec> --main <instance> --max-samples 10000 --invariants <invariants> --verbosity 2`.
   With no invariant, `--no-invariant` replaces `--invariants`. The observations are counted under
   `Observations:`.
-- Lean: see [the obligations](#lean-obligations).
+- Lean: see [the obligations](#lean-obligations) for system properties or
+  [pure function theorems](#pure-function-theorems) for a standalone contract.
 
 Each result is reported in one word, and each word has one meaning:
 
@@ -239,6 +240,37 @@ Quint this way:
 The line that starts with `Certified:` says that Lean's kernel checked the strengthening in Lean, on
 the axioms that it lists. The report gives that certificate, and it says that the check of the Quint
 translation trusts the SMT solver.
+
+## Pure function theorems
+
+Load the module that defines the function with `quint_library` and state the contract directly.
+For example, if module `clamp` defines `clampTo` to return the smaller of its two integer arguments,
+write the theorem about the generated definition:
+
+```lean
+import Quint
+
+quint_library "clamp.qnt" (main := clamp)
+
+theorem clamp_below_limit (limit x : Int) : clamp.clampTo limit x ≤ limit := by
+  change min limit x ≤ limit
+  omega
+
+#print axioms clamp_below_limit
+```
+
+Put the file beside the spec or use an absolute spec path. From a built Lean workspace that can
+`import Quint`, run `QUINT_BIN=/absolute/path/to/quint lake env lean /absolute/path/to/Proof.lean`.
+`QUINT_BIN` names the executable CLI for the integration under test. It can be omitted if that CLI
+is already on `PATH`. Record the workspace and command in the report. Count the theorem as proved
+only if Lean accepts it without `sorry` or unapproved axioms. Inspect `#print axioms` for each
+reported theorem. Don't use `--proofs`, which checks named system properties, for this file.
+
+The claim covers all arguments under the theorem's premises. Read any module constants that the
+embedded definition takes as additional arguments. No execution of a caller proves this claim.
+The result relies on Quint's Lean embedding and Lean's kernel. To reuse the theorem in a system
+proof, import the compiled library proof before `quint_module`. Check that the caller reuses the
+same generated definition rather than emitting a different one.
 
 ## Lean obligations
 

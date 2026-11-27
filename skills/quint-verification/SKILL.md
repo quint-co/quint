@@ -4,35 +4,42 @@ description: >
   Plan how each property of a Quint spec is verified, and run the plan: model checking, induction,
   a Lean proof or simulation, picked for each property together with the user. Use when the user
   asks how the properties of a `.qnt` spec should be checked or proved, asks to plan or run the
-  verification of a spec, or wants a property proved for every value of the spec's constants. For
+  verification of a spec, or wants a property proved for every value of the spec's constants or
+  every argument of a pure Quint function. For
   writing the spec itself, use quint-modeling.
 ---
 
 # Verification plans
 
 A plan picks one method for each property of a spec, together with the user, and a run verifies each
-property by its method. The checks are made by the `quint` CLI, so anyone can check a result again
-with the command that the report names. [references/methods.md](references/methods.md) gives the
-commands of each method, the claim of its result, and what rules it out.
+property by its method. Use the `quint` CLI for system properties and Lean in a workspace with
+Quint for standalone function theorems. [references/methods.md](references/methods.md) gives the
+commands, claims and limits of each method.
 
 Nothing is written to the project while the plan is made and run. The report and the Lean file of
 obligations are placed where the user's agent instructions, such as `CLAUDE.md` or `AGENTS.md`, put
 reports or specs. When the instructions do not say where reports go, the user is asked.
 
-The methods need `quint verify --backend veil`, which downloads Lean and Veil at its first run.
+For the Veil checks, `quint verify --backend veil` downloads Lean and Veil at its first run.
+A standalone function proof needs a Lean workspace that can import Quint, but no model check.
 
 ## Plan
 
-1. **Read the spec.** The properties are the `invariant`, `temporal` and `observation` definitions of
+1. **Read the spec.** The system properties are the `invariant`, `temporal` and `observation` definitions of
    the main module, which is the module that the user names, or else the module that is named after
    the file. List the constants of the main module, and the instances: the modules that import the
    main module with a value for every constant, such as
    `import two_phase_commit(participants = Set("p1", "p2", "p3")).*`. Model checking and simulation run
-   on one instance, and the smallest one is picked unless the user names another. This step is done
-   when every property is listed with its kind.
-2. **Probe.** Run the probes of [methods.md](references/methods.md#probes), one at a time, since each of
-   them uses every core. This step is done when every probe has passed, failed, or been stopped at its
-   cap.
+   on one instance, and the smallest one is picked unless the user names another.
+   Also inventory the contracts the user requests or the spec explicitly states about pure
+   functions. Follow imports to the defining module, and read the contract even when it appears
+   only in documentation. List a contract about all arguments as a **function theorem**, not as a
+   state invariant. Don't invent a contract for every helper. This step ends when every property
+   and contract in scope is listed with its kind.
+2. **Probe.** Run the probes of [methods.md](references/methods.md#probes) one at a time, since a
+   model-checking probe can use every core. Probe state properties only. An instance can exercise
+   calls to a pure function but cannot probe its universal contract. This step ends when every
+   applicable probe has passed, failed, or been stopped at its cap.
 3. **Report a violation first.** When a probe found a violation, name the property that was violated
    before anything else. Say that the violation points to a bug in the spec, or in the code that the
    spec models, and show its trace.
@@ -43,6 +50,10 @@ The methods need `quint verify --backend veil`, which downloads Lean and Veil at
    - its drawback, or why it is not possible;
    - what its probe found.
 
+   For a function theorem, list direct Lean as the proof method. Name the defining module in the
+   `quint_library` declaration and give the `lake env lean` check command, even in a plan made
+   before probes. Explain why execution of the caller cannot prove the contract for all arguments.
+
    [methods.md](references/methods.md#options) gives the words of each cell.
 5. **Recommend.** Under each table, recommend one possible method, with a reason of one or two
    sentences. A claim for every value of the constants, which induction or Lean makes, is stronger than
@@ -51,9 +62,12 @@ The methods need `quint verify --backend veil`, which downloads Lean and Veil at
    - A temporal property gets model checking. Lean is offered as well, for a user who wants a claim for
      every value of the constants.
    - An observation gets model checking.
-   - A functional invariant gets Lean. A functional invariant reads pure definitions and little or no
-     state, as in "for every input `x`, `f(x)` satisfies this". It is proved as a theorem about the
-     definitions, with no induction over the steps.
+   - A function theorem gets a [direct Lean proof](references/methods.md#pure-function-theorems)
+     over the embedded definition. Quantify over the contract's arguments and write its premises
+     explicitly. Don't add state, wrap the contract in `holds%` or model check a caller as a
+     substitute. A separate proof about a caller can reuse the theorem.
+   - A functional invariant that is stated as a named state property gets Lean too. Prove the pure
+     fact first and use it to discharge the reachable-state statement.
    - An invariant that its induction probe proved gets induction. So does an invariant that is proved
      through another invariant that implies it.
    - An invariant whose induction probe was refused, because the SMT encoding does not support the
@@ -176,7 +190,10 @@ For example, a run of a plan for two-phase commit could be reported as this tabl
 
 ## Lean proofs
 
-The properties that the plan proves in Lean wait for their proofs.
+The properties that the plan proves in Lean wait for their proofs. For a standalone function
+contract, state a theorem in a library proof file and use the
+[direct Lean check](references/methods.md#pure-function-theorems). The `holds%` obligations and
+`quint verify --proofs` below are for state and temporal properties only.
 
 1. Write the file of obligations, as [methods.md](references/methods.md#lean-obligations) shows it,
    and place it as the report is placed. Suggest that it is put next to the spec.
