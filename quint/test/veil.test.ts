@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from 'fs'
 import { tmpdir } from 'os'
-import { delimiter, join } from 'path'
+import { basename, delimiter, dirname, join } from 'path'
 import {
   builtBinary,
   checkerArgs,
@@ -222,7 +222,8 @@ describe('the checker that a check runs', () => {
   it('is the same checker for the same spec and check, kept in the workspace', () => {
     const dir = checkerDir(workspace, '{"modules":[]}', source)
 
-    assert.match(dir, /^\/mocked\/workspace\/\.lake\/quint_checkers\/[0-9a-f]{16}$/)
+    assert.equal(dirname(dir), join(workspace.dir, '.lake', 'quint_checkers'))
+    assert.match(basename(dir), /^[0-9a-f]{16}$/)
     assert.equal(checkerDir({ ...workspace }, '{"modules":[]}', `${source}`), dir)
   })
 
@@ -441,7 +442,11 @@ describe('whether Veil is ready', () => {
     assert.equal(env.PATH?.split(delimiter)[0], join(home, 'veil', 'elan', 'bin'))
   })
 
-  it('does not take a file named elan that cannot run for an elan', () => {
+  it('does not take a file named elan that cannot run for an elan', function () {
+    // Windows does not enforce POSIX executable permission bits.
+    if (process.platform === 'win32') {
+      this.skip()
+    }
     assert.equal(findElan(dirWith('elan', 0o644)).kind, 'quint')
   })
 
@@ -460,7 +465,11 @@ describe('whether Veil is ready', () => {
     }
   })
 
-  it('serializes concurrent setup and rechecks whether the first process finished it', async () => {
+  it('serializes concurrent setup and rechecks whether the first process finished it', async function () {
+    // Veil setup and the shell stubs below require Linux or macOS.
+    if (process.platform !== 'linux' && process.platform !== 'darwin') {
+      this.skip()
+    }
     const sources = join(home, 'concurrent-sources')
     const bin = join(home, 'concurrent-bin')
     const builds = join(home, 'builds')
