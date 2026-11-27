@@ -371,3 +371,16 @@ quint run ./examples/language-features/counters.qnt --max-steps 10 --max-steps 1
 ```text
 --max-steps can not be specified more than once
 ```
+
+### Error when --seed is set more than once
+
+<!-- !test in seed set more than once -->
+```sh
+quint run ./examples/language-features/counters.qnt --seed=1 --seed=2 --backend=rust
+```
+
+<!-- !test exit 1 -->
+<!-- !test err seed set more than once -->
+```text
+--seed can not be specified more than once
+```

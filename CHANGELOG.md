@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Giving `--seed` more than once, e.g. `--seed=1 --seed=2`, is now reported as `--seed can not be specified more than once`, like for other options. Before, the error was `--seed must be a big integer, found: 1,2`
+
 ### Security
 
 ## v0.35.0 -- 2026-11-27
