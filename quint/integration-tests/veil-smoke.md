@@ -10,13 +10,16 @@ bash -
 
 ### Invariant violations are reported with traces
 
-The counterexample is the shortest one, as Veil searches breadth-first.
+The counterexample is the shortest one, as Veil searches breadth-first. The checks ignore setup
+progress so the same assertions run with or without an existing Veil workspace.
 
 <!-- !test in prints a trace on invariant violation -->
 ```
 output=$(quint verify --backend veil --invariant inv ./testFixture/apalache/violateOnFive.qnt)
 exit_code=$?
-echo "$output" | grep -v '^\[Veil\]' | sed -e 's/([0-9]*ms)/(duration)/'
+printf '%s\n' "$output" | sed -e '/^\[Veil\]/d' -e '/^Downloading elan /d' \
+  -e '/^Setting up Veil in /d' -e '/^Building the Quint library for Lean in /d' \
+  -e 's/([0-9]*ms)/(duration)/'
 exit $exit_code
 ```
 
@@ -53,7 +56,9 @@ An example execution:
 ```
 set -o pipefail
 quint verify --backend veil --main semaphore --invariants mutex \
-  --proofs ./testFixture/veil/semaphore_proofs.lean ./testFixture/veil/semaphore.qnt 2>&1 | sed -e 's/([0-9]*ms)/(duration)/'
+  --proofs ./testFixture/veil/semaphore_proofs.lean ./testFixture/veil/semaphore.qnt 2>&1 |
+  sed -e '/^Downloading elan /d' -e '/^Setting up Veil in /d' \
+    -e '/^Building the Quint library for Lean in /d' -e 's/([0-9]*ms)/(duration)/'
 ```
 
 <!-- !test out proves an invariant with the invariants that strengthen it -->
