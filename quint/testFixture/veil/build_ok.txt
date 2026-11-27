@@ -1,0 +1,2 @@
+Built the compiled checker without running it (veil.modelChecker.buildOnly):
+VEIL_BUILD_ONLY {"binary":"/mocked/workspace/.lake/model_checkers/QuintVerify_rec_model_check_17974122291384375900","build_folder":"/mocked/workspace/.lake/model_checker_builds/QuintVerify_rec_model_check_17974122291384375900","c_bytes":845439,"cc_link_ms":7022,"emit_c_ms":553,"extract_ms":947}

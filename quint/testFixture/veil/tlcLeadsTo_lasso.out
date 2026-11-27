@@ -1,0 +1,15 @@
+{"start":{"actionLabels":["step_","stutter"],"ideProtocol":1}}
+{"compilationStatus":{"status":"none"},"details":{"liveness":{"metrics":{"currentProperty":"zeroLeadsToTwoNoFairness","numProperties":1,"propertiesChecked":0}}},"elapsedMs":0,"isCancelled":false,"isRunning":true,"startTimeMs":110657207,"status":"Checking liveness: zeroLeadsToTwoNoFairness"}
+{"compilationStatus":{"status":"none"},"details":{"liveness":{"metrics":{"currentProperty":"zeroLeadsToTwoNoFairness","numProperties":1,"propertiesChecked":0}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":110657207,"status":"Checking liveness: zeroLeadsToTwoNoFairness"}
+{"violation":
+ {"violates": ["zeroLeadsToTwoNoFairness"], "kind": "liveness_failure"},
+ "timing":
+ {"search_ns": 123962,
+  "route": "fair",
+  "properties":
+  [{"verdict": "fails",
+    "search_ns": 123962,
+    "property": "zeroLeadsToTwoNoFairness"}]},
+ "theory": {},
+ "result": "found_violation",
+ "lasso": {"stem": [{"n": 0}, {"n": 1}], "loop": [{"n": 1}, {"n": 1}]}}

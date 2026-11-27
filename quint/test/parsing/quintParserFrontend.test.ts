@@ -45,6 +45,8 @@ function parseAndCompare(artifact: string): void {
   const expected = readJson(artifact)
   // We're not interested in testing the contents of the table here
   delete expected.table
+  // Nor in the reason for a failure, which the CLI adds to --out and the phases below don't produce
+  delete expected.message
   let outputToCompare
 
   // read the input from the data directory and parse it

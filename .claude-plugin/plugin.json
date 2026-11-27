@@ -1,7 +1,7 @@
 {
   "name": "quint",
   "version": "0.1.0",
-  "description": "Skills for the Quint specification language: a language reference and a modeling guide for authoring .qnt specs.",
+  "description": "Skills for the Quint specification language: a language reference and a modeling guide for authoring .qnt specs, and a verification guide that plans and runs the checks and proofs of their properties.",
   "author": {
     "name": "Quint Co"
   },

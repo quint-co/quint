@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { pick } from 'lodash'
 import { prettyQuintEx, printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { QuintEx, QuintModule } from './ir/quintIr'
@@ -163,7 +164,7 @@ export function processObservedResult(
 ): CLIProcedure<TracingStage> {
   const states = printAndSaveTrace(stage, verbosityLevel, trace)
   maybePrintObserved(verbosityLevel, observed, elapsed(startMs))
-  return right({ ...stage, status: 'observed', errors: [], trace: states })
+  return right({ ...stage, status: 'observed', errors: [], trace: states, reached: observed })
 }
 
 /**
@@ -268,6 +269,7 @@ export function processTlcResult(
  * @param invariantsList The list of invariants.
  * @param invariantExprs Optional parsed invariant expressions for Rust-based evaluation.
  * @param table Optional lookup table for Rust-based evaluation.
+ * @param bounded Whether the check was bounded by `--max-steps`, which a passing run then suggests raising.
  * @returns The processed result.
  */
 export async function processApalacheResult(
@@ -277,7 +279,8 @@ export async function processApalacheResult(
   stage: TracingStage,
   invariantsList: string[],
   invariantExprs?: QuintEx[],
-  table?: LookupTable
+  table?: LookupTable,
+  bounded: boolean = true
 ): Promise<CLIProcedure<TracingStage>> {
   const elapsedMs = Date.now() - startMs
 
@@ -285,7 +288,9 @@ export async function processApalacheResult(
     if (verbosity.hasResults(verbosityLevel)) {
       console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
       if (verbosity.hasHints(verbosityLevel)) {
-        console.log(chalk.gray('You may increase --max-steps.'))
+        if (bounded) {
+          console.log(chalk.gray('You may increase --max-steps.'))
+        }
         console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
       }
     }
@@ -295,6 +300,12 @@ export async function processApalacheResult(
   const err = res.value
   const trace = printAndSaveTrace(stage, verbosityLevel, err.traces?.[0])
   const status = trace !== undefined ? 'violation' : 'failure'
+  const loop = err.traces?.[0]?.loop
+  if (trace !== undefined && loop !== undefined && verbosity.hasStateOutput(verbosityLevel)) {
+    console.log(
+      chalk.gray(`The last state steps back to [State ${loop}], and the execution repeats from there forever.\n`)
+    )
+  }
 
   if (trace !== undefined && verbosity.hasResults(verbosityLevel)) {
     console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
@@ -352,43 +363,37 @@ export function writeToJson(filename: string, json: any) {
   writeFileSync(path, jsonStringOfOutputStage(json))
 }
 
-// Extract just the parts of a ProcedureStage that we use for the output
-// See https://stackoverflow.com/a/39333479/1187277
-const pickOutputStage = ({
-  stage,
-  warnings,
-  modules,
-  table,
-  types,
-  effects,
-  errors,
-  documentation,
-  passed,
-  failed,
-  ignored,
-  status,
-  trace,
-  seed,
-  main,
-}: ProcedureStage) => {
-  return {
-    stage,
-    warnings,
-    modules,
-    table,
-    types,
-    effects,
-    errors,
-    documentation,
-    passed,
-    failed,
-    ignored,
-    status,
-    trace,
-    seed,
-    main,
-  }
-}
+// Keep this list explicit: a ProcedureStage also carries compiler internals and CLI arguments.
+const pickOutputStage = (stage: ProcedureStage) =>
+  pick(stage, [
+    'stage',
+    'warnings',
+    'modules',
+    'table',
+    'types',
+    'effects',
+    'errors',
+    'documentation',
+    'passed',
+    'failed',
+    'ignored',
+    'status',
+    'trace',
+    'seed',
+    'invariants',
+    'violated',
+    'exploredStates',
+    'elapsedMs',
+    'reached',
+    'inductionChecks',
+    'proofs',
+    'synthesis',
+    'symbolic',
+    'addedInvariants',
+    'messages',
+    'message',
+    'main',
+  ])
 
 export function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })

@@ -1,0 +1,2 @@
+{"caption":"","data":"quint_module: the size of a set whose elements are not known is not supported","endPos":{"column":150,"line":5},"fileName":"QuintVerify.lean","isSilent":false,"keepFullRange":false,"kind":"[anonymous]","pos":{"column":0,"line":5},"severity":"error"}
+{"caption":"","data":"The specification of module DiningPhilosophers5 has not been finalized. Please call #gen_spec first!","endPos":{"column":13,"line":7},"fileName":"QuintVerify.lean","isSilent":false,"keepFullRange":false,"kind":"[anonymous]","pos":{"column":0,"line":7},"severity":"error"}

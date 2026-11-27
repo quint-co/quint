@@ -17,6 +17,7 @@ import path from 'path'
 import os from 'os'
 import chalk from 'chalk'
 import { rustEvaluatorDir } from '../config'
+import { releaseTarget } from '../download'
 
 export const QUINT_EVALUATOR_VERSION = 'v0.8.0'
 
@@ -157,34 +158,15 @@ async function downloadGitHubAsset(
 }
 
 function inferAssetAndExecutableNames(platform: string, arch: string): { assetName: string; executable: string } {
-  let assetName = ''
-  let executable = 'quint_evaluator'
-
-  if (platform === 'darwin') {
-    // macOS
-    if (arch === 'arm64') {
-      assetName = 'quint_evaluator-aarch64-apple-darwin.tar.gz'
-    } else if (arch === 'x64') {
-      assetName = 'quint_evaluator-x86_64-apple-darwin.tar.gz'
-    }
-  } else if (platform === 'linux') {
-    if (arch === 'arm64') {
-      assetName = 'quint_evaluator-aarch64-unknown-linux-gnu.tar.gz'
-    } else if (arch === 'x64') {
-      assetName = 'quint_evaluator-x86_64-unknown-linux-gnu.tar.gz'
-    }
-  } else if (platform === 'win32') {
-    if (arch === 'x64') {
-      assetName = 'quint_evaluator-x86_64-pc-windows-msvc.zip'
-      executable = 'quint_evaluator.exe'
-    }
+  const target = releaseTarget(platform, arch)
+  if (target.isLeft()) {
+    throw new Error(target.value)
   }
-
-  if (!assetName) {
-    throw new Error(`Unsupported platform or architecture: ${platform} ${arch} `)
+  const { triple, archive } = target.value
+  return {
+    assetName: `quint_evaluator-${triple}${archive}`,
+    executable: platform === 'win32' ? 'quint_evaluator.exe' : 'quint_evaluator',
   }
-
-  return { assetName, executable }
 }
 
 async function exists(filePath: string): Promise<boolean> {

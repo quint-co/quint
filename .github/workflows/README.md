@@ -6,6 +6,8 @@ The benchmark workflow fails if any benchmark gets more than 10% slower than on 
 
 We use the `paths-filter` action instead of constraining the triggers because these checks are required by GitHub configuration, and a required check that doesn't get trigger on a PR will block it from being merged.
 
+The Veil workflow runs `make -C lean test` and two CLI smoke tests on relevant PRs and pushes to `main`. The full CLI suite and the fresh-install distribution tests run weekly or on manual dispatch. The workflow is not a required check.
+
 ## Release workflows
 
 ## Releasing Quint CLI: [./release.yml](./release.yml)

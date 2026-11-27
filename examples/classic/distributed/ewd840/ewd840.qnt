@@ -180,6 +180,24 @@ module ewd840 {
   }
 
   invariant IndInv = TypeOK and Inv
+
+  /* Definitions that the Lean proof of `liveness` reads (lean/Tests/TemporalProofs.lean). */
+
+  /// The values that the proof reads: the token is at a node, and every node and the token are white or black.
+  val Typed = and {
+    tpos.in(Nodes),
+    tcolor.in(Color),
+    Nodes.forall(j => color.get(j).in(Color)),
+  }
+
+  /// Every node is white, and so is the token.
+  val allWhite = tcolor == "white" and Nodes.forall(j => color.get(j) == "white")
+
+  /// Every node above the token's position is white.
+  val whiteAbove = Nodes.forall(j => j > tpos implies color.get(j) == "white")
+
+  /// Once every node is inactive, every step of `System` lowers the rank or detects termination.
+  val rank = tpos + N * (if (allWhite) 0 else if (whiteAbove) 1 else 2)
 }
 
 module ewd840_3 {

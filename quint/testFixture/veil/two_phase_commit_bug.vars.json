@@ -1,0 +1,1 @@
+[{"field":"RM::states","id":65,"name":"two_phase_commit_3::two_phase_commit::RM::states"},{"field":"TM::state","id":67,"name":"two_phase_commit_3::two_phase_commit::TM::state"},{"field":"TM::preparedRMs","id":70,"name":"two_phase_commit_3::two_phase_commit::TM::preparedRMs"},{"field":"messages","id":73,"name":"two_phase_commit_3::two_phase_commit::messages"}]

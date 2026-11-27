@@ -1,0 +1,97 @@
+name: Veil Tests
+
+# Run the Lean tests and two CLI smoke tests when their inputs change.
+# The full CLI suite and fresh-install distribution tests run weekly or on demand.
+on:
+  pull_request:
+    paths:
+      - "lean/**"
+      - "examples/**"
+      - "quint/testFixture/**"
+      - "quint/package-lock.json"
+      - "flake.nix"
+      - "flake.lock"
+      - "quint/src/veil*.ts"
+      - "quint/src/verifyVeil.ts"
+      - "quint/src/download.ts"
+      - "quint/src/config.ts"
+      - "quint/package.json"
+      - "quint/integration-tests/veil.md"
+      - "quint/integration-tests/veil-smoke.md"
+      - ".github/workflows/veil-distribution-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "lean/**"
+      - "examples/**"
+      - "quint/testFixture/**"
+      - "quint/package-lock.json"
+      - "flake.nix"
+      - "flake.lock"
+      - "quint/src/veil*.ts"
+      - "quint/src/verifyVeil.ts"
+      - "quint/src/download.ts"
+      - "quint/src/config.ts"
+      - "quint/package.json"
+      - "quint/integration-tests/veil.md"
+      - "quint/integration-tests/veil-smoke.md"
+      - ".github/workflows/veil-distribution-tests.yml"
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lean-and-veil-integration-tests:
+    name: Lean and Veil CLI Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31
+      - name: Install Quint dependencies
+        run: nix develop .#lean -c bash -c 'cd quint && npm ci && chmod +x dist/src/cli.js && ln -sf ../../dist/src/cli.js node_modules/.bin/quint'
+      - name: Configure retries for Lake downloads
+        run: |
+          # Lake's cvc5 release download does not retry transient HTTP errors.
+          curl_home=$(mktemp -d "$RUNNER_TEMP/lake-curl.XXXXXX")
+          printf '%s\n' 'retry = 3' 'retry-max-time = 300' > "$curl_home/.curlrc"
+          printf 'CURL_HOME=%s\n' "$curl_home" >> "$GITHUB_ENV"
+      - name: Lean tests
+        run: nix develop .#lean -c make -C lean test
+      - name: Veil CLI smoke tests
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: nix develop .#lean -c bash -c 'cd quint && npm run veil-smoke'
+      - name: Full Veil CLI integration suite
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: nix develop .#lean -c bash -c 'cd quint && npm run veil-integration'
+
+  veil-distribution-integration-tests:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Veil Distribution Integration Tests
+    runs-on: ${{ matrix.operating-system }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "18"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Veil distribution integration tests
+        run: cd ./quint && npm run veil-distribution-integration

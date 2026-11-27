@@ -42,3 +42,12 @@ export function apalacheDistDir(version: string): string {
 export function rustEvaluatorDir(version: string): string {
   return path.join(quintConfigDir(), `rust-evaluator-${version}`)
 }
+
+/**
+ * Get the path to the directory holding what the Veil backend installs: the Lean
+ * toolchain manager and the Lake workspace with Veil and the Quint library.
+ * @returns {string} The path to the Veil directory.
+ */
+export function veilDir(): string {
+  return path.join(quintConfigDir(), 'veil')
+}

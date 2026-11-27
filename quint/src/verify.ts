@@ -169,8 +169,9 @@ export function firstPassInvariants(prev: CompiledStage): string[] {
  * @param backendTag the tag of the progress line, e.g. `[TLC]`
  * @param unreached what was not found, e.g. `No reachable state satisfies`, followed by the observations
  * @param runRound checks the invariants `not(O_i)` for the given indices `i`
+ * @returns `verified`, with the observations that the search reached as `reached` when it ran
  */
-async function searchObservationsOnceVerified(
+export async function searchObservationsOnceVerified(
   prev: CompiledStage,
   verbosityLevel: number,
   verified: CLIProcedure<TracingStage>,
@@ -201,7 +202,7 @@ async function searchObservationsOnceVerified(
     console.log(chalk.yellow('[warning]') + ` ${unreached} ${unobserved.map(o => chalk.yellow(o)).join(', ')}.`)
   }
   maybePrintObservationReachability(verbosityLevel, prev.observations, search.value)
-  return verified
+  return right({ ...verified.value, reached: prev.observations.filter((_, i) => search.value[i]) })
 }
 
 // --------------------------------------------------------------------------------

@@ -7,6 +7,9 @@
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2025
  */
 
+import type { ProofCheck } from './veilProofs'
+import type { KeysInvariant } from './veilKeys'
+import type { SymbolicSummary, SynthesisSummary } from './verifyVeil'
 import { existsSync, readFileSync } from 'fs'
 import * as readline from 'readline'
 import { basename, dirname, resolve } from 'path'
@@ -37,6 +40,8 @@ import { Outcome, SimulatorOptions, showTraceStatistics } from './simulation'
 import { verbosity } from './verbosity'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verifyWithApalacheBackend, verifyWithTlcBackend } from './verify'
+import { checksProofs, keysCheckedWith, verifyWithVeilBackend } from './verifyVeil'
+import { inferKeysInvariants } from './veilKeys'
 import { flattenModules } from './flattening/fullFlattener'
 import { AnalysisOutput, analyzeInc, analyzeModules } from './quintAnalyzer'
 import { newTraceRecorder } from './runtime/trace'
@@ -94,6 +99,16 @@ export type stage =
   | 'outputting target'
   | 'documentation'
 
+/**
+ * One check of an inductive invariant. `invariant` is `q::inductiveInv` for the inductive invariant
+ * itself; `status` is the backend's own word, such as `proven`, `disproven` or `unknown`.
+ */
+export interface InductionCheckSummary {
+  invariant: string
+  check: string
+  status: string
+}
+
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
   stage: stage
@@ -112,6 +127,36 @@ interface OutputStage {
   status?: 'ok' | 'violation' | 'observed' | 'not observed' | 'failure' | 'error'
   trace?: QuintEx[]
   seed?: bigint
+  /** The invariants that a verification checks, which the Lean embedding (`lean/`) reads from a compiled spec. */
+  invariants?: string[]
+  /** The selected invariants violated by the reported counterexample. */
+  violated?: string[]
+  /** How many states a model checker explored when it found no violation. */
+  exploredStates?: number
+  /** How long a verification took, in milliseconds. */
+  elapsedMs?: number
+  /** The observations that a verification reached. */
+  reached?: string[]
+  /**
+   * The checks of an inductive invariant: one per invariant and per `initializer` or action, and, for
+   * an ordinary invariant that the inductive invariant must imply, one `implication`.
+   */
+  inductionChecks?: InductionCheckSummary[]
+  /** What the proof file of `--proofs` proves of each invariant. */
+  proofs?: ProofCheck[]
+  /** What the invariant synthesizer of `--synthesize-invariant` found. */
+  synthesis?: SynthesisSummary
+  /** What the bounded check of `--symbolic` found of each invariant. */
+  symbolic?: SymbolicSummary[]
+  /** The invariants `m.keys() == S` that a check added to its own (`veilKeys.ts`), as Quint text. */
+  addedInvariants?: string[]
+  /**
+   * Lean's messages about the files of the proof of `--proofs` other than its errors, such as the output of
+   * `#check`.
+   */
+  messages?: string[]
+  /** Why a procedure failed, which stderr carries when there is no `--out`. */
+  message?: string
   /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
@@ -147,12 +192,14 @@ export interface TypecheckedStage extends ParsedStage {
 
 export interface CompiledStage extends TypecheckedStage, AnalysisOutput {
   mainModule: QuintModule
-  /** The invariants that `q::inv` is the conjunction of */
+  /** The invariants that the run checks, conjoined into `q::inv` unless it checks proofs; empty when it checks none */
   invariants: string[]
   /** The observations that `observationInvariantName(i)` is the negation of */
   observations: string[]
   /** The indices in `observations` of the `--observation` names */
   stoppingObservations: number[]
+  /** The invariants `m.keys() == S` that compilation adds to the main module for a check of Veil's SMT backend */
+  keysInvariants: KeysInvariant[]
 }
 
 export interface TestedStage extends LoadedStage {
@@ -677,7 +724,8 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     typechecked.args,
     declaredProperties(typechecked, mainName, 'invariant')
   )
-  if (invariantsList.length > 0) {
+  // A check of proofs states each invariant itself, and the spec that it loads is the same whichever ones it checks.
+  if (invariantsList.length > 0 && !checksProofs(args)) {
     extraDefsAsText.push(`val q::inv = and(${invariantString})`)
   }
 
@@ -714,6 +762,16 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal})`)
   }
 
+  const checked = keysCheckedWith(args, invariantsList)
+  const keysInvariants = checked === undefined ? [] : inferKeysInvariants(typechecked, args.init, args.step, checked)
+  keysInvariants.forEach(k => extraDefsAsText.push(`val ${k.name} = ${k.text}`))
+  // The initializer of the phase that checks the ordinary invariants, which the inductive invariant must imply.
+  if (args.inductiveInvariant && keysInvariants.length > 0) {
+    extraDefsAsText.push(
+      `val q::inductiveInvWithKeys = and(q::inductiveInv, ${keysInvariants.map(k => k.name).join(', ')})`
+    )
+  }
+
   const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, typechecked.idGen, new Map()))
   main.declarations.push(...extraDefs)
 
@@ -730,7 +788,8 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
   analyzeInc(typechecked, typechecked.table, extraDefs)
 
   // CANNOT be `if (!args.flatten)`, we need to make sure it's a boolean value
-  if (args.flatten === false) {
+  // Also skip flattening for the veil backend: it uses the lookup table directly and doesn't need a flat module.
+  if (args.flatten === false || args.backend === 'veil') {
     if (args.target === 'tlaplus') {
       console.warn(chalk.yellow('Warning: flattening is required for TLA+ output, ignoring --flatten=false option.'))
     } else {
@@ -738,6 +797,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
       return right({
         ...typechecked,
         ...properties,
+        keysInvariants,
         mainModule: main,
         main: mainName,
         stage: 'compiling',
@@ -761,6 +821,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
     ...typechecked,
     ...flattenedAnalysis,
     ...properties,
+    keysInvariants,
     mainModule: flatMain,
     table: flattenedTable,
     main: mainName,
@@ -769,7 +830,7 @@ export async function compile(typechecked: TypecheckedStage): Promise<CLIProcedu
 }
 
 /**
- * Verify a spec via a model checker(Apalache or TLC).
+ * Verify a spec via a model checker (Apalache, TLC or Veil).
  *
  * @param prev the procedure stage produced by `typecheck`
  */
@@ -777,8 +838,24 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
   const verifying: TracingStage = { ...prev, stage: 'verifying' as stage }
   const verbosityLevel = deriveVerbosity(prev.args)
 
+  const veilOnly = prev.args.trustSmt
+    ? '--trust-smt'
+    : prev.args.synthesizeInvariant !== undefined
+    ? '--synthesize-invariant'
+    : prev.args.symbolic
+    ? '--symbolic'
+    : prev.args.proofs !== undefined
+    ? '--proofs'
+    : prev.args.stateConstraints && prev.args.stateConstraints.length > 0
+    ? '--state-constraints'
+    : undefined
+  if (veilOnly !== undefined && prev.args.backend !== 'veil') {
+    const scope = veilOnly === '--trust-smt' ? 'a Veil proof check' : '--backend veil'
+    return cliErr(`${veilOnly} applies only to ${scope}`, { ...verifying, errors: [] })
+  }
+
   // Warn when using temporal properties with Apalache, which has only experimental support
-  if (prev.args.temporal && prev.args.backend !== 'tlc') {
+  if (prev.args.temporal && prev.args.backend !== 'tlc' && prev.args.backend !== 'veil') {
     console.warn(
       chalk.yellow(
         '\n  WARNING: Apalache has experimental support for temporal properties and might give incorrect results.\n' +
@@ -798,6 +875,9 @@ export async function verifySpec(prev: CompiledStage): Promise<CLIProcedure<Trac
 
   if (prev.args.backend === 'tlc') {
     return verifyWithTlcBackend(prev, verifying, verbosityLevel)
+  }
+  if (prev.args.backend === 'veil') {
+    return verifyWithVeilBackend(prev, verifying, verbosityLevel)
   }
   return verifyWithApalacheBackend(prev, verifying, verbosityLevel)
 }
@@ -878,7 +958,7 @@ export function outputResult(result: CLIProcedure<ProcedureStage>): void {
       const { args, errors, sourceCode } = stage
       const verbosityLevel = deriveVerbosity(args)
       if (args.out) {
-        writeOutputToJson(args.out, stage)
+        writeOutputToJson(args.out, { ...stage, message: msg })
       } else {
         const finders = createFinders(sourceCode!)
         const formattedErrors = uniqWith(errors, isEqual).map(err => formatError(sourceCode, finders, err))

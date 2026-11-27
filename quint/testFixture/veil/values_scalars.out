@@ -1,0 +1,53 @@
+{"start":{"actionLabels":["step_"],"ideProtocol":1}}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":0,"distinctStates":2,"history":[],"queue":1,"statesFound":2}}},"elapsedMs":0,"isCancelled":false,"isRunning":true,"startTimeMs":112129763,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":1,"distinctStates":2,"history":[],"queue":0,"statesFound":2}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":112129763,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"step_","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":1,"distinctStates":2,"history":[],"queue":0,"statesFound":2}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":112129763,"status":"Running..."}
+{"violation": {"violates": ["«q::inv»"], "kind": "safety_failure"},
+ "trace":
+ {"theory": {"type": "Theory", "fields": [], "$veil": "record"},
+  "states":
+  [{"transition": "after_init",
+    "index": 0,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value": -1, "name": "n"},
+      {"value": false, "name": "b"},
+      {"value":
+       {"type": "Rec_n_who",
+        "fields":
+        [{"value": 2, "name": "n"}, {"value": "\"a\"", "name": "who"}],
+        "$veil": "record"},
+       "name": "r"},
+      {"value":
+       {"type": "Prod",
+        "name": "mk",
+        "args": [{"value": 3}, {"value": "\"x\""}],
+        "$veil": "ctor"},
+       "name": "t"},
+      {"value": [1, 2], "name": "l"}],
+     "$veil": "record"}},
+   {"transition":
+    {"type": "Label", "name": "step_", "args": [], "$veil": "ctor"},
+    "index": 1,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value": 0, "name": "n"},
+      {"value": true, "name": "b"},
+      {"value":
+       {"type": "Rec_n_who",
+        "fields":
+        [{"value": 3, "name": "n"}, {"value": "\"a\"", "name": "who"}],
+        "$veil": "record"},
+       "name": "r"},
+      {"value":
+       {"type": "Prod",
+        "name": "mk",
+        "args": [{"value": 4}, {"value": "\"x\""}],
+        "$veil": "ctor"},
+       "name": "t"},
+      {"value": [1, 2, -1], "name": "l"}],
+     "$veil": "record"}}]},
+ "state_fingerprint": 4301658158000365523,
+ "result": "found_violation"}

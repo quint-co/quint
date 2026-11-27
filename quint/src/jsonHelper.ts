@@ -6,15 +6,17 @@ import { QuintError } from './quintError'
 // those keys, then reject only the exact name. `__proto__` stays rejected by
 // the library's default protoAction ('error'), including nested keys.
 const jsonBig = JSONbig({ constructorAction: 'preserve' })
+const jsonNativeBig = JSONbig({ constructorAction: 'preserve', useNativeBigInt: true })
 
 /**
  * Parse JSON that may contain Quint names such as `constructorPanicked`.
  *
  * Number handling matches the default `JSONbig.parse`: integers longer than
  * 15 digits are bignumber.js values, shorter ones stay JavaScript numbers.
+ * With `nativeBigInt`, those longer integers are `bigint`s instead.
  */
-export function parseJsonBig(text: string): any {
-  return jsonBig.parse(text, (key, value) => {
+export function parseJsonBig(text: string, options: { nativeBigInt?: boolean } = {}): any {
+  return (options.nativeBigInt ? jsonNativeBig : jsonBig).parse(text, (key, value) => {
     if (key === 'constructor') {
       throw new SyntaxError('Object contains forbidden constructor property')
     }

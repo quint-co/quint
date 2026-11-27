@@ -1,0 +1,123 @@
+{"start":{"actionLabels":["RM_prepare","RM_abort","RM_commit","TM_decideOnCommit","TM_decideOnAbort","TM_addPreparedResourceManager"],"ideProtocol":1}}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":3,"label":{"$veil":"ctor","args":[],"name":"RM_prepare","type":"Label"},"statesGenerated":3},{"distinctStates":3,"label":{"$veil":"ctor","args":[],"name":"RM_abort","type":"Label"},"statesGenerated":3},{"distinctStates":3,"label":{"$veil":"ctor","args":[],"name":"RM_commit","type":"Label"},"statesGenerated":3},{"distinctStates":0,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnCommit","type":"Label"},"statesGenerated":0},{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnAbort","type":"Label"},"statesGenerated":1},{"distinctStates":0,"label":{"$veil":"ctor","args":[],"name":"TM_addPreparedResourceManager","type":"Label"},"statesGenerated":0}],"allActionLabels":[],"diameter":0,"distinctStates":11,"history":[],"queue":10,"statesFound":11}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":110605083,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":5,"label":{"$veil":"ctor","args":[],"name":"RM_prepare","type":"Label"},"statesGenerated":5},{"distinctStates":5,"label":{"$veil":"ctor","args":[],"name":"RM_abort","type":"Label"},"statesGenerated":5},{"distinctStates":6,"label":{"$veil":"ctor","args":[],"name":"RM_commit","type":"Label"},"statesGenerated":6},{"distinctStates":0,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnCommit","type":"Label"},"statesGenerated":0},{"distinctStates":2,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnAbort","type":"Label"},"statesGenerated":2},{"distinctStates":1,"label":{"$veil":"ctor","args":[],"name":"TM_addPreparedResourceManager","type":"Label"},"statesGenerated":1}],"allActionLabels":[],"diameter":1,"distinctStates":20,"history":[],"queue":18,"statesFound":20}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":110605083,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":7,"label":{"$veil":"ctor","args":[],"name":"RM_prepare","type":"Label"},"statesGenerated":25},{"distinctStates":13,"label":{"$veil":"ctor","args":[],"name":"RM_abort","type":"Label"},"statesGenerated":25},{"distinctStates":24,"label":{"$veil":"ctor","args":[],"name":"RM_commit","type":"Label"},"statesGenerated":36},{"distinctStates":0,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnCommit","type":"Label"},"statesGenerated":0},{"distinctStates":11,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnAbort","type":"Label"},"statesGenerated":11},{"distinctStates":5,"label":{"$veil":"ctor","args":[],"name":"TM_addPreparedResourceManager","type":"Label"},"statesGenerated":5}],"allActionLabels":[],"diameter":2,"distinctStates":61,"history":[],"queue":49,"statesFound":103}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":110605083,"status":"Running..."}
+{"compilationStatus":{"status":"none"},"details":{"modelCheck":{"metrics":{"actionStats":[{"distinctStates":7,"label":{"$veil":"ctor","args":[],"name":"RM_prepare","type":"Label"},"statesGenerated":59},{"distinctStates":22,"label":{"$veil":"ctor","args":[],"name":"RM_abort","type":"Label"},"statesGenerated":62},{"distinctStates":53,"label":{"$veil":"ctor","args":[],"name":"RM_commit","type":"Label"},"statesGenerated":111},{"distinctStates":0,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnCommit","type":"Label"},"statesGenerated":0},{"distinctStates":33,"label":{"$veil":"ctor","args":[],"name":"TM_decideOnAbort","type":"Label"},"statesGenerated":33},{"distinctStates":24,"label":{"$veil":"ctor","args":[],"name":"TM_addPreparedResourceManager","type":"Label"},"statesGenerated":27}],"allActionLabels":[],"diameter":2,"distinctStates":140,"history":[],"queue":102,"statesFound":293}}},"elapsedMs":1,"isCancelled":false,"isRunning":true,"startTimeMs":110605083,"status":"Running..."}
+{"violation": {"violates": ["consistencyInv"], "kind": "safety_failure"},
+ "trace":
+ {"theory": {"type": "Theory", "fields": [], "$veil": "record"},
+  "states":
+  [{"transition": "after_init",
+    "index": 0,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value":
+       {"entries":
+        [{"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm1\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm2\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm3\""}],
+        "$veil": "map"},
+       "name": "«RM::states»"},
+      {"value":
+       {"type": "TransactionManagerState",
+        "name": "Init",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "«TM::state»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "«TM::preparedRMs»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "messages"}],
+     "$veil": "record"}},
+   {"transition":
+    {"type": "Label", "name": "RM_abort", "args": [], "$veil": "ctor"},
+    "index": 1,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value":
+       {"entries":
+        [{"value":
+          {"type": "ResourceManagerState",
+           "name": "Aborted",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm1\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm2\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm3\""}],
+        "$veil": "map"},
+       "name": "«RM::states»"},
+      {"value":
+       {"type": "TransactionManagerState",
+        "name": "Init",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "«TM::state»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "«TM::preparedRMs»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "messages"}],
+     "$veil": "record"},
+    "choices": [{"value": "\"rm1\"", "name": " rm "}]},
+   {"transition":
+    {"type": "Label", "name": "RM_commit", "args": [], "$veil": "ctor"},
+    "index": 2,
+    "fields":
+    {"type": "State",
+     "fields":
+     [{"value":
+       {"entries":
+        [{"value":
+          {"type": "ResourceManagerState",
+           "name": "Aborted",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm1\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Committed",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm2\""},
+         {"value":
+          {"type": "ResourceManagerState",
+           "name": "Working",
+           "args": [],
+           "$veil": "ctor"},
+          "key": "\"rm3\""}],
+        "$veil": "map"},
+       "name": "«RM::states»"},
+      {"value":
+       {"type": "TransactionManagerState",
+        "name": "Init",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "«TM::state»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "«TM::preparedRMs»"},
+      {"value": {"elements": [], "$veil": "set"}, "name": "messages"}],
+     "$veil": "record"},
+    "choices": [{"value": "\"rm2\"", "name": " rm "}]}]},
+ "state_fingerprint": 2773352770307111421,
+ "result": "found_violation"}

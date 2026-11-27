@@ -1,0 +1,86 @@
+{"start":{"actionLabels":["turnOn","turnOff","stutter"],"ideProtocol":1}}
+{"compilationStatus":{"status":"none"},"details":{"liveness":{"metrics":{"currentProperty":"hot","numProperties":1,"propertiesChecked":0}}},"elapsedMs":0,"isCancelled":false,"isRunning":true,"startTimeMs":110692115,"status":"Checking liveness: hot"}
+{"compilationStatus":{"status":"none"},"details":{"liveness":{"metrics":{"currentProperty":"hot","numProperties":1,"propertiesChecked":0}}},"elapsedMs":0,"isCancelled":false,"isRunning":true,"startTimeMs":110692115,"status":"Checking liveness: hot"}
+{"violation": {"violates": ["hot"], "kind": "liveness_failure"},
+ "timing":
+ {"search_ns": 138024,
+  "route": "fair",
+  "properties": [{"verdict": "fails", "search_ns": 138024, "property": "hot"}]},
+ "theory": {},
+ "result": "found_violation",
+ "lasso":
+ {"stem":
+  [{"reading":
+    {"type": "Reading",
+     "fields":
+     [{"value": "cold", "name": "label"},
+      {"value": [0, false], "name": "pair"},
+      {"value":
+       {"type": "KettleState",
+        "name": "RoomTemperature",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "state"}],
+     "$veil": "record"},
+    "kettle_":
+    {"type": "KettleState",
+     "name": "RoomTemperature",
+     "args": [],
+     "$veil": "ctor"}},
+   {"reading":
+    {"type": "Reading",
+     "fields":
+     [{"value": "warm", "name": "label"},
+      {"value": [0, false], "name": "pair"},
+      {"value":
+       {"type": "KettleState",
+        "name": "RoomTemperature",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "state"}],
+     "$veil": "record"},
+    "kettle_":
+    {"type": "KettleState", "name": "Heating", "args": [], "$veil": "ctor"}},
+   {"reading":
+    {"type": "Reading",
+     "fields":
+     [{"value": "warm", "name": "label"},
+      {"value": [0, false], "name": "pair"},
+      {"value":
+       {"type": "KettleState",
+        "name": "RoomTemperature",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "state"}],
+     "$veil": "record"},
+    "kettle_":
+    {"type": "KettleState", "name": "Cooling", "args": [], "$veil": "ctor"}}],
+  "loop":
+  [{"reading":
+    {"type": "Reading",
+     "fields":
+     [{"value": "warm", "name": "label"},
+      {"value": [0, false], "name": "pair"},
+      {"value":
+       {"type": "KettleState",
+        "name": "RoomTemperature",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "state"}],
+     "$veil": "record"},
+    "kettle_":
+    {"type": "KettleState", "name": "Cooling", "args": [], "$veil": "ctor"}},
+   {"reading":
+    {"type": "Reading",
+     "fields":
+     [{"value": "warm", "name": "label"},
+      {"value": [0, false], "name": "pair"},
+      {"value":
+       {"type": "KettleState",
+        "name": "RoomTemperature",
+        "args": [],
+        "$veil": "ctor"},
+       "name": "state"}],
+     "$veil": "record"},
+    "kettle_":
+    {"type": "KettleState", "name": "Cooling", "args": [], "$veil": "ctor"}}]}}
