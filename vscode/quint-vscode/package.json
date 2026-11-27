@@ -23,6 +23,12 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"commands": [
+			{
+				"command": "quint.runTest",
+				"title": "Quint: Run Test"
+			}
+		],
 		"languages": [
 			{
 				"id": "quint",
