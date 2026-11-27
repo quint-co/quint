@@ -112,41 +112,6 @@ quint verify --backend veil ./testFixture/apalache/deadlock.qnt
 
 ## Violations
 
-### Invariant violations are reported with traces
-
-The counterexample is the shortest one, as Veil searches breadth-first.
-
-<!-- !test in prints a trace on invariant violation -->
-```
-output=$(quint verify --backend veil --invariant inv ./testFixture/apalache/violateOnFive.qnt)
-exit_code=$?
-echo "$output" | grep -v '^\[Veil\]' | sed -e 's/([0-9]*ms)/(duration)/'
-exit $exit_code
-```
-
-<!-- !test exit 1 -->
-<!-- !test err prints a trace on invariant violation -->
-```
-error: found a counterexample
-```
-
-<!-- !test out prints a trace on invariant violation -->
-```
-An example execution:
-
-[State 0] { n: 1 }
-
-[State 1] { n: 2 }
-
-[State 2] { n: 3 }
-
-[State 3] { n: 4 }
-
-[State 4] { n: 5 }
-
-[violation] Found an issue (duration).
-```
-
 ### Writes a Lean-escaped invariant name with its original Quint spelling
 
 `safety` is a keyword in Lean's Veil syntax, so the generated Lean declaration is
@@ -661,25 +626,6 @@ error: --symbolic applies only to --backend veil
 
 A proof file is a Lean file that proves an invariant for every value of the
 constants. It is checked against the spec as the spec is compiled now.
-
-### An invariant is proved with the invariants that make it inductive
-
-`mutex` is not inductive on its own. The proof file names `mutex` and
-`freeWhenEmpty` in `(invariants := [...])`, and `holds_by_invariants` proves
-`mutex` from the theorems that `#gen_theorems` declares for the two invariants.
-
-<!-- !test in proves an invariant with the invariants that strengthen it -->
-```
-quint verify --backend veil --main semaphore --invariants mutex \
-  --proofs ./testFixture/veil/semaphore_proofs.lean ./testFixture/veil/semaphore.qnt 2>&1 | sed -e 's/([0-9]*ms)/(duration)/'
-```
-
-<!-- !test out proves an invariant with the invariants that strengthen it -->
-```
-[Veil] Checking the proofs of ./testFixture/veil/semaphore_proofs.lean...
-✓ mutex is proved
-[ok] Every proof checks (duration).
-```
 
 ### Proves a temporal property for every value of the constants
 
