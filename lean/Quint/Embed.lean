@@ -1733,7 +1733,9 @@ def emitModule : M Unit := do
       emit (← `(command| action $name:ident { $items* }))
   for n in ctx.inlined.toList do
     if let some (.def _ _ _ e _) := ctx.lookup n then
-      let name ← ident n
+      -- The declaration that the proposition uses may be escaped for Lean or Veil, but its label is
+      -- user-facing: keep the Quint name so model-checker reports round-trip it exactly.
+      let name := mkIdent (Name.mkSimple n)
       let e ← propTerm e
       emit (← `(command| invariant [$name:ident] $e))
   -- Veil names a state constraint stated without a name, which leaves the definition its own declaration,

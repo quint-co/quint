@@ -16,9 +16,9 @@ property by its method. Use the `quint` CLI for system properties and Lean in a 
 Quint for standalone function theorems. [references/methods.md](references/methods.md) gives the
 commands, claims and limits of each method.
 
-Nothing is written to the project while the plan is made and run. The report and the Lean file of
-obligations are placed where the user's agent instructions, such as `CLAUDE.md` or `AGENTS.md`, put
-reports or specs. When the instructions do not say where reports go, the user is asked.
+Do not edit the project while planning or running verification. The only exceptions are the report
+and the Lean file of obligations. Follow the user's `AGENTS.md` or `CLAUDE.md` for where to put those
+files. Ask the user if the instructions do not specify a location.
 
 For the Veil checks, `quint verify --backend veil` downloads Lean and Veil at its first run.
 A standalone function proof needs a Lean workspace that can import Quint, but no model check.

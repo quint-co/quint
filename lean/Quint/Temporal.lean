@@ -226,7 +226,8 @@ def emitTemporal : M Unit := do
   if props.isEmpty then return
   emit (← `(command| action $(mkIdent (Name.mkSimple (← freshActionName "stutter"))):ident { pure () }))
   for (n, e) in props do
-    let name := mkIdent (Name.mkSimple (← escaped n))
+    -- Keep the property label in Quint form; the proposition's references are escaped separately.
+    let name := mkIdent (Name.mkSimple n)
     let φ ← formula [] true false e
     emit (← `(command| temporal [$name:ident] $φ:tlfml))
 

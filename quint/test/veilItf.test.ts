@@ -47,6 +47,18 @@ describe("reading the Veil model checker's output", () => {
     assert.deepEqual(outcome.kind === 'violation' ? outcome.violates : [], ['q::inv'])
   })
 
+  it('preserves an invariant label that differs from its Lean-escaped declaration name', () => {
+    const output = JSON.stringify({
+      result: 'found_violation',
+      violation: { kind: 'safety_failure', violates: ['safety'] },
+      trace: { states: [] },
+    })
+
+    const outcome = readOutcome(output, [])
+
+    assert.deepEqual(outcome.kind === 'violation' ? outcome.violates : [], ['safety'])
+  })
+
   it('reports the temporal property a lasso violates, with the state its last state steps back to', () => {
     const outcome = readOutcome(fixture('tlcLeadsTo_lasso.out'), [])
 
@@ -159,6 +171,14 @@ describe('reading the induction checks Veil reports', () => {
       ]
     )
     assert.equal(read.find(c => c.status === 'disproven')?.states?.length, 2)
+  })
+
+  it('preserves an invariant label that differs from its Lean-escaped declaration name', () => {
+    const checks = readInduction(
+      'QUINT_INDUCTION {"conditions":[{"action":"initializer","invariant":"safety","status":"proven","reasons":[]}]}'
+    )
+
+    assert.equal(checks.isRight() ? checks.value[0].invariant : '', 'safety')
   })
 
   it('fails, showing the output, when Lean reported no checks', () => {

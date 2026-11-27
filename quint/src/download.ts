@@ -13,8 +13,10 @@
  */
 
 import { Either, left, right } from '@sweet-monads/either'
+import { createHash } from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import { Transform } from 'stream'
 import { pipeline } from 'stream/promises'
 import * as tar from 'tar'
 
@@ -42,8 +44,8 @@ export function releaseTarget(platform: string, arch: string): Either<string, { 
 }
 
 /**
- * Download the `.tar.gz` at `url` and install its top-level entry `entry` as
- * `distDir/entry`.
+ * Download the `.tar.gz` at `url`, optionally verify its SHA-256 digest, and
+ * install its top-level entry `entry` as `distDir/entry`.
  *
  * The archive is unpacked into a temporary directory and then moved into place, so
  * that other quint processes (e.g., running in parallel) never see a partially
@@ -51,7 +53,12 @@ export function releaseTarget(platform: string, arch: string): Either<string, { 
  *
  * @returns the installed path, or why it could not be installed
  */
-export async function downloadAndUnpack(url: string, distDir: string, entry: string): Promise<Either<string, string>> {
+export async function downloadAndUnpack(
+  url: string,
+  distDir: string,
+  entry: string,
+  expectedSha256?: string
+): Promise<Either<string, string>> {
   return installAtomically(path.join(distDir, entry), async tmpDir => {
     let res: Response
     try {
@@ -63,12 +70,33 @@ export async function downloadAndUnpack(url: string, distDir: string, entry: str
       return left(`Error fetching ${url}: HTTP ${res.status}`)
     }
 
+    const archive = path.join(tmpDir, 'download.tar.gz')
+    const unpackDir = path.join(tmpDir, 'unpacked')
+    const hash = createHash('sha256')
+    const hashingStream = new Transform({
+      transform(chunk, _encoding, callback) {
+        hash.update(chunk)
+        callback(null, chunk)
+      },
+    })
     try {
-      await pipeline(res.body, tar.extract({ cwd: tmpDir, strict: true }))
+      await pipeline(res.body, hashingStream, fs.createWriteStream(archive))
+    } catch (error) {
+      return left(`Error downloading ${url}: ${error}`)
+    }
+
+    const actualSha256 = hash.digest('hex')
+    if (expectedSha256 !== undefined && actualSha256 !== expectedSha256.toLowerCase()) {
+      return left(`Checksum mismatch for ${url}: expected SHA-256 ${expectedSha256}, got ${actualSha256}`)
+    }
+
+    try {
+      fs.mkdirSync(unpackDir)
+      await pipeline(fs.createReadStream(archive), tar.extract({ cwd: unpackDir, strict: true }))
     } catch (error) {
       return left(`Error unpacking ${url}: ${error}`)
     }
-    return right(path.join(tmpDir, entry))
+    return right(path.join(unpackDir, entry))
   })
 }
 

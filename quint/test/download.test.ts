@@ -1,6 +1,55 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { releaseTarget } from '../src/download'
+import { createHash } from 'crypto'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import * as tar from 'tar'
+import { downloadAndUnpack, releaseTarget } from '../src/download'
+
+describe('downloading a release archive', () => {
+  it('verifies its SHA-256 digest before unpacking it', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'quint-download-'))
+    try {
+      const contents = join(tmp, 'contents')
+      const archive = join(tmp, 'release.tar.gz')
+      mkdirSync(contents)
+      writeFileSync(join(contents, 'tool'), 'the tool')
+      await tar.create({ cwd: contents, file: archive, gzip: true }, ['tool'])
+      const bytes = readFileSync(archive)
+      const url = `data:application/gzip;base64,${bytes.toString('base64')}`
+      const checksum = createHash('sha256').update(bytes).digest('hex')
+
+      const installed = await downloadAndUnpack(url, join(tmp, 'dist'), 'tool', checksum)
+
+      assert.isTrue(installed.isRight(), installed.value)
+      assert.equal(readFileSync(join(tmp, 'dist', 'tool'), 'utf8'), 'the tool')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('does not unpack an archive whose SHA-256 digest does not match', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'quint-download-'))
+    try {
+      const contents = join(tmp, 'contents')
+      const archive = join(tmp, 'release.tar.gz')
+      mkdirSync(contents)
+      writeFileSync(join(contents, 'tool'), 'the tool')
+      await tar.create({ cwd: contents, file: archive, gzip: true }, ['tool'])
+      const bytes = readFileSync(archive)
+      const url = `data:application/gzip;base64,${bytes.toString('base64')}`
+
+      const installed = await downloadAndUnpack(url, join(tmp, 'dist'), 'tool', '0'.repeat(64))
+
+      assert.isTrue(installed.isLeft())
+      assert.include(installed.value, 'Checksum mismatch')
+      assert.isFalse(installed.isRight())
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('the release a platform downloads', () => {
   it('names Linux and macOS releases by their Rust target, as gzipped tarballs', () => {

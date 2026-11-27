@@ -177,6 +177,20 @@ describe('the arguments that the Veil backend refuses before Veil is set up', ()
     )
   })
 
+  it('refuses state constraints in every mode that does not use them', async () => {
+    for (const [mode, flag] of [
+      [{ inductiveInvariant: 'xNonNegative' }, '--inductive-invariant'],
+      [{ proofs: 'counter_proofs.lean' }, '--proofs'],
+      [{ synthesizeInvariant: 'xNonNegative' }, '--synthesize-invariant'],
+      [{ symbolic: true }, '--symbolic'],
+    ] as const) {
+      assert.equal(
+        await refusal({ ...mode, stateConstraints: ['xNonNegative'] }),
+        `--state-constraints cannot be combined with ${flag}`
+      )
+    }
+  })
+
   it('refuses to synthesize an invariant given as an expression, which #updr names', async () => {
     assert.equal(
       await refusal({ synthesizeInvariant: 'x >= 0' }),
@@ -344,6 +358,11 @@ describe('what --out says a Veil counterexample violates', () => {
     const counterexample = { violates: ['agreement'] }
 
     assert.deepEqual(violatedBy(counterexample, ['RM::agreement', 'validity'], undefined), ['RM::agreement'])
+  })
+
+  it('round-trips a Quint name that its Lean declaration has to escape', () => {
+    assert.deepEqual(violatedBy({ violates: ['safety'] }, ['safety'], undefined), ['safety'])
+    assert.deepEqual(violatedBy({ violates: [], loop: 0 }, [], 'safety'), ['safety'])
   })
 
   it('names none when Veil checked the conjunction of the invariants, which does not say which part fails', () => {

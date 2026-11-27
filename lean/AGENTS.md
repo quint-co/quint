@@ -98,9 +98,9 @@ Quint in Lean 4 through Veil (see `README.md`). Commands: the `lean/Makefile` he
   it. `Quint.IR` and `Quint.Embed` are `public meta`, since they run at elaboration time. `Quint.Builtins`
   is `@[expose] public`, since proofs unfold its definitions and the compiled checker runs them.
 - The `quint` package ships `lakefile.lean`, `lean-toolchain`, `lake-manifest.json`, `Quint.lean` and
-  `Quint/*.lean` for `quint verify --backend veil`, which builds them in a workspace under
-  `~/.quint/veil`. A change to the library rebuilds only the library there; a change to the other three
-  makes a new workspace, where Veil builds again from scratch.
+  `Quint/*.lean` for `quint verify --backend veil`. The command builds them in `$QUINT_HOME/veil`,
+  or `~/.quint/veil` when `QUINT_HOME` is unset. A library change rebuilds only the library there.
+  Changes to `lakefile.lean`, `lean-toolchain` or `lake-manifest.json` create a workspace and rebuild Veil.
 - Veil's registry of modules (`globalEnv`) is a scoped environment extension that Veil itself never adds
   to, and only an entry that `ScopedEnvExtension.add` records reaches the `.olean`. `quint_module` adds its
   module that way, so that `veil module M` re-opens it in a file that imports this one. Veil's verification

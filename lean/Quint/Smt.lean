@@ -2311,7 +2311,9 @@ def emitModule : M Unit := do
         emit (← `(command| invariant [$name:ident] $p))
   for n in ctx.inlined.toList do
     if let some (.def _ _ _ e _) := ctx.lookup n then
-      let name := mkIdent (Name.mkSimple (← escaped n))
+      -- Keep the user-facing invariant label in Quint form. Only the Lean declaration used in its
+      -- proposition is escaped, so induction reports can return the original name.
+      let name := mkIdent (Name.mkSimple n)
       modify fun st => { st with smtKeysUsed := {} }
       let p ← withReader (fun c => { c with smtKeyDefs := keyDefs }) (prop e [])
       -- The invariant is stated with the key definitions of its reads, which the check then proves with it.

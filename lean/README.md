@@ -162,6 +162,11 @@ of the proofs of a Raft spec took 105 seconds of wall time. A second check impor
 6 seconds. An option that the proof file sets before `quint_module` applies to the proofs,
 but not to the loading of the spec.
 
+Quint elaborates the expected obligations in a module that imports only the spec. A separate Lean
+process compares their types with the compiled proofs and checks the axioms those proofs use. It does
+not use messages printed by the proof to decide whether a theorem counts. This is not a sandbox:
+compiling a Lean proof can run code, so only compile proof files from sources you trust.
+
 A proof may span several files. The proof file imports the other Lean files of its folder by their
 module names: `import Bridge` imports `Bridge.lean`, and `import Groups.Leaders` imports
 `Groups/Leaders.lean`. Those files may import one another. Each of them that loads the spec loads it

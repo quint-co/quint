@@ -378,6 +378,7 @@ The tests are organized under [integration-tests/](./integration-tests/):
   evaluator backend (repl, run, test commands).
 - [verification.md](./integration-tests/verification.md) for tests that run
   model checkers (Apalache and TLC) on Quint specs.
+- [veil.md](./integration-tests/veil.md) for tests of Veil verification.
 - [distribution/](./integration-tests/distribution/) for tests on downloading
   and caching Apalache, the Rust evaluator binary and Veil.
 
@@ -394,6 +395,7 @@ You can also run individual suites:
   npm run ts-evaluator-integration   # TypeScript runtime tests (repl, run, test)
   npm run rust-evaluator-integration # Rust backend runtime tests (repl, run, test)
   npm run verification-integration   # Apalache/TLC model checker tests
+  npm run veil-integration           # Veil verification tests
   npm run apalache-distribution-integration  # Apalache download/cache tests
   npm run rust-distribution-integration     # Rust evaluator download tests
   npm run veil-distribution-integration     # Veil first-run tests (downloads ~750 MB)

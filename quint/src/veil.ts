@@ -35,12 +35,17 @@ import os from 'os'
 import path from 'path'
 import { veilDir } from './config'
 import {
+  ProofCheck,
   ProofChecks,
   ProofFile,
   QuintModuleOption,
   leanIdent,
+  proofChecksFromAudit,
+  proofDiagnostics,
+  proofObligationName,
+  proofObligationsSource,
   proofSources,
-  readProofChecks,
+  readProofAudit,
   writtenSorries,
 } from './veilProofs'
 import { downloadAndUnpack, installAtomically, releaseTarget } from './download'
@@ -62,6 +67,15 @@ import {
 
 /** The elan release installed, which in turn installs the Lean of the workspace's `lean-toolchain`. */
 const ELAN_VERSION = 'v4.2.4'
+
+/** SHA-256 digests published with the elan release, keyed by Rust target triple. */
+const ELAN_SHA256: Readonly<Record<string, string>> = {
+  'aarch64-apple-darwin': '7ad829861392c718dfebde3a83b5c8508df47be02af68894b094b0b3952616e5',
+  'aarch64-unknown-linux-gnu': '05febd124d84ebf994b2e7479922a5650b1e950c17ae3bd1ddd776b65bb72bf9',
+  'x86_64-apple-darwin': '8a340b309d8ed2e96f930761fa223b3af57a38f5d253b53ac90293c9516f8cd4',
+  'x86_64-pc-windows-msvc': 'fad2e980a191c15884cc1d80d170ffc5fa84f3774541020145b66d1a644c6111',
+  'x86_64-unknown-linux-gnu': '42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63',
+}
 
 /** Verbosity level at which the output of Lake and of the checker is shown. */
 export const VEIL_OUTPUT_VERBOSITY = 4
@@ -225,6 +239,63 @@ function builtMarker(workspace: string): string {
   return path.join(workspace, '.quint-built')
 }
 
+/** Run one workspace setup at a time, including across Quint processes. */
+async function withSetupLock<T>(setup: () => Promise<Either<string, T>>): Promise<Either<string, T>> {
+  const lockFile = path.join(veilDir(), '.setup.lock')
+  try {
+    fs.mkdirSync(path.dirname(lockFile), { recursive: true })
+  } catch (error) {
+    return left(`locking Veil setup failed: ${error}`)
+  }
+  let lock: number
+  const deadline = Date.now() + 30 * 60 * 1000
+  for (;;) {
+    try {
+      lock = fs.openSync(lockFile, 'wx')
+      try {
+        fs.writeFileSync(lock, String(process.pid))
+      } catch (error) {
+        fs.closeSync(lock)
+        fs.rmSync(lockFile, { force: true })
+        return left(`locking Veil setup failed: ${error}`)
+      }
+      break
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+        return left(`locking Veil setup failed: ${error}`)
+      }
+      if (setupOwnerExited(lockFile) || Date.now() >= deadline) {
+        return left(
+          `Veil setup is locked at ${lockFile}. Retry when setup finishes, or remove the lock if setup was interrupted.`
+        )
+      }
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+  }
+
+  try {
+    return await setup()
+  } finally {
+    fs.closeSync(lock)
+    fs.rmSync(lockFile, { force: true })
+  }
+}
+
+/** Detect an abandoned lock without unlinking it: another waiter could already hold a replacement. */
+function setupOwnerExited(lockFile: string): boolean {
+  try {
+    const owner = Number(fs.readFileSync(lockFile, 'utf8'))
+    if (Number.isSafeInteger(owner) && owner > 0) {
+      process.kill(owner, 0)
+      return false
+    }
+    // A process that just created the file has not necessarily written its PID yet.
+    return Date.now() - fs.statSync(lockFile).mtimeMs >= 5_000
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ESRCH'
+  }
+}
+
 /** Every file the workspace is built from: what pins its dependencies, and the Quint library. */
 function buildFiles(sources: string): string[] {
   return [...DEPENDENCY_FILES, ...librarySources(sources)]
@@ -244,52 +315,65 @@ export async function ensureVeil(verbosityLevel: number): Promise<Either<string,
   if (status.isLeft()) {
     return left(status.value)
   }
-  const { ready, elan, workspace: dir, library } = status.value
-  const env = elanEnv(elan)
-  if (ready) {
+  if (status.value.ready) {
+    const { elan, workspace: dir, library } = status.value
+    return right({ dir, env: elanEnv(elan), library })
+  }
+
+  return withSetupLock(async () => {
+    // Another process may have completed setup while this one waited for the lock.
+    const lockedStatus = veilStatus()
+    if (lockedStatus.isLeft()) {
+      return left(lockedStatus.value)
+    }
+    const { ready, elan, workspace: dir, library } = lockedStatus.value
+    const env = elanEnv(elan)
+    if (ready) {
+      return right({ dir, env, library })
+    }
+
+    const built = builtMarker(dir)
+    const firstBuild = !fs.existsSync(built)
+    if (firstBuild) {
+      // Lake runs these to fetch what the first build needs: git clones Veil and its dependencies, curl downloads
+      // release archives, npm builds Veil's widgets, and on Linux unzip unpacks cvc5. Lake would stop for a missing
+      // one only after downloading Lean, or after building all that does not need it.
+      const tools = ['git', 'curl', 'npm', ...(process.platform === 'linux' ? ['unzip'] : [])]
+      const missing = tools.filter(tool => !onPath(process.env.PATH ?? '', tool))
+      if (missing.length > 0) {
+        return left(
+          'setting Veil up needs these programs on PATH, which Lake runs to fetch Veil and its dependencies: ' +
+            missing.join(', ')
+        )
+      }
+    }
+
+    if (elan.kind === 'quint' && !fs.existsSync(quintElanBinary(elan.home))) {
+      const installed = await installElan(elan.home, env, verbosityLevel)
+      if (installed.isLeft()) {
+        return left(installed.value)
+      }
+    }
+
+    const sources = leanSourcesDir()
+    fs.rmSync(path.join(dir, 'Quint'), { recursive: true, force: true })
+    for (const f of buildFiles(sources)) {
+      fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true })
+      fs.copyFileSync(path.join(sources, f), path.join(dir, f))
+    }
+    console.log(
+      firstBuild
+        ? `Setting up Veil in ${dir}: Lake downloads Lean, Veil and its dependencies, and builds them. ` +
+            'This happens once and takes a while.'
+        : `Building the Quint library for Lean in ${dir}...`
+    )
+    const build = await run('lake', ['build', 'Quint'], dir, env, verbosityLevel)
+    if (build.code !== 0) {
+      return left(`building Veil and the Quint library failed:\n${build.output.slice(-4000)}`)
+    }
+    fs.writeFileSync(built, library)
     return right({ dir, env, library })
-  }
-  const built = builtMarker(dir)
-  const firstBuild = !fs.existsSync(built)
-  if (firstBuild) {
-    // Lake runs these to fetch what the first build needs: git clones Veil and its dependencies, curl downloads
-    // release archives, npm builds Veil's widgets, and on Linux unzip unpacks cvc5. Lake would stop for a missing
-    // one only after downloading Lean, or after building all that does not need it.
-    const tools = ['git', 'curl', 'npm', ...(process.platform === 'linux' ? ['unzip'] : [])]
-    const missing = tools.filter(tool => !onPath(process.env.PATH ?? '', tool))
-    if (missing.length > 0) {
-      return left(
-        'setting Veil up needs these programs on PATH, which Lake runs to fetch Veil and its dependencies: ' +
-          missing.join(', ')
-      )
-    }
-  }
-
-  if (elan.kind === 'quint' && !fs.existsSync(quintElanBinary(elan.home))) {
-    const installed = await installElan(elan.home, env, verbosityLevel)
-    if (installed.isLeft()) {
-      return left(installed.value)
-    }
-  }
-
-  const sources = leanSourcesDir()
-  fs.rmSync(path.join(dir, 'Quint'), { recursive: true, force: true })
-  for (const f of buildFiles(sources)) {
-    fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true })
-    fs.copyFileSync(path.join(sources, f), path.join(dir, f))
-  }
-  console.log(
-    firstBuild
-      ? `Setting up Veil in ${dir}: Lake downloads Lean, Veil and its dependencies, and builds them. ` +
-          'This happens once and takes a while.'
-      : `Building the Quint library for Lean in ${dir}...`
-  )
-  const build = await run('lake', ['build', 'Quint'], dir, env, verbosityLevel)
-  if (build.code !== 0) {
-    return left(`building Veil and the Quint library failed:\n${build.output.slice(-4000)}`)
-  }
-  fs.writeFileSync(built, library)
-  return right({ dir, env, library })
+  })
 }
 
 async function installElan(
@@ -305,7 +389,11 @@ async function installElan(
     `https://github.com/leanprover/elan/releases/download/${ELAN_VERSION}/` +
     `elan-${target.value.triple}${target.value.archive}`
   process.stdout.write(`Downloading elan ${ELAN_VERSION}...`)
-  const init = await downloadAndUnpack(url, path.join(veilDir(), `elan-init-${ELAN_VERSION}`), 'elan-init')
+  const checksum = ELAN_SHA256[target.value.triple]
+  if (checksum === undefined) {
+    return left(`no SHA-256 checksum is recorded for elan ${ELAN_VERSION} on ${target.value.triple}`)
+  }
+  const init = await downloadAndUnpack(url, path.join(veilDir(), `elan-init-${ELAN_VERSION}`), 'elan-init', checksum)
   process.stdout.write(' done.\n')
   if (init.isLeft()) {
     return left(init.value)
@@ -728,36 +816,85 @@ export async function checkProofs(
   if (specModule.isLeft()) {
     return left(specModule.value)
   }
-  const proofModules = proofModulesName(specModule.value, folder)
-  const moduleOf = (imported: string) => (modules.has(imported) ? `${proofModules}.${imported}` : undefined)
-  const written = new Map<string, string>()
-  for (const [module, file] of modules) {
-    const leanFile = `${path.join(...`${proofModules}.${module}`.split('.'))}.lean`
-    fs.mkdirSync(path.dirname(path.join(workspace.dir, leanFile)), { recursive: true })
-    fs.writeFileSync(path.join(workspace.dir, leanFile), file.checked.source(specModule.value, moduleOf))
-    written.set(leanFile, file.path)
+  // Distinct source trees must not overwrite each other's compiled proof artifacts.
+  const proofDigest = digest([
+    ['entry', proofs.path],
+    ['text', proofs.text],
+    ...[...modules].map(([name, file]) => [name, file.text] as const),
+    ['obligations', JSON.stringify([...entry.obligations])],
+  ])
+  const proofModules = `${proofModulesName(specModule.value, folder)}_${proofDigest}`
+  const helpers = `${proofModules}.Helpers`
+  const moduleOf = (imported: string) => (modules.has(imported) ? `${helpers}.${imported}` : undefined)
+  const paths = new Map<string, string>()
+  const writeModule = (name: string, source: string, originalPath?: string) => {
+    const relative = path.join(...name.split('.')) + '.lean'
+    const leanFile = path.join(workspace.dir, relative)
+    fs.mkdirSync(path.dirname(leanFile), { recursive: true })
+    fs.writeFileSync(leanFile, source)
+    if (originalPath !== undefined) {
+      paths.set(relative, originalPath)
+      paths.set(leanFile, originalPath)
+    }
   }
-  // `lake lean` builds the modules that the file imports first.
-  const source = () => entry.source(specModule.value, moduleOf)
-  // Lean writes each message of the file as JSON, with its position, which it leaves out of an information.
-  return elaborate(
-    workspace,
-    specJson,
-    source,
-    verbosityLevel,
-    async build => {
-      const sorries = [proofs, ...modules.values()].flatMap(writtenSorries)
-      const properties = [...invariants, ...temporal]
-      const read = readProofChecks(build.output, entry, properties, proofs.path, written, trustSmt, sorries)
-      // Lean stopped before it checked anything, as when it could not build what the proof imports, or ran out of
-      // memory.
-      const stopped = build.code !== 0 && read.errors.length === 0 && read.checks.every(c => c.status !== 'proved')
-      return stopped
-        ? left<string, ProofChecks>(endedWithout('Veil could not check the proofs', build.ended, build.output))
-        : right<string, ProofChecks>(read)
-    },
-    ['--json']
+  for (const [module, file] of modules) {
+    writeModule(`${helpers}.${module}`, file.checked.source(specModule.value, moduleOf), file.path)
+  }
+  const proofModule = `${proofModules}.Proof`
+  const obligationModule = `${proofModules}.Obligations`
+  writeModule(proofModule, entry.source(specModule.value, moduleOf), proofs.path)
+  writeModule(obligationModule, proofObligationsSource(specModule.value, moduleName, entry.obligations))
+
+  // Only the process status and trusted audit determine success. Build messages are for display.
+  const built = await run(
+    'lake',
+    ['build', proofModule, obligationModule],
+    workspace.dir,
+    workspace.env,
+    verbosityLevel
   )
+  const properties = [...invariants, ...temporal]
+  const sorries = [proofs, ...modules.values()].flatMap(writtenSorries)
+  const diagnostics = proofDiagnostics(built.output, paths, trustSmt && sorries.length === 0)
+  if (built.code !== 0) {
+    if (diagnostics.errors.length === 0) {
+      return left(endedWithout('Veil could not check the proofs', built.ended, built.output))
+    }
+    const checks = properties.map(
+      (property): ProofCheck => ({
+        property,
+        status: 'not proved',
+        reason: 'the files of the proof have errors',
+      })
+    )
+    return right({ checks, ...diagnostics })
+  }
+  const reportDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quint-proof-audit-'))
+  const report = path.join(reportDir, 'report')
+  try {
+    const declarations = properties.flatMap((property, i) => [
+      `${moduleName}.${property}_holds`,
+      `${moduleName}.${proofObligationName(i)}`,
+    ])
+    const audited = await run(
+      'lake',
+      ['env', 'lean', '--run', 'Quint/ProofAudit.lean', report, proofModule, obligationModule, ...declarations],
+      workspace.dir,
+      workspace.env,
+      verbosityLevel
+    )
+    if (audited.code !== 0 || !fs.existsSync(report)) {
+      return left(endedWithout('Veil could not audit the proofs', audited.ended, audited.output))
+    }
+    const parsed = readProofAudit(fs.readFileSync(report, 'utf8'), properties.length)
+    if (parsed.isLeft()) {
+      return left(parsed.value)
+    }
+    const result = proofChecksFromAudit(properties, entry.obligations, parsed.value, trustSmt, sorries)
+    return right({ ...result, messages: diagnostics.messages })
+  } finally {
+    fs.rmSync(reportDir, { recursive: true, force: true })
+  }
 }
 
 /**

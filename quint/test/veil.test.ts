@@ -460,6 +460,44 @@ describe('whether Veil is ready', () => {
     }
   })
 
+  it('serializes concurrent setup and rechecks whether the first process finished it', async () => {
+    const sources = join(home, 'concurrent-sources')
+    const bin = join(home, 'concurrent-bin')
+    const builds = join(home, 'builds')
+    cpSync(leanSourcesDir(), sources, { recursive: true, filter: src => !src.includes('.lake') })
+    writeFileSync(join(sources, 'lake-manifest.json'), '\n', { flag: 'a' })
+    mkdirSync(bin)
+    for (const tool of ['elan', 'git', 'curl', 'npm', 'unzip']) {
+      writeFileSync(join(bin, tool), '#!/bin/sh\n', { mode: 0o755 })
+    }
+    writeFileSync(join(bin, 'lake'), '#!/bin/sh\nprintf "build\\n" >> "$QUINT_TEST_BUILDS"\n', {
+      mode: 0o755,
+    })
+    const searchPath = process.env.PATH
+    const leanDir = process.env.QUINT_LEAN_DIR
+    process.env.PATH = bin
+    process.env.QUINT_LEAN_DIR = sources
+    process.env.QUINT_TEST_BUILDS = builds
+    try {
+      const [first, second] = await Promise.all([ensureVeil(0), ensureVeil(0)])
+
+      assert.isTrue(first.isRight(), `${first.value}`)
+      assert.isTrue(second.isRight(), `${second.value}`)
+      assert.equal(readFileSync(builds, 'utf8'), 'build\n')
+      if (first.isRight()) {
+        rmSync(first.value.dir, { recursive: true, force: true })
+      }
+    } finally {
+      process.env.PATH = searchPath
+      if (leanDir === undefined) {
+        delete process.env.QUINT_LEAN_DIR
+      } else {
+        process.env.QUINT_LEAN_DIR = leanDir
+      }
+      delete process.env.QUINT_TEST_BUILDS
+    }
+  })
+
   it('names the programs that Lake fetches Veil with, which are missing, before anything is downloaded', async () => {
     delete process.env.QUINT_LEAN_DIR
     const platform = process.platform
@@ -471,7 +509,7 @@ describe('whether Veil is ready', () => {
 
       assert.isTrue(workspace.isLeft())
       assert.match(workspace.isLeft() ? workspace.value : '', /on PATH, .*: curl, unzip$/)
-      assert.isFalse(existsSync(join(home, 'veil')))
+      assert.isFalse(existsSync(join(home, 'veil', '.setup.lock')))
     } finally {
       Object.defineProperty(process, 'platform', { value: platform })
       process.env.PATH = searchPath

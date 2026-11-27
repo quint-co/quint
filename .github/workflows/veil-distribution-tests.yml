@@ -1,19 +1,26 @@
-name: Veil Distribution Tests
+name: Veil Tests
 
 # The first run of `quint verify --backend veil` downloads about 750 MB and builds
-# Veil and its dependencies from source. So this workflow runs when what that
-# run depends on changes, and weekly for what changes outside the repository:
-# the downloads of elan, Lean, Veil and npm packages, and the runner images.
-# `quint/package.json` is watched because every release bumps its version.
+# Veil and its dependencies from source. So this workflow runs the Lean tests,
+# Veil integration tests and distribution tests when their inputs change, and
+# weekly for what changes outside the repository: the downloads of elan, Lean,
+# Veil and npm packages, and the runner images. `quint/package.json` is watched
+# because every release bumps its version.
 on:
   pull_request:
     paths:
       - "lean/**"
+      - "examples/**"
+      - "quint/testFixture/**"
+      - "quint/package-lock.json"
+      - "flake.nix"
+      - "flake.lock"
       - "quint/src/veil*.ts"
       - "quint/src/verifyVeil.ts"
       - "quint/src/download.ts"
       - "quint/src/config.ts"
       - "quint/package.json"
+      - "quint/integration-tests/veil.md"
       - "quint/integration-tests/distribution/veil.md"
       - ".github/workflows/veil-distribution-tests.yml"
   push:
@@ -21,11 +28,17 @@ on:
       - main
     paths:
       - "lean/**"
+      - "examples/**"
+      - "quint/testFixture/**"
+      - "quint/package-lock.json"
+      - "flake.nix"
+      - "flake.lock"
       - "quint/src/veil*.ts"
       - "quint/src/verifyVeil.ts"
       - "quint/src/download.ts"
       - "quint/src/config.ts"
       - "quint/package.json"
+      - "quint/integration-tests/veil.md"
       - "quint/integration-tests/distribution/veil.md"
       - ".github/workflows/veil-distribution-tests.yml"
   schedule:
@@ -40,6 +53,22 @@ permissions:
   contents: read
 
 jobs:
+  lean-and-veil-integration-tests:
+    name: Lean and Veil Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31
+      - name: Install Quint dependencies
+        run: nix develop .#lean -c bash -c 'cd quint && npm ci && chmod +x dist/src/cli.js && ln -sf ../../dist/src/cli.js node_modules/.bin/quint'
+      - name: Lean tests
+        run: nix develop .#lean -c make -C lean test
+      - name: Veil integration tests
+        run: nix develop .#lean -c bash -c 'cd quint && npm run veil-integration'
+
   veil-distribution-integration-tests:
     name: Veil Distribution Integration Tests
     runs-on: ${{ matrix.operating-system }}
@@ -50,11 +79,12 @@ jobs:
         operating-system: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "18"
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
-      - run: npm install -g txm
       - name: Veil distribution integration tests
         run: cd ./quint && npm run veil-distribution-integration

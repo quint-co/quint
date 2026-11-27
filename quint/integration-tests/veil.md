@@ -87,6 +87,19 @@ quint verify --backend veil ./testFixture/veil/counter.qnt --state-constraints '
 error: the Veil backend takes a state constraint by the name of a definition, not n < 5
 ```
 
+### Refuses state constraints in checks that do not use them
+
+<!-- !test in refuses ignored state constraints -->
+```
+quint verify --backend veil ./testFixture/veil/counter.qnt \
+  --symbolic --state-constraints belowFive 2>&1 | grep '^error'
+```
+
+<!-- !test out refuses ignored state constraints -->
+```
+error: --state-constraints cannot be combined with --symbolic
+```
+
 ### Finds no deadlock where every state has a successor
 
 Like TLC run by `--backend tlc`, Veil does not report a state without
@@ -132,6 +145,34 @@ An example execution:
 [State 4] { n: 5 }
 
 [violation] Found an issue (duration).
+```
+
+### Writes a Lean-escaped invariant name with its original Quint spelling
+
+`safety` is a keyword in Lean's Veil syntax, so the generated Lean declaration is
+named `safety_`. Its user-facing invariant label remains `safety`.
+
+<!-- !test in round trips an escaped invariant name -->
+```
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+cat > "$tmp/escaped-name.qnt" <<'EOF'
+module escapedName {
+  var n: int
+  action init = n' = 1
+  action step = n' = n
+  invariant safety = n == 0
+}
+EOF
+quint verify --backend veil --out "$tmp/out.json" "$tmp/escaped-name.qnt" >/dev/null 2>&1
+printf 'exit: %s\n' "$?"
+jq -c '.violated' "$tmp/out.json"
+```
+
+<!-- !test out round trips an escaped invariant name -->
+```
+exit: 1
+["safety"]
 ```
 
 ### Invariant violations write ITF to file when `--out-itf` is specified
@@ -777,7 +818,7 @@ quint verify --backend veil --main semaphore --invariants mutex \
 
 <!-- !test out reports an error of another file of the proof at its own line -->
 ```
-✗ mutex is not proved: Lean did not check mutex_holds
+✗ mutex is not proved: the files of the proof have errors
 testFixture/veil/SemaphoreBroken.lean:7:29: Tactic `rfl` failed: The left-hand side
   1
 is not definitionally equal to the right-hand side

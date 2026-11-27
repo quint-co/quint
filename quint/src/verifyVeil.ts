@@ -281,6 +281,9 @@ function refusal(prev: CompiledStage): string | undefined {
     const flag = prev.stoppingObservations.length > 0 ? '--observation' : '--search-observations'
     return `${flag} cannot be combined with ${instead}`
   }
+  if (instead !== undefined && (args.stateConstraints?.length ?? 0) > 0) {
+    return `--state-constraints cannot be combined with ${instead}`
+  }
   if (args.temporal && (args.inductiveInvariant || args.synthesizeInvariant !== undefined || args.symbolic)) {
     return `--temporal cannot be combined with ${instead}`
   }

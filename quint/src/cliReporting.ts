@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { pick } from 'lodash'
 import { prettyQuintEx, printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { QuintEx, QuintModule } from './ir/quintIr'
@@ -362,67 +363,37 @@ export function writeToJson(filename: string, json: any) {
   writeFileSync(path, jsonStringOfOutputStage(json))
 }
 
-// Extract just the parts of a ProcedureStage that we use for the output
-// See https://stackoverflow.com/a/39333479/1187277
-const pickOutputStage = ({
-  stage,
-  warnings,
-  modules,
-  table,
-  types,
-  effects,
-  errors,
-  documentation,
-  passed,
-  failed,
-  ignored,
-  status,
-  trace,
-  seed,
-  invariants,
-  violated,
-  exploredStates,
-  elapsedMs,
-  reached,
-  inductionChecks,
-  proofs,
-  synthesis,
-  symbolic,
-  addedInvariants,
-  messages,
-  message,
-  main,
-}: ProcedureStage) => {
-  return {
-    stage,
-    warnings,
-    modules,
-    table,
-    types,
-    effects,
-    errors,
-    documentation,
-    passed,
-    failed,
-    ignored,
-    status,
-    trace,
-    seed,
-    invariants,
-    violated,
-    exploredStates,
-    elapsedMs,
-    reached,
-    inductionChecks,
-    proofs,
-    synthesis,
-    symbolic,
-    addedInvariants,
-    messages,
-    message,
-    main,
-  }
-}
+// Keep this list explicit: a ProcedureStage also carries compiler internals and CLI arguments.
+const pickOutputStage = (stage: ProcedureStage) =>
+  pick(stage, [
+    'stage',
+    'warnings',
+    'modules',
+    'table',
+    'types',
+    'effects',
+    'errors',
+    'documentation',
+    'passed',
+    'failed',
+    'ignored',
+    'status',
+    'trace',
+    'seed',
+    'invariants',
+    'violated',
+    'exploredStates',
+    'elapsedMs',
+    'reached',
+    'inductionChecks',
+    'proofs',
+    'synthesis',
+    'symbolic',
+    'addedInvariants',
+    'messages',
+    'message',
+    'main',
+  ])
 
 export function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })

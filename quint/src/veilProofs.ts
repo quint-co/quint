@@ -27,9 +27,11 @@
  * it is now, and refuses a `quint_module` option that would change that spec. The spec is loaded by a
  * Lean module of its own, built once for the spec and the options (`veil.ts`), which each checked file
  * imports and re-opens with `veil module`. Each other file of the proof is checked as a Lean module of its
- * own, which Lake builds again only when it, or a file that it imports, changed. The check then states
- * `holds% p` in the proof file and requires the theorem to prove it, on Lean's standard axioms alone: a
- * `sorry`, an unfinished proof and a trusted SMT answer all rest on `sorryAx`, and none of them counts.
+ * own, which Lake builds again only when it, or a file that it imports, changed. A trusted module that imports
+ * only the compiled spec elaborates each `holds% p` obligation. A trusted Lean auditor then compares its type with
+ * the proof constant's type and calls `Lean.collectAxioms` directly. Thus no elaborator or stdout supplied by the
+ * proof decides the result. A `sorry`, an unfinished proof and a trusted SMT answer all rest on `sorryAx`, and none
+ * of them counts unless the check explicitly trusts SMT answers.
  *
  * @module
  */
@@ -59,14 +61,14 @@ export interface ProofFile {
   readonly path: string
 }
 
-/** The Lean file that checks a file of a proof, and the property that each line it adds checks. */
+/** A Lean module made from one file of a proof. */
 export interface ProofSource {
   /**
    * The file, which imports the Lean module `specModule` and re-opens the module of the spec it loads, and
    * imports each other file of the proof by the module name that `moduleOf` gives it.
    */
   readonly source: (specModule: string, moduleOf?: (imported: string) => string | undefined) => string
-  /** The property that each line that the check adds checks, by line, from 1, of the file. */
+  /** Kept empty for compatibility; obligations are never inserted into the proof module. */
   readonly checkedAt: ReadonlyMap<number, string>
   /** The statement of the obligation of each property that the file is checked for, such as `holds% p`. */
   readonly obligations: ReadonlyMap<string, string>
@@ -173,10 +175,10 @@ export function proofSources(
 }
 
 /**
- * The Lean file that checks one file of a proof, `proofs`, against the compiled spec whose main module is
- * `moduleName`, for each of `invariants` and of the temporal properties `temporal`; `file` names it in the reasons
- * it is refused for. A file that loads no spec is left as it is, but for its imports. Fails when the file loads
- * more than one spec, or the spec with an option that changes it, or when it imports nothing before it loads the
+ * The Lean module made from one file of a proof, `proofs`, against the compiled spec whose main module is
+ * `moduleName`, recording the obligations for `invariants` and the temporal properties `temporal`; `file` names it
+ * in the reasons it is refused for. A file that loads no spec is left as it is, but for its imports. It fails when
+ * the file loads more than one spec, loads it with an option that changes it, or imports nothing before it loads the
  * spec.
  */
 export function proofSource(
@@ -221,35 +223,46 @@ export function proofSource(
   // `veil module` takes the place of the `quint_module` command, on as many lines, which keeps the file's
   // errors on their lines.
   const reopen = `veil module ${moduleName}${'\n'.repeat(proofs.slice(loadStart, loadEnd).split('\n').length - 1)}`
-  // The checks go before the `end` that closes the module, where `holds%` finds it.
   const lines = `${proofs.slice(0, loadStart)}${reopen}${proofs.slice(loadEnd)}`.split('\n')
-  const ends = lines.map((line, i) => (new RegExp(`^\\s*end\\s+${escaped(moduleName)}\\s*$`).test(line) ? i : -1))
-  const end = Math.max(...ends)
-  const at = end >= 0 ? end : lines.length
   const obligations = new Map([
     ...invariants.map(p => [p, `holds% ${leanIdent(p)}`] as const),
     ...temporal.map(p => [p, `holds_temporal% ${leanIdent(p)}`] as const),
   ])
-  const properties = [...obligations.keys()]
-  const checks = properties.flatMap(p => [
-    `example : ${obligations.get(p)} := ${obligationName(p)}`,
-    `#print axioms ${obligationName(p)}`,
-  ])
-  const checkedAt = new Map(checks.map((_, i) => [at + i + 1, properties[Math.floor(i / 2)]]))
-  const checking = [...lines.slice(0, at), ...checks, ...lines.slice(at)]
+  // The proof module contains only the user's declarations. Obligations are elaborated separately by
+  // `proofObligationsSource`, in a module that imports only the trusted spec module.
+  const checkedAt = new Map<number, string>()
   // Before the file's first import, since a comment may end that line.
   const source = (specModule: string, moduleOf?: (imported: string) => string | undefined) =>
-    renamed(checking, moduleOf)
+    renamed(lines, moduleOf)
       .map((line, i) => (i === importLine ? `${inModuleSystem ? 'public ' : ''}import ${specModule} ${line}` : line))
       .join('\n')
   return right({ source, checkedAt, obligations, options })
 }
 
+/** The declaration in a trusted obligation module whose type is the obligation at `index`. */
+export const proofObligationName = (index: number): string => `quint_proof_obligation_${index}`
+
 /**
- * A line that ends a message of Lake before it: another message, as Lake writes one or as Lean writes one in JSON,
- * or a line of Lake's progress or summary.
+ * A trusted module that elaborates `obligations` while importing only the compiled specification. The proof audit
+ * compares proof constants with these declarations directly, after both modules have already been elaborated.
  */
-const MESSAGE_END = /^(\{"|(error|warning|info|trace): |[✔✖⚠ℹ] \[|Some required targets logged failures:)/
+export function proofObligationsSource(
+  specModule: string,
+  moduleName: string,
+  obligations: ReadonlyMap<string, string>
+): string {
+  return [
+    'module',
+    '',
+    `public import ${specModule}`,
+    '',
+    `veil module ${moduleName}`,
+    '',
+    ...[...obligations.values()].flatMap((obligation, i) => [`axiom ${proofObligationName(i)} : ${obligation}`, '']),
+    `end ${moduleName}`,
+    '',
+  ].join('\n')
+}
 
 /** A line that imports a Lean module: what precedes the module's name, and the name. */
 const IMPORT = /^(\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?)(\S+)/
@@ -298,14 +311,13 @@ export interface ProofChecks {
   readonly messages: string[]
 }
 
-/** A message of Lean about the file that it elaborates, as `lean --json` writes it. */
+/** A message of Lean as `lean --json` writes it. Shared with the other Veil output readers. */
 export interface LeanJsonMessage {
   readonly severity: 'information' | 'warning' | 'error'
   readonly pos: { readonly line: number; readonly column: number }
   readonly data: string
 }
 
-/** A message of Lean about a file of the proof, which is the proof file itself when `path` is absent. */
 export interface LeanMessage {
   readonly severity: LeanJsonMessage['severity']
   readonly path?: string
@@ -314,65 +326,127 @@ export interface LeanMessage {
   readonly text: string
 }
 
-/** Veil's note that a file opens again a module that another file defined, which every file of a proof gets. */
-const REOPENED = /^Module \S+ has been previously defined\. Importing it here\.$/
+/** Parse one genuine-or-otherwise Lean JSON line. Proof verification never uses this parser. */
+export function jsonMessage(line: string): LeanMessage | undefined {
+  if (!line.startsWith('{"')) {
+    return undefined
+  }
+  try {
+    const parsed: unknown = JSON.parse(line)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'severity' in parsed &&
+      (parsed.severity === 'information' || parsed.severity === 'warning' || parsed.severity === 'error') &&
+      'data' in parsed &&
+      typeof parsed.data === 'string' &&
+      'pos' in parsed &&
+      typeof parsed.pos === 'object' &&
+      parsed.pos !== null &&
+      'line' in parsed.pos &&
+      typeof parsed.pos.line === 'number' &&
+      'column' in parsed.pos &&
+      typeof parsed.pos.column === 'number'
+    ) {
+      return {
+        severity: parsed.severity,
+        line: parsed.pos.line,
+        column: parsed.pos.column,
+        text: parsed.data.trimEnd(),
+      }
+    }
+  } catch {
+    // Not a JSON message.
+  }
+  return undefined
+}
 
-/**
- * What Lean's `output` for the file of `checked` says of each of `properties`, and the messages about the files of
- * the proof, each in full and at its own path and lines: the proof file at `proofsPath`, and each other file at the
- * path that `modules` gives for the file of its module, relative to the workspace. Lean writes the messages of the
- * file of `checked` as JSON (`LeanJsonMessage`). An error anywhere in the proof leaves every property not proved.
- */
-export function readProofChecks(
-  output: string,
-  checked: ProofSource,
+/** Lake diagnostics are for display only. They cannot establish that a proof passed. */
+export function proofDiagnostics(output: string, paths: ReadonlyMap<string, string>, trustSmt: boolean) {
+  const errors: string[] = []
+  const messages: string[] = []
+  const lines = output.split('\n')
+  for (const [i, line] of lines.entries()) {
+    const match = /^(error|warning|info): (.*\.lean):(\d+):(\d+): (.*)$/.exec(line)
+    if (match === null) {
+      continue
+    }
+    const [, severity, location, row, column, first] = match
+    const path = paths.get(location)
+    if (path === undefined || /^Module \S+ has been previously defined\. Importing it here\.$/.test(first)) {
+      continue
+    }
+    if (trustSmt && first === 'declaration uses `sorry`') {
+      continue
+    }
+    let end = i + 1
+    while (end < lines.length && !/^(error|warning|info|trace): |^[✔✖⚠ℹ] \[|^Some required targets/.test(lines[end])) {
+      end++
+    }
+    const message = [first, ...lines.slice(i + 1, end)].join('\n').trimEnd()
+    if (severity === 'error') {
+      errors.push(`${path}:${row}:${column}: ${message}`)
+    } else {
+      messages.push(`${path}:${row}:${column}: ${severity}: ${message}`)
+    }
+  }
+  return { errors, messages }
+}
+
+/** What the trusted Lean auditor found by inspecting one proof constant. */
+export interface ProofAudit {
+  readonly found: boolean
+  readonly sameType: boolean
+  readonly axioms: readonly string[]
+}
+
+/** Read the trusted auditor's file. Each row is `same|different<TAB>axioms`, or `missing`. */
+export function readProofAudit(report: string, count: number): Either<string, ProofAudit[]> {
+  const lines = report.endsWith('\n') ? report.slice(0, -1).split('\n') : report.split('\n')
+  if (lines.length !== count) {
+    return left(`the trusted proof audit reported ${lines.length} results, expected ${count}`)
+  }
+  const audits: ProofAudit[] = []
+  for (const line of lines) {
+    if (line === 'missing') {
+      audits.push({ found: false, sameType: false, axioms: [] })
+      continue
+    }
+    const match = /^(same|different)\t(.*)$/.exec(line)
+    if (match === null) {
+      return left(`the trusted proof audit wrote an invalid result: ${line}`)
+    }
+    audits.push({
+      found: true,
+      sameType: match[1] === 'same',
+      axioms: match[2] === '' ? [] : match[2].split(','),
+    })
+  }
+  return right(audits)
+}
+
+/** Decide proof statuses solely from constants inspected by the trusted auditor. */
+export function proofChecksFromAudit(
   properties: readonly string[],
-  proofsPath: string,
-  modules: ReadonlyMap<string, string> = new Map(),
+  obligations: ReadonlyMap<string, string>,
+  audits: readonly ProofAudit[],
   trustSmt: boolean = false,
   sorries: readonly string[] = []
 ): ProofChecks {
-  const messages = leanMessages(output, modules).filter(m => !REOPENED.test(m.text))
-  // On a line that the check adds, an error misstates an obligation, and an information gives a theorem's axioms.
-  const ofCheck = (m: LeanMessage) => m.path === undefined && checked.checkedAt.has(m.line)
-  // The checks push the lines after them down, the `end` of the module among them.
-  const lastCheck = Math.max(0, ...checked.checkedAt.keys())
-  const at = (m: LeanMessage) => {
-    const line = m.path === undefined && m.line > lastCheck ? m.line - checked.checkedAt.size : m.line
-    return `${m.path ?? proofsPath}:${line}:${m.column}: `
-  }
-  const errors = messages.filter(m => m.severity === 'error' && !ofCheck(m)).map(m => `${at(m)}${m.text}`)
-  // With --trust-smt and no sorry written, each declaration that uses `sorry` holds a trusted answer of the solver.
-  const ofTrust = (m: LeanMessage) => trustSmt && sorries.length === 0 && m.text === 'declaration uses `sorry`'
-  const others = messages
-    .filter(m => m.severity !== 'error' && !ofCheck(m) && !ofTrust(m))
-    .map(m => `${at(m)}${m.severity === 'information' ? 'info' : m.severity}: ${m.text}`)
-  const axioms = new Map(
-    messages.filter(ofCheck).flatMap(m => {
-      const a =
-        /'(?:[^'«]*\.)?«?([^'«»]+)_holds»?' (?:depends on axioms: \[([^\]]*)\]|does not depend on any axioms)/.exec(
-          m.text
-        )
-      return a === null ? [] : [[a[1], a[2] === undefined ? [] : a[2].split(',').map(x => x.trim())] as const]
-    })
-  )
-  const checks = properties.map((property): ProofCheck => {
-    const misstated = messages.find(
-      m => m.severity === 'error' && ofCheck(m) && checked.checkedAt.get(m.line) === property
-    )
-    if (misstated !== undefined) {
+  const checks = properties.map((property, i): ProofCheck => {
+    const audit = audits[i]
+    if (audit === undefined || !audit.found) {
+      return { property, status: 'not proved', reason: `Lean did not check ${obligationName(property)}` }
+    }
+    if (!audit.sameType) {
+      const obligation = obligations.get(property) ?? `holds% ${leanIdent(property)}`
       return {
         property,
         status: 'not proved',
-        reason: `${obligationName(property)} does not prove ${obligationOf(checked, property)}: ${misstated.text}`,
+        reason: `${obligationName(property)} does not prove ${obligation}`,
       }
     }
-    const used = axioms.get(property)
-    if (used === undefined) {
-      return { property, status: 'not proved', reason: `Lean did not check ${obligationName(property)}` }
-    }
-    const extra = used.filter(a => !STANDARD_AXIOMS.includes(a))
-    // With --trust-smt, `sorryAx` is the trusted answers of the SMT solver, once no file of the proof writes one.
+    const extra = audit.axioms.filter(a => !STANDARD_AXIOMS.includes(a))
     const trusted = trustSmt && extra.length > 0 && extra.every(a => a === 'sorryAx') && sorries.length === 0
     if (extra.length > 0 && !trusted) {
       const sorry = !extra.includes('sorryAx')
@@ -382,74 +456,10 @@ export function readProofChecks(
         : ', which a sorry, an unfinished proof or a trusted SMT answer leaves'
       return { property, status: 'not proved', reason: `its proof rests on ${extra.join(', ')}${sorry}` }
     }
-    if (errors.length > 0) {
-      return { property, status: 'not proved', reason: 'the files of the proof have errors' }
-    }
     return trusted ? { property, status: 'proved', trustsSmt: true } : { property, status: 'proved' }
   })
-  return { checks, errors, messages: others }
+  return { checks, errors: [], messages: [] }
 }
-
-/** The statement of the obligation of `property` that the file of `checked` is checked for. */
-const obligationOf = (checked: ProofSource, property: string): string =>
-  checked.obligations.get(property) ?? `holds% ${leanIdent(property)}`
-
-/**
- * The messages of Lean in `output` about the files of the proof: those of the proof file, which Lean writes as JSON,
- * and those of each other file, which Lake writes as it builds the file's module, named in `modules`.
- */
-function leanMessages(output: string, modules: ReadonlyMap<string, string>): LeanMessage[] {
-  const lines = output.split('\n')
-  return lines.flatMap((line, i): LeanMessage[] => {
-    const own = jsonMessage(line)
-    if (own !== undefined) {
-      return [own]
-    }
-    const m = /^(error|warning|info): (.*\.lean):(\d+):(\d+): (.*)$/.exec(line)
-    // Lake also reports on modules that are not files of the proof, such as the one that loads the spec.
-    const module = m === null ? undefined : [...modules].find(([file]) => m[2].endsWith(file))
-    if (m === null || module === undefined) {
-      return []
-    }
-    // A message goes on over the lines that follow, such as the goals that a proof left.
-    const after = lines.slice(i + 1)
-    const ends = after.findIndex(l => MESSAGE_END.test(l))
-    const text = [m[5], ...after.slice(0, ends < 0 ? after.length : ends)].join('\n').trimEnd()
-    const severity = m[1] === 'info' ? 'information' : m[1] === 'warning' ? 'warning' : 'error'
-    return [{ severity, path: module[1], line: Number(m[3]), column: Number(m[4]), text }]
-  })
-}
-
-/** The message that `line` holds, when it is one that Lean wrote as JSON. */
-export function jsonMessage(line: string): LeanMessage | undefined {
-  if (!line.startsWith('{"')) {
-    return undefined
-  }
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(line)
-  } catch {
-    return undefined
-  }
-  return isLeanJsonMessage(parsed)
-    ? { severity: parsed.severity, line: parsed.pos.line, column: parsed.pos.column, text: parsed.data.trimEnd() }
-    : undefined
-}
-
-const isLeanJsonMessage = (v: unknown): v is LeanJsonMessage =>
-  typeof v === 'object' &&
-  v !== null &&
-  'severity' in v &&
-  (v.severity === 'information' || v.severity === 'warning' || v.severity === 'error') &&
-  'data' in v &&
-  typeof v.data === 'string' &&
-  'pos' in v &&
-  typeof v.pos === 'object' &&
-  v.pos !== null &&
-  'line' in v.pos &&
-  typeof v.pos.line === 'number' &&
-  'column' in v.pos &&
-  typeof v.pos.column === 'number'
 
 /**
  * The `(name := value)` options that follow `from` in `text`, up to the first text that is not one, and where
@@ -505,8 +515,6 @@ function closing(text: string, open: number): number | undefined {
   }
   return undefined
 }
-
-const escaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
  * Where `file` writes a proof that it leaves unfinished, as `path:line`: a `sorry`, an `admit` or `sorryAx`

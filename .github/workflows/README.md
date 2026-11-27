@@ -6,7 +6,7 @@ The benchmark workflow fails if any benchmark gets more than 10% slower than on 
 
 We use the `paths-filter` action instead of constraining the triggers because these checks are required by GitHub configuration, and a required check that doesn't get trigger on a PR will block it from being merged.
 
-The Veil distribution workflow is not a required check, so it constrains its triggers instead. Its test downloads about 750 MB and builds Veil from source. So it runs only for changes to what the first run of `quint verify --backend veil` depends on, and weekly.
+The Veil workflow runs `make -C lean test`, `npm run veil-integration` and the distribution tests. These jobs build Veil from source, so the workflow runs only when their inputs change or on the weekly schedule. It is not a required check.
 
 ## Release workflows
 

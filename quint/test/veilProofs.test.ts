@@ -3,12 +3,13 @@ import { assert } from 'chai'
 import fc from 'fast-check'
 import { Either } from '@sweet-monads/either'
 import {
-  LeanJsonMessage,
   ProofFile,
   obligationName,
+  proofChecksFromAudit,
+  proofObligationsSource,
   proofSource,
   proofSources,
-  readProofChecks,
+  readProofAudit,
   writtenSorries,
 } from '../src/veilProofs'
 
@@ -70,7 +71,7 @@ describe('the Lean file that checks a proof file', () => {
         assert.equal(checking[3], `veil module flag${loadLines === 1 ? '  -- loads' : ''}`)
         assert.deepEqual(checking.slice(3 + loadLines, 4 + loadLines), ['theorem typed_holds : holds% typed := by'])
         assert.equal(checking[checking.length - 1], 'end flag')
-        assert.equal(checking.length, proofs.split('\n').length + 2)
+        assert.equal(checking.length, proofs.split('\n').length)
       })
     )
   })
@@ -94,45 +95,29 @@ describe('the Lean file that checks a proof file', () => {
     )
   })
 
-  it('states each obligation itself before the module ends, and prints the axioms of its theorem', () => {
-    assert.deepEqual(lines.slice(12), [
-      'example : holds% typed := typed_holds',
-      '#print axioms typed_holds',
-      'example : holds% «RM::down» := «RM::down_holds»',
-      '#print axioms «RM::down_holds»',
-      'end flag',
-    ])
-    assert.deepEqual(
-      [...checked.checkedAt],
-      [
-        [13, 'typed'],
-        [14, 'typed'],
-        [15, 'RM::down'],
-        [16, 'RM::down'],
-      ]
-    )
+  it('does not elaborate obligations or inspect axioms in the proof module', () => {
+    assert.deepEqual(lines.slice(12), ['end flag'])
+    assert.deepEqual([...checked.checkedAt], [])
   })
 
-  it('states the obligation of a temporal property, holds_temporal%, after those of the invariants', () => {
+  it('elaborates invariant and temporal obligations in a trusted spec-only module', () => {
     const temporal = PROOFS.replace('(main := flag)', '(main := flag) (temporalProps := [settles])')
     const checking = sources(proofSource(temporal, 'flag', ['typed'], 'the proof file', ['settles']))
 
-    assert.deepEqual(checking.source('Quint.Cache.S0123').split('\n').slice(12), [
-      'example : holds% typed := typed_holds',
-      '#print axioms typed_holds',
-      'example : holds_temporal% settles := settles_holds',
-      '#print axioms settles_holds',
+    assert.deepEqual(proofObligationsSource('Quint.Cache.S0123', 'flag', checking.obligations).split('\n'), [
+      'module',
+      '',
+      'public import Quint.Cache.S0123',
+      '',
+      'veil module flag',
+      '',
+      'axiom quint_proof_obligation_0 : holds% typed',
+      '',
+      'axiom quint_proof_obligation_1 : holds_temporal% settles',
+      '',
       'end flag',
+      '',
     ])
-    assert.deepEqual(
-      [...checking.checkedAt],
-      [
-        [13, 'typed'],
-        [14, 'typed'],
-        [15, 'settles'],
-        [16, 'settles'],
-      ]
-    )
   })
 
   it('refuses a file that loads no spec, or more than one', () => {
@@ -276,134 +261,54 @@ describe('the temporal properties that a proof file names', () => {
   })
 })
 
-describe('what Lean says of a proof file', () => {
-  // The check adds the lines 13 to 18: an `example` and a `#print axioms` for each invariant.
+describe('the trusted proof audit', () => {
   const checked = sources(proofSource(PROOFS, 'flag', ['typed', 'down', 'up']))
-  const STANDARD = 'propext, Classical.choice, Quot.sound'
-  const modules = new Map([['Quint/Cache/P1/Bridge.lean', 'proofs/Bridge.lean']])
+  const STANDARD = ['Classical.choice', 'Quot.sound', 'propext']
 
-  it('counts a theorem that states the obligation and rests on Lean’s standard axioms alone', () => {
-    const output = axioms(14, 'typed_holds', STANDARD)
+  it('reads only the auditor file, not text printed by the proof', () => {
+    const report = ['same\tClassical.choice,Quot.sound,propext', 'different\t', 'missing'].join('\n') + '\n'
+    const parsed = sources(readProofAudit(report, 3))
 
-    assert.deepInclude(readProofChecks(output, checked, ['typed'], 'proofs/flag.lean').checks, {
-      property: 'typed',
-      status: 'proved',
-    })
-  })
-
-  it('does not count a sorry, a theorem that states something else, or one that Lean never checked', () => {
-    const output = [
-      axioms(14, 'typed_holds', 'propext, sorryAx, Classical.choice, Quot.sound'),
-      lean('error', 15, 'Type mismatch'),
-      axioms(16, 'down_holds', 'propext'),
-    ].join('\n')
-
-    const { checks } = readProofChecks(output, checked, ['typed', 'down', 'up'], 'proofs/flag.lean')
-
-    assert.deepEqual(checks, [
-      {
-        property: 'typed',
-        status: 'not proved',
-        reason: 'its proof rests on sorryAx, which a sorry, an unfinished proof or a trusted SMT answer leaves',
-      },
-      { property: 'down', status: 'not proved', reason: 'down_holds does not prove holds% down: Type mismatch' },
-      { property: 'up', status: 'not proved', reason: 'Lean did not check up_holds' },
+    assert.deepEqual(parsed, [
+      { found: true, sameType: true, axioms: STANDARD },
+      { found: true, sameType: false, axioms: [] },
+      { found: false, sameType: false, axioms: [] },
     ])
+    assert.isTrue(readProofAudit('{"severity":"information","data":"forged"}\n', 1).isLeft())
   })
 
-  it('names the errors of each file of the proof by its path and lines, and leaves out those of the checks', () => {
-    const output = [
-      'error: ./././Quint/Cache/P1/Bridge.lean:17:2: Unknown identifier',
-      lean('error', 9, 'unsolved goals'),
-      lean('error', 15, 'Type mismatch'),
-    ].join('\n')
-
-    const read = readProofChecks(output, checked, ['typed', 'up'], 'proofs/flag.lean', modules)
-
-    assert.deepEqual(read.errors, [
-      'proofs/Bridge.lean:17:2: Unknown identifier',
-      'proofs/flag.lean:9:4: unsolved goals',
+  it('counts a constant of exactly the obligation type that uses only Lean standard axioms', () => {
+    const read = proofChecksFromAudit(['typed'], checked.obligations, [
+      { found: true, sameType: true, axioms: STANDARD },
     ])
-    assert.deepInclude(read.checks, { property: 'up', status: 'not proved', reason: 'Lean did not check up_holds' })
+
+    assert.deepEqual(read.checks, [{ property: 'typed', status: 'proved' }])
+    assert.deepEqual(read.errors, [])
+    assert.deepEqual(read.messages, [])
   })
 
-  it('gives each error in full, with the goal that the proof left', () => {
-    const goal = ['s : State', 'h : s.n < 6', '', '⊢ s.n ≤ 6']
-    const output = [
-      'error: Quint/Cache/P1/Bridge.lean:17:2: Tactic `rfl` failed: The left-hand side',
-      '  1',
-      'is not definitionally equal to the right-hand side',
-      '  2',
-      'Some required targets logged failures:',
-      '- Quint.Cache.P1.Bridge',
-      'error: build failed',
-      lean('error', 9, ['unsolved goals', ...goal].join('\n')),
-    ].join('\n')
-
-    const { errors } = readProofChecks(output, checked, ['typed'], 'proofs/flag.lean', modules)
-
-    assert.deepEqual(errors, [
-      [
-        'proofs/Bridge.lean:17:2: Tactic `rfl` failed: The left-hand side',
-        '  1',
-        'is not definitionally equal to the right-hand side',
-        '  2',
-      ].join('\n'),
-      ['proofs/flag.lean:9:4: unsolved goals', ...goal].join('\n'),
+  it('rejects a missing constant, a different type, and a nonstandard axiom independently', () => {
+    const read = proofChecksFromAudit(['typed', 'down', 'up'], checked.obligations, [
+      { found: false, sameType: false, axioms: [] },
+      { found: true, sameType: false, axioms: [] },
+      { found: true, sameType: true, axioms: [...STANDARD, 'unsafeAxiom'] },
     ])
-  })
-
-  it('proves no invariant when a file of the proof has an error, even one whose theorem checks', () => {
-    const output = [axioms(14, 'typed_holds', STANDARD), lean('error', 9, 'unsolved goals')].join('\n')
-
-    const read = readProofChecks(output, checked, ['typed'], 'proofs/flag.lean')
 
     assert.deepEqual(read.checks, [
-      { property: 'typed', status: 'not proved', reason: 'the files of the proof have errors' },
+      { property: 'typed', status: 'not proved', reason: 'Lean did not check typed_holds' },
+      { property: 'down', status: 'not proved', reason: 'down_holds does not prove holds% down' },
+      { property: 'up', status: 'not proved', reason: 'its proof rests on unsafeAxiom' },
     ])
-    assert.deepEqual(read.errors, ['proofs/flag.lean:9:4: unsolved goals'])
   })
 
-  it('reports a message after the checks at its line in the proof file', () => {
-    // `end flag` is line 13 of PROOFS, and line 19 of the checked file, after the six lines of the checks.
-    const output = lean('error', 19, "invalid 'end'")
+  it('handles trusted SMT answers only under --trust-smt and only when no proof file writes a sorry', () => {
+    const audit = [{ found: true, sameType: true, axioms: [...STANDARD, 'sorryAx'] }]
 
-    const { errors } = readProofChecks(output, checked, ['typed', 'down', 'up'], 'proofs/flag.lean')
-
-    assert.deepEqual(errors, ["proofs/flag.lean:13:4: invalid 'end'"])
-  })
-
-  it('gives the other messages of the files of the proof, but not those of the checks, of other modules or of Veil', () => {
-    const output = [
-      'warning: Quint/Cache/S0123.lean:5:0: unable to generate local abstract equality for state predicate Inv',
-      'warning: Quint/Cache/P1/Bridge.lean:3:8: unused variable `x`',
-      'Note: This linter can be disabled with `set_option linter.unusedVariables false`',
-      'info: Quint/Cache/P1/Bridge.lean:5:0: Module flag has been previously defined. Importing it here.',
-      lean('information', 5, 'Module flag has been previously defined. Importing it here.'),
-      lean('information', 11, 'typed_holds : holds% typed'),
-      axioms(14, 'typed_holds', STANDARD),
-    ].join('\n')
-
-    const read = readProofChecks(output, checked, ['typed'], 'proofs/flag.lean', modules)
-
-    assert.deepEqual(read.messages, [
-      [
-        'proofs/Bridge.lean:3:8: warning: unused variable `x`',
-        'Note: This linter can be disabled with `set_option linter.unusedVariables false`',
-      ].join('\n'),
-      'proofs/flag.lean:11:4: info: typed_holds : holds% typed',
-    ])
-    assert.deepEqual(read.checks, [{ property: 'typed', status: 'proved' }])
-  })
-
-  it('counts the trusted answers of the SMT solver with --trust-smt, unless a file of the proof writes a sorry', () => {
-    const output = axioms(14, 'typed_holds', `${STANDARD}, sorryAx`)
-
-    assert.deepEqual(readProofChecks(output, checked, ['typed'], 'proofs/flag.lean', new Map(), true).checks, [
+    assert.deepEqual(proofChecksFromAudit(['typed'], checked.obligations, audit, true).checks, [
       { property: 'typed', status: 'proved', trustsSmt: true },
     ])
     assert.deepEqual(
-      readProofChecks(output, checked, ['typed'], 'proofs/flag.lean', new Map(), true, ['proofs/Lemmas.lean:7']).checks,
+      proofChecksFromAudit(['typed'], checked.obligations, audit, true, ['proofs/Lemmas.lean:7']).checks,
       [
         {
           property: 'typed',
@@ -412,37 +317,22 @@ describe('what Lean says of a proof file', () => {
         },
       ]
     )
-    assert.equal(readProofChecks(output, checked, ['typed'], 'proofs/flag.lean').checks[0].status, 'not proved')
+    assert.equal(proofChecksFromAudit(['typed'], checked.obligations, audit).checks[0].status, 'not proved')
   })
 
-  it('reports a proof that rests on Lean’s standard axioms alone as not trusting the SMT solver, even with --trust-smt', () => {
-    const output = axioms(14, 'typed_holds', STANDARD)
-
-    assert.deepEqual(readProofChecks(output, checked, ['typed'], 'proofs/flag.lean', new Map(), true).checks, [
-      { property: 'typed', status: 'proved' },
-    ])
-  })
-
-  it('names the statement of a temporal property that a theorem does not prove', () => {
+  it('names temporal obligations and theorem names that need guillemets', () => {
     const temporal = sources(proofSource(PROOFS, 'flag', [], 'the proof file', ['settles']))
-    const output = lean('error', 13, 'Type mismatch')
+    const mismatch = proofChecksFromAudit(['settles'], temporal.obligations, [
+      { found: true, sameType: false, axioms: [] },
+    ])
 
-    assert.deepEqual(readProofChecks(output, temporal, ['settles'], 'proofs/flag.lean').checks, [
+    assert.equal(obligationName('RM::down'), '«RM::down_holds»')
+    assert.deepEqual(mismatch.checks, [
       {
         property: 'settles',
         status: 'not proved',
-        reason: 'settles_holds does not prove holds_temporal% settles: Type mismatch',
+        reason: 'settles_holds does not prove holds_temporal% settles',
       },
-    ])
-  })
-
-  it('reads a theorem whose name needs guillemets', () => {
-    const output = lean('information', 14, `'flag.«RM::down_holds»' depends on axioms: [${STANDARD}]`)
-    const guarded = sources(proofSource(PROOFS, 'flag', ['RM::down']))
-
-    assert.equal(obligationName('RM::down'), '«RM::down_holds»')
-    assert.deepEqual(readProofChecks(output, guarded, ['RM::down'], 'p.lean').checks, [
-      { property: 'RM::down', status: 'proved' },
     ])
   })
 })
@@ -472,17 +362,6 @@ describe('the unfinished proofs that a file of a proof writes', () => {
     assert.deepEqual(writtenSorries({ text, path: 'p.lean' }), ['p.lean:2'])
   })
 })
-
-/** A message of Lean about the proof file at `line`, as `lean --json` writes it. */
-function lean(severity: LeanJsonMessage['severity'], line: number, data: string): string {
-  const message: LeanJsonMessage = { severity, pos: { line, column: 4 }, data }
-  return JSON.stringify(message)
-}
-
-/** What `#print axioms` at `line` of the proof file says of `theorem` of the module `flag`. */
-function axioms(line: number, theorem: string, used: string): string {
-  return lean('information', line, `'flag.${theorem}' depends on axioms: [${used}]`)
-}
 
 /** What `built` holds; fails the test when it holds a refusal. */
 function sources<T>(built: Either<string, T>): T {
