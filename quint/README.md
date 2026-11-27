@@ -48,6 +48,12 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art type checking and
 development tooling.
 
+> [!TIP]
+> Try [Quint Studio](https://studio.quint.sh/) to write Quint specs from your code.
+> Studio helps you get started with Quint, modeling the components of your codebase that you care about the most,
+> and reproducing any misbehavior it finds against code with tests.
+> It's now on open beta, free to use, and available for macOS and Linux.
+
 ### Installation
 
 The quickest way to install Quint is using npm.
