@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.35.0 -- 2026-11-27
+
+### Added
 
 - `quint verify --backend veil` checks a spec with Veil's compiled model checker, which `quint` downloads and builds on first use, and which checks invariants on every core, as TLC does. With it, `--state-constraints` names the definitions that a state must satisfy to be explored
 - With `--backend veil`, `--inductive-invariant` is proved by Veil's SMT backend for every value of the constants. When static analysis allows it, `quint` adds the invariants `m.keys() == S` that rule out counterexamples at a key that a map lacks
